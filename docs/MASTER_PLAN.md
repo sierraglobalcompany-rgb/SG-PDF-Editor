@@ -21,6 +21,9 @@
 
 # A0 — Higiene, trazabilidad y reproducibilidad
 
+**Estado:** ✅ COMPLETADA en `feat/kiss-vertical-slice` el 2026-10-06.  
+**Evidencia Windows CI:** run `37518112465` — hygiene + `dotnet restore --locked-mode` + Release build + tests = success.
+
 ## Objetivo
 
 Dejar el repo comprensible para cualquier chat/agente y evitar que documentación, dependencias o CI diverjan.
@@ -29,38 +32,30 @@ Dejar el repo comprensible para cualquier chat/agente y evitar que documentació
 
 - [x] Ignorar `tests/PrivateFixtures/` y caches locales.
 - [x] Crear `docs/MASTER_CONTEXT.md`.
-- [ ] Crear/actualizar este `docs/MASTER_PLAN.md`.
-- [ ] Alinear `README.md`.
-- [ ] Alinear `AGENTS.md`.
-- [ ] Alinear `docs/ARCHITECTURE.md`.
-- [ ] Alinear `docs/ROADMAP.md`.
-- [ ] Simplificar `docs/DEVELOPMENT_PLAN.md` para que no duplique decisiones.
-- [ ] Actualizar `docs/LABELS_ZPL.md` con Gate BinaryKits/Labelize.
-- [ ] Actualizar `docs/REUSE_AUDIT.md`.
-- [ ] Crear `third_party/manifest.json`.
-- [ ] Crear carpeta/documentación de licencias y notices.
-- [ ] Activar mecanismo de lock NuGet reproducible.
-- [ ] Ajustar CI para verificar restore/build/test/publish según lo que pueda probarse.
-- [ ] Actualizar descripción del PR #2.
-- [ ] Verificar CI de la cabeza final de A0.
+- [x] Crear/actualizar este `docs/MASTER_PLAN.md`.
+- [x] Alinear `README.md`.
+- [x] Alinear `AGENTS.md`.
+- [x] Alinear `docs/ARCHITECTURE.md`.
+- [x] Alinear `docs/ROADMAP.md`.
+- [x] Simplificar `docs/DEVELOPMENT_PLAN.md` para que no duplique decisiones.
+- [x] Actualizar `docs/LABELS_ZPL.md` con Gate BinaryKits/Labelize.
+- [x] Actualizar `docs/REUSE_AUDIT.md`.
+- [x] Crear `third_party/manifest.json`.
+- [x] Crear carpeta/documentación de licencias y notices.
+- [x] Activar lock NuGet reproducible y commitear locks generados por Windows CI.
+- [x] Ajustar CI con higiene + restore locked + build + test.
+- [x] Actualizar descripción del PR #2.
+- [x] Verificar CI de la cabeza final de A0.
 
-## Resultado esperado
+## Resultado
 
-Repositorio reproducible, sin contradicciones materiales, con una sola fuente de verdad y preparación clara para F0.
-
-## Definition of Done A0
-
-- documentos cortos apuntan al Master Context/Plan;
-- dependencia runtime actual registrada;
-- datos privados ignorados;
-- CI Windows corre sobre la rama;
-- build/test reales verificados en GitHub Actions;
-- ninguna afirmación de lock reproducible sin evidencia real;
-- PR continúa draft y sin merge.
+Repositorio reproducible, sin contradicciones materiales conocidas, con fuentes de verdad claras y preparación lista para F0.
 
 ---
 
 # F0 — PDF base
+
+**Estado:** ⏭️ SIGUIENTE.
 
 ## Objetivo
 
