@@ -17,17 +17,14 @@ public sealed class PdfRenderTests
             File.WriteAllBytes(path, CreateSinglePagePdf());
 
             using var session = PdfDocumentSession.Open(path);
-            dynamic dynamicSession = session;
-            dynamic rendered = dynamicSession.RenderPage(0, 96d);
+            var rendered = session.RenderPage(0, 96d);
 
-            Assert.Equal(0, (int)rendered.PageIndex);
-            Assert.Equal(816, (int)rendered.PixelWidth);
-            Assert.Equal(1056, (int)rendered.PixelHeight);
-            Assert.Equal(816 * 4, (int)rendered.Stride);
-
-            byte[] pixels = rendered.Pixels;
-            Assert.Equal((int)rendered.Stride * (int)rendered.PixelHeight, pixels.Length);
-            Assert.Contains(pixels, value => value < 250);
+            Assert.Equal(0, rendered.PageIndex);
+            Assert.Equal(816, rendered.PixelWidth);
+            Assert.Equal(1056, rendered.PixelHeight);
+            Assert.Equal(816 * 4, rendered.Stride);
+            Assert.Equal(rendered.Stride * rendered.PixelHeight, rendered.Pixels.Length);
+            Assert.Contains(rendered.Pixels, value => value < 250);
         }
         finally
         {
