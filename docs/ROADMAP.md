@@ -1,46 +1,77 @@
-# Roadmap
+# Roadmap KISS
 
-## Fase 0 — Base
-- Solución .NET/WPF.
-- MVVM.
-- Contratos del Core.
-- CI básico.
-
-## Fase 1 — Visor
+## Fase 0 — Vertical slice útil
 - Abrir PDF.
-- Renderizar páginas.
-- Miniaturas.
+- Renderizar página.
 - Zoom.
-- Navegación.
+- Imprimir.
+- Importar PNG con transparencia como firma.
+- Arrastrar/redimensionar firma.
+- Guardar como copia.
 
-## Fase 2 — Organización
-- Reordenar páginas.
-- Rotar.
-- Eliminar.
-- Insertar PDF.
+**Salida:** una aplicación ya utilizable para leer y firmar PDFs.
+
+## Fase 1 — Lector completo
+- Scroll continuo.
+- Miniaturas.
+- Navegación por página.
+- Buscar/copiar texto.
+- Marcadores y enlaces.
+- PDFs con contraseña.
+- Varias pestañas si no complica estabilidad.
+
+## Fase 2 — Organizar
+- Rotar, eliminar, duplicar, reordenar.
+- Insertar páginas/PDF.
+- Extraer páginas.
 - Unir/dividir.
+- Introducir qpdf solo si reduce código y riesgo.
 
-## Fase 3 — Edición por capas
-- Texto nuevo.
-- Imágenes.
-- Firma.
+## Fase 3 — Imágenes
+- Clic derecho contextual.
+- Extraer imagen.
+- Guardar imagen como.
+- Reemplazar imagen conservando posición/tamaño.
+- Mover, redimensionar, rotar, eliminar.
+- Undo/Redo.
+
+## Fase 4 — Texto V1
+- Detectar objetos de texto.
+- Clic derecho > Editar texto.
+- Cambiar contenido simple.
+- Propiedades básicas cuando PDFium/fuente lo permita.
+- Sin prometer reflow complejo todavía.
+
+## Fase 5 — Comentarios
+- Resaltar.
+- Nota.
 - Dibujo.
-- Resaltado.
-- Comentarios.
+- Formas.
 
-## Fase 4 — OCR
-- Detectar PDFs escaneados.
-- OCR por página o documento.
-- Capa de texto buscable.
+## Fase 6 — Utilidades esenciales
+- Comprimir.
+- Marca de agua.
+- Numeración.
+- Proteger/desbloquear.
+- Reparar cuando sea viable.
 
-## Fase 5 — Formularios y seguridad
-- Formularios AcroForm.
-- Contraseña/cifrado.
-- Marcas de agua.
-- Metadatos.
+## Fase 7 — OCR
+- Tesseract.
+- Detectar documento escaneado.
+- Crear texto buscable.
 
-## Fase 6 — Edición avanzada de contenido existente
-- Detectar bloques de texto.
-- Edición visual.
-- Sustitución de fuentes.
-- Reflujo limitado y controlado.
+## Fase 8 — Texto V2
+- Agrupar líneas/párrafos.
+- Reflow limitado.
+- Mejor sustitución de fuentes.
+
+## Fase 9 — Profesional
+- Censura real.
+- Formularios.
+- Firma digital con certificado.
+- Comparar PDFs.
+- Procesamiento por lotes.
+- Conversiones solo donde exista una solución madura reutilizable.
+
+## Regla de avance
+No se inicia una fase si la anterior no abre, guarda y prueba PDFs reales sin regresiones graves.
