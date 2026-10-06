@@ -13,6 +13,8 @@
   "workflow": {
     "plan_check": true,
     "verifier": true,
+    "nyquist_validation": true,
+    "ai_integration_phase": false,
     "auto_advance": false,
     "human_verify_mode": "end-of-phase",
     "use_worktrees": true,
