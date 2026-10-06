@@ -36,5 +36,37 @@ internal static class PdfiumNative
     internal static extern float FPDF_GetPageHeightF(IntPtr page);
 
     [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern IntPtr FPDFBitmap_Create(int width, int height, int alpha);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern int FPDFBitmap_FillRect(
+        IntPtr bitmap,
+        int left,
+        int top,
+        int width,
+        int height,
+        uint color);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern IntPtr FPDFBitmap_GetBuffer(IntPtr bitmap);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern int FPDFBitmap_GetStride(IntPtr bitmap);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern void FPDFBitmap_Destroy(IntPtr bitmap);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern void FPDF_RenderPageBitmap(
+        IntPtr bitmap,
+        IntPtr page,
+        int startX,
+        int startY,
+        int sizeX,
+        int sizeY,
+        int rotate,
+        int flags);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
     internal static extern uint FPDF_GetLastError();
 }

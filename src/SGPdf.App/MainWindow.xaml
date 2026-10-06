@@ -6,9 +6,9 @@
     <DockPanel>
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="_Archivo">
-                <MenuItem Header="_Abrir..." />
+                <MenuItem Header="_Abrir..." Click="OpenPdf_Click" />
                 <Separator />
-                <MenuItem Header="_Salir" />
+                <MenuItem Header="_Salir" Click="Exit_Click" />
             </MenuItem>
             <MenuItem Header="_Editar" />
             <MenuItem Header="_Páginas" />
@@ -16,7 +16,7 @@
         </Menu>
 
         <StatusBar DockPanel.Dock="Bottom">
-            <TextBlock Text="Scaffold inicial — motor PDF pendiente" />
+            <TextBlock x:Name="StatusText" Text="Listo" />
         </StatusBar>
 
         <Grid>
@@ -31,8 +31,22 @@
             </Border>
 
             <Grid Grid.Column="1" Background="#F3F3F3">
-                <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center"
-                           Text="Abrir un PDF" FontSize="24" Foreground="#666" />
+                <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                              VerticalScrollBarVisibility="Auto">
+                    <Image x:Name="PdfImage"
+                           Margin="24"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Top"
+                           Stretch="None"
+                           Visibility="Collapsed" />
+                </ScrollViewer>
+
+                <TextBlock x:Name="EmptyStateText"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           Text="Abrir un PDF"
+                           FontSize="24"
+                           Foreground="#666" />
             </Grid>
 
             <Border Grid.Column="2" BorderThickness="1,0,0,0" BorderBrush="LightGray">
