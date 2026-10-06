@@ -1,62 +1,86 @@
 # Auditoría de repositorios reutilizables
 
 ## Regla
-Reutilizar solo cuando reduzca código/riesgo. Preferir MIT/BSD/Apache-2.0. Código GPL/AGPL se estudia como referencia funcional, pero no se copia al producto sin aprobación explícita.
+Reutilizar solo cuando reduzca código/riesgo. Runtime offline. Preferir MIT/BSD/Apache-2.0. GPL/AGPL solo como referencia funcional salvo aprobación expresa.
 
 ## 1. bblanchon/pdfium-binaries — USAR
-- Propósito: binarios PDFium actualizados para Windows.
-- Valor: evita compilar Chromium/PDFium.
-- Estrategia: consumir binario/paquete y mantener nuestro interop mínimo.
-- Riesgo: API nativa; fijar versión y actualizar deliberadamente.
+- PDFium actualizado para Windows.
+- Evita compilar Chromium/PDFium.
+- Interop mínimo propio.
 
-## 2. kudosscience/pdf-chisel — RECICLAR TÉCNICA/CÓDIGO SELECTIVO
+## 2. GOODBOY008/labelize — USAR PARA ETIQUETAS
 - MIT.
-- Ya demuestra PDFium para render, listar objetos, editar texto, reemplazar PNG/JPEG, guardar, thumbnails y undo/redo.
-- Su capa nativa es C++/N-API para Electron; no adoptaremos Electron ni node-gyp.
-- Portar a C# únicamente las ideas/llamadas PDFium necesarias, conservando atribución cuando se adapte código sustancial.
-- Especialmente útil para: `FPDFText_SetText`, `FPDFImageObj_SetBitmap`, dirty pages y guardado diferido.
+- Activo en 2026; publica binario Windows x64.
+- CLI local: ZPL/EPL → PNG/PDF.
+- No necesita Internet, servidor ni impresora.
+- Soporta comandos relevantes para archivos reales: `^XA/^XZ`, `^LH`, `^CI`, `^FO/^FT`, `^A`, `^FD/^FS`, `^FB`, `^FR`, `^FH`, `^BC`, `^BQ`, `^GF/^GFA`, `^GB`, `^PQ` y otros.
+- `^PQ` produce múltiples copias; nuestra app extraerá la cantidad y renderizará preview con 1 copia para permitir layouts personalizados.
+- Tiene golden tests comparados contra renders de Labelary.
+- Estrategia KISS: distribuir `labelize.exe` y llamarlo como proceso; NO integrar Rust ni levantar HTTP.
 
-## 3. MilosKonecny/PDFiumDotNET — REFERENCIA DE VISOR
+### Riesgos Labelize
+- No es un firmware Zebra completo: algunos comandos ZPL pueden faltar o diferir.
+- Por eso se mantiene un corpus de archivos reales Mercado Libre.
+- Si encuentra comando no soportado, debemos informar; nunca ocultar el warning.
+- Antes de fijar una nueva versión, comparar visualmente corpus de referencia.
+
+## 3. BinaryKits/BinaryKits.Zpl — FALLBACK/REFERENCIA
+- MIT y .NET nativo.
+- Tiene viewer local, QR, Code128, gráficos y texto.
+- Encaja bien con C#, pero la cobertura/fidelidad para ZPL real debe probarse contra nuestro corpus.
+- No usar junto con Labelize de inicio; queda como alternativa si Labelize presenta un bloqueo serio.
+
+## 4. empira/PDFsharp — USAR SOLO PARA PDF DE ETIQUETAS
+- MIT, activamente mantenido.
+- Versión estable 6.2.x soporta .NET 10.
+- Muy simple para crear páginas nuevas y colocar PNGs.
+- Responsabilidad: composición/export de hojas de etiquetas.
+- PDFium sigue siendo lector/editor principal.
+
+## 5. kudosscience/pdf-chisel — RECICLAR TÉCNICA/CÓDIGO SELECTIVO
 - MIT.
-- Tiene WPF, vistas continuas, thumbnails, bookmarks, búsqueda y anotaciones.
-- Última actividad principal observada es antigua respecto al PDFium actual; no queremos quedar atados a su binario.
-- Reutilizar patrones de UI/render/caché cuando simplifiquen, no adoptar toda la librería inicialmente.
+- Demuestra PDFium para render, objetos, texto, imágenes, guardado, thumbnails y undo/redo.
+- No adoptar Electron/Node/N-API.
 
-## 4. ArgusMagnus/PDFiumSharp — REFERENCIA DE INTEROP
-- Permisivo/MIT, pero proyecto antiguo.
-- Expone bindings de edición de PDFium útiles como referencia.
-- No usar el paquete/binarios antiguos; adaptar solo firmas nativas que necesitemos.
+## 6. MilosKonecny/PDFiumDotNET — REFERENCIA DE VISOR
+- MIT.
+- WPF, continuo, thumbnails, bookmarks, búsqueda y anotaciones.
+- Reutilizar patrones; no quedar atados a binario antiguo.
 
-## 5. qpdf/qpdf — USAR MÁS ADELANTE
-- Apache-2.0 y activamente mantenido.
-- Excelente para merge/split/cifrado/transformaciones estructurales.
-- No renderiza ni edita visualmente.
-- Estrategia KISS: invocar `qpdf.exe` como proceso cuando llegue Fase Organizar/Seguridad, antes de crear bindings.
+## 7. ArgusMagnus/PDFiumSharp — REFERENCIA DE INTEROP
+- Proyecto antiguo; útil para firmas P/Invoke de edición.
+- No usar paquete/binarios viejos.
 
-## 6. UglyToad/PdfPig — RESERVA
-- Apache-2.0, activo.
-- Muy bueno para extracción, posiciones, imágenes y análisis de layout.
-- No introducirlo mientras PDFium resuelva selección/hit testing/texto.
-- Candidato para Text V2/reflow si aporta valor real.
+## 8. qpdf/qpdf — MÁS ADELANTE
+- Apache-2.0.
+- Merge/split/cifrado/estructura.
+- Preferir CLI local.
 
-## 7. PDFsharp — RESERVA
-- MIT, activo y compatible con .NET moderno.
-- Útil para generación/manipulación específica.
-- No introducirlo por defecto porque duplicaría responsabilidades del motor.
+## 9. UglyToad/PdfPig — RESERVA
+- Apache-2.0.
+- Layout/extracción avanzada si PDFium no basta.
 
-## 8. Tesseract — USAR EN OCR
-- Apache-2.0 y activo.
-- Solo se incorpora al llegar Fase OCR.
+## 10. Tesseract — OCR
+- Apache-2.0.
 
-## 9. KillerPDF — SOLO REFERENCIA FUNCIONAL
-- Tiene muchas funciones similares y usa .NET 10/PDFium.
-- GPL-3.0: no copiar código al producto si queremos conservar libertad de distribución/licenciamiento.
-- Puede servir para comparar comportamiento y casos de uso.
+## 11. KillerPDF — SOLO REFERENCIA
+- GPL-3.0; no copiar código al producto.
 
-## Selección inicial final
-Dependencias del primer vertical slice:
-1. .NET 10 / WPF.
-2. PDFium actualizado (`bblanchon/pdfium-binaries`).
-3. Nuestro interop mínimo C#.
+## Dependencias aprobadas por fase
+### Base PDF
+- PDFium binaries.
 
-Nada más salvo una dependencia pequeña que demuestre claramente reducir código.
+### Etiquetas
+- Labelize CLI local.
+- PDFsharp Core estable.
+
+### OCR futuro
+- Tesseract.
+
+Nada más hasta que una función concreta lo justifique.
+
+## Prohibido para la solución
+- Labelary API en runtime.
+- APIs ZPL de pago.
+- SaaS obligatorio.
+- dependencias que requieran login/Internet para renderizar o imprimir.
