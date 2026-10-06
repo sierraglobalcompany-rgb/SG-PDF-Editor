@@ -8,10 +8,18 @@ internal static class PdfiumRuntime
 
     internal static void EnsureInitialized()
     {
-        if (Interlocked.Exchange(ref _initialized, 1) == 1)
+        if (Interlocked.CompareExchange(ref _initialized, 1, 0) != 0)
             return;
 
-        PdfiumNative.FPDF_InitLibrary();
+        try
+        {
+            PdfiumNative.FPDF_InitLibrary();
+        }
+        catch
+        {
+            Volatile.Write(ref _initialized, 0);
+            throw;
+        }
     }
 
     internal static void Shutdown()
