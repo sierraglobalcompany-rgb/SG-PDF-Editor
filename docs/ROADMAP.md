@@ -2,7 +2,7 @@
 
 > El detalle y criterios de aceptación viven en `MASTER_PLAN.md`.
 
-## A0 — Higiene y reproducibilidad
+## A0 — Higiene y reproducibilidad ✅
 - contexto/plan maestro;
 - documentos alineados;
 - manifest de terceros;
@@ -12,6 +12,29 @@
 - CI Windows verificable.
 
 **Salida:** repo listo para ejecución sin contradicciones.
+
+## A1 — Development Intelligence ▶
+
+Objetivo: reducir pérdida de contexto, lecturas repetidas y gasto de tokens sin contaminar el runtime del producto.
+
+### A1.1 — preparación
+- integrar las reglas de GSD Core + Graphify en la documentación;
+- definir jerarquía de contexto y fuentes de verdad;
+- preparar `.gitignore`/política de artefactos;
+- mantener GSD/Graphify fuera del runtime.
+
+### A1.2 — instalación/validación
+- instalar `open-gsd/gsd-core` project-scoped;
+- onboard del repo existente;
+- crear/reconciliar `.planning/PROJECT.md`, `ROADMAP.md`, `STATE.md` y config;
+- instalar Graphify project-scoped;
+- construir grafo inicial sobre `src/` + `tests/`;
+- habilitar integración GSD↔Graphify;
+- probar query/status/diff;
+- decidir con datos qué artefactos del grafo se versionan;
+- mantener auto-update de Graphify desactivado hasta medir costo/beneficio.
+
+**Salida:** una sesión nueva puede orientarse con `STATE` + plan activo + consultas Graphify sin releer todo el proyecto.
 
 ## F0 — PDF base
 - abrir PDF;
