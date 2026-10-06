@@ -6,7 +6,7 @@
     <DockPanel>
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="_Archivo">
-                <MenuItem Header="_Abrir..." Click="OpenPdf_Click" />
+                <MenuItem x:Name="OpenPdfMenuItem" Header="_Abrir..." Click="OpenPdf_Click" />
                 <Separator />
                 <MenuItem Header="_Salir" Click="Exit_Click" />
             </MenuItem>
@@ -14,6 +14,35 @@
             <MenuItem Header="_Páginas" />
             <MenuItem Header="_Anotar" />
         </Menu>
+
+        <Border x:Name="NavigationBar"
+                DockPanel.Dock="Top"
+                BorderThickness="0,0,0,1"
+                BorderBrush="LightGray"
+                Background="White"
+                Visibility="Collapsed">
+            <StackPanel Orientation="Horizontal"
+                        HorizontalAlignment="Center"
+                        Margin="8">
+                <Button x:Name="PreviousPageButton"
+                        Content="← Anterior"
+                        MinWidth="92"
+                        Padding="10,4"
+                        Click="PreviousPage_Click"
+                        IsEnabled="False" />
+                <TextBlock x:Name="PageIndicatorText"
+                           Margin="16,0"
+                           VerticalAlignment="Center"
+                           Text="Página 1 de 1"
+                           FontWeight="SemiBold" />
+                <Button x:Name="NextPageButton"
+                        Content="Siguiente →"
+                        MinWidth="92"
+                        Padding="10,4"
+                        Click="NextPage_Click"
+                        IsEnabled="False" />
+            </StackPanel>
+        </Border>
 
         <StatusBar DockPanel.Dock="Bottom">
             <TextBlock x:Name="StatusText" Text="Listo" />
