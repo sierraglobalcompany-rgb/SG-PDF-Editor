@@ -2,7 +2,9 @@
 
 **Phase:** 1 of 13  
 **Status:** in progress  
-**Current slice:** F0.1 — Open PDF + render page 1 in WPF
+**Current slice:** F0.1 — Open PDF + render page 1 in WPF  
+**F0.1 automated status:** PASS  
+**Remaining F0.1 gate:** manual Windows UI smoke (select PDF and visually confirm page 1)
 
 ## F0.1 goal
 
@@ -31,28 +33,34 @@ Deliver the smallest usable PDF vertical slice: choose a local PDF from the WPF 
 - printing (F0.5);
 - thumbnails/search/ZPL/sign/edit/OCR.
 
-## TDD
+## TDD evidence
 
-1. RED: integration test requires `PdfDocumentSession.RenderPage(0, 96)` and validates Letter output `816×1056`, stride, buffer size and non-white rendered content.
-2. GREEN: add minimum native/render implementation to satisfy the test.
-3. UI: connect the already-existing `Abrir...` command and display the successful result.
-4. VERIFY: full Windows restore/build/test plus final fresh GitHub Actions run.
+1. RED: GitHub Actions run `37536987398` built successfully and then failed exactly because `PdfDocumentSession` did not contain `RenderPage`.
+2. GREEN: `RenderPage(0, 96)` renders a generated real Letter PDF at `816×1056` with a valid BGRA buffer and non-white content.
+3. UI: the existing `Abrir...` command opens a local PDF in a background task and creates a WPF `BitmapSource` on the UI thread.
+4. VERIFY: GitHub Actions run `37537454239` completed restore/build/tests successfully on Windows for the functional head `a9a6e0e23c86d10cbe9bd20f50a5db09aa1cfffa`.
 
-## Expected files
+## Files
 
 - `src/SGPdf.App/Pdf/PdfiumNative.cs`
 - `src/SGPdf.App/Pdf/PdfiumRuntime.cs`
 - `src/SGPdf.App/Pdf/PdfDocumentSession.cs`
-- `src/SGPdf.App/Pdf/PdfRenderedPage.cs` (only if the result object remains clearer than a tuple)
+- `src/SGPdf.App/Pdf/PdfRenderedPage.cs`
 - `src/SGPdf.App/MainWindow.xaml`
 - `src/SGPdf.App/MainWindow.xaml.cs`
 - `tests/SGPdf.App.Tests/PdfRenderTests.cs`
 - `.planning/STATE.md`
 - `docs/history/2026-10-06-F0.1.md`
 
-## Acceptance
+## Acceptance status
 
-F0.1 is complete only when a real PDF can be selected from the desktop UI, page 1 visibly renders in WPF, the render test is green, handles are released correctly, the app remains offline-only, and fresh Windows CI is green.
+Automated acceptance is satisfied: the real PDFium render test is green, resources are released, UI rendering work is dispatched off the WPF thread, no online dependency was added, and Windows CI is green.
+
+The final visual desktop assertion — choose a PDF in the running Windows app and visually confirm page 1 — is intentionally recorded as **NOT RUN** in this connector-only session. It must be performed before treating F0.1 as physically QA-closed.
+
+## Next after manual smoke
+
+F0.2 — previous/next navigation, current page and boundaries.
 
 ## Merge rule
 
