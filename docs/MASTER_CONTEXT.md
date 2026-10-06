@@ -1,12 +1,13 @@
 # SG PDF Editor — Contexto maestro
 
 **Última consolidación:** 2026-10-06  
-**Estado:** arquitectura auditada y congelada; ejecución en Fase A0.  
+**Estado:** arquitectura auditada y congelada; A0 completada; A1 Development Intelligence en preparación.  
 **Repositorio:** `sierraglobalcompany-rgb/SG-PDF-Editor`  
-**Rama de trabajo actual:** `feat/kiss-vertical-slice`  
-**PR actual:** #2, borrador.  
+**Rama A0:** `feat/kiss-vertical-slice`  
+**PR A0:** #2, borrador, sin merge.  
+**Rama A1 actual:** `feat/a1-dev-intelligence`.
 
-> Este documento existe para poder abrir otro chat/agente y continuar sin reconstruir el proyecto desde cero. Antes de proponer cambios de arquitectura se debe leer este archivo y `docs/MASTER_PLAN.md`. GitHub actual tiene prioridad para el estado de ejecución; estos documentos tienen prioridad para las decisiones arquitectónicas salvo cambio explícitamente aprobado.
+> Este documento existe para poder abrir otro chat/agente y continuar sin reconstruir el proyecto desde cero. GitHub actual tiene prioridad para el estado real de ejecución; este documento y `docs/MASTER_PLAN.md` tienen prioridad para las decisiones arquitectónicas salvo cambio explícitamente aprobado.
 
 ## 1. Producto
 
@@ -244,10 +245,56 @@ El repositorio es público; eso NO convierte automáticamente el código en open
 
 Toda dependencia runtime/development relevante se registra en `third_party/manifest.json` y conserva las licencias/notices requeridos.
 
-## 15. Roadmap congelado
+## 15. Development Intelligence: GSD Core + Graphify
+
+GSD Core y Graphify son herramientas de desarrollo, no dependencias de SG PDF Editor.
+
+### GSD Core
+
+Repositorio aprobado:
 
 ```text
-A0  Higiene/fuente de verdad
+open-gsd/gsd-core
+```
+
+Se usará project-scoped para persistir estado, fases, planes y resúmenes sin contaminar otros repositorios. No sustituye los MASTER docs: gestiona estado operativo.
+
+### Graphify
+
+Repositorio aprobado:
+
+```text
+Graphify-Labs/graphify
+```
+
+Se usará project-scoped para construir un grafo local de `src/` y `tests/`, localizar dependencias y reducir lecturas amplias. No se habilitan por defecto servicios semánticos externos ni se indexan fixtures privados.
+
+### Jerarquía de contexto prevista después de A1.2
+
+```text
+Arquitectura: docs/MASTER_CONTEXT.md + docs/MASTER_PLAN.md
+Estado:       .planning/STATE.md
+Fase actual:  .planning/phases/<fase>/PLAN.md
+Código real:  Git/GitHub
+Relaciones:   Graphify
+Histórico:    SUMMARY + Markdown portable
+```
+
+Flujo normal de contexto:
+
+```text
+STATE → plan de fase → Graphify query → archivos concretos
+```
+
+Los MASTER docs completos se leen cuando la tarea toca arquitectura, licencias, cambio de fase o aparece una contradicción.
+
+GSD/Graphify deben poder fallar o desinstalarse sin impedir compilar/usar SG PDF Editor.
+
+## 16. Roadmap congelado
+
+```text
+A0  Higiene/fuente de verdad                                  ✅ completada
+A1  GSD Core + Graphify                                      ▶ actual
 F0  PDF base: open/render/cancel/zoom/navigation/print
 F1  Gate ZPL-A
 F2  Etiquetas ZPL completas
@@ -263,7 +310,7 @@ F11 Texto V2
 F12 Profesional
 ```
 
-## 16. Flujo GitHub
+## 17. Flujo GitHub
 
 - `main` representa estado estable.
 - una rama por vertical slice cuando sea razonable;
@@ -273,21 +320,23 @@ F12 Profesional
 - no auto-merge;
 - merge solo con aprobación explícita del usuario.
 
-## 17. Datos privados
+## 18. Datos privados
 
 Los ZPL reales y documentos de clientes NO entran al repo público. Usar `tests/PrivateFixtures/` local (ignorado) y fixtures sintéticos equivalentes en CI.
 
-## 18. Papel de cada participante
+Graphify tampoco debe indexar esos fixtures privados.
 
-**ChatGPT:** arquitectura aplicada, código, GitHub, CI, tests, auditoría y documentación.
+## 19. Papel de cada participante
 
-**Codex/Antigravity:** especialmente valiosos para runtime/UX real en Windows, drag/drop, native debugging e impresión física.
+**ChatGPT:** arquitectura aplicada, código, GitHub, CI, tests, auditoría, documentación y mantenimiento de históricos portables.
+
+**Codex/Antigravity:** especialmente valiosos para runtime/UX real en Windows, drag/drop, native debugging e impresión física. GSD puede instalarse para ambos runtimes en A1.2.
 
 **Usuario:** aceptación funcional/UX, impresora térmica y aprobación de merge.
 
 **Otra IA:** auditor independiente puntual, no arquitecto paralelo permanente.
 
-## 19. Definition of Done
+## 20. Definition of Done
 
 Una función solo se considera terminada si:
 
@@ -302,22 +351,24 @@ Una función solo se considera terminada si:
 
 ZPL además exige barcode/QR legible automáticamente y QA físico cuando corresponda.
 
-## 20. Estado al crear este documento
+Cada cierre de trabajo relevante debe dejar un Markdown histórico portable con fase, branch, commits, PR, verificaciones, decisiones, pendientes y siguiente acción.
 
-- Repo público, `main` estable inicial.
-- Rama `feat/kiss-vertical-slice` aislada.
-- PR #2 draft abierto.
-- Solución simplificada a App + Tests.
-- WPF/.NET 10 configurados.
-- PDFium binario ya referenciado y existe interop/session inicial.
-- CI Windows existe.
-- A0 en ejecución: se está alineando documentación, licencias, manifiesto, locks y CI antes de continuar F0.
+## 21. Estado al actualizar este documento
 
-## 21. Instrucción para un chat nuevo
+- `main` sigue en el baseline estable inicial.
+- A0 cerró en `feat/kiss-vertical-slice`, commit `4333674`, con PR #2 draft sin merge.
+- Windows CI de A0 quedó verde con restore locked, build Release y tests.
+- Nueva rama A1: `feat/a1-dev-intelligence`.
+- A1.1 está preparando documentación/reglas; todavía NO instala GSD ni Graphify.
+- La instalación/onboarding real de GSD + Graphify queda para A1.2.
+- F0 todavía no ha comenzado.
 
-1. Leer este documento y `docs/MASTER_PLAN.md`.
-2. Consultar GitHub para conocer el estado real más reciente.
-3. No reabrir decisiones congeladas salvo evidencia nueva material.
-4. Continuar desde la primera fase incompleta.
-5. Mantener KISS/YAGNI/offline/gratis.
-6. Nunca hacer merge a `main` sin aprobación del usuario.
+## 22. Instrucción para un chat nuevo
+
+1. Consultar GitHub primero para conocer el estado real más reciente.
+2. Mientras A1.2 no exista, leer este documento, `docs/MASTER_PLAN.md` y la fase activa.
+3. Después de A1.2, comenzar por `.planning/STATE.md` y el plan de fase; usar Graphify antes de lecturas amplias cuando aporte valor.
+4. No reabrir decisiones congeladas salvo evidencia nueva material.
+5. Continuar desde la primera fase incompleta.
+6. Mantener KISS/YAGNI/offline/gratis.
+7. Nunca hacer merge a `main` sin aprobación del usuario.
