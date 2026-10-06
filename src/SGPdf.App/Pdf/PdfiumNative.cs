@@ -12,7 +12,7 @@ internal static class PdfiumNative
     internal const int FPDF_RENDER_FAILED = 3;
 
     [UnmanagedFunctionPointer(CallingConvention.StdCall)]
-    internal delegate int NeedToPauseNowCallback(ref IfSdkPause pause);
+    internal delegate int NeedToPauseNowCallback(IntPtr pause);
 
     [StructLayout(LayoutKind.Sequential)]
     internal struct IfSdkPause
