@@ -18,9 +18,15 @@ third_party/cache/
 # Scratch de herramientas de desarrollo
 .superpowers/
 
-# GSD/Graphify: los documentos operativos bajo .planning/ sí se versionarán.
-# Solo ignoramos salidas transitorias/generadas que no deben convertirse en fuente de verdad.
-.planning/graphs/*.html
-.planning/graphs/*.lock
-.planning/graphs/*.tmp
-.planning/graphs/cache/
+# GSD/Graphify generated development tooling.
+# Reproducible with tools/setup-dev.ps1; never required by product build/runtime.
+.codex/
+.agents/
+.devtools/
+graphify-out/
+gsd-local-patches/
+
+# GSD operational planning is versioned; generated/transient state is not.
+.planning/graphs/
+.planning/.lock
+.planning/.gsd-trace.jsonl
