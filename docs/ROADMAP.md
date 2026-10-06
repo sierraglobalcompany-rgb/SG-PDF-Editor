@@ -1,6 +1,6 @@
 # Roadmap KISS
 
-> El detalle y criterios de aceptación viven en `MASTER_PLAN.md`.
+> El detalle y criterios de aceptación viven en `MASTER_PLAN.md`. El estado operativo diario vive en `.planning/STATE.md`.
 
 ## A0 — Higiene y reproducibilidad ✅
 - contexto/plan maestro;
@@ -8,35 +8,29 @@
 - manifest de terceros;
 - licenses/notices;
 - datos privados ignorados;
-- mecanismo de lock NuGet;
+- lock NuGet;
 - CI Windows verificable.
 
-**Salida:** repo listo para ejecución sin contradicciones.
+**Salida:** repo reproducible y arquitectura KISS/offline trazable.
 
-## A1 — Development Intelligence ▶
+## A1 — Development Intelligence ✅
 
-Objetivo: reducir pérdida de contexto, lecturas repetidas y gasto de tokens sin contaminar el runtime del producto.
+Objetivo cumplido: reducir pérdida de contexto y lecturas repetidas sin contaminar el runtime del producto.
 
-### A1.1 — preparación
-- integrar las reglas de GSD Core + Graphify en la documentación;
-- definir jerarquía de contexto y fuentes de verdad;
-- preparar `.gitignore`/política de artefactos;
-- mantener GSD/Graphify fuera del runtime.
+- GSD Core `1.15.0` project-scoped validado;
+- Graphify `0.9.77` project-scoped validado;
+- `.planning/PROJECT.md`, `REQUIREMENTS.md`, `ROADMAP.md`, `STATE.md` y config versionados;
+- `.graphifyignore` limita el corpus a `src/` + `tests/`;
+- `.codex/`, `.devtools/` y `graphify-out/` son regenerables y se ignoran;
+- setup reproducible en `tools/setup-dev.ps1`;
+- GSD health = healthy;
+- Graphify query sobre `PdfDocumentSession` = PASS;
+- fixtures privados fuera del grafo;
+- tooling no forma parte del build/runtime.
 
-### A1.2 — instalación/validación
-- instalar `open-gsd/gsd-core` project-scoped;
-- onboard del repo existente;
-- crear/reconciliar `.planning/PROJECT.md`, `ROADMAP.md`, `STATE.md` y config;
-- instalar Graphify project-scoped;
-- construir grafo inicial sobre `src/` + `tests/`;
-- habilitar integración GSD↔Graphify;
-- probar query/status/diff;
-- decidir con datos qué artefactos del grafo se versionan;
-- mantener auto-update de Graphify desactivado hasta medir costo/beneficio.
+**Salida:** una sesión nueva se orienta con `STATE` + plan activo + consultas Graphify sin releer todo el proyecto.
 
-**Salida:** una sesión nueva puede orientarse con `STATE` + plan activo + consultas Graphify sin releer todo el proyecto.
-
-## F0 — PDF base
+## F0 — PDF base ▶ SIGUIENTE
 - abrir PDF;
 - render real;
 - scheduler PDFium global;
