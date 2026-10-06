@@ -1,0 +1,21 @@
+name: build
+
+on:
+  push:
+    branches: [ main, 'feat/**', 'plan/**' ]
+  pull_request:
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Restore
+        run: dotnet restore SGPdf.slnx
+      - name: Build
+        run: dotnet build SGPdf.slnx --configuration Release --no-restore
+      - name: Test
+        run: dotnet test SGPdf.slnx --configuration Release --no-build
