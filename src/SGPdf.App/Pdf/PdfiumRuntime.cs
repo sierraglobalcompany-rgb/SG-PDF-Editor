@@ -4,29 +4,40 @@ namespace SGPdf.App.Pdf;
 
 internal static class PdfiumRuntime
 {
-    private static int _initialized;
+    internal static readonly SemaphoreSlim NativeGate = new(1, 1);
+    private static bool _initialized;
 
     internal static void EnsureInitialized()
     {
-        if (Interlocked.CompareExchange(ref _initialized, 1, 0) != 0)
-            return;
-
+        NativeGate.Wait();
         try
         {
+            if (_initialized)
+                return;
+
             PdfiumNative.FPDF_InitLibrary();
+            _initialized = true;
         }
-        catch
+        finally
         {
-            Volatile.Write(ref _initialized, 0);
-            throw;
+            NativeGate.Release();
         }
     }
 
     internal static void Shutdown()
     {
-        if (Interlocked.Exchange(ref _initialized, 0) == 0)
-            return;
+        NativeGate.Wait();
+        try
+        {
+            if (!_initialized)
+                return;
 
-        PdfiumNative.FPDF_DestroyLibrary();
+            PdfiumNative.FPDF_DestroyLibrary();
+            _initialized = false;
+        }
+        finally
+        {
+            NativeGate.Release();
+        }
     }
 }
