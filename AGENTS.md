@@ -1,16 +1,39 @@
 # Instrucciones para agentes de desarrollo
 
+## Fuentes de verdad
+
+La autoridad se divide así:
+
+- arquitectura/decisiones permanentes: `docs/MASTER_CONTEXT.md` + `docs/MASTER_PLAN.md`;
+- estado operativo futuro: `.planning/STATE.md` cuando A1.2 lo cree;
+- ejecución de la fase: `.planning/phases/<fase>/PLAN.md` cuando exista;
+- código real: Git/GitHub;
+- relaciones de código: Graphify cuando esté habilitado.
+
+Si GitHub difiere de los documentos sobre qué se ejecutó, GitHub tiene prioridad para el estado real. Si un documento secundario contradice los MASTER docs sobre arquitectura, prevalecen los MASTER docs salvo cambio aprobado.
+
 ## Antes de tocar código
 
-Leer en este orden:
+### Mientras A1 no esté completamente instalado
 
-1. `docs/MASTER_CONTEXT.md`
-2. `docs/MASTER_PLAN.md`
-3. `docs/ARCHITECTURE.md`
-4. `docs/ROADMAP.md`
-5. la Issue/PR de la fase activa
+Leer:
 
-Si un documento secundario contradice `MASTER_CONTEXT` o `MASTER_PLAN`, prevalecen los maestros hasta alinear la documentación.
+1. `docs/MASTER_CONTEXT.md`;
+2. `docs/MASTER_PLAN.md`;
+3. la Issue/PR/fase activa;
+4. solo los archivos de código necesarios.
+
+### Después de A1.2 (GSD + Graphify operativos)
+
+Usar contexto mínimo en este orden:
+
+1. `.planning/STATE.md`;
+2. plan de la fase activa;
+3. consulta Graphify cuando ayude a localizar impacto/dependencias;
+4. leer únicamente los archivos concretos identificados;
+5. cargar `MASTER_CONTEXT.md` / `MASTER_PLAN.md` completos solo si la tarea toca arquitectura, licencias, cambio de fase o existe una contradicción.
+
+No releer todo el repositorio por defecto. GSD y Graphify son herramientas de desarrollo, nunca dependencias runtime de SG PDF Editor.
 
 ## Misión
 
@@ -36,11 +59,15 @@ Construir SG PDF Editor como aplicación Windows simple, rápida, offline y úti
 13. Cada cambio debe quedar verificable con tests/CI/QA apropiados; no afirmar éxito sin evidencia fresca.
 14. No hacer merge automático a `main`.
 15. No realizar refactors preventivos masivos.
+16. GSD Core y Graphify son dev-only y deben poder fallar/desinstalarse sin impedir compilar/usar el producto.
+17. Graphify se usa cuando reduce lecturas; no sustituye compiler, tests ni una búsqueda simple cuando esta sea más rápida.
+18. Cada cierre de trabajo relevante actualiza estado/resumen y genera Markdown histórico portable para continuidad entre chats.
 
 ## Orden de ejecución actual
 
 ```text
-A0  higiene/trazabilidad
+A0  higiene/trazabilidad                         ✅ completada
+A1  GSD Core + Graphify                         ▶ actual
 F0  PDF base
 F1  Gate ZPL-A
 F2  etiquetas ZPL
@@ -68,13 +95,16 @@ Los menús de clic derecho son contextuales para imagen, texto, página o espaci
 
 Para cada vertical slice:
 
-1. revisar Issue y estado GitHub;
-2. trabajar en rama aislada;
-3. escribir/revisar prueba primero cuando haya comportamiento nuevo;
-4. implementar mínimo;
-5. verificar build/tests/CI;
-6. QA manual/real cuando aplique;
-7. actualizar docs/licencias;
-8. actualizar PR;
-9. generar Markdown histórico de estado;
-10. no merge sin aprobación del usuario.
+1. revisar estado GitHub y GSD `STATE` cuando exista;
+2. revisar Issue y plan de la fase;
+3. trabajar en rama aislada;
+4. usar Graphify para impacto/dependencias cuando aporte valor;
+5. escribir/revisar prueba primero cuando haya comportamiento nuevo;
+6. implementar mínimo;
+7. verificar build/tests/CI;
+8. QA manual/real cuando aplique;
+9. actualizar docs/licencias;
+10. actualizar PR;
+11. actualizar `STATE`/`SUMMARY` cuando GSD esté operativo;
+12. generar Markdown histórico de estado;
+13. no merge sin aprobación del usuario.
