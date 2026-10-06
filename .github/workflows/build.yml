@@ -19,17 +19,20 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      - name: Restore and generate NuGet lock files
-        run: dotnet restore SGPdf.slnx --use-lock-file
-
-      - name: Show generated NuGet lock files
+      - name: Validate repository hygiene
         shell: pwsh
         run: |
-          Get-ChildItem -Path . -Recurse -Filter packages.lock.json | ForEach-Object {
-            Write-Host "===== LOCKFILE:$($_.FullName) ====="
-            Get-Content $_.FullName -Raw
-            Write-Host "===== ENDLOCKFILE ====="
+          if (-not (Test-Path "third_party/manifest.json")) {
+            throw "third_party/manifest.json is required"
           }
+          Get-Content "third_party/manifest.json" -Raw | ConvertFrom-Json | Out-Null
+          $privateTracked = git ls-files "tests/PrivateFixtures/**"
+          if ($privateTracked) {
+            throw "Private fixtures must not be committed: $privateTracked"
+          }
+
+      - name: Restore locked dependencies
+        run: dotnet restore SGPdf.slnx --locked-mode
 
       - name: Build
         run: dotnet build SGPdf.slnx --configuration Release --no-restore
