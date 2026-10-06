@@ -8,6 +8,7 @@
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="_Archivo">
                 <MenuItem Header="_Abrir PDF..." Click="OpenPdf_Click" />
+                <MenuItem x:Name="PrintMenuItem" Header="_Imprimir..." IsEnabled="False" Click="PrintPdf_Click" />
                 <Separator />
                 <MenuItem Header="_Salir" Click="Exit_Click" />
             </MenuItem>
@@ -32,6 +33,9 @@
                         IsEnabled="False" Click="FitWidth_Click" />
                 <Button x:Name="FitPageButton" Content="Ajustar página"
                         IsEnabled="False" Click="FitPage_Click" />
+                <Separator />
+                <Button x:Name="PrintButton" Content="Imprimir"
+                        IsEnabled="False" Click="PrintPdf_Click" />
                 <Separator />
                 <TextBlock Margin="12,0,4,0" VerticalAlignment="Center" FontWeight="SemiBold" Text="LEER" />
             </ToolBar>
