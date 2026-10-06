@@ -1,127 +1,119 @@
 # Arquitectura KISS
 
+> Fuente completa: `MASTER_CONTEXT.md`. Plan de ejecución: `MASTER_PLAN.md`.
+
 ## Principio
-Una aplicación Windows local no necesita arquitectura distribuida. Empezamos con lo mínimo que resuelva el trabajo real: PDF + etiquetas térmicas. Separamos componentes solo cuando el código lo exige.
+
+Una aplicación Windows local no necesita arquitectura distribuida. Se usa la menor cantidad de piezas capaz de resolver correctamente PDF + etiquetas térmicas.
 
 ## Estructura inicial
+
 ```text
 src/SGPdf.App/
-  App.xaml
-  MainWindow.xaml
   Pdf/
     PdfiumNative.cs
+    PdfiumRuntime.cs
     PdfDocumentSession.cs
+    PdfRenderScheduler.cs
     PdfPageRenderer.cs
+    PdfPrintService.cs
   Features/
     Reader/
     Labels/
-      LabelFileDetector.cs
-      ZplJobParser.cs
-      LabelizeCli.cs
-      LabelLayout.cs
-      LabelPdfExporter.cs
     Sign/
     Edit/
     Organize/
-  Models/
+    Comments/
   Utilities/
-  ThirdPartyNotices/
 
 tests/SGPdf.App.Tests/
 ```
 
-Solo dos proyectos: aplicación + pruebas.
+Solo dos proyectos mientras sea suficiente: aplicación + pruebas.
 
-## Tecnología
+No crear `Core`, `Infrastructure`, `Domain`, DI container, buses o plugin framework preventivamente.
+
+## Stack
+
 - C# / .NET 10 / WPF.
-- PDFium: PDF.
-- Labelize `labelize.exe`: ZPL/EPL local.
-- PDFsharp Core 6.2.x: creación de PDFs de etiquetas.
-- Sin DI container.
-- MVVM pragmático; code-behind permitido para drag/resize/hit testing y UI simple.
+- PDFium: motor PDF principal.
+- BinaryKits.Zpl: candidato preferente para ZPL, sujeto a Gate ZPL-A.
+- Labelize: fallback condicionado.
+- PDFsharp: composición puntual de PDFs de etiquetas.
+- Tesseract/PdfPig/qpdf/pdfcpu: únicamente bajo demanda en fases posteriores.
+
+## PDFium
+
+Se usa interop mínimo propio. `PdfDocumentSession` contiene el estado/handles necesarios de un documento, pero la exclusión nativa es global porque PDFium no es thread-safe.
+
+```text
+UI → background task → PdfRenderScheduler → SemaphoreSlim global → PDFium
+```
+
+Prioridad: página visible > acción explícita > vecinas > thumbnails.
+
+Para renders cancelables se puede usar progressive render con `IFSDK_PAUSE`; en cancelación se cierra el render y se liberan bitmaps/handles managed y nativos.
 
 ## PDF
-`PdfDocumentSession` posee el handle PDFium y cubre abrir/cerrar/render/objetos/guardar según se necesite.
 
-No existe una jerarquía `IPdf*Service` mientras no haya una segunda implementación real.
+### Leer
 
-## Etiquetas
-### `LabelFileDetector`
-Determina si un `.txt/.prn/.zpl` contiene ZPL verificando bloques `^XA ... ^XZ`. No intenta comprender todo ZPL.
+Render bajo demanda, caché limitada, zoom y navegación. No renderizar todo el documento al abrir.
 
-### `ZplJobParser`
-Parser mínimo nuestro, exclusivamente para:
-- separar cada bloque de etiqueta;
-- leer `^PQ`;
-- mantener el ZPL original;
-- producir una copia temporal de preview con cantidad 1.
+### Firmar
 
-No renderiza texto, códigos ni gráficos.
+Firma visual PNG como objeto/overlay editable; insertar y guardar como copia. Firma criptográfica es otro proyecto futuro.
 
-### `LabelizeCli`
-Invoca `labelize.exe` local con `UseShellExecute=false`, sin red y con archivos temporales controlados. Devuelve PNG/PDF o error. No se levanta servidor HTTP local porque no hace falta.
+### Editar
 
-El ejecutable se distribuye con la aplicación junto a su licencia MIT y avisos de terceros.
+Menús contextuales. Imágenes: extraer/reemplazar/mover/resize/rotar. Texto V1: edición conservadora; si una fuente/subset no cubre nuevos code points, crear nuevo objeto con una TTF redistribuible auditada.
 
-### `LabelLayout`
-Pura lógica .NET:
-- cantidad de etiquetas;
-- columnas/filas;
-- márgenes;
-- gaps;
-- tamaño de hoja;
-- rotación automática;
-- escala uniforme.
+### Organizar
 
-Debe ser testeable sin WPF ni Labelize.
+PDFium primero. Operaciones intra-documento mediante APIs de mover/rotar/eliminar; importación entre documentos mediante APIs de import pages. Antes se ejecuta preflight para firmas, formularios, bookmarks y otras estructuras que puedan no preservarse.
 
-### `LabelPdfExporter`
-PDFsharp crea un PDF nuevo y coloca los PNG renderizados en las posiciones calculadas por `LabelLayout`.
+## Etiquetas ZPL
 
-PDFsharp no se usa como lector/editor principal; su responsabilidad inicial termina en composición de PDFs nuevos.
+No implementar un intérprete completo propio. El código nuestro solo gestiona:
 
-## Política de cantidades
-Cada diseño conserva:
-- `OriginalZpl`;
-- `RequestedCopies` desde `^PQ` o 1 si no existe;
-- `SelectedCopies` elegido por el usuario;
-- imagen de preview.
+- archivos y diseños;
+- cantidades `^PQ`;
+- selección de cantidad;
+- layout;
+- cache;
+- composición;
+- impresión;
+- warnings/errores.
 
-Esto evita que `^PQ28` se confunda con 28 diseños distintos.
+### Gate ZPL-A
 
-## Impresión
-Dos caminos:
-1. generar PDF y abrir/imprimir;
-2. imprimir directamente el layout mediante Windows cuando simplifique UX.
+Comparar BinaryKits.Zpl y Labelize usando corpus real privado + fixtures sintéticos. Si BinaryKits tiene fidelidad suficiente, gana por KISS y Labelize sale del runtime.
 
-La impresora nunca necesita interpretar ZPL. Recibe el resultado gráfico/PDF por su driver de Windows.
+### Pipeline preferido si gana BinaryKits
 
-## Red
-En runtime, Reader/Labels/Sign/Edit no hacen llamadas HTTP. Debe existir una prueba/manual QA con adaptador de red deshabilitado.
+```text
+ZPL → BinaryKits bitmap → preview WPF
+ZPL → BinaryKits PDF → PDFsharp XPdfForm → hoja final → Windows Print
+```
 
-## Dependencias bajo demanda
-- qpdf: Organizar/Seguridad si simplifica merge/split/cifrado.
-- Tesseract: OCR.
-- PdfPig: solo análisis de texto avanzado si PDFium no basta.
-- ZXing.Net: solo si añadimos generador/editor explícito de códigos de barras, no para render ZPL inicial.
+No duplicar renders por `^PQ`: `^PQ28` = un diseño + 28 copias.
 
-## Undo / Redo
-Se introduce únicamente cuando aparece la primera edición destructiva/reversible.
+## Impresión térmica
+
+El medio PDF conserva tamaño físico exacto. Se consultan capacidades del driver Windows y no se escala un barcode silenciosamente para acomodar márgenes. Si un driver rompe la escala, el fallback primero será raster a resolución nativa mediante el driver, no RAW genérico.
+
+## Undo/Redo
+
+Se introduce con la primera edición reversible mediante comandos simples (`Execute/Undo`), sin framework adicional.
 
 ## Guardado
-Durante MVP:
-- `Guardar como` por defecto;
-- no sobrescribir original automáticamente;
-- archivos temporales se eliminan después del trabajo cuando sea seguro.
 
-## Rendimiento
-### PDF
-- páginas visibles + vecinas;
-- caché limitada;
-- thumbnails a baja resolución.
+MVP: `Guardar como` por defecto. Reabrir y verificar salidas modificadas importantes.
 
-### ZPL
-- renderizar previews en background;
-- caché por hash del bloque ZPL + tamaño + dpmm;
-- no volver a renderizar diseños idénticos;
-- exportar lotes secuencialmente o con concurrencia limitada para no disparar memoria.
+## Red y privacidad
+
+Reader/Labels/Sign/Edit no hacen HTTP en runtime. Los archivos reales Mercado Libre/clientes viven fuera del repo público.
+
+## Dependencias
+
+Toda dependencia nueva pasa por licencia, mantenimiento, offline, redistribución y necesidad actual antes de entrar. `third_party/manifest.json` registra el inventario aprobado/planificado.
