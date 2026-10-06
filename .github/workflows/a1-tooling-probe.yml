@@ -1,0 +1,106 @@
+name: a1-tooling-probe
+
+on:
+  push:
+    branches: [ 'feat/a1-dev-intelligence' ]
+    paths:
+      - '.github/workflows/a1-tooling-probe.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install GSD Core project-scoped for Codex
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx --yes @opengsd/gsd-core@1.15.0 --codex --local
+
+      - name: Install Graphify 0.9.77 and Codex project skill
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check graphifyy==0.9.77
+          graphify --version
+          graphify install --project --platform codex
+
+      - name: Restrict graph corpus to source and tests
+        shell: bash
+        run: |
+          cat > .graphifyignore <<'EOF'
+          *
+          !src/
+          !src/**
+          !tests/
+          !tests/**
+          EOF
+
+      - name: Build local AST graph
+        shell: bash
+        env:
+          GRAPHIFY_QUERY_LOG_DISABLE: '1'
+        run: |
+          set -euo pipefail
+          graphify . --no-viz
+          test -f graphify-out/graph.json
+          test -f graphify-out/GRAPH_REPORT.md
+
+      - name: Query PdfDocumentSession
+        shell: bash
+        env:
+          GRAPHIFY_QUERY_LOG_DISABLE: '1'
+        run: |
+          set -euo pipefail
+          graphify query "PdfDocumentSession" --graph graphify-out/graph.json | tee graphify-query.txt
+          grep -qi "PdfDocumentSession" graphify-query.txt
+
+      - name: Capture generated file inventory
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "GSD_VERSION=1.15.0"
+            echo "GRAPHIFY_VERSION=$(graphify --version 2>&1 | tail -n 1)"
+            echo "NODE_VERSION=$(node --version)"
+            echo "PYTHON_VERSION=$(python --version)"
+            echo "HEAD=$(git rev-parse HEAD)"
+            echo
+            echo "=== git status ==="
+            git status --short
+            echo
+            echo "=== generated project files ==="
+            find .codex .agents .planning graphify-out -maxdepth 5 -type f 2>/dev/null | sort || true
+          } | tee a1-probe-report.txt
+
+      - name: Stage probe artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p a1-probe-artifact
+          cp -a a1-probe-report.txt graphify-query.txt .graphifyignore a1-probe-artifact/
+          [ -d .codex ] && cp -a .codex a1-probe-artifact/ || true
+          [ -d .agents ] && cp -a .agents a1-probe-artifact/ || true
+          [ -d .planning ] && cp -a .planning a1-probe-artifact/ || true
+          mkdir -p a1-probe-artifact/graphify-out
+          cp graphify-out/graph.json graphify-out/GRAPH_REPORT.md graphify-out/manifest.json a1-probe-artifact/graphify-out/ 2>/dev/null || true
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: a1-tooling-probe
+          path: a1-probe-artifact/
+          if-no-files-found: error
+          retention-days: 3
