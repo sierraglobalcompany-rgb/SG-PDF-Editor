@@ -69,7 +69,7 @@ jobs:
           graphify query "PdfDocumentSession" --graph graphify-out/graph.json | tee graphify-query.txt
           grep -qi "PdfDocumentSession" graphify-query.txt
 
-      - name: Capture generated file inventory
+      - name: Capture generated file inventory and sizes
         shell: bash
         run: |
           set -euo pipefail
@@ -79,6 +79,11 @@ jobs:
             echo "NODE_VERSION=$(node --version)"
             echo "PYTHON_VERSION=$(python --version)"
             echo "HEAD=$(git rev-parse HEAD)"
+            echo
+            echo "=== generated sizes ==="
+            du -sh .codex graphify-out 2>/dev/null || true
+            echo "CODEX_FILES=$(find .codex -type f 2>/dev/null | wc -l)"
+            echo "GRAPH_FILES=$(find graphify-out -type f 2>/dev/null | wc -l)"
             echo
             echo "=== git status ==="
             git status --short
@@ -92,7 +97,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p a1-probe-artifact
-          cp -a a1-probe-report.txt graphify-query.txt .graphifyignore a1-probe-artifact/
+          cp -a AGENTS.md a1-probe-report.txt graphify-query.txt .graphifyignore a1-probe-artifact/
           [ -d .codex ] && cp -a .codex a1-probe-artifact/ || true
           [ -d .agents ] && cp -a .agents a1-probe-artifact/ || true
           [ -d .planning ] && cp -a .planning a1-probe-artifact/ || true
@@ -103,5 +108,6 @@ jobs:
         with:
           name: a1-tooling-probe
           path: a1-probe-artifact/
+          include-hidden-files: true
           if-no-files-found: error
           retention-days: 3
