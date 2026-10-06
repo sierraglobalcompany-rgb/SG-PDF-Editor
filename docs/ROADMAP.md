@@ -1,98 +1,114 @@
 # Roadmap KISS
 
-## Fase 0 — Base PDF imprimible
-- Abrir PDF.
-- Renderizar página.
-- Zoom.
-- Navegación mínima.
-- Imprimir.
+> El detalle y criterios de aceptación viven en `MASTER_PLAN.md`.
 
-**Salida:** lector PDF básico y estable sobre el que se apoyan firma/edición.
+## A0 — Higiene y reproducibilidad
+- contexto/plan maestro;
+- documentos alineados;
+- manifest de terceros;
+- licenses/notices;
+- datos privados ignorados;
+- mecanismo de lock NuGet;
+- CI Windows verificable.
 
-## Fase 1 — Etiquetas térmicas ZPL offline
-- Abrir `.zpl`, `.txt` y `.prn` con ZPL.
-- Separar bloques `^XA ... ^XZ`.
-- Leer y preservar cantidades `^PQ`.
-- Renderizar localmente con Labelize; cero API/Internet.
-- Preview por etiqueta.
-- Cantidad: respetar `^PQ`, una de cada, personalizada.
-- Hoja: térmica/original, 4×6, 100×150, A4, Carta, personalizada.
-- Layout: 1, 2, 3, 4, 6, 8, 10, 12 o grid personalizado por página.
-- Márgenes/separación/rotación automática.
-- Exportar PDF con PDFsharp.
-- Imprimir desde Windows.
-- Validar con archivos Mercado Libre reales.
+**Salida:** repo listo para ejecución sin contradicciones.
 
-**Salida:** reemplaza el flujo manual de Labelary para el uso diario.
+## F0 — PDF base
+- abrir PDF;
+- render real;
+- scheduler PDFium global;
+- cancelación/progressive render;
+- zoom;
+- navegación mínima;
+- fit page/width;
+- impresión.
 
-## Fase 2 — Firma visual
-- Importar PNG con transparencia.
-- Arrastrar/redimensionar.
-- Guardar como copia.
-- Biblioteca local de firmas posteriormente.
+**Salida:** lector PDF básico usable.
 
-## Fase 3 — Lector completo
-- Scroll continuo.
-- Miniaturas.
-- Navegación avanzada.
-- Buscar/copiar texto.
-- Marcadores y enlaces.
-- PDFs con contraseña.
-- Varias pestañas solo si no complica estabilidad.
+## F1 — Gate ZPL-A
+- BinaryKits.Zpl vs Labelize;
+- corpus real privado + sintético;
+- `^CI28`, `^FH`, `^FB`, `^FR`, `^GFA`, `^BC`, `^BQ`, `^PQ`, `^DF`, `^XF`;
+- benchmark 10/100/500 diseños;
+- fidelidad, barcode, RAM/CPU/I/O, packaging y licencias.
 
-## Fase 4 — Organizar
-- Rotar, eliminar, duplicar, reordenar.
-- Insertar páginas/PDF.
-- Extraer páginas.
-- Unir/dividir.
-- Introducir qpdf solo si reduce código y riesgo.
+**Salida:** un único motor ZPL elegido por evidencia. BinaryKits es candidato preferente.
 
-## Fase 5 — Imágenes
-- Clic derecho contextual.
-- Extraer imagen.
-- Guardar imagen como.
-- Reemplazar imagen conservando posición/tamaño.
-- Mover, redimensionar, rotar, eliminar.
-- Undo/Redo.
+## F2 — Etiquetas ZPL offline
+- abrir `.zpl/.txt/.prn`;
+- diseños + cantidades `^PQ`;
+- preview;
+- cantidades archivo/una/custom;
+- tamaños térmicos/A4/Carta/custom;
+- layout 1/2/3/4/6/8/10/12/custom;
+- PDF;
+- impresión Windows;
+- validación ZXing + prueba física.
 
-## Fase 6 — Texto V1
-- Detectar objetos de texto.
-- Clic derecho > Editar texto.
-- Cambiar contenido simple.
-- Propiedades básicas cuando PDFium/fuente lo permita.
-- Sin prometer reflow complejo todavía.
+**Salida:** reemplazar el flujo manual de Labelary.
 
-## Fase 7 — Comentarios
-- Resaltar.
-- Nota.
-- Dibujo.
-- Formas.
+## F3 — Firma visual
+- PNG transparente;
+- drag/resize/move;
+- eliminar/duplicar;
+- insertar en PDF;
+- `Guardar como`;
+- reabrir y verificar.
 
-## Fase 8 — Utilidades esenciales
-- Comprimir.
-- Marca de agua.
-- Numeración.
-- Proteger/desbloquear.
-- Reparar cuando sea viable.
+## F4 — Lector completo
+- scroll continuo;
+- miniaturas;
+- búsqueda/copiar;
+- bookmarks/links;
+- password;
+- shortcuts/recientes;
+- tabs solo si no complica estabilidad.
 
-## Fase 9 — OCR
-- Tesseract.
-- Detectar documento escaneado.
-- Crear texto buscable.
+## F5 — Organizar
+- mover/reordenar/rotar/eliminar/duplicar;
+- insertar/extract/merge/split;
+- PDFium primero;
+- preflight de firmas, formularios, bookmarks y otras estructuras.
 
-## Fase 10 — Texto V2
-- Agrupar líneas/párrafos.
-- Reflow limitado.
-- Mejor sustitución de fuentes.
+## F6 — Imágenes
+- clic derecho contextual;
+- extraer/guardar;
+- reemplazar;
+- mover/resize/rotar/opacidad/orden;
+- undo/redo.
 
-## Fase 11 — Profesional
-- Censura real.
-- Formularios.
-- Firma digital con certificado.
-- Comparar PDFs.
-- Procesamiento por lotes.
-- Generador de códigos de barras/QR si aporta uso real.
-- Conversiones solo donde exista solución madura, gratuita y offline.
+## F7 — Texto V1
+- detectar/seleccionar objeto;
+- edición conservadora;
+- fallback con TTF redistribuible si aparecen nuevos code points/subset dudoso;
+- propiedades básicas;
+- save/reopen validation.
+
+## F8 — Comentarios
+- highlight;
+- underline/strikeout;
+- notas;
+- dibujo/formas.
+
+## F9 — Utilidades
+Solo las justificadas y offline: watermark, numeración, protección autorizada, optimización/reparación. qpdf/pdfcpu solo si PDFium demuestra una carencia concreta.
+
+## F10 — OCR
+Tesseract local, documento escaneado → texto buscable.
+
+## F11 — Texto V2
+- líneas/párrafos;
+- reading order;
+- reflow limitado;
+- PdfPig solo si reduce complejidad.
+
+## F12 — Profesional
+- redacción real;
+- formularios;
+- firma criptográfica;
+- compare;
+- batch;
+- conversiones auditadas.
 
 ## Regla de avance
-Cada fase debe quedar usable y probada con archivos reales. No añadir infraestructura preventiva. Ninguna función principal puede requerir Internet.
+Cada fase debe quedar usable y probada. Ninguna función principal puede requerir Internet. No añadir infraestructura preventiva.
