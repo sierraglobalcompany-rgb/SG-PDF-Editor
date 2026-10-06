@@ -1,6 +1,6 @@
 # SG PDF Editor — Plan maestro de ejecución
 
-**Versión:** 1.1 consolidada  
+**Versión:** 2.0 operativa  
 **Fecha:** 2026-10-06  
 **Autoridad:** este archivo define el orden de trabajo. `docs/MASTER_CONTEXT.md` contiene el contexto completo y las decisiones de arquitectura.
 
@@ -16,46 +16,116 @@
 8. No merge automático a `main`.
 9. Datos reales privados nunca se versionan.
 10. Cada sesión importante debe cerrar con un Markdown de estado/histórico actualizado.
+11. GSD Core + Graphify son herramientas dev-only y nunca requisitos para compilar/usar SG PDF Editor.
+12. El contexto diario debe ser mínimo: estado + plan de fase + consulta puntual + archivos concretos.
 
 ---
 
 # A0 — Higiene, trazabilidad y reproducibilidad
 
 **Estado:** ✅ COMPLETADA en `feat/kiss-vertical-slice` el 2026-10-06.  
+**Commit de cierre:** `4333674`.  
+**PR:** #2 draft, sin merge.  
 **Evidencia Windows CI:** run `37518112465` — hygiene + `dotnet restore --locked-mode` + Release build + tests = success.
-
-## Objetivo
-
-Dejar el repo comprensible para cualquier chat/agente y evitar que documentación, dependencias o CI diverjan.
-
-## Tareas
-
-- [x] Ignorar `tests/PrivateFixtures/` y caches locales.
-- [x] Crear `docs/MASTER_CONTEXT.md`.
-- [x] Crear/actualizar este `docs/MASTER_PLAN.md`.
-- [x] Alinear `README.md`.
-- [x] Alinear `AGENTS.md`.
-- [x] Alinear `docs/ARCHITECTURE.md`.
-- [x] Alinear `docs/ROADMAP.md`.
-- [x] Simplificar `docs/DEVELOPMENT_PLAN.md` para que no duplique decisiones.
-- [x] Actualizar `docs/LABELS_ZPL.md` con Gate BinaryKits/Labelize.
-- [x] Actualizar `docs/REUSE_AUDIT.md`.
-- [x] Crear `third_party/manifest.json`.
-- [x] Crear carpeta/documentación de licencias y notices.
-- [x] Activar lock NuGet reproducible y commitear locks generados por Windows CI.
-- [x] Ajustar CI con higiene + restore locked + build + test.
-- [x] Actualizar descripción del PR #2.
-- [x] Verificar CI de la cabeza final de A0.
 
 ## Resultado
 
-Repositorio reproducible, sin contradicciones materiales conocidas, con fuentes de verdad claras y preparación lista para F0.
+- fuentes de verdad creadas y alineadas;
+- repo reducido a App + Tests;
+- third-party manifest/licencias;
+- datos privados ignorados;
+- NuGet lock + restore locked;
+- CI Windows verde;
+- arquitectura KISS/offline congelada.
+
+---
+
+# A1 — Development Intelligence
+
+**Estado:** ▶ EN CURSO en `feat/a1-dev-intelligence`.
+
+## Objetivo
+
+Reducir pérdida de contexto, relecturas del repo y gasto de tokens mediante GSD Core + Graphify, sin contaminar la arquitectura runtime ni convertir tooling en requisito del build.
+
+## Herramientas aprobadas
+
+### GSD Core
+
+```text
+open-gsd/gsd-core
+```
+
+Uso: project-scoped para estado, fases, planes, resúmenes y continuidad entre agentes.
+
+### Graphify
+
+```text
+Graphify-Labs/graphify
+```
+
+Uso: project-scoped para grafo local de código (`src/` + `tests/`), impacto y navegación dirigida.
+
+## Jerarquía de contexto objetivo
+
+```text
+Arquitectura → docs/MASTER_CONTEXT.md + docs/MASTER_PLAN.md
+Estado       → .planning/STATE.md
+Fase         → .planning/phases/<fase>/PLAN.md
+Código       → Git/GitHub
+Relaciones   → Graphify
+Histórico    → SUMMARY + Markdown portable
+```
+
+Flujo normal futuro:
+
+```text
+STATE → PLAN fase → Graphify query → archivos concretos
+```
+
+Los MASTER docs completos se cargan solo para arquitectura, licencias, cambio de fase o contradicciones.
+
+## A1.1 — preparación documental
+
+- [x] crear rama `feat/a1-dev-intelligence` desde A0 cerrado;
+- [x] crear plan A1 versionado;
+- [x] actualizar `AGENTS.md` con estrategia de contexto reducido;
+- [x] insertar A1 en `docs/ROADMAP.md`;
+- [x] mover `docs/MASTER_CONTEXT.md` de A0→A1;
+- [x] actualizar este MASTER_PLAN;
+- [ ] preparar `.gitignore` para temporales/cachés de grafo sin ocultar planning operativo;
+- [ ] verificar que `src/`/dependencias runtime no cambian;
+- [ ] verificar build/tests/CI;
+- [ ] crear histórico portable A1.1.
+
+## A1.2 — instalación y validación
+
+1. instalar GSD Core project-scoped;
+2. hacer onboarding del repo existente;
+3. reconciliar `.planning/PROJECT.md`, `ROADMAP.md`, `STATE.md` y config con MASTER docs;
+4. instalar Graphify project-scoped;
+5. construir grafo inicial de `src/` + `tests/`;
+6. habilitar integración GSD↔Graphify;
+7. ejecutar query/status/diff de aceptación;
+8. mantener auto-update Graphify desactivado inicialmente;
+9. medir tamaño/costo del grafo y decidir qué artefactos se versionan;
+10. demostrar que borrar/deshabilitar GSD/Graphify no rompe build/test del producto.
+
+## Acceptance A1
+
+- una sesión nueva puede orientarse sin releer todo el repo;
+- `STATE` indica fase/branch/PR/siguiente acción;
+- Graphify devuelve relaciones útiles del código;
+- ningún servicio externo es requerido;
+- fixtures privados no se indexan/versionan;
+- GSD/Graphify siguen siendo dev-only;
+- build/test del producto sigue independiente.
 
 ---
 
 # F0 — PDF base
 
-**Estado:** ⏭️ SIGUIENTE.
+**Estado:** ⏭️ DESPUÉS DE A1.
 
 ## Objetivo
 
@@ -158,10 +228,7 @@ Crear pruebas/benchmark con:
 
 - fidelidad visual;
 - barcode/QR decodificable;
-- CPU;
-- RAM;
-- tiempo;
-- I/O;
+- CPU/RAM/tiempo/I/O;
 - cold/warm;
 - packaging;
 - mantenimiento;
@@ -378,18 +445,21 @@ Subproyectos independientes:
 
 # Flujo de ejecución por slice
 
-1. Issue/alcance.
-2. Revisar estado GitHub.
-3. Rama aislada.
-4. Test/reproducción primero cuando sea código de comportamiento.
-5. Implementación mínima.
-6. Verificación local disponible.
-7. CI Windows.
-8. QA manual/real.
-9. Documentación y dependencias.
-10. Actualizar PR.
-11. Crear Markdown histórico descargable con lo implementado, verificaciones, pendientes y siguiente paso.
-12. No merge sin aprobación.
+1. revisar estado GitHub;
+2. leer `STATE` cuando A1.2 exista;
+3. revisar Issue/plan de fase;
+4. rama aislada;
+5. usar Graphify para impacto cuando aporte valor;
+6. test/reproducción primero cuando haya comportamiento;
+7. implementación mínima;
+8. verificación local disponible;
+9. CI Windows;
+10. QA manual/real;
+11. documentación/dependencias;
+12. actualizar `STATE`/`SUMMARY` cuando GSD esté operativo;
+13. actualizar PR;
+14. crear Markdown histórico descargable;
+15. no merge sin aprobación.
 
 # Definition of Done global
 
