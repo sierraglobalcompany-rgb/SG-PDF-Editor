@@ -1,28 +1,26 @@
 # Instrucciones para agentes de desarrollo
 
 ## Misión
-Desarrollar SG PDF Editor como una aplicación de escritorio Windows estable, modular y local-first.
+Construir SG PDF Editor como una aplicación Windows simple, rápida, local-first y útil. La arquitectura debe seguir KISS/YAGNI: resolver el problema actual con el mínimo número de capas, dependencias y abstracciones.
 
 ## Reglas obligatorias
-1. Antes de implementar una función, revisar `docs/ARCHITECTURE.md` y `docs/ROADMAP.md`.
-2. Mantener la UI desacoplada del motor PDF.
-3. No acoplar el proyecto a una única librería PDF: usar interfaces en `SGPdf.Core`.
-4. No incorporar código o dependencias AGPL sin aprobación explícita.
-5. Priorizar licencias MIT, BSD, Apache-2.0, MPL-2.0 o LGPL compatibles con distribución comercial.
-6. Añadir pruebas para lógica no trivial.
-7. No hacer cambios masivos no relacionados en un mismo commit.
-8. No borrar funciones existentes para resolver fallos sin documentar la causa.
-9. Windows es la plataforma objetivo inicial.
-10. Cada fase debe quedar compilable antes de avanzar.
+1. Leer `docs/DEVELOPMENT_PLAN.md`, `docs/ARCHITECTURE.md` y `docs/ROADMAP.md` antes de implementar.
+2. No crear capas, proyectos, interfaces genéricas, contenedores DI, buses de eventos ni patrones sin una necesidad actual demostrable.
+3. Mantener inicialmente un solo proyecto de aplicación y un proyecto de pruebas.
+4. PDFium es el motor PDF principal. Usar solo las funciones nativas necesarias.
+5. qpdf, Tesseract u otra dependencia se añaden únicamente cuando una fase concreta las necesite y simplifiquen el trabajo.
+6. No incorporar código/dependencias AGPL o GPL al producto sin aprobación explícita. Priorizar MIT, BSD y Apache-2.0.
+7. Se puede reutilizar/adaptar código permisivo con atribución y revisión; nunca copiar código GPL/AGPL al producto.
+8. Cada cambio debe terminar compilable y con una prueba manual concreta.
+9. No hacer refactors masivos preventivos.
+10. No hacer merge automático a `main`.
 
-## Flujo sugerido para Antigravity
-- Analizar la tarea.
-- Proponer plan corto.
-- Implementar en una rama de trabajo.
-- Compilar.
-- Ejecutar pruebas.
-- Revisar cambios.
-- Documentar decisiones relevantes.
+## Enfoque de implementación
+- Construir vertical slices útiles, no subsistemas aislados.
+- Primero: abrir → renderizar → zoom → firma PNG transparente → guardar copia → imprimir.
+- Después expandir lector, organizar, imágenes y texto sobre la misma base.
+- Save As por defecto durante las primeras fases para proteger el original.
 
-## Primera tarea recomendada
-Implementar el visor PDF de solo lectura: selección de archivo, apertura, renderizado de páginas, miniaturas, zoom y navegación. No implementar edición avanzada todavía.
+## UX base
+El documento abre siempre en modo `Leer`. Modos principales: `Leer | Firmar | Editar | Organizar | Comentar`.
+Los menús de clic derecho son contextuales: imagen, texto, página o espacio vacío.
