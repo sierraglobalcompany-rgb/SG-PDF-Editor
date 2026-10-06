@@ -1,35 +1,42 @@
 # Módulo Etiquetas ZPL — Especificación
 
+> Decisiones globales: `MASTER_CONTEXT.md`. Orden de ejecución: `MASTER_PLAN.md`.
+
 ## Problema
-Algunas impresoras térmicas/Windows no interpretan directamente ZPL generado por plataformas como Mercado Libre. El usuario hoy abre el ZPL en un visor web, lo convierte a PDF y luego imprime ese PDF.
 
-SG PDF Editor debe reemplazar ese flujo sin Internet.
+Mercado Libre entrega etiquetas ZPL. El usuario posee una impresora térmica que puede imprimir PDF mediante Windows, pero no interpreta directamente esos archivos. Hoy el flujo manual usa Labelary para convertir/renderizar antes de imprimir.
 
-## Entrada
-Extensiones:
+SG PDF Editor debe reemplazar ese flujo completamente offline.
+
+## Entradas
+
 - `.zpl`
-- `.txt`
-- `.prn`
+- `.txt` con ZPL
+- `.prn` con ZPL
 
-Contenido mínimo reconocible:
-- uno o más bloques `^XA ... ^XZ`.
+Contenido reconocible inicialmente: uno o más bloques `^XA ... ^XZ`.
 
-## Corpus inicial Mercado Libre
+## Corpus real conocido
+
 ### Bultos
-- 10 bloques de etiqueta independientes.
-- 203 dpi / 8 dpmm como preset inicial.
-- Tamaño esperado aproximado: 102×152 mm.
-- Usa gráficos `^GFA`, Code 128 `^BC`, QR `^BQ`, bloques `^FB`, field reverse `^FR`, `^FH`, `^CI28`, `^LH`.
+- múltiples diseños independientes;
+- alrededor de 4×6 / 102×152 mm a 203 dpi como preset inicial;
+- aparecen gráficos `^GFA`, Code128 `^BC`, QR `^BQ`, `^FB`, `^FR`, `^FH`, `^CI28`, `^LH`.
 
 ### Productos
-- 7 diseños.
-- cantidades `^PQ`: 10, 12, 20, 28, 10, 20, 10.
-- tamaño esperado aproximado: 38×25 mm a 203 dpi.
-- Code 128 + texto + `^FH/^CI28`.
+- varios diseños;
+- cantidades mediante `^PQ`;
+- etiquetas pequeñas (aprox. 38×25 mm en los casos observados);
+- Code128 + texto + encoding/hex.
 
-Los tamaños son presets/candidatos iniciales; la UI permite corregirlos antes de exportar.
+Los archivos reales son privados y no se versionan.
 
-## Modelo de datos mínimo
+## Regla `^PQ`
+
+`^PQ28` representa **un diseño con 28 copias**. Nunca materializar 28 renders idénticos.
+
+Modelo mínimo:
+
 ```text
 LabelJob
   SourcePath
@@ -37,155 +44,216 @@ LabelJob
 
 LabelDesign
   OriginalZpl
-  PreviewZpl
   RequestedCopies
   SelectedCopies
   WidthMm
   HeightMm
   Dpmm
-  PreviewPath
+  ContentHash
 ```
 
-No almacenar una copia por `^PQ` en memoria: una etiqueta con `^PQ28` sigue siendo un diseño con cantidad 28.
+## Parser propio mínimo
 
-## Parser mínimo
-No interpretar ZPL completo.
+Nuestro código puede:
 
-Funciones permitidas:
-1. separar bloques por `^XA`/`^XZ`;
-2. encontrar el último `^PQ` válido del bloque;
-3. si no existe, cantidad = 1;
-4. crear `PreviewZpl` reemplazando/agregando `^PQ1` antes de `^XZ`;
-5. preservar exactamente `OriginalZpl`.
+1. separar bloques `^XA ... ^XZ`;
+2. detectar/extraer cantidad `^PQ`;
+3. mantener ZPL original;
+4. preparar input de preview con una copia cuando sea necesario;
+5. clasificar warnings/errores.
 
-## Render
-Ejecutable local: Labelize.
+No implementar un renderer ZPL completo propio.
 
-Ejemplo conceptual:
+## Gate ZPL-A — obligatorio antes de la UI completa
+
+Comparar:
+
+### BinaryKits/BinaryKits.Zpl — candidato preferente
+- MIT;
+- .NET in-process;
+- preview bitmap;
+- PDF mediante Skia (`SKDocument.CreatePdf`);
+- soporte de Code128/QR/gráficos/texto/templates;
+- soporte conocido de `^DF`, `^XF`, `^CI28`.
+
+### GOODBOY008/labelize — fallback
+- offline;
+- buena cobertura;
+- CLI/librería Rust;
+- proceso/binario adicional si se integra por CLI;
+- release condicionado mientras no se resuelva satisfactoriamente la procedencia de `ZplGSCustom.ttf`.
+
+### Corpus del Gate
+
+Probar como mínimo:
+
+- `^XA/^XZ`;
+- `^CI28`;
+- `^FH`;
+- `^FB`;
+- `^FR`;
+- `^GFA`;
+- `^BC`;
+- `^BQ`;
+- `^PQ`;
+- `^DF`;
+- `^XF`;
+- tildes y ñ;
+- direcciones largas;
+- gráficos/logos;
+- inversión/rotación.
+
+Benchmark con 10/100/500 **diseños**, no copias `^PQ`.
+
+Medir fidelidad, decode de códigos, CPU, RAM, tiempo, I/O, cold/warm, packaging, mantenimiento y licencias.
+
+Si BinaryKits tiene fidelidad suficiente, gana y Labelize sale del runtime.
+
+## Pipeline preferido si gana BinaryKits
+
+Preview:
+
 ```text
-labelize convert preview.zpl -o preview.png --width 102 --height 152 --dpmm 8
+ZPL → BinaryKits → bitmap → WPF
 ```
 
-Sin HTTP, sin API, sin servidor.
+Salida:
 
-## Pantalla
 ```text
-Etiquetas                         [Exportar PDF] [Imprimir]
-
-Archivo: Etiquetas-de-productos.txt
-
-[miniatura] Código EDEY87335       cantidad: 10  [−] [10] [+]
-[miniatura] Código GPDH19039       cantidad: 12  [−] [12] [+]
-...
-
-Cantidad:
-(*) Respetar archivo (^PQ)
-( ) Una de cada
-( ) Personalizada
-
-Hoja: [Térmica 38×25 ▼]
-Etiquetas por página: [1 ▼]
-Márgenes: [0] mm   Separación: [0] mm
-Rotación: [Auto ▼]
-
-                       PREVIEW DE HOJA
+ZPL → BinaryKits DrawPdf() → PDF individual
+                               ↓
+                         PDFsharp XPdfForm
+                               ↓
+                          hoja/grilla PDF
+                               ↓
+                          Windows Print
 ```
+
+La salida de BinaryKits es híbrida: texto/formas pueden mantenerse vectoriales; barcodes se dibujan como bitmap. El código actual utiliza nearest-neighbor para escalar módulos de barcode.
+
+## Unicode `^CI28`
+
+Aunque BinaryKits modela `UTF8 = 28`, validar explícitamente:
+
+```text
+Bogotá
+Medellín
+Nariño
+á é í ó ú
+ñ Ñ
+```
+
+y combinaciones `^FH` con UTF-8 hex.
+
+## Comandos no soportados
+
+No ignorar todo silenciosamente.
+
+### Visual
+Si cambia contenido/posición/barcode/encoding/gráfico: warning fuerte o error.
+
+### Control de impresora sin impacto visual
+Se puede ignorar con warning/debug.
+
+### Recurso/template
+Si luego se referencia algo que no pudo resolverse: error.
+
+Nunca mostrar una etiqueta aparentemente correcta cuando falta contenido relevante.
+
+## Cantidades de usuario
+
+- respetar `^PQ`;
+- una de cada diseño;
+- cantidad personalizada por diseño.
 
 ## Layouts
-Presets de etiquetas por página:
-- 1
-- 2
-- 3
-- 4
-- 6
-- 8
-- 10
-- 12
-- Personalizado: columnas × filas
 
-La app calcula el mayor rectángulo uniforme disponible por celda.
-
-Reglas:
-- aspect ratio siempre fijo;
-- nunca estirar X e Y de forma diferente;
-- rotación 0/90°;
-- no recortar barcode/QR;
-- no aplicar smoothing que vuelva borrosos los módulos del código;
-- centrar dentro de la celda.
-
-## Tamaños de hoja
 Presets:
-- Etiqueta original.
-- 38×25 mm.
-- 50×30 mm.
-- 100×100 mm.
-- 100×150 mm.
-- 102×152 mm (4×6 aprox.).
-- A4.
-- Carta.
-- Personalizado.
+- 1;
+- 2;
+- 3;
+- 4;
+- 6;
+- 8;
+- 10;
+- 12;
+- columnas × filas personalizado.
 
-Más adelante: leer tamaños del driver de impresora.
+Tamaños iniciales:
+- original/térmica;
+- 38×25 mm;
+- 50×30 mm;
+- 100×100 mm;
+- 100×150 mm;
+- 102×152 mm / 4×6;
+- A4;
+- Carta;
+- personalizado.
 
-## Exportar PDF
-PDFsharp crea un documento nuevo:
-1. nueva página del tamaño elegido;
-2. por cada celda, colocar PNG respetando layout;
-3. crear páginas adicionales cuando se llene la anterior;
-4. guardar PDF local.
+Controles: margen, gap horizontal/vertical, rotación 0/90/auto y orden.
 
-No recomprimir con pérdida imágenes monocromas de códigos.
+## Calidad barcode/QR
+
+- no JPEG;
+- no deformar X/Y de forma independiente;
+- no antialias en módulos;
+- nearest-neighbor si hay resize raster;
+- mantener quiet zones;
+- tamaño físico exacto;
+- no escalar silenciosamente por hardware margins.
+
+Validación automática:
+
+```text
+ZPL → salida final PDF → raster → ZXing.Net → payload debe coincidir
+```
+
+Y validación física con impresora/lector.
 
 ## Impresión
-Primera implementación segura:
-- generar PDF temporal/final;
-- imprimir mediante flujo Windows/PDF existente.
 
-Posteriormente, si simplifica UX, imprimir `FixedDocument` directamente.
+El PDF conserva el tamaño físico real. Consultar `PrintQueue.GetPrintCapabilities()` para tamaños, resolución, scaling e `PageImageableArea`.
 
-## Errores
-Mostrar al usuario:
-- archivo no parece ZPL;
-- bloque incompleto sin `^XZ`;
-- Labelize no pudo renderizar;
-- comando no soportado/warning;
-- tamaño inválido;
-- salida PDF no pudo escribirse.
+Si el driver no admite el medio o el área imprimible recorta contenido, advertir en vez de alterar silenciosamente la escala.
 
-Nunca mostrar una página vacía como si el render fuera correcto.
+Si un driver real destruye la escala, el primer fallback es rasterizar a la resolución nativa y usar el driver Windows; no mandar datos RAW en un lenguaje que la impresora no entienda.
 
-## Seguridad y privacidad
-- archivos no salen del PC;
-- nombres/rutas con datos personales no se registran en telemetría;
-- temporales en carpeta de app/Temp y limpieza al cerrar o terminar exportación;
-- no ejecutar contenido del ZPL como shell; siempre pasar rutas/argumentos escapados a ProcessStartInfo.
+## Privacidad
+
+- archivos reales no salen del PC;
+- `tests/PrivateFixtures/` local e ignorado;
+- CI usa fixtures sintéticos con datos falsos;
+- temporales en carpeta de app y limpieza segura;
+- no telemetría con contenido/rutas sensibles.
 
 ## Pruebas mínimas
+
 ### Parser
-- 1 bloque sin ^PQ -> 1 copia.
-- múltiples bloques.
-- ^PQ10/^PQ28.
-- datos `^FD` que contienen caracteres especiales no rompen separación.
-- archivo truncado genera error.
+- un bloque sin `^PQ` → 1;
+- múltiples bloques;
+- `^PQ10/^PQ28`;
+- truncado → error;
+- contenido `^FD` no rompe separación.
 
 ### Layout
-- 1/2/3/10 por página.
-- A4 y térmica.
-- landscape/portrait.
-- cantidades que cruzan página.
-- 28 copias del mismo diseño.
+- 1/2/3/10 por página;
+- A4 y térmica;
+- portrait/landscape;
+- cantidades que cruzan página;
+- 28 copias del mismo diseño sin 28 renders.
 
 ### Integración
-- archivo bultos Mercado Libre.
-- archivo productos Mercado Libre.
-- red Windows deshabilitada.
-- exportar PDF, reabrirlo con PDFium y validar page count.
+- bultos ML privado;
+- productos ML privado;
+- red deshabilitada;
+- exportar PDF;
+- reabrir con PDFium;
+- decodificar barcode/QR.
 
-## No incluido en primera versión
-- editor visual de ZPL;
-- enviar comandos crudos a impresora Zebra;
-- conversiones EPL/IPL/DPL;
+## Fuera del MVP
+
+- editor visual ZPL;
 - diseñador de etiquetas desde cero;
-- generar códigos de barras manualmente desde una caja de texto.
-
-Esas funciones se evalúan después del flujo importar → preview → maquetar → PDF/imprimir.
+- RAW Zebra genérico;
+- generador manual de barcodes;
+- soporte de todos los lenguajes de impresora.
