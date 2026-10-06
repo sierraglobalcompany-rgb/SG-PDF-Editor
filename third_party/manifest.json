@@ -71,6 +71,24 @@
       "status": "not-in-core",
       "purpose": "Only evaluate if PDFium has a demonstrated structural-operation gap",
       "license": "Apache-2.0"
+    },
+    {
+      "name": "open-gsd/gsd-core",
+      "upstream": "https://github.com/open-gsd/gsd-core",
+      "version": "1.15.0",
+      "status": "development-tool-local-not-vendored",
+      "purpose": "Project-scoped workflow, planning, state and continuity tooling for development only",
+      "license": "MIT",
+      "notes": "Installed on demand by tools/setup-dev.ps1. Generated .codex payload is ignored, reproducible and never part of product runtime/build. Node 24+ is the validated environment."
+    },
+    {
+      "name": "Graphify-Labs/graphify",
+      "upstream": "https://github.com/Graphify-Labs/graphify",
+      "version": "0.9.77",
+      "status": "development-tool-local-not-vendored",
+      "purpose": "Local AST code graph for targeted codebase navigation and impact analysis",
+      "license": "Apache-2.0",
+      "notes": "Installed into project-local Python venv by tools/setup-dev.ps1. graphify-out is ignored/regenerated; corpus is limited by .graphifyignore to src/tests; no external API is required for AST graph/query."
     }
   ]
 }

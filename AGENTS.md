@@ -1,16 +1,39 @@
 # Instrucciones para agentes de desarrollo
 
+## Fuentes de verdad
+
+La autoridad se divide así:
+
+- arquitectura/decisiones permanentes: `docs/MASTER_CONTEXT.md` + `docs/MASTER_PLAN.md`;
+- estado operativo: `.planning/STATE.md`;
+- roadmap GSD: `.planning/ROADMAP.md`;
+- requisitos resumidos: `.planning/REQUIREMENTS.md`;
+- ejecución de la fase: `.planning/phases/<fase>/PLAN.md` cuando exista;
+- código real/estado ejecutado: Git/GitHub;
+- relaciones de código: Graphify local cuando aporte valor.
+
+Si GitHub difiere de los documentos sobre qué se ejecutó, GitHub tiene prioridad para el estado real. Si un documento secundario contradice los MASTER docs sobre arquitectura, prevalecen los MASTER docs salvo cambio aprobado.
+
 ## Antes de tocar código
 
-Leer en este orden:
+Usar contexto mínimo en este orden:
 
-1. `docs/MASTER_CONTEXT.md`
-2. `docs/MASTER_PLAN.md`
-3. `docs/ARCHITECTURE.md`
-4. `docs/ROADMAP.md`
-5. la Issue/PR de la fase activa
+1. `.planning/STATE.md`;
+2. `.planning/ROADMAP.md` y plan de la fase activa;
+3. consulta Graphify cuando ayude a localizar impacto/dependencias;
+4. leer únicamente los archivos concretos identificados;
+5. cargar `docs/MASTER_CONTEXT.md` / `docs/MASTER_PLAN.md` completos solo si la tarea toca arquitectura, licencias, cambio de fase o existe una contradicción.
 
-Si un documento secundario contradice `MASTER_CONTEXT` o `MASTER_PLAN`, prevalecen los maestros hasta alinear la documentación.
+No releer todo el repositorio por defecto. Si GSD/Graphify no están instalados, el trabajo del producto NO se bloquea: usar Git/GitHub/búsqueda normal y ejecutar `tools/setup-dev.ps1` cuando convenga.
+
+## Tooling de desarrollo pinneado
+
+- GSD Core `1.15.0`, project-scoped para Codex mediante `tools/setup-dev.ps1`.
+- Graphify `0.9.77`, project-scoped y en virtualenv local bajo `.devtools/`.
+- `.codex/`, `.devtools/` y `graphify-out/` son generados/regenerables y no se versionan.
+- `.planning/` sí se versiona como memoria operativa.
+- Graphify auto-update permanece desactivado; actualizar manualmente cuando aporte valor.
+- GSD 1.15.0 no acepta `graphify.enabled`; no usar claves de versiones futuras sin auditar upgrade.
 
 ## Misión
 
@@ -36,12 +59,16 @@ Construir SG PDF Editor como aplicación Windows simple, rápida, offline y úti
 13. Cada cambio debe quedar verificable con tests/CI/QA apropiados; no afirmar éxito sin evidencia fresca.
 14. No hacer merge automático a `main`.
 15. No realizar refactors preventivos masivos.
+16. GSD Core y Graphify son dev-only y deben poder fallar/desinstalarse sin impedir compilar/usar el producto.
+17. Graphify se usa cuando reduce lecturas; no sustituye compiler, tests ni una búsqueda simple cuando esta sea más rápida.
+18. Cada cierre de trabajo relevante actualiza estado/resumen y genera Markdown histórico portable para continuidad entre chats.
 
 ## Orden de ejecución actual
 
 ```text
-A0  higiene/trazabilidad
-F0  PDF base
+A0  higiene/trazabilidad                         ✅ completada
+A1  GSD Core + Graphify                         ✅ completada
+F0  PDF base                                    ▶ siguiente / Phase 1
 F1  Gate ZPL-A
 F2  etiquetas ZPL
 F3  firma visual
@@ -51,6 +78,8 @@ F6  imágenes
 F7  texto V1
 F8+ fases posteriores
 ```
+
+Antes de implementar F0 se debe hacer el ciclo GSD `discuss/plan`. Mantener los primeros slices pequeños; candidato inicial: `F0.1 abrir PDF desde UI + renderizar una página real en WPF`.
 
 ## UX base
 
@@ -68,13 +97,29 @@ Los menús de clic derecho son contextuales para imagen, texto, página o espaci
 
 Para cada vertical slice:
 
-1. revisar Issue y estado GitHub;
-2. trabajar en rama aislada;
-3. escribir/revisar prueba primero cuando haya comportamiento nuevo;
-4. implementar mínimo;
-5. verificar build/tests/CI;
-6. QA manual/real cuando aplique;
-7. actualizar docs/licencias;
-8. actualizar PR;
-9. generar Markdown histórico de estado;
-10. no merge sin aprobación del usuario.
+1. revisar `.planning/STATE.md` y estado GitHub;
+2. revisar Issue/ROADMAP/requisitos/plan de la fase;
+3. trabajar en rama/worktree aislado;
+4. usar Graphify para impacto/dependencias cuando aporte valor;
+5. escribir/revisar prueba primero cuando haya comportamiento nuevo;
+6. implementar mínimo;
+7. verificar build/tests/CI;
+8. QA manual/real cuando aplique;
+9. actualizar docs/licencias;
+10. actualizar PR;
+11. actualizar `STATE`/`SUMMARY`;
+12. generar Markdown histórico de estado;
+13. no merge sin aprobación del usuario.
+
+## graphify
+
+This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
+
+When the user types `/graphify`, use the installed graphify skill or instructions before doing anything else.
+
+Rules:
+- For codebase questions, first run `graphify query "<question>"` when graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
+- Dirty graphify-out/ files are expected after hooks or incremental updates; dirty graph files are not a reason to skip graphify. Only skip graphify if the task is about stale or incorrect graph output, or the user explicitly says not to use it.
+- If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
+- Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
+- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).

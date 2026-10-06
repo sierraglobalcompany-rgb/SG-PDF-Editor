@@ -17,3 +17,16 @@ third_party/cache/
 
 # Scratch de herramientas de desarrollo
 .superpowers/
+
+# GSD/Graphify generated development tooling.
+# Reproducible with tools/setup-dev.ps1; never required by product build/runtime.
+.codex/
+.agents/
+.devtools/
+graphify-out/
+gsd-local-patches/
+
+# GSD operational planning is versioned; generated/transient state is not.
+.planning/graphs/
+.planning/.lock
+.planning/.gsd-trace.jsonl

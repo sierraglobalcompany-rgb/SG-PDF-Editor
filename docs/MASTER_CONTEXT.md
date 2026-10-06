@@ -1,37 +1,37 @@
 # SG PDF Editor — Contexto maestro
 
 **Última consolidación:** 2026-10-06  
-**Estado:** arquitectura auditada y congelada; ejecución en Fase A0.  
+**Estado:** arquitectura auditada/congelada; A0 y A1 completadas; F0 PDF Base es la siguiente fase.  
 **Repositorio:** `sierraglobalcompany-rgb/SG-PDF-Editor`  
-**Rama de trabajo actual:** `feat/kiss-vertical-slice`  
-**PR actual:** #2, borrador.  
+**A0:** `feat/kiss-vertical-slice`, PR #2 draft, sin merge.  
+**A1:** `feat/a1-dev-intelligence`, PR #6 draft, sin merge.
 
-> Este documento existe para poder abrir otro chat/agente y continuar sin reconstruir el proyecto desde cero. Antes de proponer cambios de arquitectura se debe leer este archivo y `docs/MASTER_PLAN.md`. GitHub actual tiene prioridad para el estado de ejecución; estos documentos tienen prioridad para las decisiones arquitectónicas salvo cambio explícitamente aprobado.
+> Este documento permite abrir otro chat/agente y continuar sin reconstruir el proyecto. GitHub actual tiene prioridad para el estado ejecutado; `.planning/STATE.md` es el estado operativo; este archivo y `docs/MASTER_PLAN.md` son la autoridad arquitectónica salvo cambio explícitamente aprobado.
 
 ## 1. Producto
 
-SG PDF Editor es una aplicación Windows local, rápida y simple para dos trabajos diarios:
+SG PDF Editor es una aplicación Windows local-first y offline para dos trabajos diarios:
 
 1. **PDF:** leer, imprimir, firmar visualmente, organizar y editar de forma práctica.
 2. **Etiquetas térmicas:** abrir ZPL/TXT/PRN, previsualizar, respetar cantidades, maquetar, convertir a PDF e imprimir sin Internet.
 
-No pretende comenzar como un clon completo de Acrobat. El objetivo es resolver primero los flujos reales de uso frecuente con la menor cantidad de piezas posible.
+No pretende iniciar como clon completo de Acrobat. Se construye por vertical slices útiles y verificables.
 
 ## 2. Requisitos no negociables
 
 - Windows x64 inicialmente.
-- C# + .NET 10 + WPF.
+- C# + .NET 10 LTS + WPF.
 - KISS + YAGNI.
-- Funcionamiento normal 100 % offline.
-- Sin API keys, SaaS, cuentas ni servidores obligatorios.
-- Sin componentes que exijan licencia comercial para mantener el producto cerrado.
-- Priorizar MIT, BSD y Apache-2.0.
+- Funciones principales 100 % offline.
+- Sin API keys, SaaS, cuentas, servidores, créditos ni activación obligatoria.
+- Sin licencia comercial obligatoria en runtime.
+- Priorizar MIT/BSD/Apache-2.0.
 - No introducir AGPL/GPL fuerte sin aprobación expresa.
-- `Guardar como` por defecto mientras las operaciones de guardado maduran.
+- `Guardar como` por defecto durante primeras fases de edición.
 - No hacer merge automático a `main`.
-- Los archivos reales de Mercado Libre son privados y no se versionan.
+- Datos reales de Mercado Libre/clientes son privados y no se versionan.
 
-## 3. Arquitectura congelada
+## 3. Arquitectura runtime congelada
 
 ```text
 SG PDF Editor
@@ -55,29 +55,28 @@ SG PDF Editor
 └─ Windows Printing
 ```
 
-`*` BinaryKits es el candidato ZPL preferente, sujeto a un Gate técnico contra Labelize con archivos reales y sintéticos.
+`*` BinaryKits es candidato preferente y debe ganar Gate ZPL-A contra Labelize.
 
-### Lo que NO forma parte del núcleo actual
+No forman parte del núcleo actual:
 
-- qpdf/pdfcpu: solo si PDFium demuestra una carencia concreta.
-- Tesseract: solo al llegar OCR.
-- PdfPig: solo al llegar texto/layout avanzado.
-- Labelize: fallback ZPL condicionado; no motor principal por defecto.
-- PoDoFo: fuera del plan actual.
-- MuPDF/iText/Ghostscript: descartados por modelo AGPL/comercial.
+- qpdf/pdfcpu: solo ante carencia concreta de PDFium;
+- Tesseract: F10 OCR;
+- PdfPig: solo texto/layout avanzado si reduce complejidad;
+- Labelize: fallback ZPL condicionado;
+- MuPDF/iText/Ghostscript: descartados por AGPL/comercial.
 
-## 4. Estructura de solución
+## 4. Solución KISS
 
-KISS: solo dos proyectos mientras sea suficiente.
+Mientras sea suficiente existen solo:
 
 ```text
 src/SGPdf.App/
 tests/SGPdf.App.Tests/
 ```
 
-No recrear `Core`, `Infrastructure`, `Domain`, `Application`, CQRS, event bus, plugin framework o DI complejo sin una necesidad demostrable.
+No recrear `Core`, `Infrastructure`, `Domain`, `Application`, CQRS, event bus, plugin framework o DI complejo sin necesidad real.
 
-Dentro de la aplicación se organiza por carpetas/feature:
+Dentro de la app:
 
 ```text
 Pdf/
@@ -93,39 +92,40 @@ Utilities/
 
 ## 5. PDFium
 
-PDFium es el motor PDF primario. La distribución actual del proyecto usa `bblanchon.PDFium.Win32` y debe permanecer fijada a una versión explícita.
+PDFium es el motor PDF primario y se distribuye actualmente mediante `bblanchon.PDFium.Win32` con versión explícita/pinneada.
 
-Se prefiere un P/Invoke mínimo propio en vez de un wrapper grande. Cada API nativa se añade cuando una feature real la necesita.
+Se prefiere P/Invoke mínimo propio en vez de wrapper grande. Cada API nativa entra cuando una feature la necesita.
 
 ### Thread safety
 
-PDFium no es thread-safe dentro de un mismo proceso. Todas las llamadas pasan por un gate global:
+PDFium no es thread-safe dentro de un proceso. Todas las llamadas pasan por exclusión global:
 
 ```text
-PdfiumRuntime
-  └─ SemaphoreSlim(1,1)
+WPF UI
+  ↓
+background task
+  ↓
+PdfRenderScheduler
+  ↓
+SemaphoreSlim(1,1)
+  ↓
+PDFium
 ```
 
-La UI no ejecuta PDFium directamente. El flujo es:
-
-```text
-WPF UI → tarea background → scheduler → mutex global → PDFium
-```
-
-Prioridades del scheduler:
+Prioridad prevista:
 
 1. página visible;
 2. acción explícita;
 3. páginas vecinas;
-4. miniaturas/background.
+4. thumbnails/background.
 
-Renders pesados podrán usar el API progresivo (`FPDF_RenderPageBitmap_Start`, `Continue`, `Close`, `IFSDK_PAUSE`) para cancelar trabajo obsoleto. En cancelación deben liberarse tanto recursos nativos como bitmaps managed parciales.
+Renders pesados pueden usar `FPDF_RenderPageBitmap_Start`, `Continue`, `Close` e `IFSDK_PAUSE`. Al cancelar se liberan siempre recursos nativos y managed.
 
 ## 6. UX PDF
 
-Un PDF abre siempre en `Leer`.
+Un PDF abre en `Leer` para evitar modificaciones accidentales.
 
-Navegación principal prevista:
+Modos principales:
 
 ```text
 LEER | FIRMAR | EDITAR | ORGANIZAR | COMENTAR
@@ -133,54 +133,48 @@ LEER | FIRMAR | EDITAR | ORGANIZAR | COMENTAR
 
 ### Leer
 
-Evoluciona hacia: abrir, páginas, zoom, fit width/page, scroll, thumbnails, bookmarks, búsqueda, copiar, links, password e impresión.
+Objetivo final: abrir, navegación, zoom, fit page/width, scroll continuo, thumbnails, bookmarks, búsqueda, copiar texto, links, password e impresión.
 
 ### Firmar
 
-Alta prioridad. MVP: importar PNG transparente, arrastrar, redimensionar proporcionalmente, mover, eliminar, duplicar y guardar copia. Después: biblioteca local, firma predeterminada, iniciales, fecha, nombre y sello.
+Alta prioridad. MVP: PNG transparente, drag, resize proporcional, mover, eliminar/duplicar, insertar y `Guardar como`. Después: biblioteca local, firma principal, iniciales, fecha/nombre y sellos.
 
-La firma visual no es la firma criptográfica con certificado. La firma criptográfica es una fase profesional independiente.
+Firma visual y firma criptográfica son funciones distintas. La firma criptográfica es profesional/posterior.
 
-### Editar
+### Editar imágenes
 
-Menús contextuales por objeto.
+Menú contextual previsto: reemplazar, extraer/guardar, copiar, recortar, girar, tamaño, opacidad, frente/fondo, propiedades y eliminar. Reemplazo intenta conservar posición/tamaño/rotación/orden.
 
-Imagen: reemplazar, extraer/guardar, copiar, girar, tamaño, opacidad, orden y eliminar.
+### Editar texto
 
-Texto: editar, copiar, fuente/tamaño/color cuando sea seguro y eliminar cuando corresponda.
+No tratar PDF como Word. Texto V1 es conservador; reflow/párrafos llegan después.
 
-El PDF no se tratará como Word. Texto V1 será conservador; párrafos/reflow pertenecen a una fase posterior.
+APIs relevantes: `FPDFText_SetText`, `FPDFTextObj_GetFontName`, `FPDFText_LoadFont`, `FPDFText_LoadStandardFont`, `FPDFPageObj_CreateTextObj`.
 
-## 7. Texto y fuentes
+Si aparecen nuevos code points o subset dudoso, usar fallback con TTF redistribuible auditada (p. ej. Roboto) y nuevo text object. Guardar copia, reabrir y validar.
 
-APIs PDFium previstas incluyen `FPDFText_SetText`, `FPDFTextObj_GetFontName`, `FPDFText_LoadFont`, `FPDFText_LoadStandardFont` y `FPDFPageObj_CreateTextObj`.
+## 7. Organizar PDF
 
-Fuentes subset requieren cautela. Regla inicial: si el texto nuevo introduce code points que no estaban en el texto original, usar fallback con una TTF redistribuible auditada (p. ej. Roboto) y un nuevo objeto de texto, en vez de asumir que el subset contiene el glifo.
+PDFium se intenta primero.
 
-Guardar como copia, reabrir y validar render/extracción forma parte del flujo de edición.
+Intra-documento: mover/reordenar, rotar, eliminar, duplicar cuando aplique.
 
-## 8. Organizar PDF
+Inter-documento: `FPDF_ImportPages`/`FPDF_ImportPagesByIndex` para insert/merge/extract cuando sea viable.
 
-PDFium se prueba primero.
-
-Intra-documento: mover, rotar y eliminar con APIs PDFium apropiadas.
-
-Inter-documento: `FPDF_ImportPages`/`FPDF_ImportPagesByIndex` para merge/insert/extract cuando sea viable.
-
-Existe preflight antes de operaciones estructurales:
+Preflight previsto:
 
 - firmas: `FPDF_GetSignatureCount`;
 - formularios: `FPDF_GetFormType`;
 - bookmarks: `FPDFBookmark_GetFirstChild(document, NULL)`;
-- además probar named destinations, links internos, tagged PDF, page labels, attachments y metadata.
+- named destinations, links internos, tagged PDF, page labels, attachments y metadata según corpus.
 
-No asumir que las estructuras de catálogo se preservan al importar páginas. En MVP se advierte/bloquea cuando no podamos garantizar integridad.
+No prometer preservación de estructuras document-level que no se hayan probado.
 
-## 9. ZPL y Mercado Libre
+## 8. ZPL / Mercado Libre
 
-El usuario recibe archivos ZPL de Mercado Libre y hoy usa Labelary manualmente para convertirlos antes de imprimirlos en una impresora térmica que sí acepta PDF pero no esos ZPL directamente.
+El usuario recibe ZPL de Mercado Libre y hoy usa Labelary manualmente antes de imprimir en una impresora térmica que acepta PDF pero no esos ZPL directamente.
 
-SG PDF Editor debe reemplazar ese flujo offline.
+SG PDF Editor debe reemplazar ese proceso totalmente offline.
 
 Entradas:
 
@@ -188,136 +182,202 @@ Entradas:
 - `.txt` con ZPL;
 - `.prn` con ZPL.
 
-Bloques básicos: `^XA ... ^XZ`.
+Bloques: `^XA ... ^XZ`.
 
-`^PQ28` significa **un diseño con 28 copias**, no 28 renders. El sistema conserva diseño y cantidad por separado.
+`^PQ28` significa un diseño con 28 copias, no 28 renders. Se renderiza el diseño una vez y la cantidad se aplica al layout.
 
-Debe poder maquetar 1, 2, 3, 4, 6, 8, 10, 12 o un grid personalizado por página y trabajar con tamaños térmicos, A4, Carta y tamaños personalizados.
+Layouts: 1/2/3/4/6/8/10/12/custom. Tamaños: térmicos, A4, Carta y custom.
 
-## 10. Gate ZPL-A
+## 9. Gate ZPL-A
 
-Antes de construir toda la UI de etiquetas se comparan:
+Antes de UI completa se comparan:
 
-- **BinaryKits.Zpl** — candidato preferente;
-- **Labelize** — fallback.
+- `BinaryKits/BinaryKits.Zpl` — candidato preferente;
+- `GOODBOY008/labelize` — fallback.
 
-Se prueban archivos reales privados y fixtures sintéticos con `^CI28`, `^FH`, `^FB`, `^FR`, `^GFA`, `^BC`, `^BQ`, `^PQ`, `^DF` y `^XF`.
+Corpus privado real + sintético: `^CI28`, `^FH`, `^FB`, `^FR`, `^GFA`, `^BC`, `^BQ`, `^PQ`, `^DF`, `^XF`, tildes/ñ, logos y direcciones largas.
 
-Benchmark: 10, 100 y 500 diseños, sin multiplicar por `^PQ`.
+Benchmark: 10/100/500 diseños sin multiplicar `^PQ`.
 
-Criterios: fidelidad, barcode/QR, UTF-8, velocidad, RAM, CPU, I/O, packaging, mantenimiento y licencias.
+Criterios: fidelidad, barcode/QR, UTF-8, velocidad, RAM/CPU/I/O, packaging, mantenimiento y licencias.
 
-Si BinaryKits tiene fidelidad suficiente, gana por KISS: .NET in-process, sin proceso externo ni Rust en runtime.
+Si BinaryKits es suficientemente fiel, gana por KISS: .NET in-process, MIT, sin proceso externo/Rust en runtime.
 
-## 11. BinaryKits.Zpl
+## 10. BinaryKits / Labelize
 
-Es candidato preferente porque el código actual ya puede producir bitmap y PDF mediante Skia (`SKDocument.CreatePdf`). Sus barcodes se dibujan como bitmaps y usan nearest-neighbor en el resize, mientras texto/formas pueden conservar primitivas vectoriales.
+BinaryKits puede producir bitmap y PDF vía Skia (`SKDocument.CreatePdf`); barcodes raster se manejan con nearest-neighbor. `^CI28` existe como UTF-8, pero se debe probar con datos reales/sintéticos.
 
-`^CI28` está representado como UTF-8 en su modelo, pero se debe verificar físicamente con tildes y ñ.
-
-Si gana el Gate:
+Pipeline preferido si gana:
 
 ```text
-ZPL → BinaryKits preview bitmap → WPF
+ZPL → BinaryKits bitmap → preview WPF
 ZPL → BinaryKits PDF → PDFsharp XPdfForm → hoja final → imprimir
 ```
 
-## 12. Labelize
+Labelize queda como fallback. Su distribución final está bloqueada mientras `ZplGSCustom.ttf` no quede resuelto a satisfacción del proyecto.
 
-Fallback si BinaryKits no logra la fidelidad necesaria. Tiene buena cobertura y funciona offline, pero el camino CLI añade proceso/temporales y existe una duda de procedencia sobre `ZplGSCustom.ttf`. No se distribuye en una release estable mientras ese activo no quede resuelto o eliminado/reemplazado de forma verificable.
+## 11. Impresión térmica
 
-## 13. Impresión térmica
+Mantener tamaño físico exacto. No restar automáticamente hardware margins al PDF.
 
-El PDF debe mantener tamaño físico exacto. No se restan automáticamente los hardware margins al MediaBox.
+Consultar `PrintQueue.GetPrintCapabilities()`; cuando el driver lo permita usar PageMediaSize exacto, scaling 100 %, una página por hoja y resolución nativa. `PageImageableArea` sirve para advertir recortes; nunca escalar silenciosamente un barcode.
 
-Consultar `PrintQueue.GetPrintCapabilities()` y, cuando el driver lo admita, usar tamaño exacto, scaling 100 %, una página por hoja y resolución nativa. `PageImageableArea` se usa para advertir recortes; no se escala silenciosamente un barcode.
+Si un driver destruye la escala, primer fallback: raster directo a DPI nativo mediante el driver Windows, no RAW genérico a un lenguaje desconocido.
 
-Si un driver real destruye la escala, el primer fallback será rasterización directa a la resolución nativa usando el driver Windows, no mandar ZPL/PDF como RAW a una impresora cuyo lenguaje no conocemos.
+QA ZPL: decode automático con ZXing + impresión física.
 
-La validación ZPL incluye decode automático con ZXing.Net y prueba física de impresión.
+## 12. Licencias y terceros
 
-## 14. Licencias y terceros
+Código propio: `All rights reserved` hasta decisión distinta. Repo público NO significa open source.
 
-El código propio sigue con `All rights reserved` mientras no se decida otra licencia.
+Toda dependencia runtime/dev relevante se registra en `third_party/manifest.json` y conserva licencias/notices requeridos.
 
-El repositorio es público; eso NO convierte automáticamente el código en open source.
+## 13. Development Intelligence — A1 completada
 
-Toda dependencia runtime/development relevante se registra en `third_party/manifest.json` y conserva las licencias/notices requeridos.
+GSD Core + Graphify son tooling de desarrollo; nunca requisitos del producto.
 
-## 15. Roadmap congelado
+### GSD Core
+
+- upstream: `open-gsd/gsd-core`;
+- pin validado: `1.15.0`;
+- MIT;
+- Node 24+ validado;
+- project-scoped Codex;
+- `.planning/` versionado;
+- `.codex/` generado/regenerable e ignorado.
+
+### Graphify
+
+- upstream: `Graphify-Labs/graphify`;
+- pin validado: `0.9.77`;
+- Apache-2.0;
+- instalado localmente mediante virtualenv `.devtools/`;
+- grafo limitado a `src/` + `tests/` por `.graphifyignore`;
+- `graphify-out/` regenerable e ignorado;
+- auto-update OFF;
+- AST/query funciona offline sin backend LLM/API.
+
+### Evidencia
+
+Probe final `37530638793`:
+
+- GSD install PASS;
+- `validate health` = healthy, 0 warnings/errors;
+- `state-snapshot` reconoce Phase 1 `F0 PDF Base`, estado planning;
+- Graphify install/build/query PASS;
+- grafo: 12 archivos, 161 nodos, 187 aristas, 16 comunidades;
+- query `PdfDocumentSession` recuperó llamadas/relaciones PDFium reales;
+- `PrivateFixtures` no aparece en el grafo.
+
+Medición:
+
+- `.codex/`: ~17 MB / 833 archivos → no versionar;
+- `graphify-out/`: ~472 KB / 22 archivos → no versionar.
+
+Setup reproducible: `tools/setup-dev.ps1`.
+
+### Jerarquía de contexto desde A1
 
 ```text
-A0  Higiene/fuente de verdad
-F0  PDF base: open/render/cancel/zoom/navigation/print
+Arquitectura → docs/MASTER_CONTEXT.md + docs/MASTER_PLAN.md
+Estado       → .planning/STATE.md
+Roadmap      → .planning/ROADMAP.md
+Requisitos   → .planning/REQUIREMENTS.md
+Fase         → .planning/phases/<fase>/PLAN.md cuando exista
+Código       → Git/GitHub
+Relaciones   → Graphify
+Histórico    → SUMMARY + docs/history + Markdown portable
+```
+
+Flujo normal:
+
+```text
+STATE → plan de fase → Graphify query → archivos concretos
+```
+
+MASTER docs completos solo para arquitectura/licencias/cambio de fase/contradicciones.
+
+### Compatibilidad conocida
+
+GSD 1.15.0 no acepta `graphify.enabled`; usa `auto_update/build_timeout/graph_path`. No copiar claves de versiones futuras sin upgrade auditado.
+
+Antigravity está soportado upstream, pero A1 validó Codex. Validar Antigravity en host real cuando se use.
+
+Sin backend LLM, Graphify deja nombres de comunidades genéricos; eso es intencional y no afecta el grafo AST.
+
+## 14. Estado y roadmap actual
+
+```text
+A0  Higiene/fuente de verdad               ✅ completada
+A1  GSD Core + Graphify                   ✅ completada
+F0  PDF base                              ▶ siguiente / GSD Phase 1
 F1  Gate ZPL-A
-F2  Etiquetas ZPL completas
+F2  Etiquetas ZPL
 F3  Firma visual
 F4  Lector completo
 F5  Organizar
 F6  Imágenes
 F7  Texto V1
 F8  Comentarios
-F9  Utilidades justificadas
+F9  Utilidades
 F10 OCR
 F11 Texto V2
 F12 Profesional
 ```
 
-## 16. Flujo GitHub
+F0 todavía no tiene plan de implementación definitivo. El siguiente chat debe ejecutar primero GSD discuss/plan. Primer slice recomendado para mantener KISS:
 
-- `main` representa estado estable.
-- una rama por vertical slice cuando sea razonable;
-- Issue con alcance/aceptación/riesgos;
+```text
+F0.1 — abrir PDF desde UI + renderizar una página real en WPF
+```
+
+## 15. GitHub / ramas
+
+- `main`: baseline estable; no tocar sin aprobación.
+- A0: `feat/kiss-vertical-slice`, PR #2 draft, sin merge.
+- A1: `feat/a1-dev-intelligence`, PR #6 draft, sin merge.
+- una rama/vertical slice cuando sea razonable;
 - PR draft temprano;
 - build/tests/QA antes de declarar terminado;
-- no auto-merge;
-- merge solo con aprobación explícita del usuario.
+- nunca auto-merge.
 
-## 17. Datos privados
+## 16. Datos privados
 
-Los ZPL reales y documentos de clientes NO entran al repo público. Usar `tests/PrivateFixtures/` local (ignorado) y fixtures sintéticos equivalentes en CI.
+ZPL reales/documentos de clientes no entran al repo. `tests/PrivateFixtures/` permanece local/ignorado. Graphify tampoco debe indexarlo.
 
-## 18. Papel de cada participante
+## 17. Roles
 
-**ChatGPT:** arquitectura aplicada, código, GitHub, CI, tests, auditoría y documentación.
+**ChatGPT:** planificación aplicada, código, GitHub, CI, tests, auditoría, documentación e históricos.
 
-**Codex/Antigravity:** especialmente valiosos para runtime/UX real en Windows, drag/drop, native debugging e impresión física.
+**Codex/Antigravity:** ejecución/runtime/UX Windows, native debugging, impresión y trabajo de código. Tooling project-scoped puede regenerarse con `tools/setup-dev.ps1`.
 
-**Usuario:** aceptación funcional/UX, impresora térmica y aprobación de merge.
+**Usuario:** prioridad/UX, pruebas físicas e instrucción final de merge.
 
-**Otra IA:** auditor independiente puntual, no arquitecto paralelo permanente.
+**Otra IA:** auditor puntual, no arquitecto paralelo continuo.
 
-## 19. Definition of Done
+## 18. Definition of Done
 
-Una función solo se considera terminada si:
+Una feature termina solo si:
 
 - funciona offline;
-- build/test Windows están verdes;
-- errores están controlados;
-- no destruye original;
-- tiene fixture/prueba representativa;
-- dependencias/licencias están auditadas;
-- temporales se limpian;
-- documentación queda alineada.
+- build/tests Windows tienen evidencia fresca;
+- errores controlados;
+- original protegido;
+- pruebas/fixtures representativos;
+- dependencias/licencias registradas;
+- temporales/recursos limpios;
+- docs/STATE/SUMMARY alineados;
+- histórico portable generado.
 
-ZPL además exige barcode/QR legible automáticamente y QA físico cuando corresponda.
+ZPL además exige decode automático y QA física cuando corresponda.
 
-## 20. Estado al crear este documento
+## 19. Instrucción para un chat nuevo
 
-- Repo público, `main` estable inicial.
-- Rama `feat/kiss-vertical-slice` aislada.
-- PR #2 draft abierto.
-- Solución simplificada a App + Tests.
-- WPF/.NET 10 configurados.
-- PDFium binario ya referenciado y existe interop/session inicial.
-- CI Windows existe.
-- A0 en ejecución: se está alineando documentación, licencias, manifiesto, locks y CI antes de continuar F0.
-
-## 21. Instrucción para un chat nuevo
-
-1. Leer este documento y `docs/MASTER_PLAN.md`.
-2. Consultar GitHub para conocer el estado real más reciente.
-3. No reabrir decisiones congeladas salvo evidencia nueva material.
-4. Continuar desde la primera fase incompleta.
-5. Mantener KISS/YAGNI/offline/gratis.
-6. Nunca hacer merge a `main` sin aprobación del usuario.
+1. Verificar GitHub primero.
+2. Leer `.planning/STATE.md`.
+3. Leer `.planning/ROADMAP.md` y requisitos de Phase 1.
+4. Si `tools/setup-dev.ps1` ya se ejecutó, usar Graphify antes de lecturas amplias cuando aporte valor.
+5. Leer MASTER docs completos solo si surge una decisión arquitectónica/licencia/contradicción.
+6. No reabrir A0/A1 salvo evidencia material.
+7. Continuar con F0 mediante GSD discuss/plan; no implementar toda F0 en un único bloque.
+8. No merge a `main` sin aprobación explícita del usuario.

@@ -1,0 +1,43 @@
+{
+  "mode": "interactive",
+  "granularity": "standard",
+  "model_profile": "balanced",
+  "parallelization": true,
+  "git": {
+    "branching_strategy": "none",
+    "base_branch": "main",
+    "protected_branches": ["main"],
+    "allow_default_branch_commits": false,
+    "create_tag": false
+  },
+  "workflow": {
+    "plan_check": true,
+    "verifier": true,
+    "nyquist_validation": true,
+    "ai_integration_phase": false,
+    "auto_advance": false,
+    "human_verify_mode": "end-of-phase",
+    "use_worktrees": true,
+    "build_command": "dotnet build SGPdf.slnx --configuration Release",
+    "test_command": "dotnet test SGPdf.slnx --configuration Release",
+    "context_guard_mode": "warn"
+  },
+  "planning": {
+    "commit_docs": true,
+    "pr_strict": false,
+    "search_gitignored": false,
+    "sub_repos": []
+  },
+  "hooks": {
+    "context_warnings": true,
+    "workflow_guard": false
+  },
+  "graphify": {
+    "auto_update": false,
+    "build_timeout": 300,
+    "graph_path": "graphify-out/graph.json"
+  },
+  "capabilities": {
+    "auto_update": false
+  }
+}

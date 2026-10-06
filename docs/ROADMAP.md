@@ -1,19 +1,36 @@
 # Roadmap KISS
 
-> El detalle y criterios de aceptación viven en `MASTER_PLAN.md`.
+> El detalle y criterios de aceptación viven en `MASTER_PLAN.md`. El estado operativo diario vive en `.planning/STATE.md`.
 
-## A0 — Higiene y reproducibilidad
+## A0 — Higiene y reproducibilidad ✅
 - contexto/plan maestro;
 - documentos alineados;
 - manifest de terceros;
 - licenses/notices;
 - datos privados ignorados;
-- mecanismo de lock NuGet;
+- lock NuGet;
 - CI Windows verificable.
 
-**Salida:** repo listo para ejecución sin contradicciones.
+**Salida:** repo reproducible y arquitectura KISS/offline trazable.
 
-## F0 — PDF base
+## A1 — Development Intelligence ✅
+
+Objetivo cumplido: reducir pérdida de contexto y lecturas repetidas sin contaminar el runtime del producto.
+
+- GSD Core `1.15.0` project-scoped validado;
+- Graphify `0.9.77` project-scoped validado;
+- `.planning/PROJECT.md`, `REQUIREMENTS.md`, `ROADMAP.md`, `STATE.md` y config versionados;
+- `.graphifyignore` limita el corpus a `src/` + `tests/`;
+- `.codex/`, `.devtools/` y `graphify-out/` son regenerables y se ignoran;
+- setup reproducible en `tools/setup-dev.ps1`;
+- GSD health = healthy;
+- Graphify query sobre `PdfDocumentSession` = PASS;
+- fixtures privados fuera del grafo;
+- tooling no forma parte del build/runtime.
+
+**Salida:** una sesión nueva se orienta con `STATE` + plan activo + consultas Graphify sin releer todo el proyecto.
+
+## F0 — PDF base ▶ SIGUIENTE
 - abrir PDF;
 - render real;
 - scheduler PDFium global;
