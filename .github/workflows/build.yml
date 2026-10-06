@@ -5,17 +5,34 @@ on:
     branches: [ main, 'feat/**', 'plan/**' ]
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   windows:
     runs-on: windows-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
-      - name: Restore
-        run: dotnet restore SGPdf.slnx
+
+      - name: Restore and generate NuGet lock files
+        run: dotnet restore SGPdf.slnx --use-lock-file
+
+      - name: Show generated NuGet lock files
+        shell: pwsh
+        run: |
+          Get-ChildItem -Path . -Recurse -Filter packages.lock.json | ForEach-Object {
+            Write-Host "===== LOCKFILE:$($_.FullName) ====="
+            Get-Content $_.FullName -Raw
+            Write-Host "===== ENDLOCKFILE ====="
+          }
+
       - name: Build
         run: dotnet build SGPdf.slnx --configuration Release --no-restore
+
       - name: Test
         run: dotnet test SGPdf.slnx --configuration Release --no-build
