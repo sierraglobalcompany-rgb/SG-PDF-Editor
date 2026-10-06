@@ -18,14 +18,21 @@
 ## A1.1 — preparación
 
 - [x] Crear rama `feat/a1-dev-intelligence` desde A0 cerrado (`4333674`).
-- [ ] Actualizar `AGENTS.md` con el flujo futuro de contexto: STATE → phase PLAN → Graphify → archivos concretos → MASTER docs solo si hace falta.
-- [ ] Añadir A1 al `docs/ROADMAP.md` entre A0 y F0.
-- [ ] Actualizar `docs/MASTER_CONTEXT.md` para marcar A0 cerrado y A1 como fase actual.
-- [ ] Actualizar `docs/MASTER_PLAN.md` para insertar A1 y mover F0 a fase posterior.
-- [ ] Añadir reglas de `.gitignore` para cachés/artefactos locales de GSD/Graphify sin ignorar los documentos operativos que debamos versionar.
-- [ ] Verificar que A1.1 no modifica `src/` ni dependencias runtime.
-- [ ] Verificar build/tests existentes y CI.
-- [ ] Generar histórico portable al cerrar A1.1.
+- [x] Actualizar `AGENTS.md` con el flujo futuro de contexto: STATE → phase PLAN → Graphify → archivos concretos → MASTER docs solo si hace falta.
+- [x] Añadir A1 al `docs/ROADMAP.md` entre A0 y F0.
+- [x] Actualizar `docs/MASTER_CONTEXT.md` para marcar A0 cerrado y A1 como fase actual.
+- [x] Actualizar `docs/MASTER_PLAN.md` para insertar A1 y mover F0 a fase posterior.
+- [x] Añadir reglas de `.gitignore` para cachés/artefactos locales de GSD/Graphify sin ignorar los documentos operativos que debamos versionar.
+- [x] Verificar que A1.1 no modifica `src/` ni dependencias runtime.
+- [x] Verificar build/tests existentes y CI.
+- [x] Generar histórico portable al cerrar A1.1.
+
+## Evidencia A1.1
+
+- Diff contra A0: solo docs/config, sin cambios en `src/`.
+- PR: #6 draft, apilado sobre `feat/kiss-vertical-slice`.
+- Windows CI run verificado durante el bloque: `37526170939` = success.
+- Histórico: `docs/history/2026-10-06-A1.1.md`.
 
 ## A1.2 — siguiente bloque, fuera de este cambio
 
