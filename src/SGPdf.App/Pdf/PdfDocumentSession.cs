@@ -14,14 +14,7 @@ public sealed class PdfDocumentSession : IDisposable
 
     public string FilePath { get; }
 
-    public int PageCount
-    {
-        get
-        {
-            ThrowIfDisposed();
-            return PdfiumNative.FPDF_GetPageCount(_document);
-        }
-    }
+    public int PageCount => WithDocument(PdfiumNative.FPDF_GetPageCount);
 
     public static PdfDocumentSession Open(string filePath, string? password = null)
     {
@@ -31,43 +24,63 @@ public sealed class PdfDocumentSession : IDisposable
         if (!File.Exists(filePath))
             throw new FileNotFoundException("No se encontró el archivo PDF.", filePath);
 
-        PdfiumRuntime.EnsureInitialized();
-        var document = PdfiumNative.FPDF_LoadDocument(filePath, password);
+        var document = PdfiumRuntime.RunExclusive(() =>
+        {
+            var handle = PdfiumNative.FPDF_LoadDocument(filePath, password);
+            if (handle == IntPtr.Zero)
+                throw new InvalidOperationException($"PDFium no pudo abrir el documento. Error: {PdfiumNative.FPDF_GetLastError()}.");
 
-        if (document == IntPtr.Zero)
-            throw new InvalidOperationException($"PDFium no pudo abrir el documento. Error: {PdfiumNative.FPDF_GetLastError()}.");
+            return handle;
+        });
 
         return new PdfDocumentSession(Path.GetFullPath(filePath), document);
     }
 
     public (double Width, double Height) GetPageSize(int pageIndex)
     {
-        ThrowIfDisposed();
-
-        if (pageIndex < 0 || pageIndex >= PageCount)
-            throw new ArgumentOutOfRangeException(nameof(pageIndex));
-
-        var page = PdfiumNative.FPDF_LoadPage(_document, pageIndex);
-        if (page == IntPtr.Zero)
-            throw new InvalidOperationException($"No se pudo cargar la página {pageIndex + 1}.");
-
-        try
+        return WithDocument(document =>
         {
-            return (PdfiumNative.FPDF_GetPageWidthF(page), PdfiumNative.FPDF_GetPageHeightF(page));
-        }
-        finally
+            var pageCount = PdfiumNative.FPDF_GetPageCount(document);
+            if (pageIndex < 0 || pageIndex >= pageCount)
+                throw new ArgumentOutOfRangeException(nameof(pageIndex));
+
+            var page = PdfiumNative.FPDF_LoadPage(document, pageIndex);
+            if (page == IntPtr.Zero)
+                throw new InvalidOperationException($"No se pudo cargar la página {pageIndex + 1}.");
+
+            try
+            {
+                return ((double)PdfiumNative.FPDF_GetPageWidthF(page), (double)PdfiumNative.FPDF_GetPageHeightF(page));
+            }
+            finally
+            {
+                PdfiumNative.FPDF_ClosePage(page);
+            }
+        });
+    }
+
+    internal T WithDocument<T>(Func<IntPtr, T> action)
+    {
+        ArgumentNullException.ThrowIfNull(action);
+
+        return PdfiumRuntime.RunExclusive(() =>
         {
-            PdfiumNative.FPDF_ClosePage(page);
-        }
+            ThrowIfDisposed();
+            return action(_document);
+        });
     }
 
     public void Dispose()
     {
-        if (_document == IntPtr.Zero)
-            return;
+        PdfiumRuntime.RunExclusive(() =>
+        {
+            if (_document == IntPtr.Zero)
+                return;
 
-        PdfiumNative.FPDF_CloseDocument(_document);
-        _document = IntPtr.Zero;
+            PdfiumNative.FPDF_CloseDocument(_document);
+            _document = IntPtr.Zero;
+        });
+
         GC.SuppressFinalize(this);
     }
 
