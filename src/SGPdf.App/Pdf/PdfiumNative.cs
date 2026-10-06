@@ -6,6 +6,22 @@ internal static class PdfiumNative
 {
     private const string Library = "pdfium";
 
+    internal const int FPDF_RENDER_READY = 0;
+    internal const int FPDF_RENDER_TOBECONTINUED = 1;
+    internal const int FPDF_RENDER_DONE = 2;
+    internal const int FPDF_RENDER_FAILED = 3;
+
+    [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+    internal delegate int NeedToPauseNowCallback(ref IfSdkPause pause);
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct IfSdkPause
+    {
+        internal int Version;
+        internal NeedToPauseNowCallback NeedToPauseNow;
+        internal IntPtr User;
+    }
+
     [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
     internal static extern void FPDF_InitLibrary();
 
@@ -66,6 +82,26 @@ internal static class PdfiumNative
         int sizeY,
         int rotate,
         int flags);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern int FPDF_RenderPageBitmap_Start(
+        IntPtr bitmap,
+        IntPtr page,
+        int startX,
+        int startY,
+        int sizeX,
+        int sizeY,
+        int rotate,
+        int flags,
+        ref IfSdkPause pause);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern int FPDF_RenderPage_Continue(
+        IntPtr page,
+        ref IfSdkPause pause);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern void FPDF_RenderPage_Close(IntPtr page);
 
     [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
     internal static extern uint FPDF_GetLastError();
