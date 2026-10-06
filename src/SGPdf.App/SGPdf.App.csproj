@@ -3,11 +3,12 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
+    <PlatformTarget>x64</PlatformTarget>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="../SGPdf.Core/SGPdf.Core.csproj" />
-    <ProjectReference Include="../SGPdf.Infrastructure/SGPdf.Infrastructure.csproj" />
+    <PackageReference Include="bblanchon.PDFium.Win32" Version="156.0.8076" />
   </ItemGroup>
 </Project>

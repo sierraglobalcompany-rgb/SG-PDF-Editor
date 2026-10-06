@@ -1,0 +1,41 @@
+name: build
+
+on:
+  push:
+    branches: [ main, 'feat/**', 'plan/**' ]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Validate repository hygiene
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "third_party/manifest.json")) {
+            throw "third_party/manifest.json is required"
+          }
+          Get-Content "third_party/manifest.json" -Raw | ConvertFrom-Json | Out-Null
+          $privateTracked = git ls-files "tests/PrivateFixtures/**"
+          if ($privateTracked) {
+            throw "Private fixtures must not be committed: $privateTracked"
+          }
+
+      - name: Restore locked dependencies
+        run: dotnet restore SGPdf.slnx --locked-mode
+
+      - name: Build
+        run: dotnet build SGPdf.slnx --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test SGPdf.slnx --configuration Release --no-build

@@ -1,6 +1,4 @@
 <Solution>
   <Project Path="src/SGPdf.App/SGPdf.App.csproj" />
-  <Project Path="src/SGPdf.Core/SGPdf.Core.csproj" />
-  <Project Path="src/SGPdf.Infrastructure/SGPdf.Infrastructure.csproj" />
-  <Project Path="tests/SGPdf.Core.Tests/SGPdf.Core.Tests.csproj" />
+  <Project Path="tests/SGPdf.App.Tests/SGPdf.App.Tests.csproj" />
 </Solution>

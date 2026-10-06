@@ -1,9 +1,11 @@
-namespace SGPdf.Core.Tests;
+using Xunit;
+
+namespace SGPdf.App.Tests;
 
 public sealed class SmokeTests
 {
     [Fact]
-    public void Project_scaffold_is_alive()
+    public void TestHarnessStarts()
     {
         Assert.True(true);
     }
