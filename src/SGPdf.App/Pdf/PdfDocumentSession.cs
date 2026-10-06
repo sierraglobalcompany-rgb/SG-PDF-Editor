@@ -1,3 +1,5 @@
+using System.IO;
+
 namespace SGPdf.App.Pdf;
 
 public sealed class PdfDocumentSession : IDisposable
