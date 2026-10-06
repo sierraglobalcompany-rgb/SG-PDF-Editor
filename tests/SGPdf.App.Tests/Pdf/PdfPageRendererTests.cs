@@ -47,6 +47,38 @@ public sealed class PdfPageRendererTests
         }
     }
 
+    [Fact]
+    public void Render_with_cancellation_token_honors_pre_cancelled_request()
+    {
+        var rendererType = typeof(PdfDocumentSession).Assembly.GetType("SGPdf.App.Pdf.PdfPageRenderer");
+        Assert.NotNull(rendererType);
+
+        var renderMethod = rendererType.GetMethod(
+            "Render",
+            BindingFlags.Public | BindingFlags.Static,
+            binder: null,
+            types: [typeof(PdfDocumentSession), typeof(int), typeof(int), typeof(int), typeof(CancellationToken)],
+            modifiers: null);
+        Assert.NotNull(renderMethod);
+
+        var path = CreateSinglePagePdf();
+        try
+        {
+            using var session = PdfDocumentSession.Open(path);
+            using var cancellation = new CancellationTokenSource();
+            cancellation.Cancel();
+
+            var exception = Assert.Throws<TargetInvocationException>(() =>
+                renderMethod.Invoke(null, [session, 0, 200, 300, cancellation.Token]));
+
+            Assert.IsAssignableFrom<OperationCanceledException>(exception.InnerException);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
     private static string CreateSinglePagePdf()
     {
         const string content = "0 0 0 rg 20 20 50 50 re f\n";
@@ -54,7 +86,7 @@ public sealed class PdfPageRendererTests
         {
             "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n",
             "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
-            $"3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 300] /Contents 4 0 R >>\nendobj\n",
+            "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 300] /Contents 4 0 R >>\nendobj\n",
             $"4 0 obj\n<< /Length {Encoding.ASCII.GetByteCount(content)} >>\nstream\n{content}endstream\nendobj\n"
         };
 
