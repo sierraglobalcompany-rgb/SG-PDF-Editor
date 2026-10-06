@@ -67,8 +67,8 @@ Construir SG PDF Editor como aplicación Windows simple, rápida, offline y úti
 
 ```text
 A0  higiene/trazabilidad                         ✅ completada
-A1  GSD Core + Graphify                         ▶ validación final
-F0  PDF base                                    ⏭ siguiente
+A1  GSD Core + Graphify                         ✅ completada
+F0  PDF base                                    ▶ siguiente / Phase 1
 F1  Gate ZPL-A
 F2  etiquetas ZPL
 F3  firma visual
@@ -78,6 +78,8 @@ F6  imágenes
 F7  texto V1
 F8+ fases posteriores
 ```
+
+Antes de implementar F0 se debe hacer el ciclo GSD `discuss/plan`. Mantener los primeros slices pequeños; candidato inicial: `F0.1 abrir PDF desde UI + renderizar una página real en WPF`.
 
 ## UX base
 
@@ -96,8 +98,8 @@ Los menús de clic derecho son contextuales para imagen, texto, página o espaci
 Para cada vertical slice:
 
 1. revisar `.planning/STATE.md` y estado GitHub;
-2. revisar Issue/ROADMAP/plan de la fase;
-3. trabajar en rama aislada;
+2. revisar Issue/ROADMAP/requisitos/plan de la fase;
+3. trabajar en rama/worktree aislado;
 4. usar Graphify para impacto/dependencias cuando aporte valor;
 5. escribir/revisar prueba primero cuando haya comportamiento nuevo;
 6. implementar mínimo;
