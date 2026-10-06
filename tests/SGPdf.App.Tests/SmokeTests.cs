@@ -1,3 +1,5 @@
+using Xunit;
+
 namespace SGPdf.App.Tests;
 
 public sealed class SmokeTests
