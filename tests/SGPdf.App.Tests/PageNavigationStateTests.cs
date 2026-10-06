@@ -1,60 +1,49 @@
-using System.Reflection;
-using SGPdf.App.Pdf;
+using SGPdf.App.Navigation;
 using Xunit;
 
 namespace SGPdf.App.Tests;
 
 public sealed class PageNavigationStateTests
 {
-    private static Type NavigationType
-    {
-        get
-        {
-            var type = typeof(PdfDocumentSession).Assembly.GetType("SGPdf.App.Navigation.PageNavigationState");
-            Assert.NotNull(type);
-            return type!;
-        }
-    }
-
     [Fact]
     public void ThreePageDocument_NavigatesWithinBounds()
     {
-        dynamic state = Activator.CreateInstance(NavigationType, 3, 0)!;
+        var state = new PageNavigationState(3);
 
-        Assert.Equal(3, (int)state.PageCount);
-        Assert.Equal(0, (int)state.CurrentPageIndex);
-        Assert.Equal(1, (int)state.CurrentPageNumber);
-        Assert.False((bool)state.CanMovePrevious);
-        Assert.True((bool)state.CanMoveNext);
+        Assert.Equal(3, state.PageCount);
+        Assert.Equal(0, state.CurrentPageIndex);
+        Assert.Equal(1, state.CurrentPageNumber);
+        Assert.False(state.CanMovePrevious);
+        Assert.True(state.CanMoveNext);
 
         state = state.Previous();
-        Assert.Equal(0, (int)state.CurrentPageIndex);
+        Assert.Equal(0, state.CurrentPageIndex);
 
         state = state.Next();
-        Assert.Equal(1, (int)state.CurrentPageIndex);
-        Assert.True((bool)state.CanMovePrevious);
-        Assert.True((bool)state.CanMoveNext);
+        Assert.Equal(1, state.CurrentPageIndex);
+        Assert.True(state.CanMovePrevious);
+        Assert.True(state.CanMoveNext);
 
         state = state.Next();
-        Assert.Equal(2, (int)state.CurrentPageIndex);
-        Assert.Equal(3, (int)state.CurrentPageNumber);
-        Assert.True((bool)state.CanMovePrevious);
-        Assert.False((bool)state.CanMoveNext);
+        Assert.Equal(2, state.CurrentPageIndex);
+        Assert.Equal(3, state.CurrentPageNumber);
+        Assert.True(state.CanMovePrevious);
+        Assert.False(state.CanMoveNext);
 
         state = state.Next();
-        Assert.Equal(2, (int)state.CurrentPageIndex);
+        Assert.Equal(2, state.CurrentPageIndex);
     }
 
     [Fact]
     public void OnePageDocument_DisablesBothDirections()
     {
-        dynamic state = Activator.CreateInstance(NavigationType, 1, 0)!;
+        var state = new PageNavigationState(1);
 
-        Assert.Equal(1, (int)state.CurrentPageNumber);
-        Assert.False((bool)state.CanMovePrevious);
-        Assert.False((bool)state.CanMoveNext);
-        Assert.Equal(0, (int)state.Previous().CurrentPageIndex);
-        Assert.Equal(0, (int)state.Next().CurrentPageIndex);
+        Assert.Equal(1, state.CurrentPageNumber);
+        Assert.False(state.CanMovePrevious);
+        Assert.False(state.CanMoveNext);
+        Assert.Equal(0, state.Previous().CurrentPageIndex);
+        Assert.Equal(0, state.Next().CurrentPageIndex);
     }
 
     [Theory]
@@ -64,9 +53,7 @@ public sealed class PageNavigationStateTests
     [InlineData(3, 3)]
     public void InvalidConstructorArguments_AreRejected(int pageCount, int currentPageIndex)
     {
-        var ex = Assert.Throws<TargetInvocationException>(() =>
-            Activator.CreateInstance(NavigationType, pageCount, currentPageIndex));
-
-        Assert.IsType<ArgumentOutOfRangeException>(ex.InnerException);
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            new PageNavigationState(pageCount, currentPageIndex));
     }
 }
