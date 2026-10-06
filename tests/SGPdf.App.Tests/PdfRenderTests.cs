@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text;
 using SGPdf.App.Pdf;
+using Xunit;
 
 namespace SGPdf.App.Tests;
 
@@ -25,7 +26,7 @@ public sealed class PdfRenderTests
             Assert.Equal(816 * 4, (int)rendered.Stride);
 
             byte[] pixels = rendered.Pixels;
-            Assert.Equal(rendered.Stride * rendered.PixelHeight, pixels.Length);
+            Assert.Equal((int)rendered.Stride * (int)rendered.PixelHeight, pixels.Length);
             Assert.Contains(pixels, value => value < 250);
         }
         finally
