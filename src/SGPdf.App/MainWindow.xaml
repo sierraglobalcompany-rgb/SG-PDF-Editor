@@ -31,11 +31,30 @@
                         Padding="10,4"
                         Click="PreviousPage_Click"
                         IsEnabled="False" />
-                <TextBlock x:Name="PageIndicatorText"
-                           Margin="16,0"
-                           VerticalAlignment="Center"
-                           Text="Página 1 de 1"
-                           FontWeight="SemiBold" />
+
+                <StackPanel Orientation="Horizontal"
+                            Margin="16,0"
+                            VerticalAlignment="Center">
+                    <TextBlock Text="Página"
+                               VerticalAlignment="Center"
+                               FontWeight="SemiBold" />
+                    <TextBox x:Name="PageNumberTextBox"
+                             Width="46"
+                             Margin="6,0"
+                             Padding="4,2"
+                             Text="1"
+                             TextAlignment="Center"
+                             VerticalContentAlignment="Center"
+                             ToolTip="Escribe un número de página y presiona Enter"
+                             KeyDown="PageNumberTextBox_KeyDown"
+                             LostKeyboardFocus="PageNumberTextBox_LostKeyboardFocus"
+                             IsEnabled="False" />
+                    <TextBlock x:Name="PageCountText"
+                               Text="de 1"
+                               VerticalAlignment="Center"
+                               FontWeight="SemiBold" />
+                </StackPanel>
+
                 <Button x:Name="NextPageButton"
                         Content="Siguiente →"
                         MinWidth="92"
