@@ -228,6 +228,63 @@
                                        Text="Cantidad de salida: 0"
                                        Foreground="#555"
                                        TextWrapping="Wrap" />
+
+                            <Separator Margin="0,16,0,14" />
+
+                            <TextBlock Text="Tamaño de etiqueta"
+                                       FontWeight="SemiBold"
+                                       Margin="0,0,0,8" />
+                            <ComboBox x:Name="LabelSizeComboBox"
+                                      SelectedIndex="0"
+                                      SelectionChanged="LabelSizeComboBox_SelectionChanged"
+                                      Margin="0,0,0,8">
+                                <ComboBoxItem Content="102 × 152 mm (4 × 6 in)" />
+                                <ComboBoxItem Content="100 × 150 mm" />
+                                <ComboBoxItem Content="100 × 100 mm" />
+                                <ComboBoxItem Content="Personalizado" />
+                            </ComboBox>
+
+                            <StackPanel x:Name="CustomSizePanel"
+                                        Visibility="Collapsed"
+                                        Margin="0,0,0,10">
+                                <TextBlock Text="Ancho (mm)" Margin="0,0,0,4" />
+                                <TextBox x:Name="CustomWidthTextBox"
+                                         Width="110"
+                                         HorizontalAlignment="Left"
+                                         Padding="6,3"
+                                         Text="102"
+                                         Margin="0,0,0,8" />
+                                <TextBlock Text="Alto (mm)" Margin="0,0,0,4" />
+                                <TextBox x:Name="CustomHeightTextBox"
+                                         Width="110"
+                                         HorizontalAlignment="Left"
+                                         Padding="6,3"
+                                         Text="152"
+                                         Margin="0,0,0,8" />
+                                <Button x:Name="ApplyCustomSizeButton"
+                                        Content="Aplicar tamaño"
+                                        HorizontalAlignment="Left"
+                                        Padding="10,4"
+                                        Click="ApplyCustomSize_Click" />
+                            </StackPanel>
+
+                            <TextBlock Text="Resolución"
+                                       FontWeight="SemiBold"
+                                       Margin="0,4,0,8" />
+                            <ComboBox x:Name="LabelDpmmComboBox"
+                                      SelectedIndex="1"
+                                      SelectionChanged="LabelDpmmComboBox_SelectionChanged"
+                                      Margin="0,0,0,8">
+                                <ComboBoxItem Content="6 dpmm (~152 dpi)" />
+                                <ComboBoxItem Content="8 dpmm (~203 dpi)" />
+                                <ComboBoxItem Content="12 dpmm (~300 dpi)" />
+                                <ComboBoxItem Content="24 dpmm (~600 dpi)" />
+                            </ComboBox>
+
+                            <TextBlock x:Name="RenderSettingsText"
+                                       Text="102 × 152 mm · 8 dpmm (~203 dpi)"
+                                       Foreground="#555"
+                                       TextWrapping="Wrap" />
                         </StackPanel>
                     </ScrollViewer>
                 </Grid>
