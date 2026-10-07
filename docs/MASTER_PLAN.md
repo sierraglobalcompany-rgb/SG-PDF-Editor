@@ -1,7 +1,7 @@
 # SG PDF Editor — Plan maestro de ejecución
 
-**Versión:** 2.1 operativa  
-**Fecha:** 2026-10-06  
+**Versión:** 2.2 operativa  
+**Fecha:** 2026-10-07  
 **Autoridad:** este archivo define el orden de trabajo. `docs/MASTER_CONTEXT.md` contiene el contexto completo y las decisiones arquitectónicas. `.planning/STATE.md` contiene el estado operativo diario.
 
 ## Principios de ejecución
@@ -10,14 +10,15 @@
 2. Offline: ninguna función principal depende de red.
 3. Gratis: sin API keys, SaaS ni licencias comerciales obligatorias.
 4. PDFium primero: no añadir otro motor PDF sin evidencia de una carencia concreta.
-5. BinaryKits.Zpl es candidato preferente para ZPL, pero debe ganar un Gate real.
-6. `Guardar como` por defecto hasta madurar preservación/guardado.
-7. CI, pruebas y QA son parte del feature, no una fase posterior.
-8. No merge automático a `main`.
-9. Datos reales privados nunca se versionan ni se indexan en herramientas de desarrollo.
-10. Cada sesión importante cierra con estado/resumen + Markdown histórico portable.
-11. GSD Core + Graphify son dev-only y nunca requisitos para compilar o usar SG PDF Editor.
-12. El contexto diario debe ser mínimo: `STATE` + plan de fase + Graphify cuando aporte valor + archivos concretos.
+5. **Labelize 1.7.0 es el motor ZPL aprobado por Gate ZPL-A sintético**; se integra como ejecutable local pinneado desde F2.2, no como servicio HTTP.
+6. BinaryKits queda como evidencia histórica del Gate, no como fallback runtime preventivo.
+7. `Guardar como` por defecto hasta madurar preservación/guardado.
+8. CI, pruebas y QA son parte del feature, no una fase posterior.
+9. No merge automático a `main`.
+10. Datos reales privados nunca se versionan ni se indexan en herramientas de desarrollo.
+11. Cada sesión importante cierra con estado/resumen + Markdown histórico portable.
+12. GSD Core + Graphify son dev-only y nunca requisitos para compilar o usar SG PDF Editor.
+13. El contexto diario debe ser mínimo: `STATE` + plan de fase + Graphify cuando aporte valor + archivos concretos.
 
 ---
 
@@ -28,15 +29,7 @@
 **Commit de cierre:** `4333674`.  
 **PR:** #2 draft, sin merge.
 
-## Resultado
-
-- fuentes de verdad creadas/alineadas;
-- solución KISS reducida a App + Tests;
-- third-party manifest/licencias;
-- datos privados ignorados;
-- NuGet lock + restore locked;
-- CI Windows verde;
-- arquitectura offline/libre congelada.
+Resultado: fuentes de verdad, solución App + Tests, third-party manifest/licencias, datos privados ignorados, lock de dependencias, CI Windows y arquitectura offline/libre.
 
 ---
 
@@ -46,183 +39,202 @@
 **Rama:** `feat/a1-dev-intelligence`.  
 **PR:** #6 draft, sin merge.
 
-## Objetivo cumplido
+Tooling validado:
 
-Reducir pérdida de contexto y lecturas repetidas usando GSD Core + Graphify sin contaminar el runtime ni el build del producto.
+- GSD Core `1.15.0`, MIT, project-scoped, Node 24+;
+- Graphify `0.9.77`, Apache-2.0, AST local sobre `src/` + `tests/`;
+- `.codex/` y `graphify-out/` son regenerables/ignorados;
+- setup reproducible: `tools/setup-dev.ps1`;
+- GSD/Graphify nunca entran al runtime/build del producto.
 
-## Tooling validado
+Evidencia final A1: run `37530638793` success.
 
-### GSD Core
-
-- repo: `open-gsd/gsd-core`;
-- versión pinneada: `1.15.0`;
-- licencia: MIT;
-- instalación project-scoped para Codex;
-- Node 24+ validado;
-- estado/roadmap/requisitos/config viven en `.planning/` y sí se versionan;
-- payload generado `.codex/` es regenerable y se ignora.
-
-### Graphify
-
-- repo: `Graphify-Labs/graphify`;
-- versión pinneada: `0.9.77`;
-- licencia: Apache-2.0;
-- instalación project-scoped;
-- grafo AST local, sin API/LLM requerido;
-- corpus limitado a `src/` + `tests/` mediante `.graphifyignore`;
-- `graphify-out/` es regenerable y se ignora;
-- auto-update desactivado inicialmente.
-
-## Evidencia A1.2
-
-Probe en entorno limpio:
-
-- GSD `validate health`: `healthy`, 0 warnings, 0 errors;
-- GSD `state-snapshot`: reconoce Phase 1 / `F0 PDF Base` y estado `planning`;
-- Graphify: 12 archivos de código, 161 nodos, 187 aristas, 16 comunidades;
-- query `PdfDocumentSession`: devuelve relaciones reales con `PdfiumRuntime`, `PdfiumNative` y APIs FPDF;
-- `tests/PrivateFixtures/` ausente del grafo;
-- `.codex/`: ~17 MB / 833 archivos → no versionar;
-- `graphify-out/`: ~472 KB / 22 archivos → no versionar;
-- setup reproducible: `tools/setup-dev.ps1`.
-
-Run de validación tooling: `37530638793` = success.
-
-## Jerarquía operativa después de A1
+Jerarquía operativa:
 
 ```text
 Arquitectura → docs/MASTER_CONTEXT.md + docs/MASTER_PLAN.md
 Estado       → .planning/STATE.md
 Roadmap      → .planning/ROADMAP.md
 Requisitos   → .planning/REQUIREMENTS.md
-Fase         → .planning/phases/<fase>/PLAN.md cuando exista
+Fase         → .planning/phases/<fase>/...
 Código       → Git/GitHub
 Relaciones   → Graphify local
-Histórico    → SUMMARY + docs/history + Markdown portable
+Histórico    → docs/history
 ```
 
-Flujo de contexto normal:
-
-```text
-STATE → plan de fase → Graphify query → archivos concretos
-```
-
-Los MASTER docs completos se leen solo si la tarea toca arquitectura, licencias, cambio de fase o una contradicción.
-
-## Notas de compatibilidad
-
-- GSD 1.15.0 acepta `graphify.auto_update`, `build_timeout` y `graph_path`, pero no `graphify.enabled`; no usar claves de versiones futuras sin auditar upgrade.
-- Antigravity está soportado upstream por GSD/Graphify, pero A1 validó Codex; validar en host real cuando se use.
-- Graphify sin backend LLM deja nombres de comunidades genéricos; esto es intencional y no afecta las consultas AST offline.
+Flujo normal de contexto: `STATE → plan de fase → Graphify si aporta → archivos concretos`.
 
 ---
 
 # F0 — PDF base
 
-**Estado:** ▶ SIGUIENTE.  
-**GSD:** Phase 1, listo para `discuss/plan`.
+**Estado automatizado:** ✅ F0.1–F0.6 PASS.  
+**Estado físico:** ⏳ smoke Windows/impresión/offline todavía NOT RUN.
 
-## Objetivo
+## Resultado implementado
 
-Primer vertical slice funcional del lector PDF.
-
-## Alcance
-
-1. abrir PDF desde UI;
+1. abrir PDF local desde UI;
 2. lifecycle PDFium seguro;
-3. `PdfDocumentSession` con page count/tamaños;
-4. render real de una página a bitmap WPF;
-5. navegación anterior/siguiente/ir a página;
-6. zoom;
-7. fit page / fit width;
-8. scheduler PDFium con exclusión global;
-9. cancelación de renders obsoletos;
-10. progressive render donde aporte valor;
-11. impresión Windows básica;
-12. errores comprensibles.
+3. page count/tamaños/render real;
+4. navegación anterior/siguiente/ir a página;
+5. zoom + 100 % + fit page/width;
+6. scheduler latest-request-wins y cancelación cooperativa;
+7. refit con debounce 150 ms;
+8. impresión estándar Windows con todas/actual/rango;
+9. hardening multipágina/PDF inválido;
+10. guard automatizado de runtime offline.
 
-## Fuera de alcance
+## Decisiones
 
-- thumbnails completos;
-- búsqueda;
-- firma;
-- edición;
-- ZPL;
-- organización.
+- PDFium globalmente serializado con `SemaphoreSlim(1,1)`;
+- `FPDF_RenderPageBitmap` sigue síncrono; progressive rendering solo si la medición real lo justifica;
+- impresión arranca en raster 200 DPI y usa `PrintDialog`/`DocumentPaginator`;
+- Microsoft Print to PDF usa el mismo flujo;
+- no auto-ajustar orientación ni escala física silenciosamente.
 
-## Estrategia recomendada de ejecución
+## Pendiente físico
 
-Dividir F0 en slices pequeños. Primer candidato para la próxima sesión:
-
-```text
-F0.1 abrir PDF desde UI + renderizar una página real en WPF
-```
-
-Después, en bloques separados: navegación/zoom → scheduler/cancelación → fit → print.
-
-La fase debe pasar primero por GSD discuss/plan antes de implementar.
-
-## QA mínimo F0
-
-- PDF 1 página;
-- multipágina;
-- documento grande;
-- cambio rápido de página/zoom;
-- cancelación;
-- Microsoft Print to PDF;
-- red deshabilitada.
-
-**Resultado:** lector mínimo estable que ya abre/renderiza/imprime PDF.
+PDFs reales/heavy, UI rápida, Microsoft Print to PDF, impresora física cuando exista, red deshabilitada y medición de DPI/memoria/latencia.
 
 ---
 
 # F1 — Gate ZPL-A
 
-## Objetivo
+**Estado del motor:** ✅ decisión aprobada.  
+**Cierre formal F1:** ⏳ falta corpus real privado de Mercado Libre.
 
-Elegir un único motor ZPL mediante evidencia.
+## Motores evaluados
 
-### A — BinaryKits.Zpl
+- BinaryKits.Zpl Viewer 1.3.1;
+- Labelize 1.7.0 Windows x64 CLI.
 
-Preferente por KISS: .NET in-process, MIT, bitmap preview, PDF vía Skia, soporte relevante (`^DF`, `^XF`, `^CI28`, barcodes).
+## Probe
 
-### B — Labelize
+Branch throwaway: `spike/f1-zpl-gate-a`.  
+Head verificado: `2df2f374ae6124729389640425dc8334d0647f9f`.  
+Run final: `37577735748` success.
 
-Fallback: offline y buena cobertura, pero CLI/Rust añade fricción y el release sigue condicionado por `ZplGSCustom.ttf` hasta resolver su procedencia a satisfacción del proyecto.
+Corpus sintético:
 
-## Gate
+- `^CI28`, `^FH`, `^FB`, `^FR`, `^GFA`, `^BC`, `^BQ`, `^PQ`, `^DF`, `^XF`;
+- tildes/ñ;
+- direcciones largas;
+- etiqueta compuesta;
+- QR con `^FT`.
 
-- corpus real privado + sintético;
-- 10/100/500 diseños, sin multiplicar por `^PQ`;
-- `^XA/^XZ`, `^CI28`, `^FH`, `^FB`, `^FR`, `^GFA`, `^BC`, `^BQ`, `^PQ`, `^DF`, `^XF`;
-- tildes/ñ, logos y direcciones largas;
-- fidelidad, barcode/QR, CPU/RAM/tiempo/I/O, cold/warm, packaging, mantenimiento y licencias.
+Resultado:
 
-Si BinaryKits reproduce correctamente los ZPL reales, gana y Labelize sale del runtime.
+- ambos motores renderizaron el corpus y generaron Code128/QR decodificables tras comparación alpha-aware;
+- Labelize: ~59–61 diseños/s;
+- BinaryKits: ~26–28 diseños/s;
+- Labelize exe: 5,860,352 bytes;
+- BinaryKits probe publish: ~16.9 MB / 14 archivos;
+- BinaryKits mostró desplazamiento vertical de 60 px en el probe `^FT + ^BQ` frente a Labelize.
+
+## Decisión
+
+**Labelize 1.7.0 gana el Gate y es el único motor previsto para F2.**
+
+Integración escogida:
+
+```text
+WPF / C#
+  ↓
+parser/orquestación managed
+  ↓
+LabelizeProcessRenderer
+  ↓ proceso local controlado
+labelize.exe 1.7.0 convert
+  ↓
+PNG/PDF temporal local
+```
+
+No `labelize serve`, no puerto local, no C ABI Rust, no WASM host, no dual engine.
+
+Pin release archive SHA-256:
+
+`cdd4030b0d1a8bad69b93f49866c8dcc5314af8975bb16a76991fe32f92dd21d`
+
+Riesgo residual: `ZplGSCustom.ttf` está documentada como heredada de zebrash/MIT pero con procedencia exacta imperfecta. Re-auditar antes de instalador público; si fuera necesario, redibujar ese pequeño set de glifos.
+
+Los ZPL reales privados no entran al repo/CI/Graphify.
 
 ---
 
 # F2 — Etiquetas ZPL
 
-- abrir `.zpl/.txt/.prn`;
-- diseños + `^PQ` como cantidad;
-- preview;
-- cantidad archivo/una/custom;
-- tamaños térmicos/A4/Carta/custom;
+**Objetivo:** reemplazar el flujo manual de Labelary de forma totalmente local/offline.
+
+## Arquitectura congelada
+
+- C# conserva parsing, metadatos, cantidades, UI y orquestación;
+- Labelize renderiza desde F2.2 mediante sidecar local pinneado;
+- `^PQ` es cantidad, no multiplicador de render;
+- se conserva un `NormalizedRenderSource` a nivel documento para no romper `^DF/^XF`;
+- no JPEG ni escalado silencioso de códigos;
+- dimensiones físicas son autoridad;
+- Windows driver printing, no RAW genérico sin lenguaje conocido.
+
+## F2.1 — Parse + Open
+
+**Estado:** implementación funcional automatizada PASS; cierre documental/final CI en curso.
+
+- `.zpl/.txt/.prn` local;
+- `ZplDocument` / `ZplDesign`;
+- parser `^XA/^XZ` managed;
+- `^DF` support blocks y `^XF` preservados;
+- `^PQ` extraído/removido del render source;
+- UTF-8 estricto + BOM UTF-8;
+- WPF open flow candidate-first;
+- placeholder ZPL cargado;
+- ninguna dependencia Labelize/PDFsharp/ZXing nueva.
+
+PR: #13 draft, sin merge.
+
+## F2.2 — Labelize adapter + preview
+
+- empaquetar/pinnear `labelize.exe` 1.7.0;
+- verificar digest en setup/packaging;
+- `ProcessStartInfo.ArgumentList`, sin shell concatenado;
+- request-scoped temp directory;
+- cancelación mata process tree;
+- timeout acotado;
+- PNG preview local;
+- cleanup en éxito/error/cancelación;
+- regresiones `^DF/^XF`, Code128, QR y `^FT + ^BQ`;
+- ningún download en runtime.
+
+## F2.3 — Cantidades + dimensiones
+
+- cantidad archivo / una de cada / personalizada;
+- presets térmicos + custom;
+- dpmm 6/8/12/24 según Labelize;
+- rerender ante cambio de dimensiones, no estirar barcode.
+
+## F2.4 — Layout + PDF export
+
 - layouts 1/2/3/4/6/8/10/12/custom;
+- térmico/A4/Carta/custom;
 - márgenes/gaps/rotación;
-- export PDF;
-- impresión Windows;
-- validación ZXing + QA física.
+- añadir PDFsharp solo si en esta slice sigue siendo la solución KISS más fiable;
+- export verificable sin deformación de códigos.
 
-Pipeline preferido si gana BinaryKits:
+## F2.5 — Windows thermal print
 
-```text
-ZPL → BinaryKits bitmap → preview WPF
-ZPL → BinaryKits PDF → PDFsharp XPdfForm → hoja final → imprimir
-```
+- tamaño físico exacto;
+- `PrintQueue.GetPrintCapabilities()`;
+- PageMediaSize cuando driver lo permita;
+- imageable area solo para advertir clipping;
+- nunca shrink-to-fit silencioso;
+- fallback a raster a DPI nativo mediante driver Windows si hace falta.
 
-No deformar barcode, no JPEG, tamaño físico exacto.
+## F2.6 — Validation + hardening
+
+- decode automático barcode/QR;
+- corpus privado real;
+- impresión/scanner físico;
+- offline/privacy/temp residue audit;
+- documentación/estado/histórico.
 
 ---
 
@@ -321,10 +333,9 @@ Slices independientes: firma criptográfica, formularios, redacción real, compa
 7. build/tests/CI;
 8. QA manual/real cuando aplique;
 9. actualizar docs/licencias;
-10. actualizar `STATE`/`SUMMARY`;
+10. actualizar `STATE`/histórico;
 11. actualizar PR;
-12. generar Markdown histórico portable;
-13. no merge sin aprobación.
+12. no merge sin aprobación.
 
 # Definition of Done global
 
@@ -333,10 +344,15 @@ Una función está terminada solo si:
 - funciona offline;
 - build/test Windows tienen evidencia fresca;
 - errores están controlados;
-- no destruye original;
+- no destruye original/estado válido previo;
 - tiene pruebas/fixtures representativos;
-- dependencias/licencias están registradas;
-- recursos/temporales se limpian;
-- documentación queda alineada.
+- dependencias/licencias están registradas cuando entran al runtime;
+- temporales/recursos se limpian;
+- documentación/STATE/histórico queda alineado.
 
-Para etiquetas: además decode automático y QA físico cuando corresponda.
+Para etiquetas además:
+
+- `^PQ` no multiplica renders;
+- barcode/QR decode automático cuando entra el renderer;
+- corpus privado real antes del cierre formal del Gate;
+- QA física de tamaño/códigos antes de cerrar F2.

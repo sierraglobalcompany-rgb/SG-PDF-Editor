@@ -2,11 +2,16 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="SG PDF Editor" Height="760" Width="1200"
-        WindowStartupLocation="CenterScreen">
+        WindowStartupLocation="CenterScreen"
+        Closed="Window_Closed">
     <DockPanel>
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="_Archivo">
                 <MenuItem x:Name="OpenPdfMenuItem" Header="_Abrir..." Click="OpenPdf_Click" />
+                <MenuItem x:Name="OpenZplMenuItem"
+                          Header="Abrir _etiquetas ZPL..."
+                          Click="OpenZpl_Click"
+                          IsEnabled="{Binding IsEnabled, ElementName=OpenPdfMenuItem}" />
                 <MenuItem x:Name="PrintPdfMenuItem" Header="_Imprimir..." Click="PrintPdf_Click" IsEnabled="False" />
                 <Separator />
                 <MenuItem Header="_Salir" Click="Exit_Click" />
@@ -131,7 +136,8 @@
                            HorizontalAlignment="Center"
                            VerticalAlignment="Top"
                            Stretch="None"
-                           Visibility="Collapsed" />
+                           Visibility="Collapsed"
+                           IsVisibleChanged="PdfImage_IsVisibleChanged" />
                 </ScrollViewer>
 
                 <TextBlock x:Name="EmptyStateText"
