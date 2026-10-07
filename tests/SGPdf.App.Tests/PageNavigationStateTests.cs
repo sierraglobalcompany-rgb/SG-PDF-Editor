@@ -1,3 +1,4 @@
+using System.Reflection;
 using SGPdf.App.Navigation;
 using Xunit;
 
@@ -44,6 +45,43 @@ public sealed class PageNavigationStateTests
         Assert.False(state.CanMoveNext);
         Assert.Equal(0, state.Previous().CurrentPageIndex);
         Assert.Equal(0, state.Next().CurrentPageIndex);
+    }
+
+    [Fact]
+    public void GoToPageNumber_UsesOneBasedPageNumber()
+    {
+        var method = typeof(PageNavigationState).GetMethod(
+            "GoToPageNumber",
+            BindingFlags.Instance | BindingFlags.Public,
+            binder: null,
+            types: new[] { typeof(int) },
+            modifiers: null);
+        Assert.NotNull(method);
+
+        var state = new PageNavigationState(5, 1);
+        var result = Assert.IsType<PageNavigationState>(method!.Invoke(state, new object[] { 4 }));
+
+        Assert.Equal(3, result.CurrentPageIndex);
+        Assert.Equal(4, result.CurrentPageNumber);
+        Assert.Equal(5, result.PageCount);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(6)]
+    public void GoToPageNumber_RejectsOutOfRangePageNumber(int pageNumber)
+    {
+        var method = typeof(PageNavigationState).GetMethod(
+            "GoToPageNumber",
+            BindingFlags.Instance | BindingFlags.Public,
+            binder: null,
+            types: new[] { typeof(int) },
+            modifiers: null);
+        Assert.NotNull(method);
+
+        var state = new PageNavigationState(5);
+        var ex = Assert.Throws<TargetInvocationException>(() => method!.Invoke(state, new object[] { pageNumber }));
+        Assert.IsType<ArgumentOutOfRangeException>(ex.InnerException);
     }
 
     [Theory]
