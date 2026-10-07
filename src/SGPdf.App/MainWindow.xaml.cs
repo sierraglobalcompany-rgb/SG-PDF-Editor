@@ -1,6 +1,7 @@
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Microsoft.Win32;
@@ -107,6 +108,45 @@ public partial class MainWindow : Window
     private async void NextPage_Click(object sender, RoutedEventArgs e)
     {
         await NavigateAsync(state => state.Next());
+    }
+
+    private async void PageNumberTextBox_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Escape)
+        {
+            RestorePageNumberText();
+            Keyboard.ClearFocus();
+            e.Handled = true;
+            return;
+        }
+
+        if (e.Key != Key.Enter)
+            return;
+
+        e.Handled = true;
+
+        if (_navigation is null || _isBusy ||
+            !int.TryParse(PageNumberTextBox.Text, out var pageNumber) ||
+            pageNumber < 1 || pageNumber > _navigation.PageCount)
+        {
+            RestorePageNumberText();
+            PageNumberTextBox.SelectAll();
+            return;
+        }
+
+        await NavigateAsync(state => state.GoToPageNumber(pageNumber));
+        RestorePageNumberText();
+        PageNumberTextBox.SelectAll();
+    }
+
+    private void PageNumberTextBox_LostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+    {
+        RestorePageNumberText();
+    }
+
+    private void RestorePageNumberText()
+    {
+        PageNumberTextBox.Text = (_navigation?.CurrentPageNumber ?? 1).ToString();
     }
 
     private async Task NavigateAsync(Func<PageNavigationState, PageNavigationState> move)
@@ -396,19 +436,23 @@ public partial class MainWindow : Window
             PrintPdfMenuItem.IsEnabled = false;
             PreviousPageButton.IsEnabled = false;
             NextPageButton.IsEnabled = false;
+            PageNumberTextBox.Text = "1";
+            PageNumberTextBox.IsEnabled = false;
+            PageCountText.Text = "de 1";
             ZoomOutButton.IsEnabled = false;
             ZoomPercentButton.IsEnabled = false;
             ZoomInButton.IsEnabled = false;
             FitPageButton.IsEnabled = false;
             FitWidthButton.IsEnabled = false;
-            PageIndicatorText.Text = "Página 1 de 1";
             ZoomPercentButton.Content = "100%";
             return;
         }
 
         NavigationBar.Visibility = Visibility.Visible;
         PrintPdfMenuItem.IsEnabled = !_isBusy;
-        PageIndicatorText.Text = $"Página {_navigation.CurrentPageNumber} de {_navigation.PageCount}";
+        PageNumberTextBox.Text = _navigation.CurrentPageNumber.ToString();
+        PageNumberTextBox.IsEnabled = !_isBusy;
+        PageCountText.Text = $"de {_navigation.PageCount}";
         ZoomPercentButton.Content = $"{PdfZoomState.PercentFromDpi(_currentDpi)}%";
 
         PreviousPageButton.IsEnabled = !_isBusy && _navigation.CanMovePrevious;
