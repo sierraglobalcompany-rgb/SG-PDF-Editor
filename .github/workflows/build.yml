@@ -2,7 +2,7 @@ name: build
 
 on:
   push:
-    branches: [ main, 'feat/**', 'plan/**' ]
+    branches: [ main, 'feat/**', 'plan/**', 'tmp/**' ]
   pull_request:
 
 permissions:
@@ -39,8 +39,13 @@ jobs:
         shell: pwsh
         run: ./tools/setup-labelize.ps1
 
-      - name: Restore locked dependencies
-        run: dotnet restore SGPdf.slnx --locked-mode
+      - name: Regenerate lock probe
+        shell: pwsh
+        run: |
+          dotnet restore SGPdf.slnx --force-evaluate
+          Write-Host '--- SGPDF APP LOCK START ---'
+          Get-Content src/SGPdf.App/packages.lock.json -Raw
+          Write-Host '--- SGPDF APP LOCK END ---'
 
       - name: Build
         run: dotnet build SGPdf.slnx --configuration Release --no-restore
