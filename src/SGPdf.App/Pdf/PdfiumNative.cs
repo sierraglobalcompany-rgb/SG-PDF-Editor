@@ -68,5 +68,18 @@ internal static class PdfiumNative
         int flags);
 
     [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern int FPDF_DeviceToPage(
+        IntPtr page,
+        int startX,
+        int startY,
+        int sizeX,
+        int sizeY,
+        int rotate,
+        int deviceX,
+        int deviceY,
+        out double pageX,
+        out double pageY);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
     internal static extern uint FPDF_GetLastError();
 }
