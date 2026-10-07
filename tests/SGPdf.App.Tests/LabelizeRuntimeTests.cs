@@ -1,4 +1,5 @@
 using SGPdf.App.Features.Labels;
+using Xunit;
 
 namespace SGPdf.App.Tests;
 
