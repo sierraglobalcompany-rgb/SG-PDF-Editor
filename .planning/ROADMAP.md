@@ -1,38 +1,18 @@
 # Roadmap — SG PDF Editor
 
-> GSD-managed product roadmap. A0/A1 fueron fases de preparación previas a este roadmap operativo. El detalle arquitectónico vive en `docs/MASTER_CONTEXT.md` y `docs/MASTER_PLAN.md`.
+> GSD-managed product roadmap. A0/A1 fueron fases de preparación. Arquitectura: `docs/MASTER_CONTEXT.md` + `docs/MASTER_PLAN.md`. Estado diario: `.planning/STATE.md`.
 
 ## Phase 1 — F0 PDF Base
 
-**Goal:** primer lector PDF usable y estable.
-
-**Success criteria:**
-- abrir PDF local;
-- render real PDFium sin bloquear UI;
-- navegación mínima;
-- zoom + fit page/width;
-- cancelación/scheduler;
-- impresión Windows;
-- funciona offline.
-
-**Requirements:** PDF-BASE-01..07
-
-**Estado actual:** implementación y verificación automatizada F0.1–F0.6 PASS; cierre físico Windows todavía pendiente.
+**Goal:** primer lector PDF usable y estable.  
+**Requirements:** PDF-BASE-01..07  
+**Estado:** F0.1–F0.6 automated PASS; cierre físico Windows todavía pendiente.
 
 ## Phase 2 — F1 Gate ZPL-A
 
-**Goal:** elegir un único renderer ZPL con evidencia.
-
-**Success criteria:**
-- BinaryKits y Labelize ejecutados contra corpus real privado + sintético;
-- comandos críticos y UTF-8 validados;
-- benchmark 10/100/500 diseños;
-- barcode/QR decodificables;
-- decisión documentada por fidelidad/rendimiento/licencias.
-
-**Requirements:** ZPL-GATE-01..04
-
-**Estado actual:** Gate sintético ejecutado y decisión de motor aprobada: **Labelize 1.7.0**. Falta ejecutar corpus real privado de Mercado Libre para cerrar formalmente F1; esos archivos no se versionan.
+**Goal:** elegir un único renderer ZPL con evidencia.  
+**Requirements:** ZPL-GATE-01..04  
+**Estado:** Gate sintético PASS y motor aprobado **Labelize 1.7.0**. Falta corpus real privado Mercado Libre para cierre formal F1.
 
 ## Phase 3 — F2 Etiquetas ZPL
 
@@ -48,90 +28,62 @@
 
 **Requirements:** LABEL-01..08
 
-**Estado actual:** F2.1 Parse + Open, F2.2 Labelize Adapter + Preview y **F2.3 Quantity UX + dimensiones físicas/dpmm** tienen cierre automatizado PASS. **Siguiente: F2.4 Layout + PDF composition.** PDFsharp no entra automáticamente: F2.4 debe demostrar primero la solución KISS necesaria.
+**Estado actual:**
+- F2.1 Parse + Open — automated PASS;
+- F2.2 Labelize Adapter + Preview — automated PASS;
+- F2.3 Quantity UX + dimensiones físicas/dpmm — automated PASS;
+- **F2.4 Layout + PDF Export — automated PASS**: Thermal/A4/Carta/custom, 1/2/3/4/6/8/10/12/custom, márgenes/gaps, rotación 0/90, preview de hoja, PDFsharp 6.2.4 transaccional y reopen PDFium;
+- **Siguiente: F2.5 Windows Thermal Print — diseñar/aprobar antes de implementar**;
+- F2.6 Validation/Hardening — pendiente.
 
 ## Phase 4 — F3 Firma Visual
 
-**Goal:** firmar visualmente un PDF sin web.
-
-**Success criteria:**
-- PNG transparente;
-- drag/move/resize/delete/duplicate;
-- coordenadas UI↔PDF correctas;
-- Guardar como + reopen validation.
-
+**Goal:** firmar visualmente un PDF sin web.  
 **Requirements:** SIGN-01..04
 
 ## Phase 5 — F4 Lector Completo
 
-**Goal:** completar la experiencia diaria de lectura.
-
-**Success criteria:** scroll continuo, thumbnails, search/copy, bookmarks/links, password y atajos/recientes.
-
+**Goal:** completar la experiencia diaria de lectura.  
 **Requirements:** READER-01..05
 
 ## Phase 6 — F5 Organizar
 
-**Goal:** reorganizar y combinar documentos de forma segura.
-
-**Success criteria:** move/rotate/delete/duplicate/insert/extract/merge/split con preflight y PDFium primero.
-
+**Goal:** reorganizar y combinar documentos de forma segura.  
 **Requirements:** ORG-01..04
 
 ## Phase 7 — F6 Imágenes
 
-**Goal:** edición práctica de objetos de imagen.
-
-**Success criteria:** select/context menu/extract/replace/move/resize/rotate/opacity/order/delete + undo/redo.
-
+**Goal:** edición práctica de objetos de imagen.  
 **Requirements:** IMG-01..04
 
 ## Phase 8 — F7 Texto V1
 
-**Goal:** edición simple y conservadora de texto existente.
-
-**Success criteria:** selección, edición segura, fallback font y validación save/reopen.
-
+**Goal:** edición simple y conservadora de texto existente.  
 **Requirements:** TEXT-01..04
 
 ## Phase 9 — F8 Comentarios
 
-**Goal:** anotaciones de uso diario.
-
-**Success criteria:** highlight, underline/strike, notes, ink/shapes según soporte estable.
-
+**Goal:** anotaciones de uso diario.  
 **Requirements:** COMMENTS
 
 ## Phase 10 — F9 Utilidades
 
-**Goal:** añadir solo utilidades offline con valor demostrado.
-
-**Success criteria:** conjunto priorizado y validado sin inflar el núcleo.
-
+**Goal:** utilidades offline con valor demostrado.  
 **Requirements:** UTILS
 
 ## Phase 11 — F10 OCR
 
-**Goal:** OCR local para documentos escaneados.
-
-**Success criteria:** Tesseract local y PDF buscable, español primero.
-
+**Goal:** OCR local para escaneados.  
 **Requirements:** OCR
 
 ## Phase 12 — F11 Texto V2
 
-**Goal:** análisis/layout y reflow limitado.
-
-**Success criteria:** reading order, líneas, párrafos y columnas con dependencia adicional solo si reduce complejidad.
-
+**Goal:** análisis/layout y reflow limitado.  
 **Requirements:** TEXT-V2
 
 ## Phase 13 — F12 Profesional
 
-**Goal:** funciones profesionales como slices independientes.
-
-**Success criteria:** cada subproyecto auditado por offline/licencias/compatibilidad antes de entrar.
-
+**Goal:** funciones profesionales como slices independientes.  
 **Requirements:** PRO
 
 ---
@@ -141,8 +93,9 @@
 A0: complete.  
 A1 Development Intelligence: complete.  
 F0: automated PASS; physical Windows smoke pending.  
-F1: synthetic Gate PASS for engine selection → **Labelize 1.7.0**; private Mercado Libre corpus pending formal close.  
+F1: synthetic Gate PASS → **Labelize 1.7.0**; private corpus pending formal close.  
 F2.1: automated PASS — Parse + Open.  
-F2.2: automated PASS — pinned Labelize sidecar + local renderer + navigable WPF PNG preview.  
-F2.3: automated PASS — quantity modes + label size/custom dimensions + 6/8/12/24 dpmm rerendering.  
-**Current implementation next:** Phase 3 / F2.4 — Layout + PDF composition. Design/approve F2.4 before implementation; do not pre-add PDFsharp.
+F2.2: automated PASS — Labelize sidecar + local PNG preview.  
+F2.3: automated PASS — quantities + dimensions + dpmm.  
+F2.4: automated PASS — pure-mm layout + sheet preview + transactional PDF export + PDFium reopen validation.  
+**Current implementation next:** Phase 3 / F2.5 — Windows Thermal Print. Design/approve F2.5 before implementation; no printer-driver work is part of F2.4.

@@ -49,10 +49,15 @@
     {
       "name": "PDFsharp",
       "upstream": "https://github.com/empira/PDFsharp",
-      "version": "6.2.4-candidate",
-      "status": "planned-f2-if-needed",
-      "purpose": "Compose label PDFs/grids; not PDF reader/editor",
-      "license": "MIT"
+      "version": "6.2.4",
+      "status": "runtime-current-f2",
+      "purpose": "Compose exact-physical label PDFs/grids; not PDF reader/editor",
+      "license": "MIT",
+      "nugetContentHashSha512Base64": "GhTr9F1uOYXHCIEOB5PXIgqn5a8WLsJL2m0eewTA0IvY1j6N4HGXHKKmEyB90/N6vrjmYamf41V9zbmdW2HY3g==",
+      "licenseFiles": [
+        "third_party/licenses/PDFsharp-MIT.txt"
+      ],
+      "notes": "Introduced in F2.4 only for local PDF composition/export. No MigraDoc and no network/runtime service."
     },
     {
       "name": "Tesseract",

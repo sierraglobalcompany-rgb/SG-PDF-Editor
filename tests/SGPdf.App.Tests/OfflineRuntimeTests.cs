@@ -39,7 +39,7 @@ public sealed class OfflineRuntimeTests
             .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
             .ToArray();
 
-        Assert.Equal(new[] { "bblanchon.PDFium.Win32" }, packages);
+        Assert.Equal(new[] { "bblanchon.PDFium.Win32", "PDFsharp" }, packages);
     }
 
     [Fact]
