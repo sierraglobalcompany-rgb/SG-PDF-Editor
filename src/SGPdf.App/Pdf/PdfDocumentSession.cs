@@ -15,24 +15,7 @@ public sealed class PdfDocumentSession : IDisposable
 
     public string FilePath { get; }
 
-    public int PageCount
-    {
-        get
-        {
-            ThrowIfDisposed();
-
-            PdfiumRuntime.NativeGate.Wait();
-            try
-            {
-                ThrowIfDisposed();
-                return PdfiumNative.FPDF_GetPageCount(_document);
-            }
-            finally
-            {
-                PdfiumRuntime.NativeGate.Release();
-            }
-        }
-    }
+    public int PageCount => GetPageCount(CancellationToken.None);
 
     public static PdfDocumentSession Open(string filePath, string? password = null)
     {
@@ -63,18 +46,29 @@ public sealed class PdfDocumentSession : IDisposable
 
     public (double Width, double Height) GetPageSize(int pageIndex)
     {
-        ValidatePageIndex(pageIndex);
+        return GetPageSize(pageIndex, CancellationToken.None);
+    }
 
-        PdfiumRuntime.NativeGate.Wait();
+    public (double Width, double Height) GetPageSize(
+        int pageIndex,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        ValidatePageIndex(pageIndex, cancellationToken);
+
+        PdfiumRuntime.NativeGate.Wait(cancellationToken);
         try
         {
+            cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
+
             var page = PdfiumNative.FPDF_LoadPage(_document, pageIndex);
             if (page == IntPtr.Zero)
                 throw new InvalidOperationException($"No se pudo cargar la página {pageIndex + 1}.");
 
             try
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 return (PdfiumNative.FPDF_GetPageWidthF(page), PdfiumNative.FPDF_GetPageHeightF(page));
             }
             finally
@@ -90,15 +84,26 @@ public sealed class PdfDocumentSession : IDisposable
 
     public PdfRenderedPage RenderPage(int pageIndex, double dpi = 96d)
     {
+        return RenderPage(pageIndex, dpi, CancellationToken.None);
+    }
+
+    public PdfRenderedPage RenderPage(
+        int pageIndex,
+        double dpi,
+        CancellationToken cancellationToken)
+    {
         if (!double.IsFinite(dpi) || dpi <= 0)
             throw new ArgumentOutOfRangeException(nameof(dpi), "El DPI debe ser un número positivo.");
 
-        ValidatePageIndex(pageIndex);
+        cancellationToken.ThrowIfCancellationRequested();
+        ValidatePageIndex(pageIndex, cancellationToken);
 
-        PdfiumRuntime.NativeGate.Wait();
+        PdfiumRuntime.NativeGate.Wait(cancellationToken);
         try
         {
+            cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
+
             var page = PdfiumNative.FPDF_LoadPage(_document, pageIndex);
             if (page == IntPtr.Zero)
                 throw new InvalidOperationException($"No se pudo cargar la página {pageIndex + 1}.");
@@ -106,6 +111,8 @@ public sealed class PdfDocumentSession : IDisposable
             IntPtr bitmap = IntPtr.Zero;
             try
             {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 var pageWidth = PdfiumNative.FPDF_GetPageWidthF(page);
                 var pageHeight = PdfiumNative.FPDF_GetPageHeightF(page);
                 var pixelWidth = Math.Max(1, checked((int)Math.Ceiling(pageWidth * dpi / 72d)));
@@ -118,6 +125,8 @@ public sealed class PdfDocumentSession : IDisposable
                 if (PdfiumNative.FPDFBitmap_FillRect(bitmap, 0, 0, pixelWidth, pixelHeight, 0xFFFFFFFF) == 0)
                     throw new InvalidOperationException("PDFium no pudo preparar el bitmap de renderizado.");
 
+                cancellationToken.ThrowIfCancellationRequested();
+
                 PdfiumNative.FPDF_RenderPageBitmap(
                     bitmap,
                     page,
@@ -128,6 +137,11 @@ public sealed class PdfDocumentSession : IDisposable
                     0,
                     0);
 
+                // PDFium's current full-page render call is synchronous. We cannot safely
+                // interrupt it mid-call without moving to progressive rendering, but a
+                // canceled request must never continue into buffer copy or UI publication.
+                cancellationToken.ThrowIfCancellationRequested();
+
                 var stride = PdfiumNative.FPDFBitmap_GetStride(bitmap);
                 var buffer = PdfiumNative.FPDFBitmap_GetBuffer(bitmap);
                 if (stride <= 0 || buffer == IntPtr.Zero)
@@ -135,6 +149,7 @@ public sealed class PdfDocumentSession : IDisposable
 
                 var pixels = new byte[checked(stride * pixelHeight)];
                 Marshal.Copy(buffer, pixels, 0, pixels.Length);
+                cancellationToken.ThrowIfCancellationRequested();
 
                 return new PdfRenderedPage(pageIndex, pixelWidth, pixelHeight, stride, dpi, pixels);
             }
@@ -173,10 +188,28 @@ public sealed class PdfDocumentSession : IDisposable
         }
     }
 
-    private void ValidatePageIndex(int pageIndex)
+    private int GetPageCount(CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        ThrowIfDisposed();
+
+        PdfiumRuntime.NativeGate.Wait(cancellationToken);
+        try
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
+            return PdfiumNative.FPDF_GetPageCount(_document);
+        }
+        finally
+        {
+            PdfiumRuntime.NativeGate.Release();
+        }
+    }
+
+    private void ValidatePageIndex(int pageIndex, CancellationToken cancellationToken)
     {
         ThrowIfDisposed();
-        var pageCount = PageCount;
+        var pageCount = GetPageCount(cancellationToken);
         if (pageIndex < 0 || pageIndex >= pageCount)
             throw new ArgumentOutOfRangeException(nameof(pageIndex));
     }
