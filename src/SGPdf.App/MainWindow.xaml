@@ -41,6 +41,48 @@
                         Padding="10,4"
                         Click="NextPage_Click"
                         IsEnabled="False" />
+
+                <Border Width="1"
+                        Height="24"
+                        Margin="14,0"
+                        Background="LightGray" />
+
+                <Button x:Name="ZoomOutButton"
+                        Content="−"
+                        Width="34"
+                        Padding="6,4"
+                        ToolTip="Reducir"
+                        Click="ZoomOut_Click"
+                        IsEnabled="False" />
+                <Button x:Name="ZoomPercentButton"
+                        Content="100%"
+                        MinWidth="58"
+                        Margin="4,0"
+                        Padding="8,4"
+                        ToolTip="Tamaño real (100%)"
+                        Click="ActualSize_Click"
+                        IsEnabled="False" />
+                <Button x:Name="ZoomInButton"
+                        Content="+"
+                        Width="34"
+                        Padding="6,4"
+                        ToolTip="Ampliar"
+                        Click="ZoomIn_Click"
+                        IsEnabled="False" />
+
+                <Button x:Name="FitPageButton"
+                        Content="Ajustar página"
+                        Margin="12,0,4,0"
+                        Padding="10,4"
+                        ToolTip="Mostrar la página completa"
+                        Click="FitPage_Click"
+                        IsEnabled="False" />
+                <Button x:Name="FitWidthButton"
+                        Content="Ajustar ancho"
+                        Padding="10,4"
+                        ToolTip="Ajustar al ancho del visor"
+                        Click="FitWidth_Click"
+                        IsEnabled="False" />
             </StackPanel>
         </Border>
 
@@ -60,7 +102,8 @@
             </Border>
 
             <Grid Grid.Column="1" Background="#F3F3F3">
-                <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                <ScrollViewer x:Name="PdfScrollViewer"
+                              HorizontalScrollBarVisibility="Auto"
                               VerticalScrollBarVisibility="Auto">
                     <Image x:Name="PdfImage"
                            Margin="24"
