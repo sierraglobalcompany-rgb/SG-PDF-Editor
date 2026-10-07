@@ -5,65 +5,72 @@ namespace SGPdf.App.Tests;
 
 public sealed class PdfZoomStateTests
 {
-    private static Type ZoomType
-    {
-        get
-        {
-            var type = typeof(PdfDocumentSession).Assembly.GetType("SGPdf.App.Pdf.PdfZoomState");
-            Assert.NotNull(type);
-            return type!;
-        }
-    }
-
     [Fact]
     public void DefaultState_IsManualAt100Percent()
     {
-        dynamic state = Activator.CreateInstance(ZoomType)!;
+        var state = new PdfZoomState();
 
-        Assert.Equal("Manual", state.Mode.ToString());
-        Assert.Equal(100, (int)state.ManualPercent);
-        Assert.Equal(96d, (double)state.ResolveDpi(612d, 792d, 1000d, 1000d, 48d), 6);
+        Assert.Equal(PdfZoomMode.Manual, state.Mode);
+        Assert.Equal(100, state.ManualPercent);
+        Assert.Equal(96d, state.ResolveDpi(612d, 792d, 1000d, 1000d, 48d), 6);
     }
 
     [Fact]
     public void ZoomInAndOut_UseCommercialStylePresetsAndBounds()
     {
-        dynamic state = Activator.CreateInstance(ZoomType)!;
+        var state = new PdfZoomState();
 
         state = state.ZoomIn(96d);
-        Assert.Equal(125, (int)state.ManualPercent);
+        Assert.Equal(125, state.ManualPercent);
 
         state = state.ZoomOut(120d);
-        Assert.Equal(100, (int)state.ManualPercent);
+        Assert.Equal(100, state.ManualPercent);
+
+        state = state.ZoomOut(96d);
+        Assert.Equal(75, state.ManualPercent);
+
+        state = state.ZoomOut(72d);
+        Assert.Equal(50, state.ManualPercent);
+
+        state = state.ZoomOut(48d);
+        Assert.Equal(25, state.ManualPercent);
 
         state = state.ZoomOut(24d);
-        Assert.Equal(25, (int)state.ManualPercent);
+        Assert.Equal(25, state.ManualPercent);
 
         state = state.ZoomIn(384d);
-        Assert.Equal(400, (int)state.ManualPercent);
+        Assert.Equal(400, state.ManualPercent);
+    }
+
+    [Fact]
+    public void FitBelowMinimumPreset_ZoomOutDoesNotIncreaseMagnification()
+    {
+        var state = new PdfZoomState().FitPage();
+
+        var candidate = state.ZoomOut(9.6d);
+
+        Assert.Same(state, candidate);
     }
 
     [Fact]
     public void FitWidth_UsesAvailableViewportWidth()
     {
-        dynamic state = Activator.CreateInstance(ZoomType)!;
-        state = state.FitWidth();
+        var state = new PdfZoomState().FitWidth();
 
-        var dpi = (double)state.ResolveDpi(612d, 792d, 864d, 900d, 48d);
+        var dpi = state.ResolveDpi(612d, 792d, 864d, 900d, 48d);
 
-        Assert.Equal("FitWidth", state.Mode.ToString());
+        Assert.Equal(PdfZoomMode.FitWidth, state.Mode);
         Assert.Equal(96d, dpi, 6);
     }
 
     [Fact]
     public void FitPage_UsesTheMoreRestrictiveDimension()
     {
-        dynamic state = Activator.CreateInstance(ZoomType)!;
-        state = state.FitPage();
+        var state = new PdfZoomState().FitPage();
 
-        var dpi = (double)state.ResolveDpi(612d, 792d, 864d, 900d, 48d);
+        var dpi = state.ResolveDpi(612d, 792d, 864d, 900d, 48d);
 
-        Assert.Equal("FitPage", state.Mode.ToString());
+        Assert.Equal(PdfZoomMode.FitPage, state.Mode);
         Assert.Equal(852d * 72d / 792d, dpi, 6);
     }
 }
