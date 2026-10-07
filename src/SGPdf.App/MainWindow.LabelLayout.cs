@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using Microsoft.Win32;
 using SGPdf.App.Features.Labels;
 
 namespace SGPdf.App;
@@ -16,6 +17,9 @@ public partial class MainWindow
     private string? _labelLayoutValidationMessage;
     private bool _showSheetPreview;
     private long _selectedLabelSheetIndex;
+    private Func<string?> _selectLabelPdfDestination = SelectLabelPdfDestination;
+    private Action<string, LabelLayoutPlan, IReadOnlyList<ZplRenderedLabel>> _exportLabelPdf =
+        static (path, plan, labels) => new LabelPdfExporter().Export(path, plan, labels);
 
     private void ResetLabelLayoutState()
     {
@@ -34,6 +38,7 @@ public partial class MainWindow
         _selectedLabelSheetIndex = 0;
         LabelSheetCanvas.Children.Clear();
         LabelSheetCanvas.Visibility = Visibility.Collapsed;
+        ExportLabelPdfButton.IsEnabled = false;
     }
 
     private void PreviewMode_Checked(object sender, RoutedEventArgs e)
@@ -77,6 +82,7 @@ public partial class MainWindow
             _labelLayoutPlan = null;
             _labelLayoutValidationMessage = "Revisa las medidas, márgenes, separaciones y filas/columnas.";
             PreviewSheetRadio.IsEnabled = false;
+            ExportLabelPdfButton.IsEnabled = false;
             LayoutValidationText.Text = _labelLayoutValidationMessage;
             LayoutValidationText.Visibility = Visibility.Visible;
             if (_showSheetPreview)
@@ -86,6 +92,56 @@ public partial class MainWindow
                 ShowSelectedZplPreview();
             }
         }
+    }
+
+    private void ExportLabelPdf_Click(object sender, RoutedEventArgs e)
+    {
+        if (_zplDocument is null ||
+            _labelLayoutPlan is null ||
+            _renderedZplLabels.Count == 0 ||
+            _isBusy)
+        {
+            return;
+        }
+
+        var destinationPath = _selectLabelPdfDestination();
+        if (string.IsNullOrWhiteSpace(destinationPath))
+            return;
+
+        var plan = _labelLayoutPlan;
+        var renderedLabels = _renderedZplLabels;
+
+        SetBusy(true);
+        StatusText.Text = "Exportando PDF...";
+        try
+        {
+            _exportLabelPdf(destinationPath, plan, renderedLabels);
+            StatusText.Text = $"PDF guardado: {System.IO.Path.GetFileName(destinationPath)}";
+        }
+        catch (Exception)
+        {
+            StatusText.Text = "No se pudo guardar el PDF de etiquetas.";
+        }
+        finally
+        {
+            SetBusy(false);
+            UpdateLabelPropertiesUi();
+        }
+    }
+
+    private static string? SelectLabelPdfDestination()
+    {
+        var dialog = new SaveFileDialog
+        {
+            Title = "Guardar etiquetas como PDF",
+            Filter = "PDF (*.pdf)|*.pdf",
+            DefaultExt = ".pdf",
+            AddExtension = true,
+            OverwritePrompt = true,
+            FileName = "etiquetas.pdf"
+        };
+
+        return dialog.ShowDialog() == true ? dialog.FileName : null;
     }
 
     private LabelLayoutSettings ReadLabelLayoutSettingsFromUi()
@@ -293,6 +349,7 @@ public partial class MainWindow
         PreviewLabelRadio.IsChecked = !_showSheetPreview;
         PreviewSheetRadio.IsChecked = _showSheetPreview;
         PreviewSheetRadio.IsEnabled = _labelLayoutPlan is not null;
+        ExportLabelPdfButton.IsEnabled = _labelLayoutPlan is not null && !_isBusy;
 
         SheetMediaComboBox.SelectedIndex = _labelLayoutSettings.MediaKind switch
         {
