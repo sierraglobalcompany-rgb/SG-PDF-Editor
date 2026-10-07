@@ -76,7 +76,7 @@ public partial class MainWindow
         {
             _labelLayoutPlan = null;
             _labelLayoutValidationMessage = "Revisa las medidas, márgenes, separaciones y filas/columnas.";
-            SheetPreviewRadio.IsEnabled = false;
+            PreviewSheetRadio.IsEnabled = false;
             LayoutValidationText.Text = _labelLayoutValidationMessage;
             LayoutValidationText.Visibility = Visibility.Visible;
             if (_showSheetPreview)
