@@ -12,6 +12,8 @@ public partial class MainWindow
     private IReadOnlyList<ZplRenderedLabel> _renderedZplLabels = Array.Empty<ZplRenderedLabel>();
     private int _selectedZplDesignIndex;
     private CancellationTokenSource? _labelRenderCts;
+    private ZplQuantitySelection _zplQuantitySelection = new(ZplQuantityMode.FromFile);
+    private bool _updatingLabelPropertiesUi;
 
     private async void OpenZpl_Click(object sender, RoutedEventArgs e)
     {
@@ -100,10 +102,12 @@ public partial class MainWindow
         _zplDocument = document;
         _renderedZplLabels = renderedLabels.ToArray();
         _selectedZplDesignIndex = 0;
+        _zplQuantitySelection = new ZplQuantitySelection(ZplQuantityMode.FromFile);
         previousSession?.Dispose();
 
         UpdateViewerControlsUi();
         ShowSelectedZplPreview();
+        UpdateLabelPropertiesUi();
 
         var fileName = Path.GetFileName(document.SourcePath);
         Title = $"SG PDF Editor — {fileName}";
@@ -181,6 +185,79 @@ public partial class MainWindow
         NextLabelButton.IsEnabled = _selectedZplDesignIndex < _renderedZplLabels.Count - 1;
     }
 
+    private void QuantityMode_Checked(object sender, RoutedEventArgs e)
+    {
+        UpdateQuantitySelectionFromUi();
+    }
+
+    private void CustomQuantityTextBox_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+    {
+        if (_zplDocument is not null && QuantityCustomRadio.IsChecked == true)
+            UpdateQuantitySelectionFromUi();
+    }
+
+    private void UpdateQuantitySelectionFromUi()
+    {
+        if (_updatingLabelPropertiesUi || _zplDocument is null)
+            return;
+
+        var mode = QuantityCustomRadio.IsChecked == true
+            ? ZplQuantityMode.Custom
+            : QuantityOneEachRadio.IsChecked == true
+                ? ZplQuantityMode.OneEach
+                : ZplQuantityMode.FromFile;
+
+        var customQuantity = _zplQuantitySelection.CustomQuantity;
+        if (mode == ZplQuantityMode.Custom)
+        {
+            if (!long.TryParse(CustomQuantityTextBox.Text, out customQuantity) ||
+                customQuantity < 1 ||
+                customQuantity > ZplQuantitySelection.MaxCustomQuantity)
+            {
+                OutputQuantityText.Text = "Cantidad de salida: —";
+                return;
+            }
+        }
+
+        _zplQuantitySelection = new ZplQuantitySelection(mode, customQuantity);
+        UpdateLabelPropertiesUi();
+        UpdateCurrentZplStatus();
+    }
+
+    private void UpdateLabelPropertiesUi()
+    {
+        if (_zplDocument is null)
+        {
+            LabelPropertiesPanel.Visibility = Visibility.Collapsed;
+            PropertiesPlaceholderText.Visibility = Visibility.Visible;
+            return;
+        }
+
+        LabelPropertiesPanel.Visibility = Visibility.Visible;
+        PropertiesPlaceholderText.Visibility = Visibility.Collapsed;
+
+        _updatingLabelPropertiesUi = true;
+        try
+        {
+            QuantityFromFileRadio.IsChecked = _zplQuantitySelection.Mode == ZplQuantityMode.FromFile;
+            QuantityOneEachRadio.IsChecked = _zplQuantitySelection.Mode == ZplQuantityMode.OneEach;
+            QuantityCustomRadio.IsChecked = _zplQuantitySelection.Mode == ZplQuantityMode.Custom;
+
+            var customText = _zplQuantitySelection.CustomQuantity.ToString();
+            if (!string.Equals(CustomQuantityTextBox.Text, customText, StringComparison.Ordinal))
+                CustomQuantityTextBox.Text = customText;
+
+            CustomQuantityTextBox.IsEnabled =
+                !_isBusy && _zplQuantitySelection.Mode == ZplQuantityMode.Custom;
+            OutputQuantityText.Text =
+                $"Cantidad de salida: {_zplQuantitySelection.GetTotalQuantity(_zplDocument)}";
+        }
+        finally
+        {
+            _updatingLabelPropertiesUi = false;
+        }
+    }
+
     private void UpdateCurrentZplStatus()
     {
         if (_zplDocument is null || _renderedZplLabels.Count == 0)
@@ -188,7 +265,7 @@ public partial class MainWindow
 
         var fileName = Path.GetFileName(_zplDocument.SourcePath);
         StatusText.Text =
-            $"{fileName} — etiqueta {_selectedZplDesignIndex + 1} de {_renderedZplLabels.Count} — cantidad total {_zplDocument.TotalQuantityFromFile}";
+            $"{fileName} — etiqueta {_selectedZplDesignIndex + 1} de {_renderedZplLabels.Count} — cantidad de salida {_zplQuantitySelection.GetTotalQuantity(_zplDocument)}";
     }
 
     private void NavigationBar_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
@@ -208,10 +285,12 @@ public partial class MainWindow
         _zplDocument = null;
         _renderedZplLabels = Array.Empty<ZplRenderedLabel>();
         _selectedZplDesignIndex = 0;
+        _zplQuantitySelection = new ZplQuantitySelection(ZplQuantityMode.FromFile);
         LabelNavigationBar.Visibility = Visibility.Collapsed;
         LabelCountText.Text = "Etiqueta 0 de 0";
         PreviousLabelButton.IsEnabled = false;
         NextLabelButton.IsEnabled = false;
+        UpdateLabelPropertiesUi();
     }
 
     private void Window_Closed(object? sender, EventArgs e)
