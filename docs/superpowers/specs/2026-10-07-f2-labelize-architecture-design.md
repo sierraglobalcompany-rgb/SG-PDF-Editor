@@ -1,7 +1,7 @@
 # F2 Labelize Architecture — Design
 
 **Date:** 2026-10-07  
-**Status:** proposed after approved Gate ZPL-A engine decision  
+**Status:** engine decision approved; runtime architecture pending written-spec review  
 **Scope:** runtime architecture for F2 Etiquetas ZPL; no product code in this document
 
 ## 1. Intent
@@ -12,7 +12,7 @@ Non-negotiable constraints remain: Windows x64, C#/.NET 10/WPF, KISS/YAGNI, main
 
 ## 2. Gate ZPL-A decision
 
-The approved engine is **Labelize 1.7.0**, replacing BinaryKits.Zpl as the preferred F2 runtime engine.
+The approved engine selection is **Labelize 1.7.0**, replacing BinaryKits.Zpl as the preferred F2 runtime engine.
 
 Decision evidence from the throwaway spike branch `spike/f1-zpl-gate-a`:
 
@@ -27,7 +27,7 @@ Decision evidence from the throwaway spike branch `spike/f1-zpl-gate-a`:
 
 The first spike comparison accidentally treated BinaryKits transparent pixels as black. The final verification composites both renderers over white before fidelity/decode checks. Only the corrected verification is authoritative for fidelity.
 
-Gate status after this design: synthetic evidence is sufficient to select the engine; **private real Mercado Libre samples and physical print QA remain acceptance work and are never versioned**.
+Gate status after this design: synthetic evidence is sufficient to select the engine and design F2 around it. **F1 formal closure still requires private real Mercado Libre samples; physical print/scanner validation remains F2 acceptance work.** Private inputs are never versioned.
 
 ## 3. Chosen integration model
 
@@ -93,12 +93,14 @@ Proposed minimal types:
 ```text
 ZplDocument
   SourcePath
+  OriginalText
+  NormalizedRenderText
   Designs[]
 
 ZplDesign
   Index
+  SourceBlockIndex
   OriginalBlock
-  RenderBlock / normalized render input
   QuantityFromFile
 
 ZplRenderOptions
@@ -115,6 +117,10 @@ ZplRenderedLabel
   LocalOutputPath or managed bytes
 ```
 
+`NormalizedRenderText` is the canonical renderer input for the whole source stream. It preserves block order and stored-format definitions while neutralizing print multiplication such as `^PQ`.
+
+`ZplDesign` represents only a user-visible printable design. Template-definition/support blocks remain in the normalized stream but do not become user-visible designs.
+
 Do not create Domain/Application/Infrastructure layers. These types live under the existing KISS feature structure, e.g. `Features/Labels/`.
 
 ## 6. `^PQ` semantics
@@ -126,7 +132,7 @@ For each printable label design:
 1. parse quantity parameter `a` from `^PQa,...`;
 2. default to `1` when absent;
 3. retain the value in `ZplDesign.QuantityFromFile`;
-4. remove/neutralize `^PQ` in the render input sent to Labelize;
+4. remove/neutralize `^PQ` in `ZplDocument.NormalizedRenderText`;
 5. render that design once;
 6. quantity selection later chooses:
    - file quantity;
@@ -143,11 +149,12 @@ Therefore F2 must **not blindly render isolated `^XA…^XZ` strings when doing s
 
 KISS rule for the first implementation:
 
-- parse blocks in C# for metadata and quantities;
-- build one normalized document stream that preserves source order/template definitions while removing print multiplication commands;
-- invoke Labelize against that normalized stream;
-- map Labelize outputs back to printable designs in source/render order;
-- template-definition-only blocks are metadata/support blocks, not user-visible printable designs.
+- parse source blocks in C# for metadata, printable-design classification and quantities;
+- preserve the complete source order in `NormalizedRenderText` while neutralizing print multiplication commands;
+- invoke Labelize once for the normalized document stream;
+- enumerate Labelize outputs in render order and map them to the printable `ZplDesign` sequence;
+- if output count and printable-design count disagree, fail with a controlled mapping error rather than guessing;
+- template-definition-only blocks are support blocks, not user-visible printable designs.
 
 The `^DF/^XF` synthetic regression from Gate ZPL-A becomes a permanent F2 regression before preview UI is considered complete.
 
@@ -184,11 +191,11 @@ read locally
   ↓
 ZplDocumentParser
   ↓
-ZplDocument + quantities
+ZplDocument + quantities + normalized stream
   ↓
-normalize render stream
+LabelizeProcessRenderer -> PNG output(s)
   ↓
-LabelizeProcessRenderer -> PNG
+map outputs to printable designs
   ↓
 load PNG fully into managed/WPF bitmap
   ↓
@@ -197,7 +204,7 @@ delete temp request
 show design + quantity metadata
 ```
 
-Preview must display the design once regardless of `^PQ`.
+Preview must display each design once regardless of `^PQ`.
 
 No JPEG conversion. Preserve nearest-neighbor/thermal semantics where scaling is needed; prefer rerender at target label dimensions/DPMM instead of stretching barcode pixels.
 
@@ -228,10 +235,11 @@ User-facing failures must distinguish at least:
 
 - file cannot be read / contains no printable ZPL;
 - malformed or unsupported ZPL;
-- Labelize executable missing or integrity/setup problem;
+- Labelize executable missing or invalid runtime setup;
 - renderer timeout/cancellation;
 - renderer exit failure with sanitized diagnostic;
 - expected output missing;
+- normalized-output count does not match printable-design count;
 - barcode/QR validation failure;
 - unsupported/impossible physical layout.
 
@@ -270,7 +278,7 @@ Before F2 is fully accepted:
 - printed Code128/QR scan successfully;
 - exact thermal dimensions verified;
 - A4/Carta layouts verified;
-- red disabled network test passes;
+- network-disabled test passes;
 - customer data leaves no persistent temp residue after normal use.
 
 ## 13. Implementation slices
@@ -281,7 +289,8 @@ Keep sessions small:
 
 - open `.zpl/.txt/.prn`;
 - pure C# `ZplDocumentParser`;
-- designs + `^PQ` quantity metadata;
+- printable designs + `^PQ` quantity metadata + normalized document stream;
+- classify template-definition/support blocks without rendering them as user-visible designs;
 - synthetic tests only;
 - no Labelize runtime call yet.
 
@@ -290,6 +299,7 @@ Keep sessions small:
 - pin/setup sidecar executable;
 - process renderer;
 - PNG preview;
+- output-to-design mapping;
 - cancellation/error/temp cleanup;
 - `^DF/^XF`, QR/Code128 regressions;
 - no PDF composition yet.
@@ -324,6 +334,8 @@ Keep sessions small:
 
 ## 14. Definition of Done for the engine decision
 
-Labelize becomes the official F2 engine once this design is accepted and the implementation plan is approved. BinaryKits is removed from preferred runtime architecture and remains only historical Gate evidence; it is not carried as a fallback runtime dependency.
+After this written architecture and its implementation plan are approved, Labelize is the official F2 runtime engine. BinaryKits is removed from preferred runtime architecture and remains only historical Gate evidence; it is not carried as a fallback runtime dependency.
+
+F1 is marked fully closed only after the private real-corpus check passes. F2 is marked fully accepted only after physical print/scanner QA passes.
 
 No dual-engine abstraction is built. If Labelize later fails a real requirement, reopen the decision with evidence instead of maintaining two engines preventively.
