@@ -38,10 +38,10 @@ public sealed class OfflineRuntimeTests
     }
 
     [Fact]
-    public void RuntimeSource_HasNoNetworkClientOrHttpEndpoint()
+    public void RuntimeSource_HasNoNetworkClientOrRemoteNavigation()
     {
         var sourceRoot = Path.GetDirectoryName(FindRepositoryFile("src", "SGPdf.App", "SGPdf.App.csproj"))!;
-        var forbiddenTokens = new[]
+        var forbiddenCodeTokens = new[]
         {
             "HttpClient",
             "WebClient",
@@ -52,10 +52,16 @@ public sealed class OfflineRuntimeTests
             "http://",
             "https://"
         };
+        var forbiddenXamlTokens = new[]
+        {
+            "<WebBrowser",
+            "NavigateUri=\"http://",
+            "NavigateUri=\"https://",
+            "Source=\"http://",
+            "Source=\"https://"
+        };
 
-        foreach (var path in Directory.EnumerateFiles(sourceRoot, "*.*", SearchOption.AllDirectories)
-                     .Where(path => path.EndsWith(".cs", StringComparison.OrdinalIgnoreCase) ||
-                                    path.EndsWith(".xaml", StringComparison.OrdinalIgnoreCase)))
+        foreach (var path in Directory.EnumerateFiles(sourceRoot, "*.*", SearchOption.AllDirectories))
         {
             if (path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase) ||
                 path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase))
@@ -64,6 +70,12 @@ public sealed class OfflineRuntimeTests
             }
 
             var source = File.ReadAllText(path);
+            var forbiddenTokens = path.EndsWith(".cs", StringComparison.OrdinalIgnoreCase)
+                ? forbiddenCodeTokens
+                : path.EndsWith(".xaml", StringComparison.OrdinalIgnoreCase)
+                    ? forbiddenXamlTokens
+                    : Array.Empty<string>();
+
             foreach (var forbidden in forbiddenTokens)
                 Assert.DoesNotContain(forbidden, source, StringComparison.OrdinalIgnoreCase);
         }
