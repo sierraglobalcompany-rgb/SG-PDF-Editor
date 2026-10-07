@@ -104,7 +104,8 @@
             <Grid Grid.Column="1" Background="#F3F3F3">
                 <ScrollViewer x:Name="PdfScrollViewer"
                               HorizontalScrollBarVisibility="Auto"
-                              VerticalScrollBarVisibility="Auto">
+                              VerticalScrollBarVisibility="Auto"
+                              SizeChanged="PdfScrollViewer_SizeChanged">
                     <Image x:Name="PdfImage"
                            Margin="24"
                            HorizontalAlignment="Center"

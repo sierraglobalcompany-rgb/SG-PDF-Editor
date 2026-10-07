@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Reflection;
 using System.Text;
 using SGPdf.App.Pdf;
 using Xunit;
@@ -25,6 +26,60 @@ public sealed class PdfRenderTests
             Assert.Equal(816 * 4, rendered.Stride);
             Assert.Equal(rendered.Stride * rendered.PixelHeight, rendered.Pixels.Length);
             Assert.Contains(rendered.Pixels, value => value < 250);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public void GetPageSize_PreCanceledToken_ThrowsOperationCanceledException()
+    {
+        var method = typeof(PdfDocumentSession).GetMethod(
+            "GetPageSize",
+            new[] { typeof(int), typeof(CancellationToken) });
+        Assert.NotNull(method);
+
+        var path = Path.Combine(Path.GetTempPath(), $"sgpdf-size-cancel-{Guid.NewGuid():N}.pdf");
+        try
+        {
+            File.WriteAllBytes(path, CreateSinglePagePdf());
+            using var session = PdfDocumentSession.Open(path);
+            using var cancellation = new CancellationTokenSource();
+            cancellation.Cancel();
+
+            var ex = Assert.Throws<TargetInvocationException>(() =>
+                method!.Invoke(session, new object[] { 0, cancellation.Token }));
+
+            Assert.IsType<OperationCanceledException>(ex.InnerException);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public void RenderPage_PreCanceledToken_ThrowsOperationCanceledException()
+    {
+        var method = typeof(PdfDocumentSession).GetMethod(
+            "RenderPage",
+            new[] { typeof(int), typeof(double), typeof(CancellationToken) });
+        Assert.NotNull(method);
+
+        var path = Path.Combine(Path.GetTempPath(), $"sgpdf-render-cancel-{Guid.NewGuid():N}.pdf");
+        try
+        {
+            File.WriteAllBytes(path, CreateSinglePagePdf());
+            using var session = PdfDocumentSession.Open(path);
+            using var cancellation = new CancellationTokenSource();
+            cancellation.Cancel();
+
+            var ex = Assert.Throws<TargetInvocationException>(() =>
+                method!.Invoke(session, new object[] { 0, 96d, cancellation.Token }));
+
+            Assert.IsType<OperationCanceledException>(ex.InnerException);
         }
         finally
         {

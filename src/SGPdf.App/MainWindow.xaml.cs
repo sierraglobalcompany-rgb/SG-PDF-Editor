@@ -12,7 +12,9 @@ public partial class MainWindow : Window
 {
     private const double WpfDisplayDpi = 96d;
     private const double PageMarginPixels = 48d;
+    private const int ResizeDebounceMilliseconds = 150;
 
+    private readonly PdfRenderScheduler _resizeRenderScheduler = new();
     private PdfDocumentSession? _session;
     private PageNavigationState? _navigation;
     private PdfZoomState _zoom = new();
@@ -38,6 +40,7 @@ public partial class MainWindow : Window
         if (dialog.ShowDialog(this) != true)
             return;
 
+        _resizeRenderScheduler.CancelCurrent();
         SetBusy(true);
         StatusText.Text = "Abriendo PDF...";
         PdfDocumentSession? candidateSession = null;
@@ -108,6 +111,8 @@ public partial class MainWindow : Window
     {
         if (_session is null || _navigation is null || _isBusy)
             return;
+
+        _resizeRenderScheduler.CancelCurrent();
 
         var sourceSession = _session;
         var sourceNavigation = _navigation;
@@ -194,6 +199,8 @@ public partial class MainWindow : Window
         if (_session is null || _navigation is null || _isBusy)
             return;
 
+        _resizeRenderScheduler.CancelCurrent();
+
         var sourceSession = _session;
         var sourceNavigation = _navigation;
         var sourceZoom = _zoom;
@@ -254,6 +261,69 @@ public partial class MainWindow : Window
         }
     }
 
+    private async void PdfScrollViewer_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (_session is null ||
+            _navigation is null ||
+            _isBusy ||
+            _zoom.Mode == PdfZoomMode.Manual)
+        {
+            return;
+        }
+
+        var request = _resizeRenderScheduler.Begin();
+        var sourceSession = _session;
+        var sourceNavigation = _navigation;
+        var sourceZoom = _zoom;
+
+        try
+        {
+            await Task.Delay(ResizeDebounceMilliseconds, request.CancellationToken);
+
+            if (!_resizeRenderScheduler.IsCurrent(request) || _isBusy)
+                return;
+
+            var viewport = GetViewportSize();
+            var rendered = await Task.Run(() => RenderPageForView(
+                sourceSession,
+                sourceNavigation.CurrentPageIndex,
+                sourceZoom,
+                viewport.Width,
+                viewport.Height,
+                request.CancellationToken), request.CancellationToken);
+
+            if (!_resizeRenderScheduler.IsCurrent(request) ||
+                _isBusy ||
+                !ReferenceEquals(_session, sourceSession) ||
+                !ReferenceEquals(_navigation, sourceNavigation) ||
+                !ReferenceEquals(_zoom, sourceZoom))
+            {
+                return;
+            }
+
+            var bitmap = CreateBitmapSource(rendered);
+            _currentDpi = rendered.Dpi;
+            ShowRenderedPage(bitmap);
+            UpdateViewerControlsUi();
+            UpdateCurrentPageStatus();
+        }
+        catch (OperationCanceledException) when (request.CancellationToken.IsCancellationRequested)
+        {
+            // Latest-request-wins: resize renders superseded by a newer request are expected.
+        }
+        catch (Exception)
+        {
+            if (_resizeRenderScheduler.IsCurrent(request) &&
+                !_isBusy &&
+                ReferenceEquals(_session, sourceSession) &&
+                ReferenceEquals(_navigation, sourceNavigation) &&
+                ReferenceEquals(_zoom, sourceZoom))
+            {
+                StatusText.Text = "No se pudo reajustar la vista al nuevo tamaño.";
+            }
+        }
+    }
+
     private (double Width, double Height) GetViewportSize()
     {
         var width = PdfScrollViewer.ViewportWidth;
@@ -272,9 +342,10 @@ public partial class MainWindow : Window
         int pageIndex,
         PdfZoomState zoom,
         double viewportWidth,
-        double viewportHeight)
+        double viewportHeight,
+        CancellationToken cancellationToken = default)
     {
-        var pageSize = session.GetPageSize(pageIndex);
+        var pageSize = session.GetPageSize(pageIndex, cancellationToken);
         var dpi = zoom.ResolveDpi(
             pageSize.Width,
             pageSize.Height,
@@ -282,7 +353,8 @@ public partial class MainWindow : Window
             viewportHeight,
             PageMarginPixels);
 
-        return session.RenderPage(pageIndex, dpi);
+        cancellationToken.ThrowIfCancellationRequested();
+        return session.RenderPage(pageIndex, dpi, cancellationToken);
     }
 
     private static BitmapSource CreateBitmapSource(PdfRenderedPage rendered)
@@ -359,6 +431,7 @@ public partial class MainWindow : Window
 
     protected override void OnClosed(EventArgs e)
     {
+        _resizeRenderScheduler.Dispose();
         _navigation = null;
         _session?.Dispose();
         _session = null;
