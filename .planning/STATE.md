@@ -4,7 +4,7 @@ status: executing
 progress:
   total_phases: 13
   completed_phases: 0
-  total_plans: 5
+  total_plans: 6
   completed_plans: 0
   percent: 0
 ---
@@ -13,130 +13,139 @@ progress:
 
 ## Project Reference
 
-See: `.planning/PROJECT.md` (updated 2026-10-06)
+See: `.planning/PROJECT.md`.
 
-**Core value:** Resolver PDF + ZPL diario de forma rápida, privada, estable y offline.
-**Current focus:** Phase 1 — F0 PDF Base / F0.5 Windows Print.
+**Core value:** Resolver PDF + ZPL diario de forma rápida, privada, estable y offline.  
+**Current focus:** Phase 1 — F0 PDF Base / F0.6 QA + Hardening + Offline.
 
 ## Current Position
 
-Phase: 1 of 13 (F0 PDF Base)
-Plan: F0.5 implementation + automated verification complete
-Status: F0.1–F0.5 automated PASS; manual Windows UI/print smoke remains before physical QA close
-Last activity: 2026-10-06 — F0.5 Windows Print implemented on `feat/f0-5-print`; print ranges, WPF paginator and File > Print integration are green in Windows CI.
+Phase: 1 of 13 (F0 PDF Base)  
+Plan: F0.6 implementation + automated verification complete  
+Status: F0.1–F0.6 automated PASS; **manual Windows UI/print/offline smoke remains before physical QA close**  
+Last activity: 2026-10-07 — requirement audit closed missing go-to-page, added offline guard and multipage/invalid-PDF regressions on `feat/f0-6-qa-hardening`.
 
-Progress: F0.1 automated PASS + F0.2 automated PASS + F0.3 automated PASS + F0.4 automated PASS + F0.5 automated PASS; F0 phase remains open.
+**Progress:** F0 automated implementation is complete. F0 phase remains open only for physical Windows acceptance.
 
 ## Development Tooling
 
-- GSD Core pin: `1.15.0`, project-scoped, installer-owned `.codex/` ignored.
-- Graphify pin: `0.9.77`, project-scoped, `graphify-out/` ignored y regenerable.
-- Graph corpus: solo `src/` + `tests/` mediante `.graphifyignore`.
-- Graphify auto-update: OFF; actualizar manualmente cuando aporte valor.
+- GSD Core pin: `1.15.0`, project-scoped; installer-owned `.codex/` ignored.
+- Graphify pin: `0.9.77`, project-scoped; `graphify-out/` ignored/regenerable.
+- Graph corpus: `src/` + `tests/` via `.graphifyignore`.
+- Graphify auto-update: OFF.
 - Setup reproducible: `tools/setup-dev.ps1`.
-- Tooling es dev-only: nunca requisito de build/runtime de SG PDF Editor.
+- GSD/Graphify are dev-only and never runtime/build dependencies of SG PDF Editor.
 
-## Accumulated Context
+## Accumulated Decisions
 
-### Decisions
+- Windows x64 + C# + .NET 10 LTS + WPF remain frozen for F0.
+- KISS solution: App + Tests only; no preventive Core/Infrastructure/Domain/CQRS/MediatR layers.
+- PDFium is the primary PDF engine; native calls globally serialized with `SemaphoreSlim(1,1)`.
+- F0.1 renders PDFium BGRA buffers and WPF creates `BitmapSource` outside native work.
+- F0.2 uses immutable `PageNavigationState`; navigation state commits only after successful render.
+- F0.3 uses `PdfZoomState` (`Manual`, `FitPage`, `FitWidth`); `100% = 96 DPI`; PDFium rerenders rather than stretching a bitmap.
+- Zoom/fit UX follows shared Acrobat/Foxit/PDF-XChange patterns, simplified by KISS.
+- F0.4 uses `PdfRenderScheduler` latest-request-wins; resize-fit debounce 150 ms; no general queue/workers/multilevel priority.
+- PDFium cancellation is cooperative around the synchronous native render. Progressive rendering remains deferred until real latency evidence requires it.
+- F0.5 uses WPF `PrintDialog` + `DocumentPaginator` + Windows spooler; Microsoft Print to PDF uses the same standard path.
+- F0.5 print raster starts at 200 DPI; quality/memory/latency must be measured physically before changing strategy.
+- F0.6 completed `PDF-BASE-03` with `GoToPageNumber(int)` and compact `Página [n] de N`; it reuses `NavigateAsync`.
+- F0.6 offline guard rejects direct network assemblies/clients/remote XAML navigation and pins runtime NuGet surface to `bblanchon.PDFium.Win32` only.
+- F0.6 synthetic tests cover one-page, real three-page render, last-page bounds and invalid-PDF controlled failure.
+- State/image is published only after successful rendering and current-context validation; stale results are discarded.
+- BinaryKits.Zpl remains preferred candidate, subject to Gate ZPL-A.
+- No merge to `main` without explicit user approval.
 
-- WPF + .NET 10 y solución App + Tests se mantienen por KISS.
-- PDFium es motor PDF principal; llamadas nativas serializadas globalmente con `SemaphoreSlim(1,1)`.
-- F0.1 rasteriza PDFium a BGRA administrado y WPF crea `BitmapSource` después de salir del trabajo nativo.
-- F0.2 usa `PageNavigationState` inmutable; la UI solo confirma navegación tras render exitoso.
-- F0.3 usa `PdfZoomState` con modos `Manual`, `FitPage`, `FitWidth`; `100% = 96 DPI` y PDFium rerenderiza al DPI solicitado.
-- La UX de zoom/fit sigue patrones compartidos de Acrobat, Foxit y PDF-XChange, simplificados por KISS.
-- F0.4 introduce `PdfRenderScheduler` con política **latest-request-wins**; no hay cola general, workers ni prioridades multinivel.
-- `GetPageSize` y `RenderPage` conservan APIs existentes y añaden overloads con `CancellationToken`.
-- La espera del mutex PDFium puede cancelarse antes de entrar; el token se comprueba también antes y después del render síncrono y antes de publicar/copiar resultado.
-- `FPDF_RenderPageBitmap` no se aborta a mitad de llamada. Progressive rendering queda diferido salvo evidencia real de latencia que justifique su complejidad.
-- Auto-refit durante resize solo corre en `FitPage`/`FitWidth`, con debounce de 150 ms y latest-request-wins.
-- Apertura, navegación y zoom explícitos cancelan cualquier auto-refit pendiente; las acciones manuales mantienen prioridad.
-- F0.5 usa `System.Windows.Controls.PrintDialog` + `DocumentPaginator` + spooler Windows; no se añade librería de impresión.
-- `PdfPrintRange` normaliza todas/actual/rango y convierte rangos del diálogo 1-based a índices PDF 0-based.
-- `PdfDocumentPaginator` renderiza bajo demanda con PDFium a 200 DPI y ajusta proporcionalmente al `PrintableAreaWidth/Height` del driver.
-- Microsoft Print to PDF usa exactamente el mismo flujo que cualquier impresora Windows seleccionada; no existe ruta especial.
-- F0.5 no auto-cambia portrait/landscape ni añade preview/configuración propia; esas opciones permanecen en el driver estándar.
-- Estado/imagen solo se aplican después de render exitoso y validación de contexto; resultados stale se descartan.
-- BinaryKits.Zpl es candidato preferente, sujeto a Gate ZPL-A.
-- GSD/Graphify no se venden ni distribuyen con el producto; sus payloads/grafos generados no se versionan.
-- `main` no recibe merge sin aprobación explícita del usuario.
+## Evidence
 
-### Evidence F0.1
+### F0.1 — Open + Render
 
-- TDD RED: Actions `37536987398` — build PASS; render test FAIL por ausencia de `RenderPage`.
-- Final automated head: `a4edc2e6bc101654a4d99a06c2df5aeb2c45739e`.
-- Final Windows CI: Actions `37538180207` — hygiene/restore/build/tests PASS.
-- PR: #7 draft, base `feat/a1-dev-intelligence`, sin merge.
+- RED `37536987398`: build PASS; render test failed because `RenderPage` did not exist.
+- Final CI `37538180207`: hygiene/restore/build/tests PASS.
+- Final head `a4edc2e6bc101654a4d99a06c2df5aeb2c45739e`.
+- PR #7 draft; no merge.
 
-### Evidence F0.2
+### F0.2 — Navigation
 
-- TDD RED: Actions `37540833680` — build PASS; 6 navigation tests FAIL porque `PageNavigationState` no existía.
-- Navigation-state GREEN: Actions `37540952320` — hygiene/restore/build/tests PASS.
-- WPF integration GREEN: Actions `37541249482` — hygiene/restore/build/tests PASS.
-- Final automated head: `119a7af1482e5e2e92b3d97fc709b596fca58f88`.
-- Final Windows CI: Actions `37541684119` — hygiene/restore/build/tests PASS.
-- PR: #8 draft, base `feat/f0-1-open-render`, sin merge.
+- RED `37540833680`: build PASS; navigation tests failed because `PageNavigationState` did not exist.
+- GREEN `37540952320`; WPF GREEN `37541249482`; final CI `37541684119` PASS.
+- Final head `119a7af1482e5e2e92b3d97fc709b596fca58f88`.
+- PR #8 draft; no merge.
 
-### Evidence F0.3
+### F0.3 — Zoom / Fit
 
-- TDD RED: Actions `37568533436` — build PASS; 4 zoom tests FAIL porque `PdfZoomState` no existía.
-- Core GREEN: Actions `37568643857` — hygiene/restore/build/tests PASS.
-- Edge RED: Actions `37568836993` — 1 FAIL / 12 PASS; Fit <25% + Zoom Out detectado.
-- Edge GREEN: Actions `37568978306` — 13/13 tests PASS.
-- WPF integration GREEN: Actions `37569211594` — hygiene/restore/build/tests PASS.
-- Final head: `cb3841163b8f79ef5fb8ad58f0fd920ecbf84e30`.
-- Final Windows CI: Actions `37569477256` — hygiene/restore/build/tests PASS.
-- PR: #9 draft, base `feat/f0-2-navigation`, sin merge.
+- RED `37568533436`; edge RED `37568836993`.
+- Core/edge/UI GREEN `37568643857`, `37568978306`, `37569211594`.
+- Final CI `37569477256` PASS.
+- Final head `cb3841163b8f79ef5fb8ad58f0fd920ecbf84e30`.
+- PR #9 draft; no merge.
 
-### Evidence F0.4
+### F0.4 — Scheduler + Cancel
 
-- Scheduler RED: Actions `37571170438` — build PASS; 4 nuevas FAIL / 13 existentes PASS porque `PdfRenderScheduler` no existía.
-- Scheduler GREEN: Actions `37571250584` — build/tests PASS.
-- Cancellation RED: Actions `37571350431` — build PASS; 2 nuevas FAIL / 17 PASS porque faltaban overloads cancelables.
-- Cancellation GREEN: Actions `37571466113` — hygiene/restore/build/tests PASS.
-- Resize-fit integration GREEN: Actions `37571727867` — hygiene/restore/build/tests PASS.
-- Functional head verificado: `37d3bbaa1a5eb7696e158af269db055c60e9193a`.
-- PR: #10 draft, base `feat/f0-3-zoom-fit`, sin merge.
+- Scheduler RED `37571170438`; cancellation RED `37571350431`.
+- GREEN `37571250584`, `37571466113`; resize integration `37571727867` PASS.
+- Final head `1b948dd2452acdf830cf054adb085889cdb51a9d`.
+- PR #10 draft; no merge.
 
-### Evidence F0.5
+### F0.5 — Windows Print
 
-- Print RED: Actions `37572401035` — build PASS; 5 nuevas FAIL / 19 existentes PASS porque faltaban `PdfPrintRange` / `PdfDocumentPaginator`.
-- Print core GREEN: Actions `37572515207` — hygiene/restore/build/tests PASS.
-- WPF print integration GREEN: Actions `37572716709` — hygiene/restore/build/tests PASS.
-- Functional head verificado: `ff22fbae8e28f6d08fa8e716ad2a8040b5ea54a4`.
-- PR: #11 draft, base `feat/f0-4-scheduler-cancel`, sin merge.
+- RED `37572401035`: 5 new FAIL / 19 existing PASS.
+- Core GREEN `37572515207`; WPF integration `37572716709`.
+- Final CI `37573058825` PASS.
+- Final head `1b2355d7611db9101d74d7e42babcf9d11c9ca94`.
+- PR #11 draft; no merge.
 
-### Pending Todos
+### F0.6 — QA / Hardening / Offline
 
-- Ejecutar smoke manual Windows acumulado F0.1–F0.5: apertura, navegación, límites, zoom/fit, resize y printing.
-- F0.5 smoke: cancelar diálogo; imprimir todas; página actual; rango; Microsoft Print to PDF y reabrir resultado; portrait + landscape; impresora física si existe.
-- Medir calidad/memoria/latencia de impresión a 200 DPI con PDF real pesado; cambiar solo si evidencia lo exige.
-- Probar PDF de una sola página y archivo inválido conservando comportamiento controlado.
-- Si smoke PASS, marcar slices físicamente QA-closed.
-- NEXT técnico: F0.6 QA/hardening + validación offline + cierre de F0.
-- Después de cerrar F0 completo ejecutar Gate ZPL-A con corpus privado + sintético.
+- Requirement audit found missing **go to page** in `PDF-BASE-03`.
+- Go-to-page RED `37574330464`: build PASS; 24 existing PASS + 3 new FAIL because method was absent.
+- Go-to-page GREEN `37574407816`: PASS.
+- UI/offline initial `37574605307`: build PASS; 29/30 PASS; only failure was false positive on WPF `xmlns` URI.
+- Corrected offline guard `37574711705`: PASS.
+- Multipage + invalid PDF regressions `37574831279`: PASS.
+- Functional final head `4621739d257ab9a9879d27008ef2de68091f5c6a`.
+- Functional final CI `37574941763`: hygiene/restore locked/Release build/tests/Windows job PASS.
+- PR #12 draft, base `feat/f0-5-print`; no merge.
 
-### Blockers/Concerns
+## Physical QA Pending
 
-- No hay blocker técnico automatizado.
-- El entorno actual no expone escritorio Windows interactivo ni impresora para afirmar smoke visual/físico.
-- La cancelación actual no interrumpe `FPDF_RenderPageBitmap` a mitad de llamada; evita esperar el gate cuando ya fue cancelado y descarta resultados cancelados antes de publicación. Reevaluar progressive solo si PDFs reales muestran latencia inaceptable.
-- La impresión F0.5 rasteriza a 200 DPI. Es deliberadamente simple y debe medirse en F0.6 antes de cualquier optimización.
-- F0.5 ajusta la página al área imprimible seleccionada; no cambia orientación de papel automáticamente.
-- Antigravity project-scoped está soportado upstream, pero este A1 validó Codex; validarlo en host real cuando se use.
+The current environment has no interactive Windows desktop/printer, so these remain **NOT RUN**:
+
+1. real one-page and multipage PDFs;
+2. previous/next and bounds;
+3. direct go-to-page with valid/invalid input and Esc;
+4. zoom presets, 100%, Fit Page, Fit Width;
+5. rapid resize in fit modes and latest-request-wins convergence;
+6. explicit navigation/zoom winning over pending auto-refit;
+7. print dialog cancel;
+8. print all/current/range;
+9. Microsoft Print to PDF and reopen result;
+10. portrait + landscape and physical printer if available;
+11. heavy PDF for 200-DPI print quality/memory/latency;
+12. network disabled while opening/rendering/navigating/zooming/printing locally;
+13. invalid PDF controlled error while preserving prior valid session.
+
+If this smoke passes, F0 can be marked physically QA-closed and `PDF-BASE-01..07` accepted.
+
+## Blockers / Concerns
+
+- No automated technical blocker.
+- Physical Windows smoke is the only F0 closure gate.
+- `FPDF_RenderPageBitmap` is still synchronous; progressive/native mid-call cancellation remains deferred until measured need.
+- Print raster is 200 DPI pending real-world measurement.
+- F0.5 does not auto-change paper orientation; driver settings remain authoritative.
 
 ## Deferred Items
 
-| Category | Item | Status | Deferred At | Milestone |
-|----------|------|--------|-------------|-----------|
-| PDF | Progressive rendering / native mid-call abort | Deferred until measured need | F0.4 | F0.6 or later |
-| Print | Ajuste de DPI/estrategia de raster según pruebas reales | Deferred until measured need | F0.5 | F0.6 |
-| Tooling | Activar integración Graphify automática de una versión GSD futura (`graphify.enabled`) | Deferred until audited upgrade | A1 | v0.x |
+| Category | Item | Status | Deferred At | Revisit |
+|---|---|---|---|---|
+| PDF | Progressive rendering / native mid-call abort | Deferred until measured need | F0.4 | after physical heavy-PDF test |
+| Print | DPI/raster strategy optimization | Deferred until measured need | F0.5 | after physical print test |
+| Tooling | Future automatic GSD↔Graphify integration | Deferred until audited upgrade | A1 | later tooling upgrade |
 | Product | Installer/autoupdate/cloud/accounts | Out of current scope | A0 | v1+ |
 
 ## Session Continuity
 
-Last session: 2026-10-06
-Stopped at: F0.5 implemented and automated-verified; PR #11 draft open; manual Windows UI/print smoke remains before physical QA close.
-Resume file: `docs/history/2026-10-06-F0.5.md`
+Last session: 2026-10-07  
+Stopped at: F0.6 automated implementation verified; PR #12 draft; physical F0 smoke remains pending.  
+Resume file: `docs/history/2026-10-07-F0.6.md`
