@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "lastAuditDate": "2026-10-06",
+  "lastAuditDate": "2026-10-07",
   "policy": {
     "runtimeMustWorkOffline": true,
     "preferredLicenses": ["MIT", "BSD-2-Clause", "BSD-3-Clause", "Apache-2.0"],
@@ -24,22 +24,27 @@
       ]
     },
     {
-      "name": "BinaryKits.Zpl",
-      "upstream": "https://github.com/BinaryKits/BinaryKits.Zpl",
-      "version": null,
-      "status": "candidate-gate-zpl-a",
-      "purpose": "Preferred candidate for offline in-process ZPL preview/PDF rendering",
-      "license": "MIT",
-      "notes": "Do not add to product dependency graph until Gate ZPL-A passes with private and synthetic corpus. Audit SkiaSharp/HarfBuzz/FreeType/ZXing transitive notices when pinning the package."
-    },
-    {
       "name": "GOODBOY008/labelize",
       "upstream": "https://github.com/GOODBOY008/labelize",
-      "version": "1.7.0-candidate-audited-2026-10-06",
-      "status": "fallback-only-blocked-for-release",
-      "purpose": "Fallback offline ZPL renderer if BinaryKits fidelity is insufficient",
-      "license": "MIT with permissive third-party notices",
-      "notes": "Release blocked while provenance of ZplGSCustom.ttf remains unresolved to project satisfaction."
+      "version": "1.7.0",
+      "status": "runtime-current-f2",
+      "purpose": "Offline ZPL rendering sidecar for PNG preview and later exact-size label workflows",
+      "license": "MIT with permissive embedded-font third-party notices",
+      "distribution": "labelize-x86_64-pc-windows-msvc.zip",
+      "releaseArchiveSha256": "cdd4030b0d1a8bad69b93f49866c8dcc5314af8975bb16a76991fe32f92dd21d",
+      "licenseFiles": [
+        "third_party/licenses/Labelize-MIT.txt"
+      ],
+      "notes": "Selected by Gate ZPL-A synthetic evidence. Development/CI stages the verified archive with tools/setup-labelize.ps1; product runtime never downloads it. ZplGSCustom.ttf provenance is acceptable for development but must be re-audited before a public production installer."
+    },
+    {
+      "name": "BinaryKits.Zpl",
+      "upstream": "https://github.com/BinaryKits/BinaryKits.Zpl",
+      "version": "1.3.1-gate-only",
+      "status": "historical-gate-evidence-not-runtime",
+      "purpose": "Historical comparison engine from Gate ZPL-A",
+      "license": "MIT",
+      "notes": "Not part of the F2 runtime dependency graph and not maintained as a fallback engine."
     },
     {
       "name": "PDFsharp",

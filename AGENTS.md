@@ -49,8 +49,8 @@ Construir SG PDF Editor como aplicación Windows simple, rápida, offline y úti
 3. WPF + .NET 10 se mantienen salvo evidencia material que obligue a cambiar.
 4. PDFium es el motor PDF principal; añadir solo las APIs nativas que la fase necesite.
 5. PDFium no es thread-safe: todas las llamadas nativas pasan por exclusión global y nunca bloquean el hilo UI.
-6. BinaryKits.Zpl es candidato preferente para ZPL, pero no se declara ganador hasta pasar Gate ZPL-A. Labelize es fallback condicionado.
-7. PDFsharp se usa de forma puntual para composición de PDFs de etiquetas, no como lector/editor principal.
+6. Labelize 1.7.0 Windows x64 es el motor ZPL seleccionado por Gate ZPL-A; se integra como sidecar local por child process. BinaryKits queda solo como evidencia histórica y no es fallback runtime.
+7. PDFsharp entra únicamente si F2.4 demuestra que sigue siendo la solución KISS necesaria para composición de PDFs de etiquetas; no es lector/editor principal.
 8. qpdf/pdfcpu, Tesseract, PdfPig u otra dependencia entran únicamente cuando una fase concreta demuestre la necesidad.
 9. No incorporar AGPL/GPL fuerte ni dependencias que exijan licencia comercial sin aprobación explícita. Priorizar MIT/BSD/Apache-2.0.
 10. No usar Labelary ni APIs web en runtime.
@@ -68,18 +68,21 @@ Construir SG PDF Editor como aplicación Windows simple, rápida, offline y úti
 ```text
 A0  higiene/trazabilidad                         ✅ completada
 A1  GSD Core + Graphify                         ✅ completada
-F0  PDF base                                    ▶ siguiente / Phase 1
-F1  Gate ZPL-A
-F2  etiquetas ZPL
-F3  firma visual
-F4  lector completo
-F5  organizar
-F6  imágenes
-F7  texto V1
-F8+ fases posteriores
+F0  PDF base                                    ✅ automated PASS / ⏳ physical QA
+F1  Gate ZPL-A                                  ✅ synthetic Gate / ⏳ private corpus
+F2  etiquetas ZPL                              ▶ activa
+    F2.1 Parse + Open                           ✅ automated PASS
+    F2.2 Labelize + Preview                     ✅ automated PASS
+    F2.3 Quantity UX + dimensiones              ▶ siguiente
+    F2.4 Layout + PDF                           ⏳ no iniciar todavía
+    F2.5 Thermal print                          ⏳ pendiente
+    F2.6 Validation/hardening                   ⏳ pendiente
+F3  firma visual                                ⏳ pendiente
+F4  lector completo                             ⏳ pendiente
+F5+ fases posteriores                           ⏳ pendiente
 ```
 
-Antes de implementar F0 se debe hacer el ciclo GSD `discuss/plan`. Mantener los primeros slices pequeños; candidato inicial: `F0.1 abrir PDF desde UI + renderizar una página real en WPF`.
+Continuar por slices pequeños. Antes de iniciar una slice, verificar branch/head/CI reales, revisar `STATE` + plan activo y respetar el orden anterior. No iniciar F2.4 antes de cerrar F2.3.
 
 ## UX base
 

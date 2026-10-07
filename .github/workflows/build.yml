@@ -30,6 +30,14 @@ jobs:
           if ($privateTracked) {
             throw "Private fixtures must not be committed: $privateTracked"
           }
+          $runtimeTracked = git ls-files "third_party/runtime/**"
+          if ($runtimeTracked) {
+            throw "Staged third-party runtime binaries must not be committed: $runtimeTracked"
+          }
+
+      - name: Stage pinned Labelize 1.7.0
+        shell: pwsh
+        run: ./tools/setup-labelize.ps1
 
       - name: Restore locked dependencies
         run: dotnet restore SGPdf.slnx --locked-mode
