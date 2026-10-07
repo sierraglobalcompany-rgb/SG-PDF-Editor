@@ -1,10 +1,12 @@
 using System.IO;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Microsoft.Win32;
 using SGPdf.App.Navigation;
 using SGPdf.App.Pdf;
+using SGPdf.App.Printing;
 
 namespace SGPdf.App;
 
@@ -391,6 +393,7 @@ public partial class MainWindow : Window
         if (_session is null || _navigation is null)
         {
             NavigationBar.Visibility = Visibility.Collapsed;
+            PrintPdfMenuItem.IsEnabled = false;
             PreviousPageButton.IsEnabled = false;
             NextPageButton.IsEnabled = false;
             ZoomOutButton.IsEnabled = false;
@@ -404,6 +407,7 @@ public partial class MainWindow : Window
         }
 
         NavigationBar.Visibility = Visibility.Visible;
+        PrintPdfMenuItem.IsEnabled = !_isBusy;
         PageIndicatorText.Text = $"Página {_navigation.CurrentPageNumber} de {_navigation.PageCount}";
         ZoomPercentButton.Content = $"{PdfZoomState.PercentFromDpi(_currentDpi)}%";
 
@@ -422,6 +426,78 @@ public partial class MainWindow : Window
             return;
 
         StatusText.Text = $"{Path.GetFileName(_session.FilePath)} — página {_navigation.CurrentPageNumber} de {_navigation.PageCount}";
+    }
+
+    private void PrintPdf_Click(object sender, RoutedEventArgs e)
+    {
+        if (_session is null || _navigation is null || _isBusy)
+            return;
+
+        _resizeRenderScheduler.CancelCurrent();
+        var printDialog = new PrintDialog
+        {
+            CurrentPageEnabled = true,
+            SelectedPagesEnabled = false,
+            UserPageRangeEnabled = _navigation.PageCount > 1,
+            MinPage = 1,
+            MaxPage = checked((uint)_navigation.PageCount),
+            PageRangeSelection = PageRangeSelection.AllPages
+        };
+
+        var printingStarted = false;
+
+        try
+        {
+            if (printDialog.ShowDialog() != true)
+                return;
+
+            var range = ResolvePrintRange(printDialog, _navigation);
+            SetBusy(true);
+            printingStarted = true;
+            StatusText.Text = "Enviando a impresora...";
+
+            var paginator = new PdfDocumentPaginator(
+                _session,
+                range,
+                printDialog.PrintableAreaWidth,
+                printDialog.PrintableAreaHeight);
+
+            printDialog.PrintDocument(
+                paginator,
+                $"SG PDF Editor — {Path.GetFileName(_session.FilePath)}");
+
+            StatusText.Text = "Trabajo de impresión enviado.";
+        }
+        catch (Exception ex)
+        {
+            StatusText.Text = "No se pudo imprimir el PDF.";
+            MessageBox.Show(
+                this,
+                $"No se pudo enviar el PDF a la impresora.\n\n{ex.Message}",
+                "SG PDF Editor",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+        }
+        finally
+        {
+            if (printingStarted)
+                SetBusy(false);
+        }
+    }
+
+    private static PdfPrintRange ResolvePrintRange(PrintDialog dialog, PageNavigationState navigation)
+    {
+        return dialog.PageRangeSelection switch
+        {
+            PageRangeSelection.CurrentPage => PdfPrintRange.Current(
+                navigation.CurrentPageIndex,
+                navigation.PageCount),
+            PageRangeSelection.UserPages => PdfPrintRange.UserPages(
+                dialog.PageRange.PageFrom,
+                dialog.PageRange.PageTo,
+                navigation.PageCount),
+            _ => PdfPrintRange.All(navigation.PageCount)
+        };
     }
 
     private void Exit_Click(object sender, RoutedEventArgs e)
