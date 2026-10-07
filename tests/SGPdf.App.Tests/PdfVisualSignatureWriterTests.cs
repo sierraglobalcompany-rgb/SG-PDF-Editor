@@ -29,8 +29,6 @@ public sealed class PdfVisualSignatureWriterTests
         Assert.Equal(1, session.PageCount);
         var rendered = session.RenderPage(0, dpi: 300d);
 
-        // Asset quadrants are intentionally asymmetric. These samples prove
-        // orientation and alpha after PDFium save/reopen rather than file creation only.
         var opaque = SamplePdfPoint(rendered, pageHeightPoints: 300d, x: 81d, y: 135d);
         var transparent = SamplePdfPoint(rendered, 300d, x: 135d, y: 135d);
         var semi = SamplePdfPoint(rendered, 300d, x: 81d, y: 81d);
@@ -49,11 +47,11 @@ public sealed class PdfVisualSignatureWriterTests
         using var fixture = PdfFixture.CreateBluePage();
         var placement = ValidPlacement();
 
-        Assert.Throws<ArgumentException>(() =>
+        Assert.Throws<ArgumentException>((Action)(() =>
             new PdfVisualSignatureWriter().SaveAsCopy(
                 fixture.SourcePath,
                 fixture.SourcePath,
-                new[] { placement }));
+                new[] { placement })));
     }
 
     [Fact]
@@ -62,11 +60,11 @@ public sealed class PdfVisualSignatureWriterTests
         using var fixture = PdfFixture.CreateBluePage();
         var destination = fixture.PathFor("empty.pdf");
 
-        Assert.Throws<ArgumentException>(() =>
+        Assert.Throws<ArgumentException>((Action)(() =>
             new PdfVisualSignatureWriter().SaveAsCopy(
                 fixture.SourcePath,
                 destination,
-                Array.Empty<SignaturePlacement>()));
+                Array.Empty<SignaturePlacement>())));
         Assert.False(File.Exists(destination));
     }
 
@@ -77,23 +75,23 @@ public sealed class PdfVisualSignatureWriterTests
         var writer = new PdfVisualSignatureWriter();
         var asset = CreateAsymmetricAsset();
 
-        Assert.Throws<ArgumentOutOfRangeException>(() =>
+        Assert.Throws<ArgumentOutOfRangeException>((Action)(() =>
             writer.SaveAsCopy(
                 fixture.SourcePath,
                 fixture.PathFor("bad-page.pdf"),
-                new[] { new SignaturePlacement(Guid.NewGuid(), 4, new PdfRect(10, 10, 20, 20), asset) }));
+                new[] { new SignaturePlacement(Guid.NewGuid(), 4, new PdfRect(10, 10, 20, 20), asset) })));
 
-        Assert.Throws<ArgumentException>(() =>
+        Assert.Throws<ArgumentException>((Action)(() =>
             writer.SaveAsCopy(
                 fixture.SourcePath,
                 fixture.PathFor("bad-bounds.pdf"),
-                new[] { new SignaturePlacement(Guid.NewGuid(), 0, new PdfRect(double.NaN, 10, 20, 20), asset) }));
+                new[] { new SignaturePlacement(Guid.NewGuid(), 0, new PdfRect(double.NaN, 10, 20, 20), asset) })));
 
-        Assert.Throws<ArgumentOutOfRangeException>(() =>
+        Assert.Throws<ArgumentOutOfRangeException>((Action)(() =>
             writer.SaveAsCopy(
                 fixture.SourcePath,
                 fixture.PathFor("outside.pdf"),
-                new[] { new SignaturePlacement(Guid.NewGuid(), 0, new PdfRect(290, 290, 20, 20), asset) }));
+                new[] { new SignaturePlacement(Guid.NewGuid(), 0, new PdfRect(290, 290, 20, 20), asset) })));
     }
 
     [Fact]
@@ -106,8 +104,8 @@ public sealed class PdfVisualSignatureWriterTests
             saveAsCopyOverride: static (_, _, _) => 0,
             validateOutputOverride: null);
 
-        Assert.Throws<InvalidOperationException>(() =>
-            writer.SaveAsCopy(fixture.SourcePath, destination, new[] { ValidPlacement() }));
+        Assert.Throws<InvalidOperationException>((Action)(() =>
+            writer.SaveAsCopy(fixture.SourcePath, destination, new[] { ValidPlacement() })));
 
         Assert.Equal("KEEP", File.ReadAllText(destination));
         AssertNoTempResidue(destination);
@@ -123,8 +121,8 @@ public sealed class PdfVisualSignatureWriterTests
             saveAsCopyOverride: null,
             validateOutputOverride: static (_, _, _) => throw new InvalidDataException("forced validation failure"));
 
-        Assert.Throws<InvalidDataException>(() =>
-            writer.SaveAsCopy(fixture.SourcePath, destination, new[] { ValidPlacement() }));
+        Assert.Throws<InvalidDataException>((Action)(() =>
+            writer.SaveAsCopy(fixture.SourcePath, destination, new[] { ValidPlacement() })));
 
         Assert.Equal("KEEP", File.ReadAllText(destination));
         AssertNoTempResidue(destination);
@@ -153,11 +151,10 @@ public sealed class PdfVisualSignatureWriterTests
         const int stride = width * 4;
         var pixels = new byte[stride * height];
 
-        // BGRA rows are top-to-bottom for our managed asset.
-        FillQuadrant(pixels, stride, x0: 0, y0: 0, b: 0, g: 0, r: 0, a: 255);       // top-left black
-        FillQuadrant(pixels, stride, x0: 2, y0: 0, b: 0, g: 0, r: 0, a: 0);         // top-right transparent
-        FillQuadrant(pixels, stride, x0: 0, y0: 2, b: 0, g: 0, r: 255, a: 128);     // bottom-left half red
-        FillQuadrant(pixels, stride, x0: 2, y0: 2, b: 0, g: 0, r: 255, a: 255);     // bottom-right red
+        FillQuadrant(pixels, stride, x0: 0, y0: 0, b: 0, g: 0, r: 0, a: 255);
+        FillQuadrant(pixels, stride, x0: 2, y0: 0, b: 0, g: 0, r: 0, a: 0);
+        FillQuadrant(pixels, stride, x0: 0, y0: 2, b: 0, g: 0, r: 255, a: 128);
+        FillQuadrant(pixels, stride, x0: 2, y0: 2, b: 0, g: 0, r: 255, a: 255);
 
         return new SignatureAsset(width, height, stride, pixels, "asymmetric.png");
     }
@@ -224,9 +221,8 @@ public sealed class PdfVisualSignatureWriterTests
             page.Width = XUnit.FromPoint(300d);
             page.Height = XUnit.FromPoint(300d);
             using (var graphics = XGraphics.FromPdfPage(page))
-            {
                 graphics.DrawRectangle(XBrushes.Blue, 0d, 0d, 300d, 300d);
-            }
+
             document.Save(source);
             document.Close();
             return new PdfFixture(directory, source);
