@@ -18,13 +18,7 @@
 
 **Goal:** reemplazar el flujo manual de Labelary de forma offline.
 
-**Success criteria:**
-- abrir ZPL/TXT/PRN;
-- preview + cantidades `^PQ`;
-- layouts/tamaños configurables;
-- export PDF;
-- impresión térmica Windows;
-- validación digital y física de códigos.
+**Success criteria:** abrir ZPL/TXT/PRN; preview/cantidades; layouts/tamaños; export PDF; impresión térmica Windows; validación digital y física de códigos.
 
 **Requirements:** LABEL-01..08
 
@@ -33,13 +27,16 @@
 - F2.2 Labelize Adapter + Preview — automated PASS;
 - F2.3 Quantity UX + dimensiones físicas/dpmm — automated PASS;
 - F2.4 Layout + PDF Export — automated PASS;
-- **F2.5 Windows Thermal Print — automated PASS / physical hardware QA NOT RUN**: `PrintQueue`/`PrintTicket` preflight, media exacta, CopyCount=1, clipping warning sin escalado, paginator térmico exacto y UI de impresión;
-- **Siguiente: F2.6 Validation + Hardening** — decode automático, corpus privado, impresora/scanner físico, offline/privacy/temp audit.
+- F2.5 Windows Thermal Print — automated PASS / hardware physical QA NOT RUN;
+- **F2.6 Validation + Hardening — automated PASS / private corpus NOT RUN / physical printer-scanner NOT RUN**: exact Code128/QR decode through Labelize→PDF→PDFium at 300 DPI, 90° regression, opt-in private corpus runner, cleanup/offline/privacy evidence.
+
+The automated ZPL pipeline is complete. Private customer-label and physical paper/scanner acceptance remain explicit parallel gates; synthetic CI never substitutes for them.
 
 ## Phase 4 — F3 Firma Visual
 
 **Goal:** firmar visualmente un PDF sin web.  
-**Requirements:** SIGN-01..04
+**Requirements:** SIGN-01..04  
+**Estado:** **Next — design/approval first.**
 
 ## Phase 5 — F4 Lector Completo
 
@@ -94,9 +91,7 @@ A0: complete.
 A1 Development Intelligence: complete.  
 F0: automated PASS; physical Windows smoke pending.  
 F1: synthetic Gate PASS → **Labelize 1.7.0**; private corpus pending formal close.  
-F2.1: automated PASS — Parse + Open.  
-F2.2: automated PASS — Labelize sidecar + local PNG preview.  
-F2.3: automated PASS — quantities + dimensions + dpmm.  
-F2.4: automated PASS — pure-mm layout + sheet preview + transactional PDF export + PDFium reopen validation.  
-F2.5: automated PASS — exact-size Windows thermal print preflight/paginator/UI; **real physical print still pending**.  
-**Current implementation next:** Phase 3 / F2.6 — Validation + Hardening.
+F2.1–F2.6: **automated PASS**.  
+F2 private corpus: **NOT RUN**.  
+F2 physical thermal/scanner acceptance: **NOT RUN**.  
+**Current implementation next:** Phase 4 / F3 — Firma Visual; design/approve before implementation.

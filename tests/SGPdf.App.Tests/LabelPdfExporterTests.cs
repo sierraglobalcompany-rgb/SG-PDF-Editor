@@ -38,6 +38,10 @@ public sealed partial class LabelPdfExporterTests
                 Assert.Equal(MmToPoints(210), double.Parse(match.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture), 2);
                 Assert.Equal(MmToPoints(297), double.Parse(match.Groups[2].Value, System.Globalization.CultureInfo.InvariantCulture), 2);
             });
+
+            var directory = Path.GetDirectoryName(path)!;
+            var fileName = Path.GetFileName(path);
+            Assert.Empty(Directory.GetFiles(directory, $".{fileName}.*.sgpdf.tmp"));
         }
         finally
         {

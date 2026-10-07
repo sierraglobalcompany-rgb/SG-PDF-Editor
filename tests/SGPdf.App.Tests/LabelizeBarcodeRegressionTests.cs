@@ -2,7 +2,6 @@ using SkiaSharp;
 using SGPdf.App.Features.Labels;
 using Xunit;
 using ZXing;
-using ZXing.Common;
 
 namespace SGPdf.App.Tests;
 
@@ -14,9 +13,8 @@ public sealed class LabelizeBarcodeRegressionTests
         var png = await RenderSingleAsync(
             "^XA^BY2,2,100^FO60,80^BCN,100,Y,N,N^FD123456789012^FS^XZ");
 
-        var result = Decode(png, BarcodeFormat.CODE_128);
+        var result = BarcodeDecodeAssert.DecodePng(png, BarcodeFormat.CODE_128);
 
-        Assert.NotNull(result);
         Assert.Equal(BarcodeFormat.CODE_128, result.BarcodeFormat);
         Assert.Equal("123456789012", result.Text);
     }
@@ -27,9 +25,8 @@ public sealed class LabelizeBarcodeRegressionTests
         var png = await RenderSingleAsync(
             "^XA^FO80,80^BQN,2,6^FDLA,SG-PDF-QR-12345^FS^XZ");
 
-        var result = Decode(png, BarcodeFormat.QR_CODE);
+        var result = BarcodeDecodeAssert.DecodePng(png, BarcodeFormat.QR_CODE);
 
-        Assert.NotNull(result);
         Assert.Equal(BarcodeFormat.QR_CODE, result.BarcodeFormat);
         Assert.Equal("SG-PDF-QR-12345", result.Text);
     }
@@ -40,10 +37,9 @@ public sealed class LabelizeBarcodeRegressionTests
         var png = await RenderSingleAsync(
             "^XA^FT120,360^BQN,2,6^FDLA,SG-PDF-FT-QR^FS^XZ");
 
-        var result = Decode(png, BarcodeFormat.QR_CODE);
+        var result = BarcodeDecodeAssert.DecodePng(png, BarcodeFormat.QR_CODE);
         var (minX, minY) = FindInkOrigin(png);
 
-        Assert.NotNull(result);
         Assert.Equal("SG-PDF-FT-QR", result.Text);
         Assert.True(minX > 20, $"Expected ^FT QR to be offset horizontally, minX={minX}.");
         Assert.True(minY > 20, $"Expected ^FT QR to be offset vertically, minY={minY}.");
@@ -55,41 +51,6 @@ public sealed class LabelizeBarcodeRegressionTests
         var renderer = new LabelizeProcessRenderer();
         var labels = await renderer.RenderAsync(document, ZplRenderOptions.Default);
         return Assert.Single(labels).PngBytes;
-    }
-
-    private static Result? Decode(byte[] pngBytes, BarcodeFormat expectedFormat)
-    {
-        using var bitmap = SKBitmap.Decode(pngBytes);
-        Assert.NotNull(bitmap);
-
-        var rgb = new byte[checked(bitmap.Width * bitmap.Height * 3)];
-        var offset = 0;
-        for (var y = 0; y < bitmap.Height; y++)
-        {
-            for (var x = 0; x < bitmap.Width; x++)
-            {
-                var color = bitmap.GetPixel(x, y);
-                rgb[offset++] = color.Red;
-                rgb[offset++] = color.Green;
-                rgb[offset++] = color.Blue;
-            }
-        }
-
-        var reader = new BarcodeReaderGeneric
-        {
-            AutoRotate = false,
-            Options = new DecodingOptions
-            {
-                TryHarder = true,
-                PossibleFormats = [expectedFormat]
-            }
-        };
-
-        return reader.Decode(
-            rgb,
-            bitmap.Width,
-            bitmap.Height,
-            RGBLuminanceSource.BitmapFormat.RGB24);
     }
 
     private static (int MinX, int MinY) FindInkOrigin(byte[] pngBytes)
