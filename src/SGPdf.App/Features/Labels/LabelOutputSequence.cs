@@ -26,6 +26,8 @@ public sealed class LabelOutputSequence
         TotalCount = total;
     }
 
+    public int DesignCount => _cumulativeEnds.Length;
+
     public long TotalCount { get; }
 
     public int GetDesignIndexAt(long outputIndex)
