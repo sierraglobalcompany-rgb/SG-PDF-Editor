@@ -9,7 +9,7 @@
 
 Close the ZPL feature block with reproducible evidence that the label pipeline preserves machine-readable Code128/QR content, that real private labels can be exercised locally without entering GitHub/CI/Graphify, and that the runtime remains offline/private with temporary files cleaned up.
 
-F2.6 may achieve **automated PASS** in CI, but **F2 physical acceptance remains open** until real printer/ruler/scanner QA and the user's private corpus are actually run on a Windows machine with the required hardware/data.
+F2.6 may achieve **automated PASS** in CI, but **full F2 acceptance remains open** until the private real-label corpus is actually run and the real printer/ruler/scanner QA is actually completed on a Windows machine with the required hardware/data.
 
 ## Existing baseline
 
@@ -121,12 +121,14 @@ If a real printer/scanner is unavailable, status is **NOT RUN**, never PASS.
 
 The repository may contain a **template/checklist only**. Actual private results remain local/ignored.
 
-A local run should end in one of these explicit states:
+A local private-corpus run should end in one of these explicit states:
 
 - `PASS` — all selected private cases rendered/validated as expected;
 - `FAIL` — at least one case mismatched or errored;
-- `NOT RUN` — fixtures/hardware were not supplied;
-- `PARTIAL` — some required corpus/hardware checks were run but the full gate was not completed.
+- `NOT RUN` — private fixtures were not supplied;
+- `PARTIAL` — some required private cases were run but the full private corpus gate was not completed.
+
+Physical QA keeps its own separate PASS/FAIL/NOT RUN/PARTIAL status.
 
 This prevents automated synthetic success from being confused with real-label or physical acceptance.
 
@@ -225,4 +227,4 @@ At the end of automated F2.6:
 
 ## Merge policy
 
-F2.6 remains a draft stacked PR and is not merged automatically. Any merge/rebase/integration remains subject to explicit user approval.
+When implementation begins, F2.6 will use a draft stacked PR based on verified F2.5. It will not be merged automatically. Any merge/rebase/integration remains subject to explicit user approval.
