@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Xml.Linq;
 using SGPdf.App.Pdf;
 using Xunit;
 
@@ -30,11 +31,15 @@ public sealed class OfflineRuntimeTests
     public void RuntimeProject_HasOnlyApprovedPackageDependency()
     {
         var projectPath = FindRepositoryFile("src", "SGPdf.App", "SGPdf.App.csproj");
-        var project = File.ReadAllText(projectPath);
+        var document = XDocument.Load(projectPath);
+        var packages = document
+            .Descendants("PackageReference")
+            .Select(element => (string?)element.Attribute("Include"))
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
 
-        Assert.Contains("bblanchon.PDFium.Win32", project, StringComparison.Ordinal);
-        Assert.DoesNotContain("System.Net.Http", project, StringComparison.OrdinalIgnoreCase);
-        Assert.DoesNotContain("RestSharp", project, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(new[] { "bblanchon.PDFium.Win32" }, packages);
     }
 
     [Fact]
