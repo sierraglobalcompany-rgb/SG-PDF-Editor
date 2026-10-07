@@ -46,6 +46,9 @@ jobs:
           Write-Host '--- SGPDF APP LOCK START ---'
           Get-Content src/SGPdf.App/packages.lock.json -Raw
           Write-Host '--- SGPDF APP LOCK END ---'
+          Write-Host '--- SGPDF TEST LOCK START ---'
+          Get-Content tests/SGPdf.App.Tests/packages.lock.json -Raw
+          Write-Host '--- SGPDF TEST LOCK END ---'
 
       - name: Build
         run: dotnet build SGPdf.slnx --configuration Release --no-restore
