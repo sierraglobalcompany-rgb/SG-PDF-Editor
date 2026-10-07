@@ -92,7 +92,8 @@
         "resolved": "6.2.4",
         "contentHash": "GhTr9F1uOYXHCIEOB5PXIgqn5a8WLsJL2m0eewTA0IvY1j6N4HGXHKKmEyB90/N6vrjmYamf41V9zbmdW2HY3g==",
         "dependencies": {
-          "Microsoft.Extensions.Logging.Abstractions": "8.0.3"
+          "Microsoft.Extensions.Logging.Abstractions": "8.0.3",
+          "System.Security.Cryptography.Pkcs": "8.0.1"
         }
       },
       "SkiaSharp.NativeAssets.macOS": {
@@ -104,6 +105,11 @@
         "type": "Transitive",
         "resolved": "3.119.1",
         "contentHash": "8C4GSXVJqSr0y3Tyyv5jz6MJSTVUyYkMjeKrzK+VyZPGLo89MNoUEclVuYahzOCDdtbfXrd2HtxXfDuvoSXrUw=="
+      },
+      "System.Security.Cryptography.Pkcs": {
+        "type": "Transitive",
+        "resolved": "8.0.1",
+        "contentHash": "CoCRHFym33aUSf/NtWSVSZa99dkd0Hm7OCZUxORBjRB16LNhIEOf8THPqzIYlvKM0nNDAPTRBa1FxEECrgaxxA=="
       },
       "xunit.abstractions": {
         "type": "Transitive",
@@ -148,8 +154,8 @@
       "sgpdf.app": {
         "type": "Project",
         "dependencies": {
-          "bblanchon.PDFium.Win32": "[156.0.8076, )",
-          "PDFsharp": "[6.2.4, )"
+          "PDFsharp": "[6.2.4, )",
+          "bblanchon.PDFium.Win32": "[156.0.8076, )"
         }
       }
     }
