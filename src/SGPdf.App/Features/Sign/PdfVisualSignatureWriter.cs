@@ -1,3 +1,4 @@
+using System.IO;
 using System.Runtime.InteropServices;
 using SGPdf.App.Pdf;
 
@@ -257,7 +258,6 @@ internal sealed class PdfVisualSignatureWriter
 
             if (PdfiumNative.FPDFPage_InsertObject(page, imageObject) == 0)
             {
-                // Current PDFium frees the object when insertion fails.
                 imageObject = IntPtr.Zero;
                 throw new InvalidOperationException("PDFium no pudo insertar la firma en la página.");
             }
@@ -337,7 +337,6 @@ internal sealed class PdfVisualSignatureWriter
             }
             catch
             {
-                // The native callback must never throw across the ABI boundary.
             }
             return 0;
         }
@@ -365,7 +364,6 @@ internal sealed class PdfVisualSignatureWriter
         }
         catch
         {
-            // Best-effort cleanup must not hide the primary save failure.
         }
     }
 
