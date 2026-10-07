@@ -17,6 +17,8 @@
 
 **Requirements:** PDF-BASE-01..07
 
+**Estado actual:** implementación y verificación automatizada F0.1–F0.6 PASS; cierre físico Windows todavía pendiente.
+
 ## Phase 2 — F1 Gate ZPL-A
 
 **Goal:** elegir un único renderer ZPL con evidencia.
@@ -29,6 +31,8 @@
 - decisión documentada por fidelidad/rendimiento/licencias.
 
 **Requirements:** ZPL-GATE-01..04
+
+**Estado actual:** Gate sintético ejecutado y decisión de motor aprobada: **Labelize 1.7.0**. Falta ejecutar corpus real privado de Mercado Libre para cerrar formalmente F1; esos archivos no se versionan.
 
 ## Phase 3 — F2 Etiquetas ZPL
 
@@ -43,6 +47,8 @@
 - validación digital y física de códigos.
 
 **Requirements:** LABEL-01..08
+
+**Estado actual:** F2.1 Parse + Open en ejecución/verificación. Esta slice es managed-only; el sidecar local Labelize empieza en F2.2.
 
 ## Phase 4 — F3 Firma Visual
 
@@ -133,5 +139,7 @@
 ## Current Position
 
 A0: complete.  
-A1 Development Intelligence: complete after tooling validation.  
-**Next GSD-managed phase:** Phase 1 — F0 PDF Base, ready to discuss/plan.
+A1 Development Intelligence: complete.  
+F0: automated PASS; physical Windows smoke pending.  
+F1: synthetic Gate PASS for engine selection → **Labelize 1.7.0**; private Mercado Libre corpus pending formal close.  
+**Current implementation:** Phase 3 / F2.1 — ZPL Parse + Open, stacked on the approved Labelize architecture, with no Labelize runtime call until F2.2.
