@@ -187,6 +187,7 @@ public partial class MainWindow
             return;
         }
 
+        var wasShowingSheet = _showSheetPreview;
         try
         {
             var sequence = new LabelOutputSequence(_zplDocument, _zplQuantitySelection);
@@ -211,8 +212,15 @@ public partial class MainWindow
         if (_labelLayoutPlan is null && _showSheetPreview)
             _showSheetPreview = false;
 
-        if (showPreview)
-            ShowCurrentZplPreview();
+        if (!showPreview)
+            return;
+
+        if (_showSheetPreview && _labelLayoutPlan is not null)
+            ShowSelectedZplSheetPreview();
+        else if (wasShowingSheet)
+            ShowSelectedZplPreview();
+        else
+            UpdateLabelNavigationUi();
     }
 
     private void ShowCurrentZplPreview()
