@@ -4,7 +4,7 @@ status: executing
 progress:
   total_phases: 13
   completed_phases: 0
-  total_plans: 4
+  total_plans: 5
   completed_plans: 0
   percent: 0
 ---
@@ -16,16 +16,16 @@ progress:
 See: `.planning/PROJECT.md` (updated 2026-10-06)
 
 **Core value:** Resolver PDF + ZPL diario de forma rápida, privada, estable y offline.
-**Current focus:** Phase 1 — F0 PDF Base / F0.4 Scheduler + Cancel.
+**Current focus:** Phase 1 — F0 PDF Base / F0.5 Windows Print.
 
 ## Current Position
 
 Phase: 1 of 13 (F0 PDF Base)
-Plan: F0.4 implementation + automated verification complete
-Status: F0.1–F0.4 automated PASS; manual Windows UI smoke remains before physical QA close
-Last activity: 2026-10-06 — F0.4 latest-request-wins scheduler, cooperative cancellation and debounced auto-refit implemented on `feat/f0-4-scheduler-cancel`; Windows CI is green.
+Plan: F0.5 implementation + automated verification complete
+Status: F0.1–F0.5 automated PASS; manual Windows UI/print smoke remains before physical QA close
+Last activity: 2026-10-06 — F0.5 Windows Print implemented on `feat/f0-5-print`; print ranges, WPF paginator and File > Print integration are green in Windows CI.
 
-Progress: F0.1 automated PASS + F0.2 automated PASS + F0.3 automated PASS + F0.4 automated PASS; F0 phase remains open.
+Progress: F0.1 automated PASS + F0.2 automated PASS + F0.3 automated PASS + F0.4 automated PASS + F0.5 automated PASS; F0 phase remains open.
 
 ## Development Tooling
 
@@ -52,7 +52,11 @@ Progress: F0.1 automated PASS + F0.2 automated PASS + F0.3 automated PASS + F0.4
 - `FPDF_RenderPageBitmap` no se aborta a mitad de llamada. Progressive rendering queda diferido salvo evidencia real de latencia que justifique su complejidad.
 - Auto-refit durante resize solo corre en `FitPage`/`FitWidth`, con debounce de 150 ms y latest-request-wins.
 - Apertura, navegación y zoom explícitos cancelan cualquier auto-refit pendiente; las acciones manuales mantienen prioridad.
-- Navegación/zoom manual siguen serializados por `_isBusy`; F0.4 no convierte toda la UI en una cola concurrente.
+- F0.5 usa `System.Windows.Controls.PrintDialog` + `DocumentPaginator` + spooler Windows; no se añade librería de impresión.
+- `PdfPrintRange` normaliza todas/actual/rango y convierte rangos del diálogo 1-based a índices PDF 0-based.
+- `PdfDocumentPaginator` renderiza bajo demanda con PDFium a 200 DPI y ajusta proporcionalmente al `PrintableAreaWidth/Height` del driver.
+- Microsoft Print to PDF usa exactamente el mismo flujo que cualquier impresora Windows seleccionada; no existe ruta especial.
+- F0.5 no auto-cambia portrait/landscape ni añade preview/configuración propia; esas opciones permanecen en el driver estándar.
 - Estado/imagen solo se aplican después de render exitoso y validación de contexto; resultados stale se descartan.
 - BinaryKits.Zpl es candidato preferente, sujeto a Gate ZPL-A.
 - GSD/Graphify no se venden ni distribuyen con el producto; sus payloads/grafos generados no se versionan.
@@ -95,22 +99,31 @@ Progress: F0.1 automated PASS + F0.2 automated PASS + F0.3 automated PASS + F0.4
 - Functional head verificado: `37d3bbaa1a5eb7696e158af269db055c60e9193a`.
 - PR: #10 draft, base `feat/f0-3-zoom-fit`, sin merge.
 
+### Evidence F0.5
+
+- Print RED: Actions `37572401035` — build PASS; 5 nuevas FAIL / 19 existentes PASS porque faltaban `PdfPrintRange` / `PdfDocumentPaginator`.
+- Print core GREEN: Actions `37572515207` — hygiene/restore/build/tests PASS.
+- WPF print integration GREEN: Actions `37572716709` — hygiene/restore/build/tests PASS.
+- Functional head verificado: `ff22fbae8e28f6d08fa8e716ad2a8040b5ea54a4`.
+- PR: #11 draft, base `feat/f0-4-scheduler-cancel`, sin merge.
+
 ### Pending Todos
 
-- Ejecutar smoke manual Windows acumulado F0.1–F0.4: apertura, navegación, límites, zoom y fit.
-- F0.4 smoke: activar Fit Page/Fit Width, redimensionar rápidamente y confirmar que la vista converge al tamaño final sin mostrar resultados viejos.
-- Confirmar que una navegación, zoom o apertura manual posterior a resize tiene prioridad sobre re-fit pendiente.
+- Ejecutar smoke manual Windows acumulado F0.1–F0.5: apertura, navegación, límites, zoom/fit, resize y printing.
+- F0.5 smoke: cancelar diálogo; imprimir todas; página actual; rango; Microsoft Print to PDF y reabrir resultado; portrait + landscape; impresora física si existe.
+- Medir calidad/memoria/latencia de impresión a 200 DPI con PDF real pesado; cambiar solo si evidencia lo exige.
 - Probar PDF de una sola página y archivo inválido conservando comportamiento controlado.
 - Si smoke PASS, marcar slices físicamente QA-closed.
-- NEXT técnico: F0.5 Windows Print.
-- Después F0.6 QA/hardening y cierre de F0.
+- NEXT técnico: F0.6 QA/hardening + validación offline + cierre de F0.
 - Después de cerrar F0 completo ejecutar Gate ZPL-A con corpus privado + sintético.
 
 ### Blockers/Concerns
 
 - No hay blocker técnico automatizado.
-- El entorno actual no expone escritorio Windows interactivo para afirmar el smoke visual.
+- El entorno actual no expone escritorio Windows interactivo ni impresora para afirmar smoke visual/físico.
 - La cancelación actual no interrumpe `FPDF_RenderPageBitmap` a mitad de llamada; evita esperar el gate cuando ya fue cancelado y descarta resultados cancelados antes de publicación. Reevaluar progressive solo si PDFs reales muestran latencia inaceptable.
+- La impresión F0.5 rasteriza a 200 DPI. Es deliberadamente simple y debe medirse en F0.6 antes de cualquier optimización.
+- F0.5 ajusta la página al área imprimible seleccionada; no cambia orientación de papel automáticamente.
 - Antigravity project-scoped está soportado upstream, pero este A1 validó Codex; validarlo en host real cuando se use.
 
 ## Deferred Items
@@ -118,11 +131,12 @@ Progress: F0.1 automated PASS + F0.2 automated PASS + F0.3 automated PASS + F0.4
 | Category | Item | Status | Deferred At | Milestone |
 |----------|------|--------|-------------|-----------|
 | PDF | Progressive rendering / native mid-call abort | Deferred until measured need | F0.4 | F0.6 or later |
+| Print | Ajuste de DPI/estrategia de raster según pruebas reales | Deferred until measured need | F0.5 | F0.6 |
 | Tooling | Activar integración Graphify automática de una versión GSD futura (`graphify.enabled`) | Deferred until audited upgrade | A1 | v0.x |
 | Product | Installer/autoupdate/cloud/accounts | Out of current scope | A0 | v1+ |
 
 ## Session Continuity
 
 Last session: 2026-10-06
-Stopped at: F0.4 implemented and automated-verified; PR #10 draft open; manual Windows UI smoke remains before physical QA close.
-Resume file: `docs/history/2026-10-06-F0.4.md`
+Stopped at: F0.5 implemented and automated-verified; PR #11 draft open; manual Windows UI/print smoke remains before physical QA close.
+Resume file: `docs/history/2026-10-06-F0.5.md`
