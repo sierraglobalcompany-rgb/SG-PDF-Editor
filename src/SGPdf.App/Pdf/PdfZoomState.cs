@@ -70,13 +70,16 @@ public sealed class PdfZoomState
     public PdfZoomState ZoomOut(double currentDpi)
     {
         var currentPercent = ToPercent(currentDpi);
+        if (currentPercent <= Presets[0] + 0.01d)
+            return this;
+
         for (var index = Presets.Length - 1; index >= 0; index--)
         {
             if (Presets[index] < currentPercent - 0.01d)
                 return new PdfZoomState(PdfZoomMode.Manual, Presets[index]);
         }
 
-        return new PdfZoomState(PdfZoomMode.Manual, Presets[0]);
+        return this;
     }
 
     public double ResolveDpi(
