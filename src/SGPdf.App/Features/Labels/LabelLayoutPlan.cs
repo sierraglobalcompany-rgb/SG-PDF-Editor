@@ -61,6 +61,7 @@ public sealed class LabelLayoutPlan
     public int Rows { get; }
     public int Columns { get; }
     public int LabelsPerPage { get; }
+    public int DesignCount => _sequence.DesignCount;
     public long TotalLabels { get; }
     public long PageCount { get; }
 
