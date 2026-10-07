@@ -4,7 +4,7 @@ status: executing
 progress:
   total_phases: 13
   completed_phases: 0
-  total_plans: 9
+  total_plans: 10
   completed_plans: 0
   percent: 0
 ---
@@ -16,21 +16,22 @@ progress:
 See `.planning/PROJECT.md`.
 
 **Core value:** Resolver PDF + ZPL diario de forma rápida, privada, estable y offline.  
-**Current focus:** Phase 3 — F2 Etiquetas. **F2.1–F2.5 tienen cierre automatizado PASS. Siguiente: F2.6 Validation + Hardening.** F0 physical smoke y F1 private-corpus acceptance continúan abiertos.
+**Current focus:** Phase 3 — F2 Etiquetas tiene **F2.1–F2.6 automated PASS**. Los gates privados/físicos permanecen abiertos en paralelo. **Siguiente slice de producto: F3 Firma Visual, diseño/aprobación antes de implementar.**
 
 ## Current Position
 
-F2.5 — **Windows Thermal Print: automated PASS / physical QA NOT RUN**.  
-Branch: `feat/f2-5-windows-thermal-print`.  
-PR: #17 draft, base `feat/f2-4-layout-pdf-export`, no merge.  
-Functional head before closure docs: `228d045ed34c1eecdcc3892ee1322f9db56fce4d` → push CI `37682279620` PASS + PR CI `37682285176` PASS; Release build 0 warnings / 0 errors; **136 PASS / 0 FAIL / 0 SKIPPED**.  
-Closure docs are the final mutation; exact-head push/PR CI must be recorded in PR #17.
+F2.6 — **Validation + Hardening: automated PASS / private corpus NOT RUN / physical printer-scanner NOT RUN**.  
+Branch: `feat/f2-6-validation-hardening`.  
+PR: #18 draft, base `feat/f2-5-windows-thermal-print`, no merge.  
+Functional head before closure docs: `b69195ae0fe09edffdba9aeb8829fc9e225c54d5` → PR CI `37689872152` PASS; Release build 0 warnings / 0 errors; **144 PASS / 0 FAIL / 0 SKIPPED**.  
+Closure docs are the final branch mutation; exact-head push/PR CI is recorded in PR #18 after this documentation commit.
 
 Parallel acceptance gates still open:
 
 - F0 PDF Base: F0.1–F0.6 automated PASS; physical Windows UI/print/offline smoke **NOT RUN**.
 - F1 Gate ZPL-A: synthetic comparison complete and engine selected **Labelize 1.7.0**; private Mercado Libre corpus still required for formal close.
-- F2 manual/private: real ZPL corpus, exact physical thermal printing, clipping behavior, barcode/QR scanner and offline/privacy/temp-residue smoke remain **NOT RUN**.
+- F2 private real-label corpus: **NOT RUN**. Use `tools/run-private-label-qa.ps1` locally with ignored `tests/PrivateFixtures/labels`.
+- F2 physical thermal printer/ruler/scanner: **NOT RUN**. Follow `docs/qa/F2.6-PHYSICAL-QA.md`.
 
 ## Development Tooling
 
@@ -45,27 +46,22 @@ Parallel acceptance gates still open:
 - Windows x64 + C# + .NET 10 LTS + WPF remain frozen.
 - KISS solution remains `SGPdf.App + SGPdf.App.Tests`.
 - PDFium remains the primary PDF reader/render engine and native calls remain globally serialized.
-- PDFsharp 6.2.4 is used only for F2.4 label PDF composition/export, not reading/editing.
+- PDFsharp 6.2.4 is used only for label PDF composition/export, not reading/editing.
 
 ### ZPL / Labels
 
 - Labelize 1.7.0 is the sole ZPL runtime renderer; BinaryKits remains historical Gate evidence only.
 - Runtime remains local/offline; no Labelary/HTTP/server/download.
 - `^PQ` is quantity metadata, never a render multiplier; output ordering/counts remain lazy via `LabelOutputSequence`.
-- F2.3 physical dimensions/dpmm are authoritative for rendering.
-- F2.4 `LabelLayoutPlan` is the single physical layout authority in millimeters for preview/export/thermal print.
-- Labels are never silently shrunk to fit.
-- F2.5 uses standard Windows installed-driver printing via `PrintQueue` / `PrintTicket` / `PrintCapabilities`.
-- F2.5 requests exact thermal `PageMediaSize`, normalizes `CopyCount=1`, requests matching DPI when exposed, then validates via `MergeAndValidatePrintTicket`.
-- Driver media quantization tolerance is 0.5 mm per dimension for acceptance only; it never authorizes content scaling.
-- `PageImageableArea` can produce clipping warnings but never changes geometry.
-- `LabelPrintPaginator` is separate from PDF `PdfDocumentPaginator` because PDF printing intentionally uses fit-to-printable-area while labels require exact physical geometry.
-- Thermal print is one label per page; F2.4 rotation is applied exactly once.
-- Paginator blocks page counts above `Int32.MaxValue` rather than overflowing.
-- No RAW ZPL, vendor SDK, direct USB/serial/socket protocol or PDF intermediary was added.
-- `System.Printing` required no new NuGet package.
-- Printing does not rerender Labelize or mutate current workspace state.
-- Real customer/Mercado Libre ZPL remains private/local and never enters repo/CI/Graphify.
+- Physical dimensions in millimeters and selected dpmm are authoritative; labels are never silently shrunk to fit.
+- F2.4 `LabelLayoutPlan` is the single layout authority for preview/export/thermal printing.
+- F2.5 uses installed Windows drivers through `PrintQueue` / `PrintTicket` / `PrintCapabilities`; `CopyCount=1`; imageable area warns only.
+- No RAW ZPL, vendor SDK, direct USB/serial/socket transport or PDF intermediary was added.
+- F2.6 barcode validation is **test/QA-only**. `ZXing.Net 0.16.11` remains in `SGPdf.App.Tests`; it is not a runtime dependency.
+- F2.6 validates real pipeline output: Labelize PNG → PDFsharp export → PDFium raster at 300 DPI → exact ZXing Code128/QR decode, including 90° label rotation.
+- Private QA is explicit opt-in through `SGPDF_PRIVATE_QA_ROOT` / `tools/run-private-label-qa.ps1`; absence of fixtures is `NOT RUN`, never private PASS.
+- Private/customer ZPL, expectation JSON, renders, screenshots, scanner captures and completed private QA reports never enter repo/CI/Graphify.
+- F2.6 added no `src/SGPdf.App`, `.csproj`, package or lockfile changes.
 - No merge to `main` without explicit user approval.
 
 ## Evidence
@@ -84,30 +80,32 @@ Parallel acceptance gates still open:
 
 ### F2.5 — Windows Thermal Print
 
-- Approved spec: `docs/superpowers/specs/2026-10-07-f2-5-windows-thermal-print-design.md`.
-- Approved TDD plan: `docs/superpowers/plans/2026-10-07-f2-5-windows-thermal-print.md`.
-- Task 1 RED `57e286b169bc43576f9453d48b5c73f8ea9c05a4` → `37679965628`; GREEN `731935c3b9533de349cd307d4f3b00e32a9b2f87` → `37680108237`, 118 PASS.
-- Task 2 RED `bb75e3138c6c133fc7f5fad2ab6916635c3d38ad` → `37680438244`; GREEN `450e26f1a664355150694f2bf9241ebd2b86ad06` → `37680626270`, 124 PASS.
-- Task 3 RED `02152926ef99759c5ad863df556473bb4f63b64d` → `37680987425`; GREEN `fd04e5b106977e48bf03a36853cee2ebb2a067fa` → `37681449064`, 130 PASS.
-- Task 4 RED `b8432ff29911b6fe2ebf97bf8e242f507c45c8f2` → `37681780601`: build 0/0; 130 PASS / 6 expected FAIL.
-- Functional GREEN `228d045ed34c1eecdcc3892ee1322f9db56fce4d` → push `37682279620` PASS + PR `37682285176` PASS; build 0/0; **136 PASS**.
-- Scope audit from F2.4: 13 changed files, no `.csproj`, lockfile, third-party runtime, PDF paginator or private fixture changes.
+- Final head `c003d6512a5df5be2f53aab2262d09c6dcbf92cf` → push `37682952554` + PR `37682957831` PASS; **136 tests**.
+- Physical printer/ruler/scanner acceptance remains NOT RUN.
+
+### F2.6 — Validation + Hardening
+
+- Approved spec: `docs/superpowers/specs/2026-10-07-f2-6-validation-hardening-design.md`.
+- Approved plan: `docs/superpowers/plans/2026-10-07-f2-6-validation-hardening.md`.
+- Task 1 PDF decode RED `1b511172fc91b413ae98be112943e29c90fcf3ab` → PR CI `37688599916`: expected 3 `CS0103` because `BarcodeDecodeAssert` did not exist.
+- Task 1 GREEN `e862144c9794795b9c72cfbfb9458c39409ea960` → PR CI `37688842446` PASS; build 0/0; **138 tests**.
+- Task 2 private corpus RED `8b1a7449a1959b2d07959f149b7e5c8d98f6b741` → PR CI `37689085073`: expected 5 errors because `PrivateLabelCorpusQa` did not exist.
+- Task 2 GREEN `1c065d718268c9cfcddbf1f2531fe98fc20e9a53` → PR CI `37689526677` PASS; build 0/0; **143 tests**.
+- Task 3 residue/privacy evidence head `b69195ae0fe09edffdba9aeb8829fc9e225c54d5` → PR CI `37689872152` PASS; build 0/0; **144 tests**. New residue assertions passed without production cleanup changes.
+- Functional scope audit against F2.5: tests/dev tooling/docs only; no runtime source/package/lock/private-fixture changes.
 
 ## Manual / Private QA Pending
 
-1. private real Mercado Libre `.zpl/.txt/.prn` corpus;
-2. visual label/sheet/PDF comparison on Windows;
-3. real save/cancel/overwrite PDF UX;
-4. network-disabled runtime + temp-residue/privacy smoke;
-5. physical thermal printer: 102×152, 100×150, 100×100 + custom;
-6. physical DPI/clipping/feed behavior on real Windows driver;
-7. barcode/QR automatic decode + scanner validation.
+1. Run the user's private real Mercado Libre `.zpl/.txt/.prn` corpus with `tools/run-private-label-qa.ps1`.
+2. Physical thermal print at 102×152, 100×150 and 100×100 mm using a real installed driver.
+3. Measure real printed dimensions and observe clipping/feed/alignment behavior.
+4. Scan representative Code128 and QR physically and compare exact payload text.
+5. F0 broader Windows UI/print/offline physical smoke.
 
 ## Blockers / Concerns
 
-- No automated technical blocker in F2.5.
-- **Physical print correctness is not proven until real hardware QA.** CI validates geometry/tickets/paginator only.
-- F0 physical smoke remains open.
+- No automated technical blocker in F2.6.
+- **Automated barcode decode does not prove scanner/paper behavior.** Physical acceptance remains separate.
 - F1 formal close waits private real labels.
 - `ZplGSCustom.ttf` provenance must be re-audited before a public installer.
 
@@ -115,18 +113,16 @@ Parallel acceptance gates still open:
 
 | Category | Item | Status | Revisit |
 |---|---|---|---|
-| ZPL | Parse/Open | Automated PASS | private QA |
-| ZPL | Labelize preview | Automated PASS | private QA |
-| ZPL | Quantity + physical dimensions/dpmm | Automated PASS | private QA |
-| ZPL | Layout + PDF export | Automated PASS | manual/private QA |
-| ZPL | Windows thermal print | **Automated PASS / physical NOT RUN** | F2.6/manual |
-| ZPL | Validation + hardening | **Next** | F2.6 |
+| ZPL | Parse/Open through validation/hardening | **Automated PASS** | private/physical QA |
+| ZPL | Private real-label corpus | **NOT RUN** | local QA |
+| ZPL | Physical thermal + scanner | **NOT RUN** | hardware QA |
+| PDF | F3 Firma Visual | **Next — design first** | F3 |
 | PDF | Progressive native rendering | Deferred | heavy-PDF QA |
 | Tooling | Automatic GSD↔Graphify integration | Deferred | later |
 
 ## Session Continuity
 
 Last session: 2026-10-07  
-Stopped at: **F2.5 automated complete**, PR #17 draft/unmerged; final closure-head CI still to record after this documentation commit.  
-Next technical slice: **F2.6 Validation + Hardening**. It owns automatic barcode/QR decode, private corpus, real printer/scanner testing and final offline/privacy/temp audit.  
-Resume files: `docs/history/2026-10-07-F2.5.md`, `.planning/phases/02-f1-zpl-gate/F2.5-PLAN.md`, `docs/superpowers/specs/2026-10-07-f2-5-windows-thermal-print-design.md`.
+Stopped at: **F2.6 automated functional complete**, PR #18 draft/unmerged; closure docs are landing and exact closure-head CI must be recorded in PR #18.  
+Next product slice after closure: **F3 Firma Visual**. Classify/design/approve before implementation. F2 private and physical gates remain open in parallel and must never be inferred from synthetic CI.  
+Resume files: `docs/history/2026-10-07-F2.6.md`, `docs/qa/F2.6-PHYSICAL-QA.md`, `docs/superpowers/specs/2026-10-07-f2-6-validation-hardening-design.md`, `docs/superpowers/plans/2026-10-07-f2-6-validation-hardening.md`.
