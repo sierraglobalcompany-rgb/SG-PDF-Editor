@@ -81,7 +81,7 @@ ThermalPrintPreflightResult
   └─ summary
              ↓ user confirms
 LabelPrintPaginator
-  └─ exact physical page + existing PNG
+  └─ exact physical page + current F2.4 placement/rotation + existing PNG
              ↓
 PrintDialog.PrintDocument(...)
              ↓
@@ -92,14 +92,16 @@ No generic printer abstraction/plugin framework is introduced. Keep the Windows-
 
 ## Media-size authority
 
-The authoritative requested dimensions are the **currently applied F2.3/F2.4 physical label dimensions**, not the printer driver's defaults.
+The authoritative requested dimensions are the **current F2.4 thermal plan dimensions**, which are derived from the applied F2.3 physical label dimensions plus explicit F2.4 rotation.
 
 For Thermal media:
 
 - one output label = one physical page;
-- requested page width/height come from the current thermal `LabelLayoutPlan`;
+- requested page width/height come from `LabelLayoutPlan.PageWidthMm/PageHeightMm`;
+- when F2.4 rotation is 90°, the thermal planner already swaps occupied/page width and height; F2.5 must not swap them a second time;
 - WPF device-independent units use `96 / 25.4` units per millimeter;
-- label content is drawn at that requested physical rectangle;
+- the paginator uses the single `LabelPlacement` returned by `LabelLayoutPlan.GetPage(...)` as geometry authority;
+- if placement rotation is 90°, rotate the PNG geometrically exactly as F2.4 preview/PDF export do; do **not** stretch the unrotated bitmap into the swapped rectangle;
 - no `FitInsidePage`, stretch-to-printable-area, auto-orientation or shrink-to-fit is allowed.
 
 ### Driver size validation
@@ -108,13 +110,13 @@ The app may request a custom `PageMediaSize(width, height)` even when the exact 
 
 After validation:
 
-- compare the validated media width/height against the requested dimensions;
+- compare the validated media width/height against the requested plan dimensions;
 - allow a transport/driver quantization tolerance of **0.5 mm per dimension**;
 - this tolerance is only for deciding whether the driver accepted the requested media; it does **not** authorize scaling the label content;
 - if either dimension differs by more than 0.5 mm, block the job before spooling;
-- orientation swaps are accepted only when they correspond exactly to the requested orientation, never silently.
+- orientation swaps are accepted only when they correspond to the already-requested F2.4 thermal orientation/rotation, never silently.
 
-Reason for tolerance: Windows print units and driver-reported media commonly quantize physical dimensions. F2.6 physical QA may tighten or revise this threshold from real hardware evidence.
+Reason for tolerance: Windows print units and driver-reported media commonly quantize physical dimensions. F2.6 physical QA may tighten or revise this threshold from real hardware evidence. In particular, the current UI's `102 × 152 mm (4 × 6 in)` preset is a rounded commercial label description, while exact 4 × 6 inches is 101.6 × 152.4 mm; F2.5 does not silently rewrite the stored F2.3 dimensions. Physical QA will determine whether that preset should later be canonicalized to exact inch dimensions.
 
 ## Imageable-area policy
 
@@ -167,9 +169,11 @@ Responsibilities:
 
 - consume `LabelOutputSequence`, thermal `LabelLayoutPlan`, and the existing per-design `ZplRenderedLabel` collection;
 - `PageCount` = total output labels, after checked `int` validation;
-- each page resolves its design lazily from the output sequence;
-- `PageSize` = exact requested thermal media size in WPF units;
-- draw white background plus the selected PNG at the exact full requested label rectangle;
+- each paginator page obtains the corresponding `LabelLayoutPage`/single `LabelPlacement` from the thermal plan rather than recomputing physical geometry;
+- each page resolves its design lazily from the existing sequence/placement;
+- `PageSize` = exact thermal plan page size in WPF units;
+- draw white background plus the selected PNG using the placement's exact X/Y/width/height and rotation transform;
+- for the current thermal plan the placement normally starts at 0/0 and fills the physical page, but the paginator must still consume plan geometry rather than hard-code that assumption;
 - no centering/scaling calculation based on printable area;
 - no PDF generation;
 - no Labelize call during normal print pagination.
@@ -193,7 +197,7 @@ Flow:
 1. user clicks `Imprimir etiquetas...`;
 2. standard Windows `PrintDialog` opens;
 3. user selects printer/preferences and presses Print;
-4. **nothing is spooled yet**;
+4. `ShowDialog()` returns selection/configuration only; SG PDF Editor has not yet called `PrintDocument`;
 5. app obtains selected `PrintQueue` + `PrintTicket` and performs preflight;
 6. if blocked, show the specific reason and return to the workspace;
 7. if valid, show confirmation summary;
@@ -206,14 +210,15 @@ Minimum information:
 
 ```text
 Impresora: Zebra ZD421
-Tamaño: 102 × 152 mm
+Tamaño solicitado: 102 × 152 mm
+Tamaño validado por driver: 101.6 × 152.4 mm
 Resolución: 203 dpi
 Etiquetas: 25
 Copias de Windows: 1
 Escalado SG PDF Editor: ninguno
 ```
 
-Warnings appear directly below, for example:
+If requested and validated size are effectively identical, the UI may collapse them to one size line. Warnings appear directly below, for example:
 
 - `El área imprimible reportada no cubre toda la etiqueta; puede haber recorte.`
 - `La impresora no reporta una resolución equivalente a 203 dpi; se usará la resolución validada por el driver.`
@@ -244,7 +249,7 @@ If `PrintDocument` throws after confirmation, report failure; do not alter quant
 - no temporary PDF;
 - no new persistent temp label files;
 - existing managed PNG bytes feed the paginator;
-- remote/network printers may of course be handled by Windows if the user selected one, but SG PDF Editor itself does not create network connections or discover printers over the Internet.
+- remote/network printers may of course be handled by Windows if the user selected one, but SG PDF Editor itself does not create Internet requests or implement its own printer discovery protocol.
 
 ## Testing strategy
 
@@ -258,7 +263,7 @@ Cover at minimum:
 - validated exact-size acceptance;
 - <=0.5 mm media quantization acceptance without content scaling;
 - >0.5 mm media substitution blocking;
-- swapped/incompatible dimensions blocking;
+- swapped/incompatible dimensions blocking unless explicitly requested by the F2.4 plan;
 - imageable-area shortfall produces warning, not scaling;
 - matching resolution selection;
 - unsupported/missing resolution warning;
@@ -266,7 +271,8 @@ Cover at minimum:
 - output quantities are not multiplied twice;
 - lazy design sequence preserved;
 - `Int32.MaxValue` paginator boundary/overflow block;
-- paginator page size equals requested physical label size;
+- paginator page size equals current thermal plan size;
+- 90° plan rotation uses rotated geometry rather than image stretching/double-swapping;
 - paginator never calls the PDF `FitInsidePage` path;
 - paginator chooses correct design for repeated quantities;
 - UI print button only enabled for valid Thermal layout;
@@ -278,6 +284,7 @@ Use small local delegates/test seams where needed for `PrintDialog`/preflight su
 
 - Zebra/TSC/Xprinter or available Windows thermal driver;
 - 102×152, 100×150, 100×100 and one custom size;
+- exact 4×6-inch behavior vs rounded 102×152 preset;
 - 203/300/600 dpi where hardware exists;
 - measure printed physical dimensions;
 - edge/clipping behavior;
@@ -316,12 +323,12 @@ Rejected: unnecessary dependency, reduced printer portability, and contrary to t
 
 F2.5 automated closure requires:
 
-1. current F2.4 layout remains the geometry authority;
+1. current F2.4 thermal plan remains the geometry/rotation authority;
 2. selected Windows printer is preflighted through validated `PrintTicket`;
 3. incompatible driver media substitution blocks before spool;
 4. imageable-area issues warn but never scale;
 5. Windows copy count cannot multiply SG PDF Editor quantity;
-6. `LabelPrintPaginator` draws exact requested physical page geometry;
+6. `LabelPrintPaginator` consumes F2.4 placements and draws exact requested physical geometry including 90° rotation;
 7. no PDF intermediary, RAW ZPL path or new runtime package;
 8. build/tests/CI green with fresh evidence;
 9. state/roadmap/history updated;
