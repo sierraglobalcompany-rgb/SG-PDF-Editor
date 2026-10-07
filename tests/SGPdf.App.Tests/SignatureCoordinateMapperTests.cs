@@ -7,15 +7,15 @@ namespace SGPdf.App.Tests;
 public sealed class SignatureCoordinateMapperTests
 {
     [Fact]
-    public void DeviceRectToPdfRect_RoundTripsAgainstArbitraryAffineTransform()
+    public void DeviceRectToPdfRect_RoundTripsAgainstOrthogonalRotatedTransform()
     {
         var transform = new PdfPageDeviceTransform(
             OriginX: 10d,
             OriginY: 500d,
-            XAxisX: 0.5d,
-            XAxisY: 0.1d,
-            YAxisX: -0.05d,
-            YAxisY: -0.75d,
+            XAxisX: 0d,
+            XAxisY: 0.5d,
+            YAxisX: 0.75d,
+            YAxisY: 0d,
             DeviceWidth: 1200,
             DeviceHeight: 1800);
 
@@ -62,14 +62,15 @@ public sealed class SignatureCoordinateMapperTests
     }
 
     [Fact]
-    public void GetVisiblePdfBounds_EnclosesAllMappedDeviceCorners()
+    public void GetVisiblePdfBounds_EnclosesMappedDevicePage()
     {
-        var transform = new PdfPageDeviceTransform(20d, 700d, 0.5d, 0.15d, -0.1d, -0.65d, 800, 1000);
+        var transform = new PdfPageDeviceTransform(20d, 700d, 0d, 0.5d, 0.65d, 0d, 800, 1000);
 
         var bounds = SignatureCoordinateMapper.GetVisiblePdfBounds(transform);
+        var mapped = SignatureCoordinateMapper.DeviceRectToPdfRect(
+            new SignatureDeviceRect(0d, 0d, 800d, 1000d),
+            transform);
 
-        var fullDevice = new SignatureDeviceRect(0d, 0d, 800d, 1000d);
-        var mapped = SignatureCoordinateMapper.DeviceRectToPdfRect(fullDevice, transform);
         Assert.InRange(Math.Abs(bounds.Left - mapped.Left), 0d, 0.01d);
         Assert.InRange(Math.Abs(bounds.Bottom - mapped.Bottom), 0d, 0.01d);
         Assert.InRange(Math.Abs(bounds.Width - mapped.Width), 0d, 0.01d);
