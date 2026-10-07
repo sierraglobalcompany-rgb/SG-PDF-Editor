@@ -437,6 +437,14 @@
                                     Padding="12,5"
                                     IsEnabled="False"
                                     Click="ExportLabelPdf_Click" />
+
+                            <Button x:Name="PrintLabelButton"
+                                    Content="Imprimir etiquetas..."
+                                    HorizontalAlignment="Left"
+                                    Margin="0,8,0,0"
+                                    Padding="12,5"
+                                    IsEnabled="False"
+                                    Click="PrintLabels_Click" />
                         </StackPanel>
                     </ScrollViewer>
                 </Grid>

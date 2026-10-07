@@ -32,7 +32,6 @@ No releer todo el repositorio por defecto. Si GSD/Graphify no están instalados,
 - Graphify `0.9.77`, project-scoped y en virtualenv local bajo `.devtools/`.
 - `.codex/`, `.devtools/` y `graphify-out/` son generados/regenerables y no se versionan.
 - `.planning/` sí se versiona como memoria operativa.
-- Graphify auto-update permanece desactivado; actualizar manualmente cuando aporte valor.
 - GSD/Graphify son dev-only y nunca dependencia runtime/build del producto.
 
 ## Misión
@@ -63,7 +62,10 @@ Construir SG PDF Editor como aplicación Windows simple, rápida, offline y úti
 17. Graphify se usa cuando reduce lecturas; no sustituye compiler/tests/búsqueda simple.
 18. Cada cierre relevante actualiza estado/resumen y genera Markdown histórico portable.
 19. Para layouts de etiquetas, dimensiones físicas en milímetros son autoridad; nunca shrink-to-fit silencioso.
-20. F2.5 impresión debe reutilizar la geometría validada de F2.4 y no duplicar un segundo motor de layout.
+20. Impresión térmica Windows reutiliza el `LabelLayoutPlan` de F2.4; no duplicar un segundo motor de layout.
+21. `PageImageableArea` solo advierte posible clipping; nunca debe causar escalado/traslación silenciosa.
+22. SG PDF Editor es la autoridad de cantidad de etiquetas; `PrintTicket.CopyCount` se normaliza a 1.
+23. No introducir RAW ZPL/vendor SDK/direct USB-serial-socket sin un slice y aprobación explícitos.
 
 ## Orden de ejecución actual
 
@@ -72,30 +74,33 @@ A0  higiene/trazabilidad                         ✅ completada
 A1  GSD Core + Graphify                         ✅ completada
 F0  PDF base                                    ✅ automated PASS / ⏳ physical QA
 F1  Gate ZPL-A                                  ✅ synthetic Gate / ⏳ private corpus
-F2  etiquetas ZPL                              ▶ activa
+F2  etiquetas ZPL                               ▶ activa
     F2.1 Parse + Open                           ✅ automated PASS
     F2.2 Labelize + Preview                     ✅ automated PASS
     F2.3 Quantity UX + dimensiones              ✅ automated PASS
     F2.4 Layout + PDF Export                    ✅ automated PASS
-    F2.5 Thermal print                          ▶ siguiente — diseñar antes de implementar
-    F2.6 Validation/hardening                   ⏳ pendiente
+    F2.5 Windows Thermal Print                  ✅ automated PASS / ⏳ physical QA
+    F2.6 Validation/hardening                   ▶ siguiente
 F3  firma visual                                ⏳ pendiente
 F4  lector completo                             ⏳ pendiente
 F5+ fases posteriores                           ⏳ pendiente
 ```
 
-F2.4 dejó:
+F2.5 dejó:
 
-- salida lazy por cantidad;
-- planner físico puro en mm;
-- Thermal/A4/Carta/custom;
-- layouts 1/2/3/4/6/8/10/12/custom;
-- márgenes/gaps + rotación 0/90;
-- preview de hoja desde los PNG de Labelize sin rerender;
-- PDFsharp 6.2.4 MIT pinneado solo para export;
-- export transaccional + reopen/render PDFium.
+- preflight puro de tamaño/DPI/copias/área imprimible;
+- tolerancia driver 0.5 mm por dimensión solo para aceptar cuantización, nunca para escalar;
+- `LabelPrintPaginator` exacto, 1 etiqueta por página;
+- Windows `PrintQueue` / `PrintTicket` / `PrintCapabilities` + `MergeAndValidatePrintTicket`;
+- `CopyCount=1` y cantidades provenientes del modelo SG PDF Editor;
+- clipping warning sin shrink-to-fit;
+- botón `Imprimir etiquetas...` solo en layout Thermal válido;
+- impresión no rerenderiza Labelize ni muta workspace;
+- sin nuevo NuGet, RAW ZPL, vendor SDK, PDF intermediario ni red runtime.
 
-Continuar por slices pequeños. Antes de iniciar una slice, verificar branch/head/CI reales, revisar `STATE` + plan activo y respetar el orden. **No iniciar F2.5 sin diseño/aprobación propios.**
+**Importante:** CI no prueba papel real. F2.5 está automatizado; dimensiones físicas impresas, clipping real y lectura scanner permanecen NOT RUN hasta F2.6/manual hardware QA.
+
+Continuar por slices pequeños. Antes de F2.6 revisar `STATE`, spec/plan vigente y definir claramente qué parte puede cerrarse en CI y qué requiere corpus/hardware privado.
 
 ## UX base
 
@@ -131,7 +136,7 @@ This project has a knowledge graph at `graphify-out/` with god nodes, community 
 When the user types `/graphify`, use the installed graphify skill/instructions first.
 
 Rules:
-- For codebase questions, run `graphify query "<question>"` first when `graphify-out/graph.json` exists and aporta valor.
+- For codebase questions, run `graphify query "<question>"` first when `graphify-out/graph.json` exists y aporta valor.
 - Use `graphify path` for relationships and `graphify explain` for focused concepts.
 - Dirty ignored graph outputs are expected; not a reason to skip Graphify.
 - Use `graphify-out/wiki/index.md` for broad navigation when present.
