@@ -7,6 +7,8 @@
 
 ### F0 — PDF Base
 
+> **Estado 2026-10-07:** implementación + verificación automatizada de `PDF-BASE-01` a `PDF-BASE-07` = **PASS**. Los checkboxes permanecen abiertos hasta completar el smoke físico Windows, incluyendo Microsoft Print to PDF y prueba con red deshabilitada.
+
 - [ ] **PDF-BASE-01** Abrir un PDF local desde la UI.
 - [ ] **PDF-BASE-02** Renderizar páginas reales con PDFium sin bloquear la UI.
 - [ ] **PDF-BASE-03** Navegar anterior/siguiente/ir a página.

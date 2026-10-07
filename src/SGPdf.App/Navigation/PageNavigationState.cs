@@ -37,4 +37,15 @@ public sealed class PageNavigationState
             ? new PageNavigationState(PageCount, CurrentPageIndex + 1)
             : this;
     }
+
+    public PageNavigationState GoToPageNumber(int pageNumber)
+    {
+        if (pageNumber < 1 || pageNumber > PageCount)
+            throw new ArgumentOutOfRangeException(nameof(pageNumber));
+
+        var pageIndex = pageNumber - 1;
+        return pageIndex == CurrentPageIndex
+            ? this
+            : new PageNavigationState(PageCount, pageIndex);
+    }
 }

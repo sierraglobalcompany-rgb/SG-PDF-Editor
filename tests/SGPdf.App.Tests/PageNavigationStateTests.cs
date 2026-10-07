@@ -46,6 +46,35 @@ public sealed class PageNavigationStateTests
         Assert.Equal(0, state.Next().CurrentPageIndex);
     }
 
+    [Fact]
+    public void GoToPageNumber_UsesOneBasedPageNumber()
+    {
+        var state = new PageNavigationState(5, 1);
+        var result = state.GoToPageNumber(4);
+
+        Assert.Equal(3, result.CurrentPageIndex);
+        Assert.Equal(4, result.CurrentPageNumber);
+        Assert.Equal(5, result.PageCount);
+    }
+
+    [Fact]
+    public void GoToCurrentPageNumber_ReturnsSameState()
+    {
+        var state = new PageNavigationState(5, 2);
+
+        Assert.Same(state, state.GoToPageNumber(3));
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(6)]
+    public void GoToPageNumber_RejectsOutOfRangePageNumber(int pageNumber)
+    {
+        var state = new PageNavigationState(5);
+
+        Assert.Throws<ArgumentOutOfRangeException>(() => state.GoToPageNumber(pageNumber));
+    }
+
     [Theory]
     [InlineData(0, 0)]
     [InlineData(-1, 0)]
