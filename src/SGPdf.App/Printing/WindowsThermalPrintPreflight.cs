@@ -118,7 +118,7 @@ public static class WindowsThermalPrintPreflight
             WpfUnitsToMillimeters(extentHeight));
 
     private static ThermalImageableAreaMm? ConvertImageableAreaToMillimeters(
-        PrintDocumentImageableArea? imageableArea)
+        PageImageableArea? imageableArea)
     {
         if (imageableArea is null)
             return null;
