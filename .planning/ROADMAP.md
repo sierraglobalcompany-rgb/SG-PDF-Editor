@@ -48,7 +48,7 @@
 
 **Requirements:** LABEL-01..08
 
-**Estado actual:** F2.1 Parse + Open en ejecución/verificación. Esta slice es managed-only; el sidecar local Labelize empieza en F2.2.
+**Estado actual:** F2.1 Parse + Open y F2.2 Labelize Adapter + Preview tienen cierre automatizado PASS. **Siguiente: F2.3 Quantity UX + dimensiones físicas/dpmm.** F2.4 layout/PDF todavía no inicia.
 
 ## Phase 4 — F3 Firma Visual
 
@@ -142,4 +142,6 @@ A0: complete.
 A1 Development Intelligence: complete.  
 F0: automated PASS; physical Windows smoke pending.  
 F1: synthetic Gate PASS for engine selection → **Labelize 1.7.0**; private Mercado Libre corpus pending formal close.  
-**Current implementation:** Phase 3 / F2.1 — ZPL Parse + Open, stacked on the approved Labelize architecture, with no Labelize runtime call until F2.2.
+F2.1: automated PASS — Parse + Open.  
+F2.2: automated PASS — pinned Labelize sidecar + local renderer + navigable WPF PNG preview.  
+**Current implementation next:** Phase 3 / F2.3 — Quantity UX + physical dimensions/dpmm. No F2.4 composition until F2.3 closes.
