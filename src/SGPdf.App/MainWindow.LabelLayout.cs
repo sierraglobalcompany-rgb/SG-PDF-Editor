@@ -39,6 +39,7 @@ public partial class MainWindow
         LabelSheetCanvas.Children.Clear();
         LabelSheetCanvas.Visibility = Visibility.Collapsed;
         ExportLabelPdfButton.IsEnabled = false;
+        PrintLabelButton.IsEnabled = false;
     }
 
     private void PreviewMode_Checked(object sender, RoutedEventArgs e)
@@ -83,6 +84,7 @@ public partial class MainWindow
             _labelLayoutValidationMessage = "Revisa las medidas, márgenes, separaciones y filas/columnas.";
             PreviewSheetRadio.IsEnabled = false;
             ExportLabelPdfButton.IsEnabled = false;
+            PrintLabelButton.IsEnabled = false;
             LayoutValidationText.Text = _labelLayoutValidationMessage;
             LayoutValidationText.Visibility = Visibility.Visible;
             if (_showSheetPreview)
@@ -350,6 +352,12 @@ public partial class MainWindow
         PreviewSheetRadio.IsChecked = _showSheetPreview;
         PreviewSheetRadio.IsEnabled = _labelLayoutPlan is not null;
         ExportLabelPdfButton.IsEnabled = _labelLayoutPlan is not null && !_isBusy;
+        PrintLabelButton.IsEnabled =
+            _zplDocument is not null &&
+            _renderedZplLabels.Count > 0 &&
+            _labelLayoutPlan is not null &&
+            _labelLayoutSettings.MediaKind == LabelMediaKind.Thermal &&
+            !_isBusy;
 
         SheetMediaComboBox.SelectedIndex = _labelLayoutSettings.MediaKind switch
         {
