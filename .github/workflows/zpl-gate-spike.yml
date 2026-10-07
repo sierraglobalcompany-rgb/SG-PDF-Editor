@@ -1,0 +1,72 @@
+name: zpl-gate-spike
+
+on:
+  push:
+    branches:
+      - spike/f1-zpl-gate-a
+  workflow_dispatch:
+
+jobs:
+  windows-zpl-gate:
+    runs-on: windows-2025
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore spike harness
+        shell: pwsh
+        run: dotnet restore spikes/F1.ZplGate/F1.ZplGate.csproj
+
+      - name: Build spike harness
+        shell: pwsh
+        run: dotnet build spikes/F1.ZplGate/F1.ZplGate.csproj -c Release --no-restore
+
+      - name: Download pinned Labelize 1.7.0 Windows binary
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path .spike-tools | Out-Null
+          $zip = Join-Path $PWD '.spike-tools/labelize-1.7.0-win-x64.zip'
+          Invoke-WebRequest `
+            -Uri 'https://github.com/GOODBOY008/labelize/releases/download/v1.7.0/labelize-x86_64-pc-windows-msvc.zip' `
+            -OutFile $zip
+          $actual = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLowerInvariant()
+          $expected = 'cdd4030b0d1a8bad69b93f49866c8dcc5314af8975bb16a76991fe32f92dd21d'
+          if ($actual -ne $expected) { throw "Labelize SHA256 mismatch: $actual" }
+          Expand-Archive -Path $zip -DestinationPath .spike-tools/labelize -Force
+          $exe = Get-ChildItem .spike-tools/labelize -Recurse -Filter labelize.exe | Select-Object -First 1
+          if (-not $exe) { throw 'labelize.exe not found in release archive' }
+          "LABELIZE_EXE=$($exe.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "LABELIZE_EXE_BYTES=$($exe.Length)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Execute synthetic gate
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path spike-out | Out-Null
+          dotnet run --project spikes/F1.ZplGate/F1.ZplGate.csproj -c Release --no-build -- "$env:LABELIZE_EXE" "$PWD/spike-out"
+
+      - name: Measure integration footprint
+        shell: pwsh
+        run: |
+          dotnet publish spikes/F1.ZplGate/F1.ZplGate.csproj -c Release -r win-x64 --self-contained false -o spike-out/binarykits-publish
+          $publishBytes = (Get-ChildItem spike-out/binarykits-publish -File -Recurse | Measure-Object Length -Sum).Sum
+          $publishFiles = (Get-ChildItem spike-out/binarykits-publish -File -Recurse | Measure-Object).Count
+          @"
+          BinaryKits spike framework-dependent publish bytes: $publishBytes
+          BinaryKits spike publish file count: $publishFiles
+          Labelize 1.7.0 executable bytes: $env:LABELIZE_EXE_BYTES
+          "@ | Set-Content spike-out/packaging.txt
+          Get-Content spike-out/report.md | Add-Content $env:GITHUB_STEP_SUMMARY
+          "`n## Packaging`n" | Add-Content $env:GITHUB_STEP_SUMMARY
+          Get-Content spike-out/packaging.txt | Add-Content $env:GITHUB_STEP_SUMMARY
+
+      - name: Upload gate evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: f1-zpl-gate-a
+          path: spike-out
+          if-no-files-found: error
+          retention-days: 7
