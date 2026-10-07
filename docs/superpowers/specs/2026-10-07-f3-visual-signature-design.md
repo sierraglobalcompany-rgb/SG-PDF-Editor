@@ -148,7 +148,10 @@ PDF opened in current PdfDocumentSession
       generates page content
       saves to temporary file
                ↓
-     reopen/render with PDFium
+     close writer/native handles
+     release PDFium NativeGate
+               ↓
+     reopen/render with PdfDocumentSession
                ↓
       atomic destination replace/move
 ```
@@ -286,6 +289,8 @@ show a simple three-way choice:
 - `Descartar`
 - `Cancelar`
 
+If save succeeds, continue the originally requested navigation/close/mode action. If save fails or is canceled, remain on the current page with edits intact.
+
 The original source PDF is never overwritten as part of this flow.
 
 ## 9. PNG import
@@ -415,6 +420,18 @@ Encryption-at-rest beyond normal Windows profile permissions is not required for
 
 ## 13. PDF writing strategy
 
+### F3.1 alpha insertion gate
+
+Before building the full writer/UI, implementation must prove with a synthetic test that the currently packaged PDFium build can:
+
+1. receive the prepared BGRA/alpha signature bitmap;
+2. insert it as an image page object at a known rectangle;
+3. save the document;
+4. reopen/render it;
+5. preserve the underlying page pixels through transparent parts of the signature.
+
+This is a technical gate, not a second engine comparison. If alpha cannot be preserved using the intended minimal PDFium path, stop and return to design instead of flattening the entire page or silently losing transparency.
+
 ### Do not mutate the active read session
 
 The current `PdfDocumentSession` remains a read/render session for the UI. `Guardar como...` uses a dedicated write operation that opens the source PDF independently under the existing global PDFium native gate.
@@ -426,6 +443,10 @@ Benefits:
 - original stays unchanged;
 - transactional output is simpler;
 - reopened validation is independent.
+
+### Native gate rule
+
+PDFium remains globally serialized. The writer may hold `PdfiumRuntime.NativeGate` while its native document/page/bitmap/save handles are active, but it must **close those native handles and release the gate before** reopening the temporary output through `PdfDocumentSession` for validation. Do not call a `PdfDocumentSession` method that reacquires the same gate while already holding it.
 
 ### Writer responsibilities
 
@@ -445,12 +466,25 @@ A focused `PdfVisualSignatureWriter` should:
    - close page;
 5. save the modified document to the temporary output using PDFium save-as-copy APIs;
 6. close all native handles even on failure;
-7. reopen the temporary PDF with the existing PDFium reader;
-8. validate page count and render each affected page;
-9. only then move/replace the requested destination;
-10. remove temporary output on failure/cancel.
+7. release the global native gate;
+8. reopen the temporary PDF with the existing PDFium reader;
+9. validate page count and render each affected page;
+10. only then move/replace the requested destination;
+11. remove temporary output on failure/cancel.
 
 The exact P/Invoke surface is added minimally when F3.1 is implemented. No generic PDF editing abstraction/plugin system.
+
+### Existing cryptographic signatures
+
+A visual signature changes page content and can invalidate existing certificate/digital signatures. Before writing, F3.1 must perform a minimal preflight for existing PDF signatures when supported by the packaged PDFium API surface.
+
+If one or more existing cryptographic signatures are detected:
+
+- show a clear warning that saving a modified copy can invalidate those signatures;
+- require explicit confirmation before continuing;
+- never describe the F3 visual mark itself as a cryptographic/digital signature.
+
+If reliable signature detection is unavailable in the current PDFium build, do not claim preservation; document the limitation and stop for design review before silently treating a signed PDF as ordinary.
 
 ### Image transparency
 
@@ -467,7 +501,7 @@ F3 uses **Guardar como...** only.
 
 ## 14. Validation after save
 
-Automated acceptance must prove more than `FPDF_SaveAsCopy` returning success.
+Automated acceptance must prove more than the PDFium save function returning success.
 
 For synthetic PDFs:
 
@@ -548,18 +582,21 @@ Interactive pressure/stylus behavior remains manual QA.
 
 ### PDF integration tests
 
+- alpha insertion gate on synthetic PDF before full F3.1 writer/UI;
 - insert transparent asset into synthetic PDF;
 - exact placement in PDF points;
 - multiple placements on same page;
-- duplicate produces two objects/visible instances;
+- duplicate produces two visible instances;
 - deleted placement not written;
 - save/reopen/render;
 - alpha transparency visible over underlying graphics;
 - portrait + landscape pages;
+- coordinate behavior for representative rotated/cropped pages or explicit stop if current mapping cannot support them safely;
 - output remains stable regardless of viewer zoom used to create placement;
 - original source hash unchanged;
 - existing destination preserved on injected write/validation failure;
-- temp cleanup on success/failure.
+- temp cleanup on success/failure;
+- pre-existing cryptographic-signature preflight/warning seam.
 
 ### WPF tests
 
@@ -591,9 +628,10 @@ Manual checklist should include:
 - mouse drawing;
 - touch if available;
 - real stylus/digital pen if available;
+- warning behavior on a PDF that already contains a cryptographic signature, if such a safe test file is available;
 - network disabled during complete signing flow.
 
-If stylus/photo hardware is unavailable, mark those items `NOT RUN`; CI must not imply physical PASS.
+If stylus/photo/signed-PDF test material is unavailable, mark those items `NOT RUN`; CI must not imply physical/manual PASS.
 
 ## 19. Expected implementation footprint
 
@@ -633,11 +671,13 @@ No new runtime NuGet package is expected for F3.1–F3.3. If implementation prov
 2. one or more signatures can be placed on current page;
 3. move/resize/duplicate/delete work without mutating source PDF;
 4. placement is authoritative in PDF coordinates and survives zoom/view changes;
-5. save writes a copy through PDFium, not rasterized full pages;
-6. transparency survives save/reopen;
-7. source stays unchanged and destination write is transactional;
-8. build/tests/CI green with fresh evidence;
-9. PR remains draft/unmerged without explicit user approval.
+5. PDFium alpha insertion gate passes before full writer/UI completion;
+6. save writes a copy through PDFium, not rasterized full pages;
+7. transparency survives save/reopen;
+8. source stays unchanged and destination write is transactional;
+9. pre-existing cryptographic signatures are detected/warned when the current PDFium build can reliably expose them; otherwise implementation stops for design review rather than claiming safety;
+10. build/tests/CI green with fresh evidence;
+11. PR remains draft/unmerged without explicit user approval.
 
 ### F3.2
 
@@ -673,7 +713,8 @@ Stop implementation and return to design if any of these becomes necessary:
 - general-purpose undo/redo/document object framework before F6/F7;
 - complex multi-page pending-edit architecture;
 - cryptographic signing;
-- arbitrary image-object editor behavior beyond visual signatures.
+- arbitrary image-object editor behavior beyond visual signatures;
+- silent modification of a PDF whose existing cryptographic-signature state cannot be assessed safely.
 
 ## 22. Continuation after written-spec approval
 
