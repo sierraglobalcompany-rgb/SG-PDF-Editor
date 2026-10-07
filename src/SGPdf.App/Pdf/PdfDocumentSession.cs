@@ -171,6 +171,24 @@ public sealed class PdfDocumentSession : IDisposable
         }
     }
 
+    public int GetCryptographicSignatureCount()
+    {
+        ThrowIfDisposed();
+        PdfiumRuntime.NativeGate.Wait();
+        try
+        {
+            ThrowIfDisposed();
+            var count = PdfiumNative.FPDF_GetSignatureCount(_document);
+            if (count < 0)
+                throw new InvalidOperationException("PDFium no pudo consultar las firmas criptográficas del documento.");
+            return count;
+        }
+        finally
+        {
+            PdfiumRuntime.NativeGate.Release();
+        }
+    }
+
     public void Dispose()
     {
         if (_document == IntPtr.Zero)
