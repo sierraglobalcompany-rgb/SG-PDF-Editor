@@ -32,9 +32,9 @@
 - F2.1 Parse + Open — automated PASS;
 - F2.2 Labelize Adapter + Preview — automated PASS;
 - F2.3 Quantity UX + dimensiones físicas/dpmm — automated PASS;
-- **F2.4 Layout + PDF Export — automated PASS**: Thermal/A4/Carta/custom, 1/2/3/4/6/8/10/12/custom, márgenes/gaps, rotación 0/90, preview de hoja, PDFsharp 6.2.4 transaccional y reopen PDFium;
-- **Siguiente: F2.5 Windows Thermal Print — diseñar/aprobar antes de implementar**;
-- F2.6 Validation/Hardening — pendiente.
+- F2.4 Layout + PDF Export — automated PASS;
+- **F2.5 Windows Thermal Print — automated PASS / physical hardware QA NOT RUN**: `PrintQueue`/`PrintTicket` preflight, media exacta, CopyCount=1, clipping warning sin escalado, paginator térmico exacto y UI de impresión;
+- **Siguiente: F2.6 Validation + Hardening** — decode automático, corpus privado, impresora/scanner físico, offline/privacy/temp audit.
 
 ## Phase 4 — F3 Firma Visual
 
@@ -98,4 +98,5 @@ F2.1: automated PASS — Parse + Open.
 F2.2: automated PASS — Labelize sidecar + local PNG preview.  
 F2.3: automated PASS — quantities + dimensions + dpmm.  
 F2.4: automated PASS — pure-mm layout + sheet preview + transactional PDF export + PDFium reopen validation.  
-**Current implementation next:** Phase 3 / F2.5 — Windows Thermal Print. Design/approve F2.5 before implementation; no printer-driver work is part of F2.4.
+F2.5: automated PASS — exact-size Windows thermal print preflight/paginator/UI; **real physical print still pending**.  
+**Current implementation next:** Phase 3 / F2.6 — Validation + Hardening.
