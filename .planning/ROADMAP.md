@@ -48,7 +48,7 @@
 
 **Requirements:** LABEL-01..08
 
-**Estado actual:** F2.1 Parse + Open y F2.2 Labelize Adapter + Preview tienen cierre automatizado PASS. **Siguiente: F2.3 Quantity UX + dimensiones físicas/dpmm.** F2.4 layout/PDF todavía no inicia.
+**Estado actual:** F2.1 Parse + Open, F2.2 Labelize Adapter + Preview y **F2.3 Quantity UX + dimensiones físicas/dpmm** tienen cierre automatizado PASS. **Siguiente: F2.4 Layout + PDF composition.** PDFsharp no entra automáticamente: F2.4 debe demostrar primero la solución KISS necesaria.
 
 ## Phase 4 — F3 Firma Visual
 
@@ -144,4 +144,5 @@ F0: automated PASS; physical Windows smoke pending.
 F1: synthetic Gate PASS for engine selection → **Labelize 1.7.0**; private Mercado Libre corpus pending formal close.  
 F2.1: automated PASS — Parse + Open.  
 F2.2: automated PASS — pinned Labelize sidecar + local renderer + navigable WPF PNG preview.  
-**Current implementation next:** Phase 3 / F2.3 — Quantity UX + physical dimensions/dpmm. No F2.4 composition until F2.3 closes.
+F2.3: automated PASS — quantity modes + label size/custom dimensions + 6/8/12/24 dpmm rerendering.  
+**Current implementation next:** Phase 3 / F2.4 — Layout + PDF composition. Design/approve F2.4 before implementation; do not pre-add PDFsharp.
