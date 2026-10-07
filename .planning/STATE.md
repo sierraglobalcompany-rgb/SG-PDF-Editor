@@ -4,7 +4,7 @@ status: executing
 progress:
   total_phases: 13
   completed_phases: 0
-  total_plans: 6
+  total_plans: 7
   completed_plans: 0
   percent: 0
 ---
@@ -16,16 +16,16 @@ progress:
 See: `.planning/PROJECT.md`.
 
 **Core value:** Resolver PDF + ZPL diario de forma rápida, privada, estable y offline.  
-**Current focus:** Phase 3 — F2 Etiquetas; F2.1 and F2.2 automated closed. Next slice: F2.3 Quantity UX + dimensions. F1 private-corpus acceptance remains open.
+**Current focus:** Phase 3 — F2 Etiquetas; F2.1, F2.2 and F2.3 automated closed. Next slice: **F2.4 Layout + PDF composition**, pending its own design/approval. F1 private-corpus acceptance remains open.
 
 ## Current Position
 
-F2.2 — **Labelize Adapter + Preview: automated PASS**.  
-Branch: `feat/f2-2-labelize-preview`.  
-PR: #14 draft, base `feat/f2-1-zpl-parse-open`, no merge.  
-Implementation head before closure docs: `5b8829b65e082ad185eb9f97ed145962b70411d1` → Windows CI `37654759373` PASS, Release build 0 warnings / 0 errors, 73 tests PASS.  
-Task 5 closure docs are the final branch mutation; exact-head CI after that mutation is recorded in PR #14.  
-Last activity: 2026-10-07 — pinned Labelize sidecar, safe local process execution, managed PNG mapping/cleanup and navigable WPF preview completed.
+F2.3 — **Quantity UX + Physical Dimensions/dpmm: automated PASS**.  
+Branch: `feat/f2-3-quantity-dimensions`.  
+PR: #15 draft, base `feat/f2-2-labelize-preview`, no merge.  
+Functional GREEN head before closure docs: `7fba8883f5af57ec1ac8a69bd5ba8bdba379822c` → push Windows CI `37659069251` PASS; Release build 0 warnings / 0 errors; 83 PASS / 0 FAIL / 0 SKIPPED.  
+Closure docs are the final branch mutation; exact-head CI after that mutation is recorded in PR #15.  
+Last activity: 2026-10-07 — quantity modes, physical size presets/custom dimensions and 6/8/12/24 dpmm rerender controls completed without entering layout/PDF/print scope.
 
 Parallel acceptance gates still open:
 
@@ -50,15 +50,11 @@ Parallel acceptance gates still open:
 - KISS solution: App + Tests only; no preventive Core/Infrastructure/Domain/CQRS/MediatR layers.
 - PDFium is the primary PDF engine; native calls globally serialized with `SemaphoreSlim(1,1)`.
 - F0.1 renders PDFium BGRA buffers and WPF creates `BitmapSource` outside native work.
-- F0.2 uses immutable `PageNavigationState`; navigation state commits only after successful render.
+- F0.2 uses immutable `PageNavigationState`; navigation commits only after successful render.
 - F0.3 uses `PdfZoomState` (`Manual`, `FitPage`, `FitWidth`); `100% = 96 DPI`; PDFium rerenders rather than stretching a bitmap.
-- Zoom/fit UX follows shared Acrobat/Foxit/PDF-XChange patterns, simplified by KISS.
-- F0.4 uses `PdfRenderScheduler` latest-request-wins; resize-fit debounce 150 ms; no general queue/workers/multilevel priority.
-- PDFium cancellation is cooperative around synchronous native render. Progressive rendering remains deferred until real latency evidence requires it.
-- F0.5 uses WPF `PrintDialog` + `DocumentPaginator` + Windows spooler; Microsoft Print to PDF uses the same standard path.
-- F0.5 print raster starts at 200 DPI; quality/memory/latency must be measured physically before changing strategy.
-- F0.6 completed `PDF-BASE-03` with `GoToPageNumber(int)` and compact `Página [n] de N`.
-- F0.6 offline guard rejects direct network assemblies/clients/remote XAML navigation and pins runtime NuGet surface to `bblanchon.PDFium.Win32` only.
+- F0.4 uses `PdfRenderScheduler` latest-request-wins; resize-fit debounce 150 ms; no general worker/queue architecture.
+- F0.5 uses WPF `PrintDialog` + `DocumentPaginator` + Windows spooler; print raster starts at 200 DPI pending physical measurement.
+- F0.6 completed direct go-to-page and offline guards.
 
 ### ZPL / Labels
 
@@ -71,13 +67,16 @@ Parallel acceptance gates still open:
 - `TotalQuantityFromFile` is `long`.
 - `^DF` stored-format definition blocks remain support context, not user-visible designs; normalized document-level source preserves `^DF/^XF` order.
 - `^PQ` inside a `^DF` definition is rejected rather than guessed.
-- F2.2 renders the normalized document once, maps Labelize outputs deterministically to printable designs and fails on output-count mismatch rather than guessing.
-- Labelize render temp data is request-scoped; PNG bytes are loaded into managed memory before cleanup.
-- WPF preview uses `BitmapImage.CacheOption=OnLoad`; no temp file remains attached to the UI bitmap.
+- F2.2 renders normalized ZPL once, maps Labelize outputs deterministically and fails on output-count mismatch.
+- Labelize render temp data is request-scoped; PNG bytes are in managed memory before cleanup; WPF uses `BitmapImage.CacheOption=OnLoad`.
 - Label preview navigation is Previous / `Etiqueta n de N` / Next; each design appears once regardless of `^PQ`.
-- Opening ZPL remains candidate-first: parse + render must succeed before replacing a valid PDF/ZPL workspace.
-- Window close cancels an active Labelize child process through the existing process-tree cancellation path.
-- F2.2 defaults remain 102×152 mm at 8 dpmm; final size/dpmm UX belongs to F2.3.
+- Opening ZPL is candidate-first; render must succeed before replacing a valid workspace. Window close cancels active Labelize work.
+- F2.3 quantity modes: `Del archivo`, `Una de cada`, `Personalizada por diseño`; quantity changes **never rerender** Labelize.
+- F2.3 physical presets: 102×152, 100×150, 100×100 mm plus custom width/height; resolutions 6/8/12/24 dpmm.
+- Physical size/dpmm changes rerender the normalized ZPL with Labelize; the old PNG is never stretched.
+- Applied physical settings commit only after successful rerender; failure/cancellation keeps the last valid preview/settings and selected design.
+- F2.3 added no package/dependency; the small `_renderZplAsync` delegate is a local test seam, not a renderer abstraction layer.
+- F2.4 is next. Do not add PDFsharp preemptively; first design the composition path and prove the smallest required dependency.
 - Real Mercado Libre/customer ZPL stays private/local and is never committed, attached to CI artifacts or indexed by Graphify.
 - No merge to `main` without explicit user approval.
 
@@ -95,27 +94,30 @@ Parallel acceptance gates still open:
 ### F1 — Gate ZPL-A synthetic probe
 
 - Throwaway branch: `spike/f1-zpl-gate-a`.
-- Verified head `2df2f374ae6124729389640425dc8334d0647f9f`.
-- Windows workflow `37577735748`: PASS.
-- Both engines rendered the synthetic corpus and produced decodable Code128/QR after alpha-aware comparison.
-- Measured throughput: Labelize ~59–61 designs/s vs BinaryKits ~26–28 designs/s.
-- Packaging: Labelize executable 5,860,352 bytes vs BinaryKits probe framework-dependent publish ~16.9 MB / 14 files.
-- `^FT + ^BQ`: BinaryKits rendered the QR 60 px lower vertically than Labelize while both remained decodable.
-- **Formal F1 acceptance remains open for private real Mercado Libre corpus.**
+- Verified head `2df2f374ae6124729389640425dc8334d0647f9f`; workflow `37577735748` PASS.
+- Both engines rendered/decoded the synthetic corpus; Labelize selected by fidelity/performance/packaging/licensing evidence.
+- Formal F1 acceptance still waits for the private real Mercado Libre corpus.
 
 ### F2.1 — ZPL Parse + Open
 
 - Automated implementation/history PASS on branch `feat/f2-1-zpl-parse-open` / PR #13 draft.
 - History-complete head `21fc4e515677b4870fe6319b246d7329bda39ce1` → `37584180581` PASS.
-- Final implementation head recorded in the F2.1 history/PR; no merge.
 
 ### F2.2 — Labelize Adapter + Preview
 
-- Tasks 1–3 consolidated GREEN head `8d6da1e6cd2099a812adc54c8e6c90d409e01be0` → `37641938607` PASS; build 0 warnings / 0 errors; 72 tests PASS.
-- Task 4 RED head `691163513af05c6182cc0a65c7356eb9df498ddc` → `37642332662` expected failure.
-- Task 4 GREEN implementation head `5b8829b65e082ad185eb9f97ed145962b70411d1` → `37654759373` PASS; build 0 warnings / 0 errors; 73 tests PASS.
-- Diff audit: no runtime HTTP/server, no BinaryKits fallback, no PDF composition/PDFsharp, no private fixtures, no committed Labelize runtime/archive.
-- Exact-head closure CI after Task 5 docs is recorded in PR #14.
+- Tasks 1–3 consolidated GREEN head `8d6da1e6cd2099a812adc54c8e6c90d409e01be0` → `37641938607` PASS; 72 tests.
+- Task 4 RED `691163513af05c6182cc0a65c7356eb9df498ddc` → `37642332662` expected failure.
+- Task 4 GREEN `5b8829b65e082ad185eb9f97ed145962b70411d1` → `37654759373` PASS; 73 tests.
+- Final F2.2 head `9af600ce19812adb67a11718a47734c346b51bfc` → push CI `37656292018` PASS and PR CI `37656303399` PASS; build 0/0; 73 tests.
+
+### F2.3 — Quantity UX + Physical Dimensions/dpmm
+
+- Task 1 RED `dc1630b0bd7ba7abdb3d3279f60b3a747d2df189` → `37657634828` expected compile failure; GREEN `8b079d3c7e510081da368ce7383dd4edf9c9db8a` → `37657815355` PASS.
+- Task 2 RED `96986b42a2ca3b29e92668b0d662d36725698996` → `37658018096`: 79 PASS / 1 expected FAIL; GREEN `d1e212929448b9f5de83a37538ed82c3de45428a` → `37658341567` PASS.
+- Task 3 RED `f022ef6f7ded98e07bcaf6cfd914a1b1dece3606` → `37658611498`: 80 PASS / 3 expected FAIL.
+- Task 3 GREEN implementation head `7fba8883f5af57ec1ac8a69bd5ba8bdba379822c` → push CI `37659069251` PASS; build 0 warnings / 0 errors; 83 PASS / 0 FAIL / 0 SKIPPED.
+- Functional diff audit before closure docs: 6 files only; no package, no parser/runtime engine change, no PDF/layout/print/private fixtures.
+- Exact-head closure CI after documentation is recorded in PR #15.
 
 ## Manual / Private QA Pending
 
@@ -135,13 +137,14 @@ Parallel acceptance gates still open:
 2. design and `^PQ` counts against actual files;
 3. stored-format/template cases if present;
 4. Labelize preview fidelity against known-good output;
-5. interactive PDF ↔ ZPL switching and render cancellation on Windows;
-6. network-disabled/temp-residue privacy smoke;
-7. barcode/QR scanner QA and exact-size thermal printing in later F2 acceptance.
+5. F2.3 quantity modes and size/dpmm controls against real labels;
+6. interactive PDF ↔ ZPL switching and render cancellation on Windows;
+7. network-disabled/temp-residue privacy smoke;
+8. barcode/QR scanner QA and exact-size thermal printing in later F2 acceptance.
 
 ## Blockers / Concerns
 
-- No automated technical blocker in F2.2.
+- No automated technical blocker in F2.3.
 - F0 physical smoke remains open.
 - F1 formal close waits for private real labels, but F2 can continue in small slices.
 - `ZplGSCustom.ttf` Labelize provenance is acceptable for development/Gate selection but must be re-audited before a public production installer.
@@ -155,8 +158,8 @@ Parallel acceptance gates still open:
 | PDF | Progressive rendering / native mid-call abort | Deferred until measured need | after physical heavy-PDF test |
 | Print | DPI/raster strategy optimization | Deferred until measured need | after physical print test |
 | ZPL | Labelize sidecar + navigable PNG preview | **Automated PASS** | F2.2 manual/private QA later |
-| ZPL | Quantity UX + dimensions | **Next** | F2.3 |
-| ZPL | Layout/PDF composition | Planned, dependency only when needed | F2.4 |
+| ZPL | Quantity UX + physical dimensions/dpmm | **Automated PASS** | F2.3 manual/private QA later |
+| ZPL | Layout/PDF composition | **Next — design first** | F2.4 |
 | ZPL | Exact thermal print | Planned | F2.5 |
 | ZPL | Decode/private/physical hardening | Planned | F2.6 |
 | Tooling | Future automatic GSD↔Graphify integration | Deferred | later tooling upgrade |
@@ -164,6 +167,6 @@ Parallel acceptance gates still open:
 ## Session Continuity
 
 Last session: 2026-10-07  
-Stopped at: **F2.2 automated complete**, PR #14 draft, no merge; final exact-head closure run is recorded in PR #14.  
-Next technical slice: **F2.3 Quantity UX + physical dimensions/dpmm**, using the stable F2.2 preview and without starting F2.4 composition.  
-Resume files: `docs/history/2026-10-07-F2.2.md`, `.planning/phases/02-f1-zpl-gate/F2.2-PLAN.md`, `docs/superpowers/specs/2026-10-07-f2-labelize-architecture-design.md`.
+Stopped at: **F2.3 automated complete**, PR #15 draft, no merge; final exact-head closure run is recorded in PR #15.  
+Next technical slice: **F2.4 Layout + PDF composition**. Design/approve it before implementation and do not add PDFsharp until the design demonstrates need.  
+Resume files: `docs/history/2026-10-07-F2.3.md`, `.planning/phases/02-f1-zpl-gate/F2.3-PLAN.md`, `docs/superpowers/specs/2026-10-07-f2-labelize-architecture-design.md`.

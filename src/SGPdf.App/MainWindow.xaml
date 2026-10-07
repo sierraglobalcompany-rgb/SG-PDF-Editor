@@ -179,8 +179,115 @@
                            Foreground="#666" />
             </Grid>
 
-            <Border Grid.Column="2" BorderThickness="1,0,0,0" BorderBrush="LightGray">
-                <TextBlock Margin="16" Text="Propiedades" FontWeight="SemiBold" />
+            <Border Grid.Column="2"
+                    BorderThickness="1,0,0,0"
+                    BorderBrush="LightGray"
+                    IsEnabled="{Binding IsEnabled, ElementName=OpenPdfMenuItem}">
+                <Grid>
+                    <TextBlock x:Name="PropertiesPlaceholderText"
+                               Margin="16"
+                               Text="Propiedades"
+                               FontWeight="SemiBold" />
+
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel x:Name="LabelPropertiesPanel"
+                                    Margin="16"
+                                    Visibility="Collapsed">
+                            <TextBlock Text="Propiedades de etiqueta"
+                                       FontWeight="SemiBold"
+                                       FontSize="16"
+                                       Margin="0,0,0,16" />
+
+                            <TextBlock Text="Cantidad"
+                                       FontWeight="SemiBold"
+                                       Margin="0,0,0,8" />
+                            <RadioButton x:Name="QuantityFromFileRadio"
+                                         GroupName="LabelQuantity"
+                                         Content="Del archivo"
+                                         Margin="0,0,0,6"
+                                         Checked="QuantityMode_Checked" />
+                            <RadioButton x:Name="QuantityOneEachRadio"
+                                         GroupName="LabelQuantity"
+                                         Content="Una de cada"
+                                         Margin="0,0,0,6"
+                                         Checked="QuantityMode_Checked" />
+                            <RadioButton x:Name="QuantityCustomRadio"
+                                         GroupName="LabelQuantity"
+                                         Content="Personalizada por diseño"
+                                         Margin="0,0,0,6"
+                                         Checked="QuantityMode_Checked" />
+                            <TextBox x:Name="CustomQuantityTextBox"
+                                     Width="110"
+                                     HorizontalAlignment="Left"
+                                     Margin="22,0,0,8"
+                                     Padding="6,3"
+                                     Text="1"
+                                     TextChanged="CustomQuantityTextBox_TextChanged"
+                                     IsEnabled="False" />
+                            <TextBlock x:Name="OutputQuantityText"
+                                       Text="Cantidad de salida: 0"
+                                       Foreground="#555"
+                                       TextWrapping="Wrap" />
+
+                            <Separator Margin="0,16,0,14" />
+
+                            <TextBlock Text="Tamaño de etiqueta"
+                                       FontWeight="SemiBold"
+                                       Margin="0,0,0,8" />
+                            <ComboBox x:Name="LabelSizeComboBox"
+                                      SelectedIndex="0"
+                                      SelectionChanged="LabelSizeComboBox_SelectionChanged"
+                                      Margin="0,0,0,8">
+                                <ComboBoxItem Content="102 × 152 mm (4 × 6 in)" />
+                                <ComboBoxItem Content="100 × 150 mm" />
+                                <ComboBoxItem Content="100 × 100 mm" />
+                                <ComboBoxItem Content="Personalizado" />
+                            </ComboBox>
+
+                            <StackPanel x:Name="CustomSizePanel"
+                                        Visibility="Collapsed"
+                                        Margin="0,0,0,10">
+                                <TextBlock Text="Ancho (mm)" Margin="0,0,0,4" />
+                                <TextBox x:Name="CustomWidthTextBox"
+                                         Width="110"
+                                         HorizontalAlignment="Left"
+                                         Padding="6,3"
+                                         Text="102"
+                                         Margin="0,0,0,8" />
+                                <TextBlock Text="Alto (mm)" Margin="0,0,0,4" />
+                                <TextBox x:Name="CustomHeightTextBox"
+                                         Width="110"
+                                         HorizontalAlignment="Left"
+                                         Padding="6,3"
+                                         Text="152"
+                                         Margin="0,0,0,8" />
+                                <Button x:Name="ApplyCustomSizeButton"
+                                        Content="Aplicar tamaño"
+                                        HorizontalAlignment="Left"
+                                        Padding="10,4"
+                                        Click="ApplyCustomSize_Click" />
+                            </StackPanel>
+
+                            <TextBlock Text="Resolución"
+                                       FontWeight="SemiBold"
+                                       Margin="0,4,0,8" />
+                            <ComboBox x:Name="LabelDpmmComboBox"
+                                      SelectedIndex="1"
+                                      SelectionChanged="LabelDpmmComboBox_SelectionChanged"
+                                      Margin="0,0,0,8">
+                                <ComboBoxItem Content="6 dpmm (~152 dpi)" />
+                                <ComboBoxItem Content="8 dpmm (~203 dpi)" />
+                                <ComboBoxItem Content="12 dpmm (~300 dpi)" />
+                                <ComboBoxItem Content="24 dpmm (~600 dpi)" />
+                            </ComboBox>
+
+                            <TextBlock x:Name="RenderSettingsText"
+                                       Text="102 × 152 mm · 8 dpmm (~203 dpi)"
+                                       Foreground="#555"
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
             </Border>
         </Grid>
     </DockPanel>

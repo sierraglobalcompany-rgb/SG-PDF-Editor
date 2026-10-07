@@ -73,8 +73,8 @@ F1  Gate ZPL-A                                  ✅ synthetic Gate / ⏳ private
 F2  etiquetas ZPL                              ▶ activa
     F2.1 Parse + Open                           ✅ automated PASS
     F2.2 Labelize + Preview                     ✅ automated PASS
-    F2.3 Quantity UX + dimensiones              ▶ siguiente
-    F2.4 Layout + PDF                           ⏳ no iniciar todavía
+    F2.3 Quantity UX + dimensiones              ✅ automated PASS
+    F2.4 Layout + PDF                           ▶ siguiente — diseñar antes de implementar
     F2.5 Thermal print                          ⏳ pendiente
     F2.6 Validation/hardening                   ⏳ pendiente
 F3  firma visual                                ⏳ pendiente
@@ -82,7 +82,9 @@ F4  lector completo                             ⏳ pendiente
 F5+ fases posteriores                           ⏳ pendiente
 ```
 
-Continuar por slices pequeños. Antes de iniciar una slice, verificar branch/head/CI reales, revisar `STATE` + plan activo y respetar el orden anterior. No iniciar F2.4 antes de cerrar F2.3.
+F2.3 dejó tres modos de cantidad (archivo / una de cada / personalizada), presets físicos 102×152, 100×150, 100×100, tamaño custom y 6/8/12/24 dpmm. Cantidad no rerenderiza; tamaño/dpmm sí vuelven a renderizar con Labelize y conservan el último preview válido si falla.
+
+Continuar por slices pequeños. Antes de iniciar una slice, verificar branch/head/CI reales, revisar `STATE` + plan activo y respetar el orden anterior. Para F2.4: diseñar primero layout/composición y demostrar si hace falta PDFsharp; no añadirla preventivamente.
 
 ## UX base
 
