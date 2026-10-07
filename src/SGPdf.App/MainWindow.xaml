@@ -7,6 +7,7 @@
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="_Archivo">
                 <MenuItem x:Name="OpenPdfMenuItem" Header="_Abrir..." Click="OpenPdf_Click" />
+                <MenuItem x:Name="PrintPdfMenuItem" Header="_Imprimir..." Click="PrintPdf_Click" IsEnabled="False" />
                 <Separator />
                 <MenuItem Header="_Salir" Click="Exit_Click" />
             </MenuItem>
