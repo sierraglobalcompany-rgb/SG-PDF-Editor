@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.IO;
 using System.Windows;
 using System.Windows.Media.Imaging;
@@ -13,6 +14,10 @@ public partial class MainWindow
     private int _selectedZplDesignIndex;
     private CancellationTokenSource? _labelRenderCts;
     private ZplQuantitySelection _zplQuantitySelection = new(ZplQuantityMode.FromFile);
+    private ZplRenderOptions _zplRenderOptions = ZplRenderOptions.Default;
+    private Func<ZplDocument, ZplRenderOptions, CancellationToken, Task<IReadOnlyList<ZplRenderedLabel>>> _renderZplAsync =
+        static (document, options, cancellationToken) =>
+            new LabelizeProcessRenderer().RenderAsync(document, options, cancellationToken);
     private bool _updatingLabelPropertiesUi;
 
     private async void OpenZpl_Click(object sender, RoutedEventArgs e)
@@ -43,9 +48,9 @@ public partial class MainWindow
             _labelRenderCts = renderCts;
 
             StatusText.Text = "Renderizando etiquetas ZPL...";
-            var rendered = await new LabelizeProcessRenderer().RenderAsync(
+            var rendered = await _renderZplAsync(
                 candidate,
-                ZplRenderOptions.Default,
+                _zplRenderOptions,
                 renderToken);
 
             renderToken.ThrowIfCancellationRequested();
@@ -86,13 +91,7 @@ public partial class MainWindow
         IReadOnlyList<ZplRenderedLabel> renderedLabels)
     {
         ArgumentNullException.ThrowIfNull(document);
-        ArgumentNullException.ThrowIfNull(renderedLabels);
-        if (renderedLabels.Count != document.Designs.Count || renderedLabels.Count == 0)
-        {
-            throw new ArgumentException(
-                "Rendered label count must match the printable ZPL design count.",
-                nameof(renderedLabels));
-        }
+        ValidateRenderedLabels(document, renderedLabels);
 
         _resizeRenderScheduler.CancelCurrent();
 
@@ -103,6 +102,13 @@ public partial class MainWindow
         _renderedZplLabels = renderedLabels.ToArray();
         _selectedZplDesignIndex = 0;
         _zplQuantitySelection = new ZplQuantitySelection(ZplQuantityMode.FromFile);
+
+        var firstRendered = _renderedZplLabels[0];
+        _zplRenderOptions = new ZplRenderOptions(
+            firstRendered.WidthMm,
+            firstRendered.HeightMm,
+            firstRendered.Dpmm);
+
         previousSession?.Dispose();
 
         UpdateViewerControlsUi();
@@ -112,6 +118,19 @@ public partial class MainWindow
         var fileName = Path.GetFileName(document.SourcePath);
         Title = $"SG PDF Editor — {fileName}";
         UpdateCurrentZplStatus();
+    }
+
+    private static void ValidateRenderedLabels(
+        ZplDocument document,
+        IReadOnlyList<ZplRenderedLabel> renderedLabels)
+    {
+        ArgumentNullException.ThrowIfNull(renderedLabels);
+        if (renderedLabels.Count != document.Designs.Count || renderedLabels.Count == 0)
+        {
+            throw new ArgumentException(
+                "Rendered label count must match the printable ZPL design count.",
+                nameof(renderedLabels));
+        }
     }
 
     private void PreviousLabel_Click(object sender, RoutedEventArgs e)
@@ -224,6 +243,169 @@ public partial class MainWindow
         UpdateCurrentZplStatus();
     }
 
+    private async void LabelSizeComboBox_SelectionChanged(
+        object sender,
+        System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        if (_updatingLabelPropertiesUi || _zplDocument is null || _isBusy)
+            return;
+
+        if (LabelSizeComboBox.SelectedIndex == 3)
+        {
+            CustomSizePanel.Visibility = Visibility.Visible;
+            return;
+        }
+
+        ZplRenderOptions? candidate = LabelSizeComboBox.SelectedIndex switch
+        {
+            0 => new ZplRenderOptions(102d, 152d, _zplRenderOptions.Dpmm),
+            1 => new ZplRenderOptions(100d, 150d, _zplRenderOptions.Dpmm),
+            2 => new ZplRenderOptions(100d, 100d, _zplRenderOptions.Dpmm),
+            _ => null
+        };
+
+        if (candidate is not null)
+            await ReRenderCurrentZplAsync(candidate);
+    }
+
+    private async void LabelDpmmComboBox_SelectionChanged(
+        object sender,
+        System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        if (_updatingLabelPropertiesUi || _zplDocument is null || _isBusy)
+            return;
+
+        var dpmm = LabelDpmmComboBox.SelectedIndex switch
+        {
+            0 => 6,
+            1 => 8,
+            2 => 12,
+            3 => 24,
+            _ => _zplRenderOptions.Dpmm
+        };
+
+        await ReRenderCurrentZplAsync(new ZplRenderOptions(
+            _zplRenderOptions.WidthMm,
+            _zplRenderOptions.HeightMm,
+            dpmm));
+    }
+
+    private async void ApplyCustomSize_Click(object sender, RoutedEventArgs e)
+    {
+        if (_zplDocument is null || _isBusy)
+            return;
+
+        if (!TryParsePositiveMillimeters(CustomWidthTextBox.Text, out var widthMm) ||
+            !TryParsePositiveMillimeters(CustomHeightTextBox.Text, out var heightMm))
+        {
+            StatusText.Text = "Ingresa un ancho y alto válidos en milímetros.";
+            return;
+        }
+
+        await ReRenderCurrentZplAsync(new ZplRenderOptions(
+            widthMm,
+            heightMm,
+            _zplRenderOptions.Dpmm));
+    }
+
+    private async Task ReRenderCurrentZplAsync(ZplRenderOptions candidateOptions)
+    {
+        if (_zplDocument is null || _isBusy)
+            return;
+
+        if (RenderOptionsEqual(candidateOptions, _zplRenderOptions))
+        {
+            UpdateLabelPropertiesUi();
+            return;
+        }
+
+        var sourceDocument = _zplDocument;
+        var renderCts = new CancellationTokenSource();
+        var renderToken = renderCts.Token;
+        _labelRenderCts = renderCts;
+
+        SetBusy(true);
+        StatusText.Text = "Renderizando etiquetas ZPL...";
+
+        try
+        {
+            var rendered = await _renderZplAsync(
+                sourceDocument,
+                candidateOptions,
+                renderToken);
+
+            renderToken.ThrowIfCancellationRequested();
+            if (!ReferenceEquals(_zplDocument, sourceDocument) ||
+                !ReferenceEquals(_labelRenderCts, renderCts))
+            {
+                return;
+            }
+
+            ValidateRenderedLabels(sourceDocument, rendered);
+            _renderedZplLabels = rendered.ToArray();
+            _zplRenderOptions = candidateOptions;
+            _selectedZplDesignIndex = Math.Clamp(
+                _selectedZplDesignIndex,
+                0,
+                _renderedZplLabels.Count - 1);
+
+            ShowSelectedZplPreview();
+            UpdateLabelPropertiesUi();
+        }
+        catch (OperationCanceledException) when (renderToken.IsCancellationRequested)
+        {
+            // An interrupted re-render keeps the last valid preview/settings intact.
+        }
+        catch (Exception)
+        {
+            if (ReferenceEquals(_zplDocument, sourceDocument))
+            {
+                StatusText.Text = "No se pudo aplicar el tamaño o resolución solicitados.";
+                UpdateLabelPropertiesUi();
+            }
+        }
+        finally
+        {
+            if (ReferenceEquals(_labelRenderCts, renderCts))
+                _labelRenderCts = null;
+
+            renderCts.Dispose();
+            SetBusy(false);
+            UpdateLabelPropertiesUi();
+        }
+    }
+
+    private static bool RenderOptionsEqual(ZplRenderOptions left, ZplRenderOptions right)
+        => Math.Abs(left.WidthMm - right.WidthMm) < 0.001d &&
+           Math.Abs(left.HeightMm - right.HeightMm) < 0.001d &&
+           left.Dpmm == right.Dpmm;
+
+    private static bool TryParsePositiveMillimeters(string text, out double value)
+    {
+        var parsed = double.TryParse(
+            text,
+            NumberStyles.Float,
+            CultureInfo.CurrentCulture,
+            out value);
+
+        if (!parsed)
+        {
+            parsed = double.TryParse(
+                text,
+                NumberStyles.Float,
+                CultureInfo.InvariantCulture,
+                out value);
+        }
+
+        if (!parsed || !double.IsFinite(value) || value <= 0d)
+        {
+            value = 0d;
+            return false;
+        }
+
+        return true;
+    }
+
     private void UpdateLabelPropertiesUi()
     {
         if (_zplDocument is null)
@@ -243,20 +425,75 @@ public partial class MainWindow
             QuantityOneEachRadio.IsChecked = _zplQuantitySelection.Mode == ZplQuantityMode.OneEach;
             QuantityCustomRadio.IsChecked = _zplQuantitySelection.Mode == ZplQuantityMode.Custom;
 
-            var customText = _zplQuantitySelection.CustomQuantity.ToString();
-            if (!string.Equals(CustomQuantityTextBox.Text, customText, StringComparison.Ordinal))
-                CustomQuantityTextBox.Text = customText;
+            var customQuantityText = _zplQuantitySelection.CustomQuantity.ToString();
+            if (!string.Equals(CustomQuantityTextBox.Text, customQuantityText, StringComparison.Ordinal))
+                CustomQuantityTextBox.Text = customQuantityText;
 
             CustomQuantityTextBox.IsEnabled =
                 !_isBusy && _zplQuantitySelection.Mode == ZplQuantityMode.Custom;
             OutputQuantityText.Text =
                 $"Cantidad de salida: {_zplQuantitySelection.GetTotalQuantity(_zplDocument)}";
+
+            var sizeIndex = GetSizePresetIndex(_zplRenderOptions);
+            LabelSizeComboBox.SelectedIndex = sizeIndex;
+            CustomSizePanel.Visibility = sizeIndex == 3
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+
+            var widthText = FormatMillimeters(_zplRenderOptions.WidthMm);
+            var heightText = FormatMillimeters(_zplRenderOptions.HeightMm);
+            if (!string.Equals(CustomWidthTextBox.Text, widthText, StringComparison.Ordinal))
+                CustomWidthTextBox.Text = widthText;
+            if (!string.Equals(CustomHeightTextBox.Text, heightText, StringComparison.Ordinal))
+                CustomHeightTextBox.Text = heightText;
+
+            LabelDpmmComboBox.SelectedIndex = GetDpmmIndex(_zplRenderOptions.Dpmm);
+            RenderSettingsText.Text =
+                $"{widthText} × {heightText} mm · {_zplRenderOptions.Dpmm} dpmm ({GetApproximateDpi(_zplRenderOptions.Dpmm)})";
         }
         finally
         {
             _updatingLabelPropertiesUi = false;
         }
     }
+
+    private static int GetSizePresetIndex(ZplRenderOptions options)
+    {
+        if (SameSize(options, 102d, 152d))
+            return 0;
+        if (SameSize(options, 100d, 150d))
+            return 1;
+        if (SameSize(options, 100d, 100d))
+            return 2;
+        return 3;
+    }
+
+    private static bool SameSize(ZplRenderOptions options, double widthMm, double heightMm)
+        => Math.Abs(options.WidthMm - widthMm) < 0.001d &&
+           Math.Abs(options.HeightMm - heightMm) < 0.001d;
+
+    private static int GetDpmmIndex(int dpmm)
+        => dpmm switch
+        {
+            6 => 0,
+            8 => 1,
+            12 => 2,
+            24 => 3,
+            _ => 1
+        };
+
+    private static string GetApproximateDpi(int dpmm)
+        => dpmm switch
+        {
+            6 => "~152 dpi",
+            8 => "~203 dpi",
+            12 => "~300 dpi",
+            24 => "~600 dpi",
+            _ => $"~{Math.Round(dpmm * 25.4d)} dpi"
+        };
+
+    private static string FormatMillimeters(double value)
+        => value.ToString("0.##", CultureInfo.CurrentCulture);
 
     private void UpdateCurrentZplStatus()
     {
