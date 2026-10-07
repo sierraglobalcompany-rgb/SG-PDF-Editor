@@ -4,7 +4,7 @@
 
 **Goal:** Close F2.6 automated validation with exact Code128/QR decode evidence through Labelize → PDF export → PDFium, a reproducible private-corpus runner, and final offline/privacy/temp-residue hardening while keeping real corpus and physical printer/scanner acceptance explicitly separate.
 
-**Architecture:** Keep all new validation logic test/dev-only. Reuse the existing Labelize renderer, `LabelPdfExporter`, `PdfDocumentSession`, SkiaSharp and already-pinned ZXing.Net; do not add a runtime scanner or barcode subsystem. Standard CI remains synthetic and offline, while a versioned PowerShell launcher explicitly opts into ignored `tests/PrivateFixtures/` data for local private QA.
+**Architecture:** Keep new validation logic test/dev-only. Reuse the existing Labelize renderer, `LabelPdfExporter`, `PdfDocumentSession`, SkiaSharp and already-pinned ZXing.Net; do not add a runtime scanner or barcode subsystem. Standard CI remains synthetic/offline, while an explicit PowerShell launcher opts into ignored `tests/PrivateFixtures/` data for local private QA.
 
 **Tech Stack:** C# / .NET 10 / xUnit 2.9.3 / SkiaSharp 3.119.1 / ZXing.Net 0.16.11 test-only / Labelize 1.7.0 / PDFsharp 6.2.4 / PDFium / PowerShell / GitHub Actions Windows.
 
@@ -17,7 +17,7 @@
 - `ZXing.Net 0.16.11` already exists in `SGPdf.App.Tests`; do not add it to `src/SGPdf.App`.
 - No new production `PackageReference` and no lockfile mutation unless a separately approved blocker proves it unavoidable.
 - No Labelary, HTTP, sockets, cloud validation, telemetry, downloads, webcam scanning or scanner UI.
-- Real Mercado Libre/customer files, expected JSON, rendered output, screenshots, scanner captures and QA reports remain under ignored/private paths and never enter GitHub/CI/Graphify.
+- Real Mercado Libre/customer files, expected JSON, rendered output, screenshots, scanner captures and QA reports remain private/ignored and never enter GitHub/CI/Graphify.
 - Standard CI success means `F2.6 automated PASS` only; it does not mean private-corpus PASS or physical printer/scanner PASS.
 - Physical QA remains manual and may finish as `NOT RUN`.
 - No merge without explicit user approval.
@@ -26,26 +26,26 @@
 
 1. **PDF raster DPI too low for machine readability** — integration tests render exported thermal pages at 300 DPI and require exact Code128/QR payload matches.
 2. **90° rotation corrupts or double-rotates a code** — a dedicated PDF export + PDFium + ZXing regression must decode the rotated payload exactly.
-3. **Private fixtures absent in normal CI** — standard test execution must remain green, while the explicit private-QA launcher must report `NOT RUN` and non-zero status when its requested root is absent.
-4. **Malformed/missing private expectation metadata** — an explicitly requested private run must fail clearly with the local case filename and must never silently mark PASS.
-5. **Temporary/private residue or runtime scope creep** — failure/success residue assertions and existing offline/package guards must remain green; whole-branch audit must show no runtime ZXing/network/private fixture changes.
+3. **Private fixtures absent in normal CI** — standard tests stay green, while the explicit private-QA launcher reports `NOT RUN` with non-zero exit when its requested root is absent.
+4. **Malformed/missing private expectation metadata** — an explicitly requested private run fails clearly with local case filename context and never silently marks PASS.
+5. **Temporary/private residue or runtime scope creep** — residue assertions and existing offline/package guards remain green; whole-branch audit shows no runtime ZXing/network/private fixture changes.
 
 ---
 
 ## File map
 
 - Create `tests/SGPdf.App.Tests/BarcodeDecodeAssert.cs` — shared test-only decoder helpers for PNG and PDFium BGRA buffers.
-- Create `tests/SGPdf.App.Tests/LabelPdfBarcodeIntegrationTests.cs` — real Labelize → PDFsharp export → PDFium render → ZXing exact-payload tests.
-- Modify `tests/SGPdf.App.Tests/LabelizeBarcodeRegressionTests.cs` — reuse the shared decoder helper; preserve existing PNG regressions.
+- Create `tests/SGPdf.App.Tests/LabelPdfBarcodeIntegrationTests.cs` — real Labelize → PDF export → PDFium render → ZXing exact-payload tests.
+- Modify `tests/SGPdf.App.Tests/LabelizeBarcodeRegressionTests.cs` — reuse shared decoder helper; preserve existing PNG regressions.
 - Create `tests/SGPdf.App.Tests/PrivateLabelCorpusTests.cs` — opt-in private-corpus test entry point plus expectation parsing/validation.
-- Create `tools/run-private-label-qa.ps1` — explicit local launcher that returns `NOT RUN`, `PASS`, or failure without uploading data.
+- Create `tools/run-private-label-qa.ps1` — explicit local private-QA launcher.
 - Modify `tests/SGPdf.App.Tests/LabelizeProcessRendererTests.cs` — add renderer-start failure residue coverage if missing.
-- Modify `tests/SGPdf.App.Tests/LabelPdfExporterTests.cs` — assert no `.sgpdf.tmp` residue after successful export in addition to existing failure coverage.
-- Reuse `tests/SGPdf.App.Tests/OfflineRuntimeTests.cs` unchanged unless a missing assertion is demonstrated by RED.
-- Create `docs/qa/F2.6-PHYSICAL-QA.md` — public checklist/template only, never real private results.
+- Modify `tests/SGPdf.App.Tests/LabelPdfExporterTests.cs` — assert no `.sgpdf.tmp` residue after successful export.
+- Reuse `tests/SGPdf.App.Tests/OfflineRuntimeTests.cs` unchanged unless RED demonstrates a missing guard.
+- Create `docs/qa/F2.6-PHYSICAL-QA.md` — public checklist/template only.
 - Closure only: update `.planning/STATE.md`, `.planning/ROADMAP.md`, `AGENTS.md`, and create `docs/history/2026-10-07-F2.6.md`.
 
-No `src/SGPdf.App` file is expected to change in F2.6. If a RED appears to require product code or a new dependency, stop and reclassify before implementing it.
+No `src/SGPdf.App` file is expected to change in F2.6. If a RED appears to require product code or a new dependency, stop and return to design review.
 
 ---
 
@@ -57,75 +57,65 @@ No `src/SGPdf.App` file is expected to change in F2.6. If a RED appears to requi
 - Modify: `tests/SGPdf.App.Tests/LabelizeBarcodeRegressionTests.cs`
 
 **Interfaces:**
-- Consumes: `LabelizeProcessRenderer.RenderAsync(ZplDocument, ZplRenderOptions, CancellationToken)`, `LabelLayoutPlanner.CreatePlan(...)`, `LabelPdfExporter.Export(string, LabelLayoutPlan, IReadOnlyList<ZplRenderedLabel>)`, `PdfDocumentSession.Open(string)`, `PdfDocumentSession.RenderPage(int, double)`.
+- Consumes: `LabelizeProcessRenderer.RenderAsync(...)`, `LabelLayoutPlanner.CreatePlan(...)`, `LabelPdfExporter.Export(...)`, `PdfDocumentSession.Open(...)`, `PdfDocumentSession.RenderPage(...)`.
 - Produces test-only helper:
   - `internal static ZXing.Result DecodePng(byte[] pngBytes, BarcodeFormat expectedFormat)`
   - `internal static ZXing.Result DecodeBgra32(byte[] pixels, int width, int height, int stride, BarcodeFormat expectedFormat)`
 
-- [ ] **Step 1: Add failing PDF barcode integration tests**
+- [ ] **Step 1: Write the failing integration tests**
 
-Create tests with these exact behaviors:
+Create:
 
 ```csharp
 [Fact]
 public async Task ExportedThermalPdf_Code128AndQrDecodeAfterPdfiumRender()
 ```
 
-Use two printable ZPL designs rendered by real Labelize at `100 × 100 mm`, `8 dpmm`:
-- Code128 payload: `SGPDF-C128-2607`
-- QR payload: `SGPDF-QR-2607`
+Use two printable designs rendered by real Labelize at `100 × 100 mm`, `8 dpmm`:
+- Code128 payload `SGPDF-C128-2607`
+- QR payload `SGPDF-QR-2607`
 
-Create a Thermal layout with `OneEach`, export one label per PDF page, reopen through `PdfDocumentSession`, render each page at **300 DPI**, decode page 0 as `CODE_128` and page 1 as `QR_CODE`, and assert both format and exact text.
+Use a Thermal layout with `OneEach`, export one label per PDF page, reopen with `PdfDocumentSession`, render each page at **300 DPI**, decode page 0 as `CODE_128` and page 1 as `QR_CODE`, and assert exact format + text.
 
-Also add:
+Also create:
 
 ```csharp
 [Fact]
 public async Task ExportedThermalPdf_RotatedQrDecodesAfterPdfiumRender()
 ```
 
-Use payload `SGPDF-QR-ROT90`, Thermal layout rotation `Degrees90`, render the exported page through PDFium at **300 DPI**, and require exact QR text. This test owns the review-focus case for accidental double rotation.
+Use payload `SGPDF-QR-ROT90`, Thermal layout rotation `Degrees90`, render through PDFium at **300 DPI**, and require exact QR text.
 
-- [ ] **Step 2: Run the focused tests and confirm RED**
+Both tests should already call `BarcodeDecodeAssert`, which does not exist yet.
 
-Run:
+- [ ] **Step 2: Run focused tests and confirm RED**
 
 ```powershell
 dotnet test tests/SGPdf.App.Tests/SGPdf.App.Tests.csproj --configuration Release --filter "FullyQualifiedName~LabelPdfBarcodeIntegrationTests"
 ```
 
-Expected: compile/test failure because `BarcodeDecodeAssert` / the new integration test implementation does not yet exist. Do not alter production code to make RED easier.
+Expected: compile failure because `BarcodeDecodeAssert` does not exist. Production code remains untouched.
 
-- [ ] **Step 3: Implement `BarcodeDecodeAssert` test helper**
+- [ ] **Step 3: Implement `BarcodeDecodeAssert` minimally**
 
-`DecodePng` must preserve the existing Labelize PNG behavior using SkiaSharp and ZXing with `TryHarder=true`, `AutoRotate=false`, and `PossibleFormats=[expectedFormat]`.
+`DecodePng` uses SkiaSharp + ZXing with `TryHarder=true`, `AutoRotate=false`, `PossibleFormats=[expectedFormat]`.
 
-`DecodeBgra32` must respect `PdfRenderedPage.Stride`, convert each PDFium BGRA pixel to an RGB24 buffer without assuming tightly packed rows, then decode through ZXing with the same options. Throw/assert with format context if no result is returned.
+`DecodeBgra32` respects `PdfRenderedPage.Stride`, converts PDFium BGRA rows to RGB24, then uses the same ZXing options. It must fail with expected-format context when no code is decoded.
 
-- [ ] **Step 4: Refactor existing PNG regressions to the shared helper without changing their assertions**
+- [ ] **Step 4: Refactor existing PNG regressions to the helper**
 
-`LabelizeBarcodeRegressionTests` must still prove:
+Preserve these existing exact assertions:
 - Code128 `123456789012`;
 - QR `SG-PDF-QR-12345`;
-- `^FT` QR `SG-PDF-FT-QR` plus its ink-origin assertions.
+- `^FT` QR `SG-PDF-FT-QR` plus existing ink-origin assertions.
 
-No behavioral change beyond removing duplicate decode code.
+- [ ] **Step 5: Verify Task 1 GREEN**
 
-- [ ] **Step 5: Implement the two real pipeline integration tests minimally**
+Run the focused integration tests and existing `LabelizeBarcodeRegressionTests`, then the full suite.
 
-Use actual `LabelizeProcessRenderer`, actual `LabelPdfExporter`, actual `PdfDocumentSession`, and temporary files/directories cleaned in `finally`. Do not mock the export or PDFium path.
+Expected: all PASS; no product code or new package change.
 
-- [ ] **Step 6: Verify Task 1 GREEN**
-
-Run the focused tests above, then:
-
-```powershell
-dotnet test SGPdf.slnx --configuration Release --no-build
-```
-
-Expected: all tests PASS, including the pre-existing PNG regressions; no skipped test added for this task.
-
-- [ ] **Step 7: Commit Task 1**
+- [ ] **Step 6: Commit Task 1**
 
 ```bash
 git add tests/SGPdf.App.Tests/BarcodeDecodeAssert.cs tests/SGPdf.App.Tests/LabelPdfBarcodeIntegrationTests.cs tests/SGPdf.App.Tests/LabelizeBarcodeRegressionTests.cs
@@ -141,9 +131,15 @@ git commit -m "test(labels): validate barcode decode through exported PDF"
 - Create: `tools/run-private-label-qa.ps1`
 
 **Interfaces:**
-- Consumes: Task 1 `BarcodeDecodeAssert`, existing `ZplDocumentParser`, `LabelizeProcessRenderer`, `ZplRenderOptions`.
+- Consumes: Task 1 `BarcodeDecodeAssert`, `ZplDocumentParser`, `LabelizeProcessRenderer`, `ZplRenderOptions`.
 - Environment contract: `SGPDF_PRIVATE_QA_ROOT` is set only by the explicit launcher.
-- Private expectation schema, stored beside each private `.zpl/.txt/.prn` as `<basename>.expected.json`:
+- Test-only internal contracts:
+  - `private static PrivateLabelExpectation ParseExpectation(string path)`
+  - `private static IReadOnlyList<PrivateLabelCase> DiscoverCases(string rootPath)`
+  - `private static Task ValidateCaseAsync(PrivateLabelCase testCase, CancellationToken cancellationToken = default)`
+  - nested records `PrivateLabelCase(string SourcePath, string ExpectationPath, PrivateLabelExpectation Expectation)` and expectation/code records matching the schema below.
+
+Private sibling expectation schema:
 
 ```json
 {
@@ -157,11 +153,11 @@ git commit -m "test(labels): validate barcode decode through exported PDF"
 }
 ```
 
-`widthMm`, `heightMm`, `dpmm`, and `codes` may be omitted when unknown/not applicable; `designCount` is required. Supported code format names in F2.6 are exactly `CODE_128` and `QR_CODE`.
+`widthMm`, `heightMm`, `dpmm`, and `codes` may be omitted; `designCount` is required. Supported `format` values are exactly `CODE_128` and `QR_CODE`.
 
-- [ ] **Step 1: Write synthetic tests for the private expectation/runner contract**
+- [ ] **Step 1: Write synthetic contract tests**
 
-The test class must include normal tracked synthetic temp-directory tests that do **not** contain customer data:
+Add tracked synthetic tests:
 
 ```csharp
 [Fact]
@@ -174,9 +170,9 @@ public void ParseExpectation_UnsupportedBarcodeFormat_FailsClearly()
 public void DiscoverCases_RequiresMatchingExpectedJson()
 ```
 
-Assertions must include the local case filename in the error message where applicable.
+Use temporary synthetic files only. Error assertions include the local filename where applicable.
 
-Add one opt-in entry test:
+Add opt-in entry point:
 
 ```csharp
 [Trait("Category", "PrivateQA")]
@@ -184,62 +180,50 @@ Add one opt-in entry test:
 public async Task PrivateCorpus_FromEnvironment_MatchesExpectations()
 ```
 
-When `SGPDF_PRIVATE_QA_ROOT` is **unset**, this test must return without touching filesystem/network and write `PRIVATE_QA: NOT RUN` to test output. It must never print fixture contents.
+When `SGPDF_PRIVATE_QA_ROOT` is unset, return without touching filesystem/network and write `PRIVATE_QA: NOT RUN` to `ITestOutputHelper`. Never print fixture contents.
 
-When the variable is set, absence of the directory or invalid expectations is a test failure, not a skip/pass interpretation by the launcher.
+When it is set, missing directory or malformed expectations must fail.
 
-- [ ] **Step 2: Run the focused contract tests and confirm RED**
-
-Run:
+- [ ] **Step 2: Run focused tests and confirm RED**
 
 ```powershell
 dotnet test tests/SGPdf.App.Tests/SGPdf.App.Tests.csproj --configuration Release --filter "FullyQualifiedName~PrivateLabelCorpusTests"
 ```
 
-Expected: FAIL/compile failure because the private corpus parsing/discovery code has not been implemented.
+Expected: compile/test failure until parsing/discovery/validation contracts are implemented.
 
-- [ ] **Step 3: Implement the minimal private-corpus test runner inside the test project**
+- [ ] **Step 3: Implement private corpus validation test-only**
 
-Keep it test-only. Required behavior for an opted-in local run:
-
-1. enumerate only top-level `*.zpl`, `*.txt`, `*.prn` under the supplied root;
+For an opted-in local run:
+1. enumerate top-level `*.zpl`, `*.txt`, `*.prn` only;
 2. require sibling `<basename>.expected.json`;
-3. parse source through `ZplDocumentParser`;
+3. parse with `ZplDocumentParser`;
 4. assert `designCount`;
-5. choose render options from expectation values when all physical values are supplied, otherwise `ZplRenderOptions.Default`;
+5. if width/height/dpmm are all present, use them; otherwise use `ZplRenderOptions.Default`;
 6. render through real Labelize;
-7. for each expected code, validate `designIndex` range, map `CODE_128` / `QR_CODE`, decode rendered PNG via Task 1 helper, and compare exact text;
-8. include only local case filename/design index in failures — never dump complete ZPL or decoded customer payload into normal logs unless needed for the direct local assertion message.
+7. validate expected design index, format and exact decoded text via Task 1 helper;
+8. failures may identify local filename/design index but must not dump entire ZPL/customer data.
 
-- [ ] **Step 4: Add the explicit PowerShell launcher**
-
-`tools/run-private-label-qa.ps1` parameters:
+- [ ] **Step 4: Add `tools/run-private-label-qa.ps1`**
 
 ```powershell
 param([string]$Root = "tests/PrivateFixtures/labels")
 ```
 
-Behavior:
-- if `$Root` does not exist: print exactly `PRIVATE_QA: NOT RUN — no private fixture directory` and exit non-zero;
-- resolve the root locally, set `SGPDF_PRIVATE_QA_ROOT` only for the child `dotnet test` invocation;
-- stage Labelize through existing `tools/setup-labelize.ps1` before the filtered test;
+Required behavior:
+- missing `$Root` → print exactly `PRIVATE_QA: NOT RUN — no private fixture directory` and exit non-zero;
+- resolve local root;
+- stage Labelize through existing `tools/setup-labelize.ps1`;
+- set `SGPDF_PRIVATE_QA_ROOT` only for the child filtered `dotnet test`;
 - run only `FullyQualifiedName~PrivateCorpus_FromEnvironment_MatchesExpectations`;
-- on success print `PRIVATE_QA: PASS`;
-- on test failure print `PRIVATE_QA: FAIL` and propagate non-zero exit;
-- clear/restore the environment variable in `finally`;
-- never upload, copy, zip or artifact the private directory.
+- success → `PRIVATE_QA: PASS`;
+- test failure → `PRIVATE_QA: FAIL` and non-zero exit;
+- restore/remove the environment variable in `finally`;
+- never upload/copy/archive the private root.
 
-- [ ] **Step 5: Verify normal CI-style execution does not require private data**
+- [ ] **Step 5: Verify normal CI-style execution and explicit NOT RUN behavior**
 
-With `SGPDF_PRIVATE_QA_ROOT` unset:
-
-```powershell
-dotnet test SGPdf.slnx --configuration Release --no-build
-```
-
-Expected: full standard suite PASS; output may contain `PRIVATE_QA: NOT RUN`, but F2 private acceptance remains separately documented as NOT RUN.
-
-Then run the launcher against a guaranteed-missing temporary path and verify non-zero exit plus the exact `PRIVATE_QA: NOT RUN` message.
+With the environment variable unset, full standard tests must PASS. Then run the launcher against a guaranteed-missing path and require non-zero exit plus the exact NOT RUN message.
 
 - [ ] **Step 6: Commit Task 2**
 
@@ -255,15 +239,13 @@ git commit -m "test(labels): add private corpus QA runner"
 **Files:**
 - Modify: `tests/SGPdf.App.Tests/LabelizeProcessRendererTests.cs`
 - Modify: `tests/SGPdf.App.Tests/LabelPdfExporterTests.cs`
-- Inspect/reuse without expected modification: `tests/SGPdf.App.Tests/OfflineRuntimeTests.cs`
+- Inspect/reuse: `tests/SGPdf.App.Tests/OfflineRuntimeTests.cs`
 - Inspect/reuse: `.github/workflows/build.yml`
 - Inspect/reuse: `.gitignore`
 
-**Interfaces:**
-- Consumes existing renderer/export behavior only.
-- Produces no product API.
+**Interfaces:** no new product API.
 
-- [ ] **Step 1: Add missing residue tests first**
+- [ ] **Step 1: Add missing residue evidence**
 
 Add:
 
@@ -272,49 +254,37 @@ Add:
 public async Task RenderAsync_WhenProcessStartFails_CleansRequestTempDirectory()
 ```
 
-Construct `LabelizeProcessRenderer` with a guaranteed-nonexistent executable path and a controlled `tempRoot`, assert an exception, then assert `tempRoot` contains no request residue.
+Use a guaranteed-nonexistent executable path plus controlled `tempRoot`; assert exception and empty request residue.
 
-Extend successful PDF export coverage with an assertion that the destination directory contains no `.<filename>.*.sgpdf.tmp` file after success.
+Extend successful PDF export coverage to assert no `.<filename>.*.sgpdf.tmp` remains after success.
 
-- [ ] **Step 2: Run focused tests and confirm RED if a gap exists**
-
-Run:
+- [ ] **Step 2: Run focused tests**
 
 ```powershell
 dotnet test tests/SGPdf.App.Tests/SGPdf.App.Tests.csproj --configuration Release --filter "FullyQualifiedName~LabelizeProcessRendererTests|FullyQualifiedName~LabelPdfExporterTests"
 ```
 
-Expected: the new assertions either expose a real cleanup gap (RED) or pass immediately because production cleanup is already correct. If they pass immediately, record this task as evidence-hardening rather than fabricate a product change.
+If new assertions expose residue, RED is valid. If they pass immediately because cleanup is already correct, record evidence-hardening and do not fabricate a product change.
 
-- [ ] **Step 3: Implement only a demonstrated production cleanup fix, if RED proves one**
+- [ ] **Step 3: Fix production cleanup only if RED proves a real bug**
 
-If and only if Step 2 exposes residue, make the smallest `finally`/cleanup change in the owning existing production class and rerun the focused test. If no RED exists, make **no** production change.
+Make the smallest owning `finally`/cleanup change and rerun. Otherwise make no `src/` change.
 
 - [ ] **Step 4: Re-run offline/privacy/package guards**
 
-Run:
-
 ```powershell
 dotnet test tests/SGPdf.App.Tests/SGPdf.App.Tests.csproj --configuration Release --filter "FullyQualifiedName~OfflineRuntimeTests"
-```
-
-Expected:
-- runtime package list remains exactly `bblanchon.PDFium.Win32`, `PDFsharp`;
-- app assembly/source still has no forbidden runtime network surface.
-
-Also verify repository hygiene directly:
-
-```powershell
 git ls-files "tests/PrivateFixtures/**"
 ```
 
-Expected: empty output.
-
-Check `.gitignore` still contains `tests/PrivateFixtures/` and CI hygiene still rejects tracked private fixtures. Do not add a second redundant runtime-network mechanism.
+Expected:
+- runtime packages exactly `bblanchon.PDFium.Win32`, `PDFsharp`;
+- no forbidden runtime network surface;
+- `git ls-files` output empty;
+- `.gitignore` still contains `tests/PrivateFixtures/`;
+- CI hygiene still rejects tracked private fixtures.
 
 - [ ] **Step 5: Full Task 3 verification**
-
-Run:
 
 ```powershell
 dotnet restore SGPdf.slnx --locked-mode
@@ -322,22 +292,22 @@ dotnet build SGPdf.slnx --configuration Release --no-restore
 dotnet test SGPdf.slnx --configuration Release --no-build
 ```
 
-Expected: locked restore PASS, build 0 warnings / 0 errors, full suite PASS, no package/lock changes.
+Expected: restore PASS, build 0 warnings / 0 errors, full suite PASS, no package/lock mutation.
 
-- [ ] **Step 6: Commit Task 3**
+- [ ] **Step 6: Commit Task 3 only if files changed**
 
-Commit only files that actually changed. If this task needed tests only:
+If tests were added:
 
 ```bash
 git add tests/SGPdf.App.Tests/LabelizeProcessRendererTests.cs tests/SGPdf.App.Tests/LabelPdfExporterTests.cs
 git commit -m "test(labels): harden temporary residue checks"
 ```
 
-If no file needed changing because all required evidence already existed, do not create an empty commit; record that fact in the closure history.
+No empty commit if existing evidence already covered everything.
 
 ---
 
-### Task 4: Physical QA protocol, whole-branch audit, and automated closure
+### Task 4: Physical QA protocol, audit, and automated closure
 
 **Files:**
 - Create: `docs/qa/F2.6-PHYSICAL-QA.md`
@@ -345,102 +315,65 @@ If no file needed changing because all required evidence already existed, do not
 - Modify: `.planning/STATE.md`
 - Modify: `.planning/ROADMAP.md`
 - Modify: `AGENTS.md`
-- Update PR body after implementation CI evidence exists.
+- Update/create stacked draft PR after implementation evidence exists.
 
-**Interfaces:**
-- Consumes Task 1–3 evidence and exact CI run IDs.
-- Produces the durable handoff to the next product phase; no code API.
+**Interfaces:** consumes Task 1–3 evidence and exact CI run IDs; produces no code API.
 
-- [ ] **Step 1: Write the public physical-QA checklist/template**
+- [ ] **Step 1: Write physical QA checklist/template**
 
-The checklist must contain, without real customer data:
-- statuses `PASS / FAIL / NOT RUN / PARTIAL`;
-- printer model + driver version fields;
-- media tests `102×152`, `100×150`, `100×100 mm`;
-- ruler/caliper measured width/height fields;
+Include:
+- `PASS / FAIL / NOT RUN / PARTIAL`;
+- printer model + driver version;
+- `102×152`, `100×150`, `100×100 mm`;
+- measured width/height;
 - expected vs selected driver media size;
-- clipping/imageable-area warning field;
-- representative native DPI field;
-- Code128 scanner expected/actual fields;
-- QR scanner expected/actual fields;
-- explicit instruction: do not commit completed private results, customer labels or scanner captures.
+- clipping/imageable-area warning;
+- representative native DPI;
+- Code128 expected/actual scanner text;
+- QR expected/actual scanner text;
+- explicit warning not to commit completed private results/customer data.
 
-Until hardware is used, closure docs must say physical QA **NOT RUN**.
+If hardware has not been used, status remains `NOT RUN`.
 
-- [ ] **Step 2: Open/update the stacked draft PR**
+- [ ] **Step 2: Open the stacked draft PR**
 
-Create PR from `feat/f2-6-validation-hardening` to `feat/f2-5-windows-thermal-print` if it does not already exist. Keep it draft and unmerged.
+Base: `feat/f2-5-windows-thermal-print`  
+Head: `feat/f2-6-validation-hardening`
 
-PR body must distinguish:
-- automated synthetic result;
-- private corpus status;
-- physical status;
-- no-new-runtime-dependency audit.
+PR stays draft/unmerged and separates automated, private-corpus and physical statuses.
 
-- [ ] **Step 3: Run whole-branch scope audit against F2.5**
+- [ ] **Step 3: Audit the whole branch against F2.5**
 
-Verify changed files and diff. Expected scope:
-- tests/dev tooling/docs only unless Task 3 demonstrated a real cleanup bug;
-- no runtime ZXing reference;
-- no `.csproj`/lockfile production dependency change;
-- no tracked `tests/PrivateFixtures/**`;
-- no network/runtime download;
-- no new label layout, print, reader or editor feature.
+Expected diff is tests/dev tooling/docs only unless Task 3 proved a real cleanup bug. Block closure on any unexpected runtime ZXing reference, production dependency/lock mutation, tracked private fixture, network/download behavior or new product feature.
 
-Any unexpected product/API/package change blocks closure and requires review.
+- [ ] **Step 4: Run fresh functional CI**
 
-- [ ] **Step 4: Run fresh functional verification before closure docs**
+Require repository hygiene, Labelize staging, locked restore, Release build 0 warnings/0 errors and all tests PASS. Record push + PR CI IDs.
 
-Run CI on the latest functional head. Require:
-- repository hygiene PASS;
-- Labelize staging PASS;
-- locked restore PASS;
-- Release build 0 warnings / 0 errors;
-- all tests PASS.
+- [ ] **Step 5: Update durable state/history**
 
-Record push and PR run IDs.
+`STATE`/`ROADMAP` may say F2.1–F2.6 automated PASS only after CI criteria pass. Private real-label acceptance and physical thermal/scanner acceptance remain `NOT RUN` unless actually executed. Next product slice becomes F3 visual signature design with its own gate.
 
-- [ ] **Step 5: Update durable project state/history**
+`AGENTS.md` must preserve that ZXing is test/QA-only and CI cannot imply private/hardware PASS.
 
-`.planning/STATE.md` and `.planning/ROADMAP.md` must say:
-- F2.1–F2.6 automated PASS only if exact CI criteria pass;
-- F1/F2 private real-label acceptance remains `NOT RUN` unless actually executed;
-- F2 physical thermal/scanner acceptance remains `NOT RUN` unless actually executed;
-- next product slice is F3 visual signature design, subject to its own gate.
+- [ ] **Step 6: Commit closure docs and verify exact closure head**
 
-`AGENTS.md` must preserve:
-- ZXing is test/QA-only;
-- no runtime barcode validation subsystem exists;
-- private/hardware PASS cannot be inferred from CI.
+After the docs commit, require both push and PR CI on that same exact SHA. Earlier functional CI is insufficient for final closure.
 
-History file must include exact commits/run IDs and any Task 3 finding.
+- [ ] **Step 7: Update PR body and stop without merge**
 
-- [ ] **Step 6: Commit closure docs and verify the exact closure head**
-
-After the docs commit, require both push and PR CI on that **exact same head**. Do not claim closure from the earlier functional head.
-
-Expected final automated status:
-- build 0 warnings / 0 errors;
-- full suite 0 failures;
-- PR draft/open/unmerged;
-- `F2.6 automated PASS`;
-- private corpus `NOT RUN` unless actually supplied;
-- physical printer/scanner `NOT RUN` unless actually performed.
-
-- [ ] **Step 7: Update PR body with exact-head evidence and stop without merge**
-
-Record final head SHA, push CI ID, PR CI ID, test count, scope audit, private status and physical status. No merge/rebase/integration without explicit user approval.
+Record final SHA, push CI ID, PR CI ID, test count, scope audit, private status and physical status. Do not merge/rebase/integrate without explicit user approval.
 
 ---
 
 ## Execution order / stop conditions
 
-Execute Tasks 1 → 2 → 3 → 4 in order. Stop and return to design review if any of these occurs:
+Execute Task 1 → 2 → 3 → 4. Stop and return to design review if:
 
 - a production/runtime barcode decoder becomes necessary;
-- a new NuGet/runtime dependency appears necessary;
-- PDF export must change physical geometry to make decode pass;
-- private data would need to enter tracked files, CI artifacts or logs;
-- physical printer behavior suggests RAW/vendor-specific transport is required.
+- a new runtime/NuGet dependency becomes necessary;
+- PDF geometry must change merely to make decoding pass;
+- private data would need to enter tracked files, CI artifacts or normal logs;
+- physical behavior suggests RAW/vendor-specific transport is required.
 
 Those are architecture changes, not F2.6 hardening details.
