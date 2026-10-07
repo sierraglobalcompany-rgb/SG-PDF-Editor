@@ -26,7 +26,8 @@
                 BorderThickness="0,0,0,1"
                 BorderBrush="LightGray"
                 Background="White"
-                Visibility="Collapsed">
+                Visibility="Collapsed"
+                IsVisibleChanged="NavigationBar_IsVisibleChanged">
             <StackPanel Orientation="Horizontal"
                         HorizontalAlignment="Center"
                         Margin="8">
@@ -107,6 +108,36 @@
                         Padding="10,4"
                         ToolTip="Ajustar al ancho del visor"
                         Click="FitWidth_Click"
+                        IsEnabled="False" />
+            </StackPanel>
+        </Border>
+
+        <Border x:Name="LabelNavigationBar"
+                DockPanel.Dock="Top"
+                BorderThickness="0,0,0,1"
+                BorderBrush="LightGray"
+                Background="White"
+                Visibility="Collapsed"
+                IsEnabled="{Binding IsEnabled, ElementName=OpenPdfMenuItem}">
+            <StackPanel Orientation="Horizontal"
+                        HorizontalAlignment="Center"
+                        Margin="8">
+                <Button x:Name="PreviousLabelButton"
+                        Content="← Anterior"
+                        MinWidth="92"
+                        Padding="10,4"
+                        Click="PreviousLabel_Click"
+                        IsEnabled="False" />
+                <TextBlock x:Name="LabelCountText"
+                           Text="Etiqueta 0 de 0"
+                           Margin="16,0"
+                           VerticalAlignment="Center"
+                           FontWeight="SemiBold" />
+                <Button x:Name="NextLabelButton"
+                        Content="Siguiente →"
+                        MinWidth="92"
+                        Padding="10,4"
+                        Click="NextLabel_Click"
                         IsEnabled="False" />
             </StackPanel>
         </Border>
