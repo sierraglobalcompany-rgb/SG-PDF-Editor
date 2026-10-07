@@ -19,11 +19,15 @@ jobs:
 
       - name: Restore spike harness
         shell: pwsh
-        run: dotnet restore spikes/F1.ZplGate/F1.ZplGate.csproj
+        run: |
+          dotnet restore spikes/F1.ZplGate/F1.ZplGate.csproj
+          dotnet restore spikes/F1.ZplGate/Verify.csproj
 
       - name: Build spike harness
         shell: pwsh
-        run: dotnet build spikes/F1.ZplGate/F1.ZplGate.csproj -c Release --no-restore
+        run: |
+          dotnet build spikes/F1.ZplGate/F1.ZplGate.csproj -c Release --no-restore
+          dotnet build spikes/F1.ZplGate/Verify.csproj -c Release --no-restore
 
       - name: Download pinned Labelize 1.7.0 Windows binary
         shell: pwsh
@@ -48,6 +52,11 @@ jobs:
           New-Item -ItemType Directory -Force -Path spike-out | Out-Null
           dotnet run --project spikes/F1.ZplGate/F1.ZplGate.csproj -c Release --no-build -- "$env:LABELIZE_EXE" "$PWD/spike-out"
 
+      - name: Verify alpha-aware fidelity and QR FT risk
+        shell: pwsh
+        run: |
+          dotnet run --project spikes/F1.ZplGate/Verify.csproj -c Release --no-build -- "$env:LABELIZE_EXE" "$PWD/spike-out"
+
       - name: Measure integration footprint
         shell: pwsh
         run: |
@@ -59,6 +68,8 @@ jobs:
           BinaryKits spike publish file count: $publishFiles
           Labelize 1.7.0 executable bytes: $env:LABELIZE_EXE_BYTES
           "@ | Set-Content spike-out/packaging.txt
+          Get-Content spike-out/corrected-report.md | Add-Content $env:GITHUB_STEP_SUMMARY
+          "`n## Benchmarks (original timing pass)`n" | Add-Content $env:GITHUB_STEP_SUMMARY
           Get-Content spike-out/report.md | Add-Content $env:GITHUB_STEP_SUMMARY
           "`n## Packaging`n" | Add-Content $env:GITHUB_STEP_SUMMARY
           Get-Content spike-out/packaging.txt | Add-Content $env:GITHUB_STEP_SUMMARY
