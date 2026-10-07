@@ -179,8 +179,58 @@
                            Foreground="#666" />
             </Grid>
 
-            <Border Grid.Column="2" BorderThickness="1,0,0,0" BorderBrush="LightGray">
-                <TextBlock Margin="16" Text="Propiedades" FontWeight="SemiBold" />
+            <Border Grid.Column="2"
+                    BorderThickness="1,0,0,0"
+                    BorderBrush="LightGray"
+                    IsEnabled="{Binding IsEnabled, ElementName=OpenPdfMenuItem}">
+                <Grid>
+                    <TextBlock x:Name="PropertiesPlaceholderText"
+                               Margin="16"
+                               Text="Propiedades"
+                               FontWeight="SemiBold" />
+
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel x:Name="LabelPropertiesPanel"
+                                    Margin="16"
+                                    Visibility="Collapsed">
+                            <TextBlock Text="Propiedades de etiqueta"
+                                       FontWeight="SemiBold"
+                                       FontSize="16"
+                                       Margin="0,0,0,16" />
+
+                            <TextBlock Text="Cantidad"
+                                       FontWeight="SemiBold"
+                                       Margin="0,0,0,8" />
+                            <RadioButton x:Name="QuantityFromFileRadio"
+                                         GroupName="LabelQuantity"
+                                         Content="Del archivo"
+                                         Margin="0,0,0,6"
+                                         Checked="QuantityMode_Checked" />
+                            <RadioButton x:Name="QuantityOneEachRadio"
+                                         GroupName="LabelQuantity"
+                                         Content="Una de cada"
+                                         Margin="0,0,0,6"
+                                         Checked="QuantityMode_Checked" />
+                            <RadioButton x:Name="QuantityCustomRadio"
+                                         GroupName="LabelQuantity"
+                                         Content="Personalizada por diseño"
+                                         Margin="0,0,0,6"
+                                         Checked="QuantityMode_Checked" />
+                            <TextBox x:Name="CustomQuantityTextBox"
+                                     Width="110"
+                                     HorizontalAlignment="Left"
+                                     Margin="22,0,0,8"
+                                     Padding="6,3"
+                                     Text="1"
+                                     TextChanged="CustomQuantityTextBox_TextChanged"
+                                     IsEnabled="False" />
+                            <TextBlock x:Name="OutputQuantityText"
+                                       Text="Cantidad de salida: 0"
+                                       Foreground="#555"
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
             </Border>
         </Grid>
     </DockPanel>
