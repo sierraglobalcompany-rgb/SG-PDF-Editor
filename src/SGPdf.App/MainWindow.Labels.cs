@@ -109,10 +109,11 @@ public partial class MainWindow
             firstRendered.HeightMm,
             firstRendered.Dpmm);
 
+        ResetLabelLayoutState();
         previousSession?.Dispose();
 
         UpdateViewerControlsUi();
-        ShowSelectedZplPreview();
+        ShowCurrentZplPreview();
         UpdateLabelPropertiesUi();
 
         var fileName = Path.GetFileName(document.SourcePath);
@@ -148,6 +149,12 @@ public partial class MainWindow
         if (_isBusy || _zplDocument is null || _renderedZplLabels.Count == 0)
             return;
 
+        if (_showSheetPreview)
+        {
+            NavigateLabelSheet(offset);
+            return;
+        }
+
         var candidateIndex = Math.Clamp(
             _selectedZplDesignIndex + offset,
             0,
@@ -166,6 +173,7 @@ public partial class MainWindow
 
         PdfImage.Source = CreateZplBitmapSource(_renderedZplLabels[_selectedZplDesignIndex].PngBytes);
         PdfImage.Visibility = Visibility.Visible;
+        LabelSheetCanvas.Visibility = Visibility.Collapsed;
         EmptyStateText.Visibility = Visibility.Collapsed;
         LabelNavigationBar.Visibility = Visibility.Visible;
 
@@ -199,6 +207,14 @@ public partial class MainWindow
         }
 
         LabelNavigationBar.Visibility = Visibility.Visible;
+        if (_showSheetPreview && _labelLayoutPlan is not null)
+        {
+            LabelCountText.Text = $"Hoja {_selectedLabelSheetIndex + 1} de {_labelLayoutPlan.PageCount}";
+            PreviousLabelButton.IsEnabled = _selectedLabelSheetIndex > 0;
+            NextLabelButton.IsEnabled = _selectedLabelSheetIndex < _labelLayoutPlan.PageCount - 1;
+            return;
+        }
+
         LabelCountText.Text = $"Etiqueta {_selectedZplDesignIndex + 1} de {_renderedZplLabels.Count}";
         PreviousLabelButton.IsEnabled = _selectedZplDesignIndex > 0;
         NextLabelButton.IsEnabled = _selectedZplDesignIndex < _renderedZplLabels.Count - 1;
@@ -239,6 +255,7 @@ public partial class MainWindow
         }
 
         _zplQuantitySelection = new ZplQuantitySelection(mode, customQuantity);
+        RebuildLabelLayoutPlan();
         UpdateLabelPropertiesUi();
         UpdateCurrentZplStatus();
     }
@@ -349,7 +366,8 @@ public partial class MainWindow
                 0,
                 _renderedZplLabels.Count - 1);
 
-            ShowSelectedZplPreview();
+            RebuildLabelLayoutPlan(showPreview: false);
+            ShowCurrentZplPreview();
             UpdateLabelPropertiesUi();
         }
         catch (OperationCanceledException) when (renderToken.IsCancellationRequested)
@@ -450,6 +468,8 @@ public partial class MainWindow
             LabelDpmmComboBox.SelectedIndex = GetDpmmIndex(_zplRenderOptions.Dpmm);
             RenderSettingsText.Text =
                 $"{widthText} × {heightText} mm · {_zplRenderOptions.Dpmm} dpmm ({GetApproximateDpi(_zplRenderOptions.Dpmm)})";
+
+            UpdateLabelLayoutPropertiesUiCore();
         }
         finally
         {
@@ -501,6 +521,13 @@ public partial class MainWindow
             return;
 
         var fileName = Path.GetFileName(_zplDocument.SourcePath);
+        if (_showSheetPreview && _labelLayoutPlan is not null)
+        {
+            StatusText.Text =
+                $"{fileName} — hoja {_selectedLabelSheetIndex + 1} de {_labelLayoutPlan.PageCount} — cantidad de salida {_zplQuantitySelection.GetTotalQuantity(_zplDocument)}";
+            return;
+        }
+
         StatusText.Text =
             $"{fileName} — etiqueta {_selectedZplDesignIndex + 1} de {_renderedZplLabels.Count} — cantidad de salida {_zplQuantitySelection.GetTotalQuantity(_zplDocument)}";
     }
@@ -523,6 +550,7 @@ public partial class MainWindow
         _renderedZplLabels = Array.Empty<ZplRenderedLabel>();
         _selectedZplDesignIndex = 0;
         _zplQuantitySelection = new ZplQuantitySelection(ZplQuantityMode.FromFile);
+        ClearLabelLayoutState();
         LabelNavigationBar.Visibility = Visibility.Collapsed;
         LabelCountText.Text = "Etiqueta 0 de 0";
         PreviousLabelButton.IsEnabled = false;
@@ -536,5 +564,6 @@ public partial class MainWindow
         _labelRenderCts = null;
         _zplDocument = null;
         _renderedZplLabels = Array.Empty<ZplRenderedLabel>();
+        _labelLayoutPlan = null;
     }
 }
