@@ -109,6 +109,38 @@ public sealed class LabelizeProcessRendererTests
     }
 
     [Fact]
+    public async Task RenderAsync_WhenProcessStartFails_CleansRequestTempDirectory()
+    {
+        var tempRoot = CreateTempDirectory();
+        var fakeExecutable = Path.Combine(
+            Path.GetTempPath(),
+            $"sgpdf-not-executable-{Guid.NewGuid():N}.exe");
+        File.WriteAllText(fakeExecutable, "not a Windows executable");
+
+        try
+        {
+            var document = ZplDocumentParser.Parse(
+                "start-failure.zpl",
+                "^XA^FO40,40^A0N,36,36^FDSTART FAIL^FS^XZ");
+            var renderer = new LabelizeProcessRenderer(
+                fakeExecutable,
+                TimeSpan.FromSeconds(10),
+                tempRoot);
+
+            await Assert.ThrowsAnyAsync<Exception>(() =>
+                renderer.RenderAsync(document, ZplRenderOptions.Default));
+
+            Assert.Empty(Directory.EnumerateFileSystemEntries(tempRoot));
+        }
+        finally
+        {
+            if (File.Exists(fakeExecutable))
+                File.Delete(fakeExecutable);
+            Directory.Delete(tempRoot, recursive: true);
+        }
+    }
+
+    [Fact]
     public void ZplRenderOptions_RejectsUnsupportedDpmm()
     {
         var error = Assert.Throws<ArgumentOutOfRangeException>(() =>
