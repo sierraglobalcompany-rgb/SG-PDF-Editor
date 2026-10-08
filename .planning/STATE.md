@@ -17,7 +17,7 @@ See `.planning/PROJECT.md`.
 > The numeric GSD progress frontmatter is not used as product-completion truth while automated and physical/private acceptance gates are tracked separately. GitHub exact heads + CI and the status below are authoritative for executed work.
 
 **Core value:** Resolver PDF + ZPL diario de forma rápida, privada, estable y offline.  
-**Current focus:** Phase 4 — **F3 Firma Visual**, slice **F3.4 Local Signature Library**.
+**Current focus:** Phase 4 — **F3 Firma Visual**, slice **F3.4 Local Signature Library** automated implementation complete; closure CI/draft PR gate in progress.
 
 ## Current Position
 
@@ -32,19 +32,21 @@ See `.planning/PROJECT.md`.
 - Tests: 246 PASS / 0 FAIL / 0 SKIPPED.
 - Hardware mouse/touch/stylus QA: **NOT RUN**.
 
-### F3.4 — current gate: implementation-plan review
+### F3.4 — automated implementation PASS; closure gate
 
 - Branch: `feat/f3-4-local-signature-library`.
 - Base: exact F3.3 final head `8b5bfd35b59fbc75826f8d7616aaaca3e2f31233`.
-- Formal spec: `docs/superpowers/specs/2026-10-08-f3-4-local-signature-library-design.md`.
-- Spec commit: `ea1a8f6e6395d60729d8c8a1196b8ae94b8a2103`.
-- Spec push CI `37824381432`: PASS.
-- Continuity reconciliation head before plan: `69af1cc46bf54156854554f3974f519e3f127da5` → CI `37825730483` PASS.
-- Written spec gate: **APPROVED by user on 2026-10-08** by asking to continue after review/audit.
-- TDD implementation plan: `docs/superpowers/plans/2026-10-08-f3-4-local-signature-library.md` — written and self-audited; **awaiting user review/approval**.
-- Phase companion: `.planning/phases/04-f3-visual-signature/F3.4-PLAN.md`.
-- Product code: **NOT STARTED**.
-- F3.4 PR: **not opened yet**.
+- Formal spec: `docs/superpowers/specs/2026-10-08-f3-4-local-signature-library-design.md` — **APPROVED**.
+- TDD plan: `docs/superpowers/plans/2026-10-08-f3-4-local-signature-library.md` — **APPROVED** and executed task-by-task.
+- Functional head: `c46ddbc9e7bea9ea1dab2eb7678a837d7364f9c0`.
+- Functional push CI `37834492859`: **PASS**.
+- Release build: **0 warnings / 0 errors**.
+- Tests: **301 PASS / 0 FAIL / 0 SKIPPED**.
+- Scope audit vs F3.3: PASS; no unauthorized package/lock/PDF writer/coordinate/photo/ink/PDFium/ZPL changes.
+- Closure history: `docs/history/2026-10-08-F3.4.md`.
+- Final closure exact-head CI: pending after this docs-only commit.
+- F3.4 draft PR: pending after exact-head CI; must remain stacked on F3.3 and unmerged.
+- Manual Windows QA: **NOT RUN**.
 
 ## Executed Chain
 
@@ -56,7 +58,7 @@ See `.planning/PROJECT.md`.
 - F3.1 Core visual signature: automated PASS.
 - F3.2 Photo/scan preparation: automated PASS; real-photo QA NOT RUN.
 - F3.3 Draw signature: automated PASS; hardware QA NOT RUN.
-- F3.4 Local signature library: spec approved; TDD implementation plan awaiting approval; no product code yet.
+- F3.4 Local signature library: automated implementation PASS; closure CI/draft PR pending; manual Windows QA NOT RUN.
 
 ## Parallel Acceptance Gates Still Open
 
@@ -69,6 +71,7 @@ These are intentionally separate and do not become PASS from synthetic CI:
 - F3.1 real transparent-signature UX/save/open: **NOT RUN**.
 - F3.2 real phone/scanner photo-quality QA: **NOT RUN**.
 - F3.3 real mouse/touch/stylus QA: **NOT RUN**.
+- F3.4 real save→restart→reuse, rename/delete, LocalAppData inspection, placed-copy survival and network-disabled smoke: **NOT RUN**.
 
 They remain required before the corresponding physical/private acceptance claims or public-release readiness. They do not invalidate the automated PASS statuses above.
 
@@ -83,18 +86,21 @@ They remain required before the corresponding physical/private acceptance claims
 - ZXing.Net 0.16.11 is test/QA-only.
 - All visual-signature sources converge to `SignatureAsset` → `AddSignatureAsset(...)`.
 - F3.4 persists/reloads only the transparent `SignatureAsset`; no placement geometry, database, cloud, network, encryption or second signature pipeline.
+- F3.4 storage is `%LOCALAPPDATA%\SG PDF Editor\Signatures\` with manifest v1 + lossless PNG assets.
 - No merge to `main` without explicit user approval.
 
 ## Next Gate
 
 ```text
-user reviews F3.4 TDD implementation plan
-→ if approved: RED → GREEN task-by-task
-→ closure docs + exact-head CI
-→ open/keep PR draft stacked on F3.3
-→ no merge without explicit approval
+closure docs commit
+→ require exact-head GitHub CI PASS
+→ open F3.4 draft PR stacked on F3.3
+→ keep manual Windows QA separate as NOT RUN
+→ no merge without explicit user approval
+→ after closure, next product-design gate is F4 Lector Completo
 ```
 
 ## Continuity
 
-Cross-project reconciliation audit: `docs/history/2026-10-08-CONTINUITY-AUDIT.md`.
+- Cross-project reconciliation audit: `docs/history/2026-10-08-CONTINUITY-AUDIT.md`.
+- F3.4 closure evidence: `docs/history/2026-10-08-F3.4.md`.

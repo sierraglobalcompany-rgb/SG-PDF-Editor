@@ -30,11 +30,11 @@ Phase continuity index: `.planning/phases/03-f2-zpl-workspace/PLAN.md`.
 - **F3.1 Core placement/save — automated PASS.** Manual real-signature UX remains NOT RUN.
 - **F3.2 Photo/scan preparation — automated PASS.** Real-photo/scanner QA remains NOT RUN.
 - **F3.3 Draw signature / InkCanvas — automated PASS.** Final head `8b5bfd35b59fbc75826f8d7616aaaca3e2f31233`; PR CI `37802865627` PASS; 246 tests. Hardware QA remains NOT RUN.
-- **F3.4 Local signature library — CURRENT.** Written spec approved by user. TDD implementation plan exists at `docs/superpowers/plans/2026-10-08-f3-4-local-signature-library.md`, has been self-audited against the spec, and is awaiting user approval. Product code has not started and no F3.4 PR is open yet.
+- **F3.4 Local signature library — automated implementation PASS.** Functional head `c46ddbc9e7bea9ea1dab2eb7678a837d7364f9c0`; functional CI `37834492859` PASS; Release build 0 warnings/0 errors; 301 tests PASS. Closure exact-head CI and draft stacked PR are the remaining automated closure steps. Real Windows save→restart→reuse/rename/delete/offline QA remains **NOT RUN**.
 
 ## Phase 5 — F4 Lector Completo
 **Goal:** continuous scroll, thumbnails, bookmarks/links, search/copy text, password PDFs, shortcuts/recent files.  
-**Estado:** pending.
+**Estado:** pending design/planning gate after F3.4 automated closure.
 
 ## Phase 6 — F5 Organizar
 **Goal:** page reordering/rotation/delete/duplicate/insert/extract/merge/split with preservation preflight.  
@@ -75,8 +75,8 @@ F2.1–F2.6                     automated PASS / private + physical QA pending
 F3.1                          automated PASS / manual QA pending
 F3.2                          automated PASS / real-photo QA pending
 F3.3                          automated PASS / hardware QA pending
-F3.4                          spec approved / TDD plan awaiting approval / no code
+F3.4                          automated implementation PASS / closure CI + draft PR pending / manual QA pending
 F4–F12                        pending
 ```
 
-Next permitted step after plan approval: **execute F3.4 RED → GREEN task-by-task**. No product-code implementation before that approval.
+Next automated closure step: **exact-head CI for the F3.4 closure-doc commit, then open the draft PR stacked on F3.3**. No merge to `main` without explicit user approval.
