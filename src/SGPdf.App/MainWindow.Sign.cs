@@ -45,6 +45,8 @@ public partial class MainWindow
         static (owner, path) => SignaturePhotoDialog.Prepare(owner, path);
     private Func<Window, SignatureAsset?> _drawSignature =
         static owner => SignatureDrawDialog.Draw(owner);
+    private Func<Window, SignatureAsset?, SignatureAsset?> _openSignatureLibrary =
+        static (owner, selectedAsset) => SignatureLibraryDialog.Open(owner, selectedAsset);
     private Action<string, string, IReadOnlyList<SignaturePlacement>, CancellationToken> _saveVisualSignatures =
         static (source, destination, placements, token) =>
             new PdfVisualSignatureWriter().SaveAsCopy(source, destination, placements, token);
@@ -235,6 +237,18 @@ public partial class MainWindow
         draw.Click += DrawSignature_Click;
         panel.Children.Add(draw);
 
+        var library = new Button
+        {
+            Name = "SignatureLibraryButton",
+            Content = "Biblioteca de firmas...",
+            Padding = new Thickness(10, 5, 10, 5),
+            HorizontalAlignment = HorizontalAlignment.Left,
+            Margin = new Thickness(0, 8, 0, 0)
+        };
+        RegisterName(library.Name, library);
+        library.Click += (_, _) => TryOpenSignatureLibrary();
+        panel.Children.Add(library);
+
         var duplicate = new Button { Content = "Duplicar", Padding = new Thickness(10, 5, 10, 5), HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 8, 0, 0) };
         duplicate.Click += (_, _) => { if (_signatureEditState?.DuplicateSelected() is not null) RefreshSignatureOverlay(); };
         panel.Children.Add(duplicate);
@@ -249,7 +263,7 @@ public partial class MainWindow
 
         panel.Children.Add(new TextBlock
         {
-            Text = "Puedes cargar un PNG transparente, preparar una firma desde una foto/escaneo o dibujarla directamente.",
+            Text = "Puedes cargar un PNG transparente, preparar una firma desde una foto/escaneo, dibujarla directamente o reutilizar una firma guardada localmente.",
             TextWrapping = TextWrapping.Wrap,
             Foreground = Brushes.DimGray,
             Margin = new Thickness(0, 14, 0, 0)
@@ -353,6 +367,36 @@ public partial class MainWindow
 
     private void DrawSignature_Click(object sender, RoutedEventArgs e)
         => TryDrawSignature();
+
+    private SignatureAsset? GetSelectedSignatureAsset()
+    {
+        if (_signatureEditState?.SelectedId is not Guid selectedId)
+            return null;
+
+        return _signatureEditState.Placements
+            .FirstOrDefault(placement => placement.Id == selectedId)
+            ?.Asset;
+    }
+
+    private bool TryOpenSignatureLibrary()
+    {
+        try
+        {
+            var asset = _openSignatureLibrary(this, GetSelectedSignatureAsset());
+            if (asset is null)
+                return false;
+
+            AddSignatureAsset(asset);
+            StatusText.Text = "Firma de la biblioteca agregada. Arrástrala o redimensiónala y luego usa Guardar como...";
+            return true;
+        }
+        catch (Exception ex)
+        {
+            StatusText.Text = "No se pudo abrir la biblioteca de firmas.";
+            ShowSignatureMessage($"No se pudo usar la biblioteca local de firmas.\n\n{ex.Message}", MessageBoxImage.Error);
+            return false;
+        }
+    }
 
     private bool TryLoadSignatureFromPath(string path)
     {
