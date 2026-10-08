@@ -379,7 +379,7 @@ public sealed class SignatureLibraryDialogTests
         => Assert.IsType<TextBlock>(dialog.FindName(name));
 
     private static void Click(FrameworkElement dialog, string name)
-        => Button(dialog, name).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        => Button(dialog, name).RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));
 
     private static void SetField(object target, string name, object value)
     {
