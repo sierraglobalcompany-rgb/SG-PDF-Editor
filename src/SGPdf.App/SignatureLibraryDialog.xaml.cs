@@ -259,7 +259,8 @@ public partial class SignatureLibraryDialog : Window
     }
 
     private static bool IsItemLoadFailure(Exception ex)
-        => ex is IOException
+        => ex is InvalidDataException
+            or IOException
             or UnauthorizedAccessException
             or ArgumentException
             or OverflowException
