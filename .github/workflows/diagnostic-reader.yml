@@ -23,29 +23,21 @@ jobs:
         run: dotnet restore SGPdf.slnx --locked-mode
       - name: Build
         run: dotnet build SGPdf.slnx --configuration Release --no-restore
-      - name: Isolate F4 Task 2 tests
+      - name: Isolate hang stages
         shell: pwsh
         run: |
           $tests = @(
-            'ContinuousSurface_UsesRecyclingVirtualization',
-            'LeerMode_ShowsContinuousSurfaceAndHidesSinglePageEditSurface',
-            'OpenPdf_PublishesSessionAfterPageMetricsWithoutEagerAllPageRender',
-            'ScrollCenter_UpdatesNavigationPageNumberAndPrintCurrentSemantics',
-            'PreviousNextAndPageNumber_ScrollWithoutRecreatingSession',
-            'Zoom_RebuildsGeometryKeepsCurrentPageAnchorAndReleasesStaleBitmaps',
-            'StaleReaderGeneration_DoesNotPublishBitmapOrTransform',
-            'PerPageRenderFailure_IsolatedAndSessionRemainsActive',
-            'ReaderRetention_ReleasesBitmapOutsideVisiblePlusNeighborWindow',
-            'EnterFirmar_UsesCurrentReaderPageAndExistingSinglePageSurface',
-            'ReturnLeer_PreservesCurrentPageAndExistingSignatureDirtyGuard',
-            'PdfToZpl_HidesBothPdfReaderSurfacesAndKeepsExistingZplBehavior'
+            'SGPdf.App.Tests.ReaderHangDiagnosticsTests.OpenWithSyntheticRenderer_WithoutClose_Completes',
+            'SGPdf.App.Tests.ReaderHangDiagnosticsTests.OpenWithRealRenderer_WithoutClose_Completes',
+            'SGPdf.App.Tests.ReaderHangDiagnosticsTests.OpenWithSyntheticRenderer_ThenClose_Completes',
+            'SGPdf.App.Tests.MainWindowReaderTests.LeerMode_ShowsContinuousSurfaceAndHidesSinglePageEditSurface'
           )
           foreach ($test in $tests) {
             Write-Host "=== RUN $test ==="
             $arguments = @(
               'test', 'tests/SGPdf.App.Tests/SGPdf.App.Tests.csproj',
               '--configuration', 'Release', '--no-build',
-              '--filter', "FullyQualifiedName=SGPdf.App.Tests.MainWindowReaderTests.$test"
+              '--filter', "FullyQualifiedName=$test"
             )
             $process = Start-Process dotnet -ArgumentList $arguments -PassThru -NoNewWindow
             if (-not $process.WaitForExit(20000)) {
