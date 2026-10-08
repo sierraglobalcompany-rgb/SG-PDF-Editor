@@ -27,6 +27,22 @@ public sealed class PdfFileLockDiagnosticsTests
         Assert.False(Directory.Exists(fixture.Directory));
     }
 
+    [Fact]
+    public void PdfiumRender_Dispose_AllowsImmediateDelete()
+    {
+        var fixture = CreatePdf();
+        using (var session = PdfDocumentSession.Open(fixture.Path))
+        {
+            var sizes = session.GetPageSizes();
+            Assert.Single(sizes);
+            var rendered = session.RenderPage(0, 96d);
+            Assert.True(rendered.PixelWidth > 0);
+        }
+
+        Directory.Delete(fixture.Directory, true);
+        Assert.False(Directory.Exists(fixture.Directory));
+    }
+
     private static (string Directory, string Path) CreatePdf()
     {
         var directory = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"sgpdf-lock-{Guid.NewGuid():N}");
