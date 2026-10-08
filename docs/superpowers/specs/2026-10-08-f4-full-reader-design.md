@@ -1,317 +1,264 @@
 # F4 — Full Reader / Lector Completo — Design Specification
 
 **Date:** 2026-10-08  
-**Status:** WRITTEN — awaiting user review  
+**Status:** WRITTEN + SELF-REVIEWED — awaiting user approval  
 **Branch:** `feat/f4-full-reader`  
 **Base:** F3.4 closure head `1bef751962e0b4aaf35fbda9b8a1a9a2ee2ba36b`  
 **Product:** SG PDF Editor — Windows x64, C#/.NET 10, WPF, local-first/offline
 
 ## 1. Purpose
 
-F4 turns the existing F0 single-page PDF reader into the normal daily reading experience for SG PDF Editor without replacing PDFium, introducing another PDF engine, or breaking the visual-signature workflow delivered in F3.
+F4 turns the existing F0 single-page PDF reader into the normal daily reading experience for SG PDF Editor without replacing PDFium, introducing another PDF engine, or breaking F2 ZPL and F3 visual signatures.
 
-Success means a user can open a normal or password-protected PDF and read it naturally with continuous vertical scrolling, thumbnails, bookmarks, internal/external links, text search/copy, keyboard shortcuts and recent files while the application remains local-first, responsive and memory-bounded.
+Success means a user can open a normal or password-protected PDF and read it naturally with continuous vertical scrolling, thumbnails, bookmarks, safe links, text search/copy, keyboard shortcuts and recent files while the application remains responsive, private and memory-bounded.
 
-F4 is a reader phase. It does not add page organization, OCR, text editing, annotations, cryptographic signing, multi-document tabs or cloud features.
+F4 is a **reader** phase. It does not add page organization, OCR, text editing, saved annotations, cryptographic signing, multi-document tabs or cloud features.
 
-## 2. Existing baseline and constraints
+## 2. Existing baseline and non-negotiables
 
 The current application already has:
 
 - `PdfDocumentSession` owning the native PDFium document handle;
-- `PdfiumRuntime.NativeGate`, globally serializing native PDFium calls;
-- `PdfRenderScheduler` with latest-request-wins behavior for the current page;
+- `PdfiumRuntime.NativeGate`, globally serializing PDFium calls;
+- `PdfRenderScheduler` latest-request-wins behavior;
 - `PageNavigationState`;
-- `PdfZoomState` with 25–400% manual zoom plus Fit Page and Fit Width;
-- a central WPF `ScrollViewer` containing one `PdfImage`;
-- Windows printing based on the current PDF session;
-- F3 visual signatures layered on the current single `PdfImage` through `SignatureEditState` and `SignatureOverlayCanvas`;
-- F2 ZPL preview sharing the same central area through a separate canvas.
+- `PdfZoomState` with 25–400% manual zoom, Fit Page and Fit Width;
+- one central `PdfImage` inside a WPF `ScrollViewer`;
+- Windows printing using the current PDF session;
+- F3 visual signing layered on the active single `PdfImage` via `SignatureEditState` + `SignatureOverlayCanvas`;
+- F2 ZPL preview using its own existing central surface.
 
-Non-negotiable project constraints remain:
+Constraints remain:
 
-1. Windows x64, C#/.NET 10 and WPF.
+1. Windows x64 + C#/.NET 10 + WPF.
 2. PDFium remains the primary PDF engine.
-3. All PDFium calls remain behind `PdfiumRuntime.NativeGate`.
-4. No cloud, account, API key, telemetry or network dependency for normal operation.
+3. Every PDFium call remains behind `PdfiumRuntime.NativeGate`.
+4. No normal-operation cloud, API key, account, telemetry or required network connection.
 5. No new commercial runtime dependency.
 6. KISS/YAGNI: no preventive MVVM framework, DI container, event bus, repository abstraction or plugin framework.
 7. No automatic merge to `main`.
-8. Existing F2 and F3 behavior must not be silently regressed.
+8. Existing F2/F3 tests are regression gates.
 
-## 3. Product UX model
+## 3. Product UX boundary
 
-The final product mode concept remains:
+The long-term mode concept remains:
 
 ```text
 LEER | FIRMAR | EDITAR | ORGANIZAR | COMENTAR
 ```
 
-F4 changes only `LEER`.
+F4 changes `LEER` only.
 
-### 3.1 LEER mode
+### 3.1 LEER
 
-`LEER` becomes a continuous vertical PDF viewer. Multiple page cards may be visible. Only visible pages and a small neighbor window are rendered at full viewing resolution.
+`LEER` becomes a continuous vertical viewer. Multiple page cards may be visible, but only the visible region and a small neighbor window are rendered at full viewing resolution.
 
-The left panel becomes reader navigation with:
+The left panel becomes:
 
 ```text
 [Páginas] [Marcadores]
 ```
 
-The existing top page/zoom controls remain familiar rather than being redesigned wholesale.
+The existing top page and zoom controls remain recognizable.
 
-### 3.2 FIRMAR compatibility boundary
+### 3.2 FIRMAR compatibility — frozen decision
 
-F3 visual signing remains a single-active-page editor in F4.
+F3 remains a **single-active-page editor**.
 
-When the user enters `FIRMAR` from the continuous reader:
+Entering `FIRMAR` from continuous reading:
 
-1. the current reader page becomes the active signing page;
-2. the continuous reader surface is hidden;
-3. the existing single-page `PdfImage` surface is shown/rendered;
-4. the existing `SignatureOverlayCanvas`, `SignatureEditState`, coordinate mapping and `AddSignatureAsset(...)` path remain authoritative.
+1. current reader page becomes active signing page;
+2. continuous surface is hidden;
+3. existing single-page `PdfImage` is shown/rendered;
+4. existing `SignatureOverlayCanvas`, `SignatureEditState`, coordinate mapping and `AddSignatureAsset(...)` remain authoritative.
 
-When the user returns to `LEER`:
+Returning to `LEER`:
 
-1. unresolved-signature guards keep their current behavior;
-2. the single-page signing surface is hidden;
-3. the continuous reader returns to the same active page;
-4. exact sub-page pixel offset restoration is desirable but is not a hard F4 acceptance requirement.
+1. existing unresolved-signature guard remains authoritative;
+2. single-page signing surface is hidden;
+3. continuous reader returns to the same active page.
 
-This boundary is deliberate. F4 must not create a second signature placement model or migrate signature overlays into every continuous page card.
+Exact sub-page pixel offset restoration is desirable but not a hard F4 requirement.
 
-While `FIRMAR` is active, existing previous/next/page-number navigation continues to use the single-page path and existing dirty guards. Continuous scrolling is a `LEER` behavior.
+While `FIRMAR` is active, previous/next/page-number navigation keeps the existing single-page path and dirty guards. Continuous scrolling is a `LEER` behavior.
 
-### 3.3 ZPL compatibility boundary
+F4 must not create a second signature placement model or put signature editing overlays on every continuous page card.
 
-Opening ZPL continues to switch to the existing ZPL surface. Both the continuous PDF reader and single-page PDF editor are hidden while ZPL preview is active. F4 must not move label rendering into the reader architecture.
+### 3.3 ZPL compatibility
 
-## 4. Recommended architecture
+Opening ZPL continues to activate the existing ZPL surface. The continuous reader and single-page PDF editor are hidden while ZPL preview is active. F4 does not move label rendering into reader code.
 
-F4 evolves the existing application rather than replacing it.
+## 4. Architecture
 
-### 4.1 Central surfaces
-
-The center area will contain three mutually exclusive surfaces:
+### 4.1 Three mutually exclusive center surfaces
 
 ```text
-PDF read  -> continuous virtualized reader
-PDF edit  -> existing single-page PdfImage + overlays
-ZPL       -> existing LabelSheetCanvas / label preview
+PDF read  -> new continuous virtualized reader
+PDF edit  -> existing single PdfImage + edit/sign overlays
+ZPL       -> existing label preview/sheet surface
 ```
 
-A new continuous reader control/list is added beside the existing `PdfImage`; the existing `PdfImage` is retained for F3 and future page-local editing modes.
+The existing `PdfImage` is retained specifically so F3 and later page-local editing do not need to be rebuilt for F4.
 
 ### 4.2 Feature structure
 
-Feature-specific reader code may live under:
+Reader-specific code may live in:
 
 ```text
 src/SGPdf.App/Features/Reader/
 ```
 
-Small WPF integration may remain in a `MainWindow.Reader.cs` partial, following the existing `MainWindow.Sign.cs` / `MainWindow.Labels.cs` pattern.
+WPF integration may use `MainWindow.Reader.cs`, matching the existing partial-window pattern. No new project or app-wide framework is introduced.
 
-Do not create new projects or framework layers.
+### 4.3 Native document ownership
 
-### 4.3 PdfDocumentSession growth
+`PdfDocumentSession` remains the only owner of the native document handle. It may become `partial` and split reader concerns into focused files such as text/navigation helpers rather than exposing the raw `IntPtr`.
 
-`PdfDocumentSession` remains the sole owner of the native document handle. F4 may make it `partial` and split native-reader operations by concern, for example:
-
-```text
-PdfDocumentSession.cs
-PdfDocumentSession.Text.cs
-PdfDocumentSession.Navigation.cs
-```
-
-This is preferred over exposing the raw `IntPtr` document handle to reader services.
-
-All new P/Invoke declarations remain minimal and feature-driven in `PdfiumNative.cs` or narrowly split native files if the single file becomes materially difficult to maintain.
+New P/Invoke declarations stay minimal and feature-driven.
 
 ## 5. F4.1 — Continuous Reader Core
 
-### 5.1 Goal
+### 5.1 Lightweight page model
 
-Replace single-page reading in `LEER` with smooth continuous vertical scrolling while preserving navigation, zoom, printing and the single-page editor used by F3.
-
-### 5.2 Page metadata
-
-On successful document open, the reader obtains lightweight geometry for every page using PDFium page-size metadata, preferably `FPDF_GetPageSizeByIndexF` rather than fully loading/rendering every page.
+After a document loads, obtain page count and page geometry without rendering every page. Prefer `FPDF_GetPageSizeByIndexF` for geometry.
 
 Each reader page slot needs only:
 
-- zero-based page index;
-- PDF width/height in points;
-- calculated display width/height for the active zoom mode;
-- current full-page bitmap, if realized/rendered;
-- current `PdfPageDeviceTransform`, if rendered;
-- render state: placeholder / loading / ready / error.
+- page index;
+- width/height in PDF points;
+- calculated display size for current zoom mode;
+- full-page bitmap only while in the render window;
+- `PdfPageDeviceTransform` only while rendered;
+- placeholder/loading/ready/error state.
 
-No full document bitmap pre-render is allowed.
+No eager full-document bitmap render is allowed.
 
-### 5.3 WPF virtualization
+### 5.2 Standard WPF virtualization
 
-Use WPF virtualization/recycling rather than one permanent `Image` per page. A standard WPF virtualized list/panel is preferred over a custom scrolling engine.
+Use standard WPF virtualization/recycling before considering a custom scrolling engine. Page placeholders preserve calculated geometry so scrollbar extent does not depend on bitmap completion.
 
-Page slots render as white page cards over the existing neutral viewer background. Placeholders preserve page geometry so the scrollbar remains stable before the bitmap arrives.
+Mixed page sizes and portrait/landscape combinations are required.
 
-The virtualized view must support mixed portrait/landscape/page sizes.
+### 5.3 Current page
 
-### 5.4 Current-page definition
+Current page is determined by the **vertical center of the viewport**:
 
-In continuous mode, the current page is the page whose displayed page rectangle contains the vertical center of the viewport. If the viewport center falls in an inter-page gap, choose the nearest page rectangle.
+- if center is inside a page rectangle, that page is current;
+- if center is in a page gap, choose the nearest page.
 
-The current page drives:
+Current page drives page-number UI, status, thumbnail selection, Print -> Current page, and the page selected when entering `FIRMAR`.
 
-- `PageNavigationState` / page-number display;
-- status text;
-- selected thumbnail;
-- Print -> Current page;
-- the page chosen when entering `FIRMAR`.
-
-Scrolling updates current-page state without triggering a replacement render of the whole viewer.
-
-### 5.5 Navigation semantics
+### 5.4 Navigation
 
 In `LEER`:
 
-- Previous = scroll to the previous page;
-- Next = scroll to the next page;
-- typed page number + Enter = scroll to that page;
-- programmatic navigation aligns the target page predictably near the top of the viewport with normal page margin;
-- navigation does not recreate the document session.
+- Previous -> scroll to previous page;
+- Next -> scroll to next page;
+- page number + Enter -> scroll to target page;
+- explicit page navigation aligns target near the top with normal page margin;
+- document session is not recreated.
 
-In `FIRMAR`, these controls continue through the existing single-page navigation path.
+In `FIRMAR`, the same controls retain existing single-page behavior.
 
-### 5.6 Zoom semantics
+### 5.5 Zoom
 
-The existing `PdfZoomState` and 25–400% limits remain authoritative.
+Existing 25–400% limits remain.
 
-Manual zoom / 100%:
-- one common DPI/scale applies across pages.
+**Manual / 100%:** one common DPI/scale across pages.
 
-Fit Width:
-- resolve display scale per page from that page's own width and the current viewport width;
-- pages of different physical widths may therefore have different resolved DPI while each fits the reader width.
+**Fit Width:** resolve scale per page from that page's width and current viewport width.
 
-Fit Page:
-- resolve display scale per page from its own dimensions and the current viewport dimensions;
-- continuous mode remains active; this button does not switch back to single-page reading.
+**Fit Page:** resolve scale per page from that page's dimensions and viewport dimensions; continuous mode remains active.
 
-The visible zoom percentage shown by the UI in a fit mode reflects the current page's resolved DPI.
+In fit modes the displayed percentage reflects the current page's resolved DPI.
 
-A zoom or fit change:
+Zoom/refit:
 
-1. updates all page placeholder geometry;
+1. recomputes placeholder geometry;
 2. invalidates stale full-page reader bitmaps;
-3. preserves the current page as the navigation anchor;
+3. preserves current page as navigation anchor;
 4. rerenders only the active render window.
 
-### 5.7 Full-page render window and memory policy
+### 5.6 Memory policy
 
-F4 does not introduce an unbounded bitmap cache.
+Full-resolution reader bitmaps are retained only for:
 
-At full viewing resolution, retain only:
+- currently visible pages;
+- at most one neighboring page immediately before the visible range;
+- at most one neighboring page immediately after the visible range.
 
-- pages currently visible; plus
-- at most one adjacent page before the visible range; plus
-- at most one adjacent page after the visible range.
+When a page leaves this window, its full-resolution bitmap is released and may be rerendered later.
 
-When a page leaves that window, its full-resolution `BitmapSource` is released from the page slot and may be rerendered if the user returns.
+This simple count-bounded policy is preferred over an LRU/cache framework. If real Windows QA proves high-zoom memory is still unacceptable, the implementation plan may add a measured pixel/byte guard.
 
-This count-bounded policy is intentionally simpler than an LRU/byte-budget subsystem. If real QA shows that very high zoom still causes unacceptable memory pressure, add a measured pixel/byte guard in the implementation plan rather than inventing a cache framework now.
+### 5.7 Render scheduling
 
-### 5.8 Render scheduling
+Reader rendering is latest-view-wins:
 
-Reader rendering follows latest-view-wins behavior:
+- scroll/zoom/open creates a new generation;
+- stale work is canceled where possible or ignored before UI publication;
+- `FPDF_RenderPageBitmap` remains synchronous and globally serialized;
+- no unbounded Task-per-page fanout;
+- visible pages precede neighbor prefetch;
+- thumbnail background work must not starve visible full-page work.
 
-- scrolling/zoom/opening produces a new reader generation/request;
-- stale pending page renders are canceled or ignored before UI publication;
-- native `FPDF_RenderPageBitmap` remains synchronous and globally serialized by `NativeGate`;
-- do not launch an unbounded Task per page;
-- render visible pages before adjacent prefetch pages;
-- thumbnail background work must never starve the visible full-page render path.
+Progressive PDFium rendering remains deferred until measured evidence requires it.
 
-Progressive PDFium rendering remains out of scope unless physical performance evidence proves it necessary.
+### 5.8 Per-page failure
 
-### 5.9 Per-page render failure
+Once the document session itself opened successfully, one page failing to render shows a controlled error card; the rest of the document remains usable.
 
-After a document has opened successfully, one page failing to render must not discard the whole document session. That page card shows a controlled error state and navigation can continue to other pages.
+Document open remains candidate-first: a failed new open leaves the previous document untouched.
 
-Opening a document remains candidate-first: failure to load the document/session leaves the previous document intact.
+## 6. F4.2 — Thumbnails
 
-## 6. F4.2 — Thumbnails and left navigation
+The left `Páginas` tab is a virtualized lazy thumbnail list.
 
-### 6.1 Páginas tab
+Each item shows thumbnail, page number and current-page selection. Clicking exactly once navigates to that page; scrolling the reader updates selection without recursive navigation.
 
-The current left placeholder becomes a virtualized thumbnail list.
+Thumbnail rules:
 
-Each item shows:
+- approximately 120–150 WPF-pixel display width;
+- rendered lazily for realized/near-visible rows;
+- never eagerly render all thumbnails;
+- stale requests may be discarded;
+- thumbnail work is lower practical priority than visible full-page rendering;
+- do not permanently retain thousands of thumbnail bitmaps.
 
-- lazy thumbnail;
-- page number;
-- current-page selection state.
+The final F4 UI has both `Páginas` and `Marcadores`; during earlier slices Marcadores may be empty/hidden until F4.5.
 
-Clicking a thumbnail scrolls the continuous reader to that page. Reader scrolling updates thumbnail selection without recursively causing another navigation loop.
+## 7. F4.3 — Password PDFs
 
-### 6.2 Thumbnail rendering
+### 7.1 Classification
 
-Thumbnails are low-resolution and independently lazy. Target display width should remain small (approximately 120–150 WPF pixels); the exact visual width belongs to implementation/UI tuning.
+`FPDF_ERR_PASSWORD` (`4`) is the authoritative PDFium classification for password required/incorrect. UI code must not detect password cases by parsing exception text.
 
-Do not pre-render thumbnails for the whole document.
-
-Only realized/near-visible thumbnail rows request thumbnail renders. Stale thumbnail requests may be dropped. Full-page viewing renders have higher practical priority than thumbnail work.
-
-Thumbnail bitmap lifetime is tied to a small realized/near-realized window; F4 does not maintain thousands of thumbnail bitmaps permanently.
-
-### 6.3 Marcadores tab empty state
-
-Before F4.5 bookmark support lands, the tab may be absent or show a controlled empty/coming-later state only inside the development slice. The final F4 UI must provide both `Páginas` and `Marcadores`.
-
-## 7. F4.3 — Password-protected PDFs
-
-### 7.1 Error classification
-
-PDFium error code `FPDF_ERR_PASSWORD` (`4`) means password required or incorrect. F4 must surface this separately from malformed PDF/file errors.
-
-`PdfDocumentSession.Open(...)` may retain its current public shape or gain a controlled exception/result type, but the UI must not parse human-readable exception text to detect password failure.
-
-### 7.2 Open flow
+### 7.2 Candidate-first flow
 
 ```text
-open without password
-  -> success: publish candidate session
-  -> password error: show password dialog
-       -> retry with entered password
-       -> success: publish candidate session
-       -> password error: keep dialog open with controlled validation message
-       -> cancel: keep prior document unchanged
-  -> other error: show normal open error, keep prior document unchanged
+open with no password
+  -> success: publish candidate
+  -> password error: masked password dialog
+       -> retry
+       -> success: publish candidate
+       -> password error: controlled invalid-password message, stay in dialog
+       -> cancel: keep previous document
+  -> other error: normal open error, keep previous document
 ```
 
-The password field is masked.
+### 7.3 Privacy and scope
 
-### 7.3 Password privacy
+Passwords are never written to recents, logs, status text, JSON/settings or app-created diagnostics. They are not persisted across restarts.
 
-F4 never writes a password to:
+F4 guarantees reading/navigation/search/printing after a protected file opens successfully to the extent PDFium permits. F4 does **not** redesign encrypted-PDF save/edit/sign behavior. Existing write paths that cannot safely reopen an encrypted source must fail in a controlled way rather than persist credentials or bypass security.
 
-- recent-files storage;
-- logs/status text;
-- JSON/settings;
-- crash/diagnostic artifacts intentionally created by the app.
+Owner-permission enforcement for editing belongs to later write features.
 
-The password exists only as needed for the current open attempt/session flow. It is not persisted across application restarts.
+## 8. F4.4 — Search, selection and copy
 
-F4.3 guarantees reading/navigation/search/printing of a successfully opened protected document to the extent allowed by PDFium. It does **not** redesign encrypted-PDF save/edit/sign semantics. If an existing writer cannot reopen an encrypted source safely, that write path must fail in a controlled manner rather than storing credentials or silently bypassing security.
+### 8.1 PDFium text APIs
 
-Owner-permission enforcement for editing is a later write-feature concern; F4 does not claim to unlock restricted editing.
-
-## 8. F4.4 — Text search, selection and copy
-
-### 8.1 PDFium APIs
-
-Use PDFium text APIs, including the necessary subset of:
+Use the needed subset of:
 
 - `FPDFText_LoadPage` / `FPDFText_ClosePage`;
 - `FPDFText_FindStart` / `FindNext` / `FindPrev` / `FindClose`;
@@ -320,198 +267,137 @@ Use PDFium text APIs, including the necessary subset of:
 - `FPDFText_GetText`;
 - `FPDFText_CountRects` / `FPDFText_GetRect`.
 
-No OCR library enters F4. Image-only/scanned PDFs without a text layer legitimately return no searchable/selectable text; OCR remains F10.
+No OCR enters F4. Image-only PDFs with no text layer legitimately return no text; OCR remains F10.
 
 ### 8.2 Find UI
 
-`Ctrl+F` opens a compact find bar in `LEER`.
+`Ctrl+F` opens a compact find bar with query, previous, next and close.
 
-Minimum controls:
-
-- query box;
-- previous match;
-- next match;
-- close.
-
-Enter = next match. Shift+Enter = previous match. Escape closes the bar.
-
-F4 uses case-insensitive, non-whole-word search by default. Case/whole-word/regex options are not part of F4.
+- Enter -> next;
+- Shift+Enter -> previous;
+- Escape -> close;
+- default search = case-insensitive, non-whole-word;
+- no regex/case/whole-word UI in F4.
 
 ### 8.3 Search strategy
 
-Do not build a permanent whole-document search index.
+No permanent whole-document index.
 
-Search is on-demand from the current page and current direction:
+On-demand search starts from the current page, continues one page at a time in the requested direction, wraps at most once, and stops at first match or after every page was visited. Query change/cancel invalidates the previous search generation.
 
-1. search the current page;
-2. continue page-by-page in the requested direction;
-3. wrap at most once at document ends;
-4. stop when a match is found or the full document has been visited;
-5. cancellation/query change invalidates the prior search generation.
+F4 does not require an all-results panel or exact global `N of M` count. `Sin resultados` is sufficient.
 
-The user does not need an all-results panel or exact global `N of M` count in F4. A controlled `Sin resultados` state is sufficient.
-
-The active match scrolls into view and is highlighted. F4 does not require highlighting every match on the current page simultaneously.
+Only the active match must be highlighted.
 
 ### 8.4 Text selection
 
-Mouse drag may select text **within one page at a time** in F4.
+Mouse drag selects text **within one page at a time**.
 
-Flow:
+1. map device point -> PDF point using that rendered page's transform;
+2. hit-test start/end character index;
+3. normalize range;
+4. obtain text rectangles;
+5. draw selection overlay over the page;
+6. `Ctrl+C` copies PDFium Unicode text to Windows clipboard.
 
-1. map mouse/device coordinates to PDF page coordinates using the rendered page transform;
-2. hit-test start/end character indexes;
-3. normalize the character range;
-4. obtain highlight rectangles with PDFium text-rect APIs;
-5. render a selection overlay above that page;
-6. `Ctrl+C` copies Unicode text returned by PDFium to the Windows clipboard.
+Cross-page drag selection, double-click word semantics, paragraph selection and selection handles are deferred.
 
-Cross-page drag selection, double-click word semantics, paragraph selection and custom selection handles are explicitly deferred.
+Selection is interaction state, not rasterized into the page image. Zoom recomputes overlay geometry from PDF/text coordinates.
 
-Clicking elsewhere or changing document clears the selection. Changing zoom rerenders the selection rectangles from PDF coordinates/character range rather than rasterizing the highlight into the page image.
-
-### 8.5 Search/selection and FIRMAR
-
-Text search/selection belongs to `LEER`. Entering `FIRMAR` hides/clears the reader selection UI; it does not mutate the document or signature state.
+Entering `FIRMAR` clears/hides reader selection without altering signature/document state.
 
 ## 9. F4.5 — Bookmarks and links
 
 ### 9.1 Bookmarks
 
-The `Marcadores` tab displays the PDF outline as a WPF tree.
+`Marcadores` shows a read-only WPF tree using the necessary PDFium bookmark/destination APIs, including `FPDFBookmark_GetFirstChild`, `FPDFBookmark_GetNextSibling`, `FPDFBookmark_GetTitle`, destination/action lookup and `FPDFDest_GetDestPageIndex`.
 
-Use PDFium bookmark APIs, including:
+Malformed outline traversal must be cycle-safe and bounded. Track visited bookmark handles and enforce conservative maximums: **10,000 nodes and depth 128** unless planning chooses stricter limits. Never recurse indefinitely.
 
-- `FPDFBookmark_GetFirstChild`;
-- `FPDFBookmark_GetNextSibling`;
-- `FPDFBookmark_GetTitle`;
-- `FPDFBookmark_GetDest` and/or bookmark action APIs;
-- `FPDFDest_GetDestPageIndex`.
-
-Bookmark loading is read-only.
-
-Malformed PDFs may contain circular bookmark references. Traversal must be bounded and cycle-safe. The implementation must track visited native bookmark handles and apply conservative maximum node/depth limits rather than recursing forever. Suggested design limits are 10,000 nodes and depth 128; implementation tests may tighten them but must not remove bounded traversal.
-
-A bookmark with a valid in-document destination scrolls to that page. Unsupported bookmark actions remain visible if their title is valid but are not executed.
+A valid in-document destination scrolls to its page. Unsupported actions may remain visible by title but are not executed.
 
 ### 9.2 Explicit PDF links
 
-F4.5 supports explicit PDF link annotations.
+Required F4 links are explicit PDF link annotations.
 
-Minimum supported actions:
+Support:
 
-- internal document destination/GOTO -> scroll to target page;
-- URI action -> explicit user confirmation, then optional OS browser launch.
+- internal GOTO/destination -> reader navigation;
+- URI -> confirmation, then optional browser launch.
 
-Do not execute:
+Do **not** execute Launch actions, remote GOTO, arbitrary file/shell actions, JavaScript or unknown action types.
 
-- `Launch` actions;
-- remote-document GOTO actions;
-- arbitrary file/shell actions;
-- JavaScript actions;
-- unsupported action types.
-
-Plain-text URL auto-detection through `FPDFLink_LoadWebLinks` is optional/deferred and is not required for READER-03. Explicit PDF link annotations are the F4 acceptance target.
+Automatic detection of plain-text URLs via `FPDFLink_LoadWebLinks` is not required for READER-03 and is deferred.
 
 ### 9.3 External URI safety
 
-External navigation is never automatic.
+External URI opening requires all of:
 
-Before opening an external URI:
+1. explicit user click;
+2. confirmation showing destination;
+3. scheme exactly `http` or `https`;
+4. OS browser launch only after confirmation.
 
-1. require a user click on the link;
-2. show the destination URI in a confirmation prompt;
-3. allow only `http` and `https` schemes in F4;
-4. only after confirmation call the OS shell/browser.
+Cancel = no external action. SG PDF Editor itself never requires network access.
 
-Cancel performs no external action.
+Link rectangles/quads are overlays mapped through the page transform. Active text-selection drag wins over link activation.
 
-This explicit action does not violate the product's offline-first rule: SG PDF Editor itself has no network dependency and never initiates link traffic without the user's request.
+## 10. F4.6 — Shortcuts, recent files and hardening
 
-### 9.4 Link hit areas
+### 10.1 Shortcuts
 
-Link annotation rectangles/quads are mapped through each rendered page's device transform and exposed as transparent/cursor-aware overlays. They must not alter the page bitmap.
+Minimum:
 
-When text selection drag is active, selection interaction takes precedence over accidental link activation.
+- `Ctrl+O` open PDF;
+- `Ctrl+P` print;
+- `Ctrl+F` find;
+- `Ctrl+C` copy active reader selection;
+- `Ctrl++` / `Ctrl+-` zoom;
+- `Ctrl+0` 100%;
+- `Home` / `End` go to first/last page when focus is not in an editable text control;
+- `PageUp` / `PageDown` scroll **one viewport height** up/down in continuous `LEER`; they do not directly force previous/next page selection;
+- `F3` / `Shift+F3` may map to next/previous find only if no existing app conflict is found.
 
-## 10. F4.6 — Keyboard shortcuts, recent files and hardening
-
-### 10.1 Required shortcuts
-
-Minimum F4 shortcuts:
-
-- `Ctrl+O` — open PDF;
-- `Ctrl+P` — print;
-- `Ctrl+F` — find;
-- `Ctrl+C` — copy active reader text selection;
-- `Ctrl++` / `Ctrl+-` — zoom in/out;
-- `Ctrl+0` — 100% actual size;
-- `Home` / `End` — first/last page when focus is not inside an editable text field;
-- `PageUp` / `PageDown` — normal reader viewport/page scrolling without stealing keystrokes from text-entry controls;
-- `F3` / `Shift+F3` may be used for next/previous find if it does not conflict with existing app behavior.
-
-Existing text-entry behavior in page number, search, custom ZPL fields and dialogs takes precedence over global shortcuts where appropriate.
+Text-entry controls (page box, find box, ZPL fields, dialogs) keep normal editing semantics where they conflict with global shortcuts.
 
 ### 10.2 Recent files
 
-Add `Archivo -> Recientes` with at most 10 successful PDF opens, newest first.
-
-Persist only:
-
-```json
-{
-  "version": 1,
-  "items": [
-    {
-      "path": "C:\\...\\documento.pdf",
-      "lastOpenedUtc": "2026-10-08T20:00:00Z"
-    }
-  ]
-}
-```
-
-Storage is local app data, not the repository or the PDF directory.
+`Archivo -> Recientes` stores at most 10 successful PDF opens, newest first, under LocalAppData. Format is small versioned JSON containing only full path and UTC last-open time.
 
 Rules:
 
-- add/update only after a PDF opens successfully;
-- full normalized Windows path is the identity, compared case-insensitively;
-- move an existing item to the top on reopen;
-- trim to 10;
-- do not store passwords, PDF contents, search history or thumbnails;
-- no database;
-- provide `Borrar recientes`;
-- corrupt recent-file JSON degrades to an empty/unavailable recent list without blocking PDF open.
+- update only after successful PDF open;
+- normalized Windows full path is identity, compared `OrdinalIgnoreCase`;
+- reopen moves item to top;
+- cap = 10;
+- never store passwords, PDF content, search history or thumbnails;
+- `Borrar recientes` clears metadata only;
+- writes use complete temp -> same-volume publish/replace, never in-place truncation;
+- do not probe all paths at startup/menu construction;
+- choosing an entry is the point where the app attempts to open/check it;
+- stale/missing chosen file shows controlled message and may be removed from recents without changing current document.
 
-Do not probe every recent path at application startup. In particular, a stale UNC/network path must not trigger background network access merely because the menu exists. Existence/opening is checked when the user explicitly chooses that recent item.
+**Corrupt `recent-files.json` policy:** treat recents as unavailable/empty for that load and do not delete or rewrite the corrupt file merely by opening the app/menu. A later **successful PDF open** may rebuild a fresh valid recent manifest containing that newly opened path through the normal atomic write path. Corrupt recents must never block PDF opening.
 
-If a selected recent file no longer exists, show a controlled message and allow/remove that stale entry without affecting the current document.
+This avoids background access to stale UNC/network paths and keeps offline/privacy behavior deterministic.
 
-### 10.3 Offline/privacy hardening
-
-Automated guards must continue to ensure normal reader operations do not require network access. No telemetry is introduced.
-
-Recent paths are the only new persisted reader metadata in F4.
-
-## 11. Reader state and data flow
-
-The conceptual data flow is:
+## 11. Conceptual data flow
 
 ```text
 Open PDF
   -> candidate PdfDocumentSession
   -> page count + lightweight page metrics
   -> publish session
-  -> Reader document state
+  -> reader state
        -> virtualized page slots
        -> visible-range detector
-       -> bounded render window
-       -> page bitmap + transform
-       -> overlays (selection/search/links)
+       -> visible + one-neighbor render window
+       -> bitmap + transform
+       -> overlays (search/selection/links)
 
 Left panel
-  -> thumbnail requests (lazy)
-  -> bookmark tree (read-only)
+  -> lazy thumbnails
+  -> read-only bookmark tree
 
 Search
   -> current session
@@ -521,303 +407,243 @@ Search
 
 FIRMAR
   -> current reader page
-  -> existing single-page PdfImage path
+  -> existing single PdfImage
   -> existing SignatureEditState / AddSignatureAsset
 ```
 
-There is one current PDF session, not one session per page.
+There is exactly one current PDF document session, not a session per page.
 
 ## 12. State ownership
 
-F4 should keep state small and explicit. The exact type names may be adjusted during planning, but responsibilities are frozen:
+Keep responsibilities explicit:
 
-### Document/session state
-Owned by `PdfDocumentSession` and `MainWindow` lifecycle:
-- native document handle;
-- file path;
-- page count;
-- PDFium operations.
+**Document/session:** native handle, path, page count, native operations.
 
-### Reader navigation state
-- current page;
-- zoom mode;
-- page metrics;
-- continuous viewport anchor;
-- visible page range.
+**Reader navigation/layout:** current page, zoom mode, page metrics, viewport anchor/range.
 
-### Render state
-- page slot placeholder/loading/bitmap/error;
-- generation/cancellation identity;
-- visible + one-neighbor retention policy.
+**Reader rendering:** page render state, generation/cancellation identity, visible+neighbor bitmap lifetime.
 
-### Reader interaction state
-- find query/direction/current match;
-- one-page text selection;
-- link overlays;
-- selected left-panel tab/item.
+**Reader interaction:** find query/current match, one-page text selection, link overlays, left-panel selection.
 
-Do not merge signature dirty state into reader state. Do not put recent-files persistence inside `PdfDocumentSession`.
+**Recents:** separate LocalAppData metadata store.
+
+Signature dirty/placement state remains separate. Recent-file persistence does not belong in `PdfDocumentSession`.
 
 ## 13. Error handling
 
-### Open failure
-Previous document stays usable. Candidate session is disposed.
+- Failed new document open -> dispose candidate; keep previous document.
+- Password error -> prompt/retry/cancel without replacing previous document.
+- One page render failure -> error card only; rest remains navigable.
+- Thumbnail failure -> placeholder/error thumbnail; main reader works.
+- Text extraction/search failure on one page -> controlled skip/error; do not dispose session.
+- Bookmark cycle/corruption -> stop bounded traversal, retain already-valid nodes.
+- Unsupported link action -> no external execution.
+- Corrupt recents -> reader startup/open still works; do not destructively repair merely on read.
 
-### Password failure
-Prompt/retry without replacing the current document until success.
+## 14. Performance rules
 
-### Page render failure
-Page card reports error; rest of document remains navigable.
+Hard architecture rules:
 
-### Thumbnail failure
-Show placeholder/error thumbnail; full reader remains usable.
-
-### Text extraction/search failure on one page
-Skip/report that page in a controlled manner; do not crash or dispose the document.
-
-### Bookmark corruption/cycle
-Stop bounded traversal; keep any already-valid bookmark nodes; do not hang.
-
-### Unsupported link action
-Do nothing external; optionally show a non-blocking/controlled status.
-
-### Recent-files corruption
-Do not block startup or PDF opening; recent list may reset logically/appear unavailable. Never delete arbitrary user files.
-
-## 14. Performance and responsiveness rules
-
-F4 acceptance is behavioral rather than tied to a synthetic benchmark number, but the following are hard architectural rules:
-
-1. Opening/scrolling/zooming must never intentionally render every full page.
-2. Scrolling rapidly must invalidate stale publication.
-3. Native calls remain globally serialized.
-4. Long reader work happens off the WPF UI thread except small state/UI updates.
+1. Never intentionally full-render every page on open/zoom.
+2. Rapid scroll/zoom rejects stale UI publication.
+3. Native PDFium calls remain globally serialized.
+4. Long reader work is off the WPF UI thread except small UI/state publication.
 5. No unbounded Task creation per page.
-6. Bitmap lifetime is bounded by visible/neighbor windows.
-7. Thumbnail work is lazy and lower practical priority than visible page work.
-8. Search can be canceled/restarted between page operations when the query changes.
-9. No startup access to every recent file path.
-10. Progressive rendering is deferred until measured need.
+6. Full-resolution bitmap lifetime is visible+one-neighbor bounded.
+7. Thumbnail rendering is lazy.
+8. Search can restart/cancel between page operations.
+9. Startup/menu creation does not touch every recent file path.
+10. Progressive rendering remains deferred without measured need.
 
 ## 15. Testing strategy
 
-Every slice follows RED -> GREEN and final full regression.
+Every slice is RED -> GREEN plus full regression.
 
 ### 15.1 Pure/unit tests
 
-Cover at minimum:
+At minimum:
 
-- current-page selection from viewport geometry;
-- previous/next/go-to-page continuous navigation semantics;
-- zoom display geometry for manual/Fit Width/Fit Page with mixed page sizes;
-- visible + neighbor render-window calculation;
+- current-page choice from viewport geometry;
+- continuous previous/next/go-to semantics;
+- manual/Fit Width/Fit Page page geometry with mixed sizes;
+- visible+neighbor render-window calculation;
 - stale generation rejection;
-- recent-files ordering/dedupe/cap/corruption;
-- bounded bookmark traversal/cycle detection;
-- search wrap behavior;
-- text-range normalization.
+- search forward/back/wrap behavior;
+- text-range normalization;
+- bookmark cycle/node/depth bounds;
+- recents ordering, dedupe, cap, corruption and no-startup-probe behavior.
 
 ### 15.2 PDFium integration tests
 
-Use synthetic/public-safe fixtures only.
-
-Cover:
+Synthetic/public-safe fixtures only:
 
 - page size by index;
-- password required/incorrect/correct;
-- text extraction and Unicode;
-- search index/count/rects;
+- password required/wrong/correct;
+- text Unicode extraction;
+- search index/count/rectangles;
 - bookmark title/destination;
 - internal link destination;
 - URI extraction;
-- scanned/image-only page returning no useful text without OCR.
+- image-only page with no searchable text.
 
-All native test calls remain serialized.
+All native calls remain serialized.
 
 ### 15.3 WPF/STA tests
 
-Cover:
+At minimum:
 
-- continuous reader surface shown in LEER;
-- single-page surface shown in FIRMAR;
+- continuous surface visible in LEER;
+- single-page surface visible in FIRMAR;
 - entering FIRMAR uses current reader page;
 - leaving FIRMAR returns to same page;
-- thumbnail click navigates exactly once;
-- scrolling updates page-number UI;
+- thumbnail click navigates once;
+- scroll updates page-number state;
 - find bar shortcut/open/close;
-- selection + Ctrl+C seam;
-- external URI requires confirmation;
-- recent menu does not probe paths on construction/startup;
+- selection + copy seam;
+- URI requires confirmation;
+- recent menu construction does not probe stored paths;
 - existing PNG/photo/draw/library signature actions remain available.
 
 ### 15.4 Full regression
 
-Every completed F4 slice runs the full existing suite. F2 ZPL and F3 visual-signature tests are regression gates, not optional collateral coverage.
+Every F4 slice runs the complete existing suite. F2 ZPL and F3 visual-signature tests remain required gates.
 
-## 16. Manual Windows QA — separate NOT RUN gate
+## 16. Manual Windows QA — separate gate
 
-Automated PASS does not imply physical UX/performance PASS.
+Automated PASS does not imply UX/performance PASS. Manual F4 QA should include:
 
-F4 manual QA should include:
-
-- 1-page, ~100-page and very large/many-page PDFs;
-- mixed portrait/landscape/page sizes;
-- rapid mouse-wheel/touchpad scrolling;
-- rapid zoom/refit/resize;
-- memory observation while scrolling forward/back through many pages;
-- thumbnails while fast scrolling;
-- password required / wrong / correct / cancel;
-- accented Spanish text search/copy;
+- 1-page, ~100-page and large/many-page PDFs;
+- mixed page sizes/orientations;
+- rapid wheel/touchpad scroll;
+- rapid zoom/refit/window resize;
+- memory observation after long forward/back scrolling;
+- lazy thumbnail behavior;
+- password required/wrong/correct/cancel;
+- Spanish accented text search/copy;
 - image-only PDF no-results behavior;
 - nested bookmarks;
-- internal link navigation;
-- external `https` link confirm/cancel, including network-disabled smoke;
-- missing recent file;
-- recent UNC/network-looking path does not get probed at startup;
-- LEER -> FIRMAR -> LEER transition;
-- dirty signature navigation guards;
-- printing current page from continuous reader;
-- open ZPL after PDF and return to PDF flows.
+- internal links;
+- external HTTPS confirm/cancel and network-disabled smoke;
+- stale recent file;
+- stored UNC-looking recent path not probed at startup;
+- LEER -> FIRMAR -> LEER;
+- dirty signature guards;
+- Print Current Page from continuous view;
+- PDF -> ZPL transitions.
 
-Manual findings may justify tuning render prefetch, thumbnail size or cache policy, but they do not justify adding another PDF engine without a separate evidence gate.
+Manual results may tune prefetch/thumbnail sizes but do not justify another PDF engine without a separate evidence gate.
 
-## 17. Slice boundaries and implementation order
+## 17. Slice order
 
-### F4.1 — Continuous Reader Core
+### F4.1 Continuous Reader Core
 
-- page metrics;
-- virtualized continuous page list;
-- current-page tracking;
-- navigation integration;
-- zoom/fit integration;
-- visible + one-neighbor render window;
-- LEER/FIRMAR surface transition;
-- per-page render errors.
+Page metrics, virtualized list, current-page tracking, navigation, zoom/fit, bounded render window, LEER/FIRMAR surface transition, per-page render errors.
 
-### F4.2 — Thumbnails
+### F4.2 Thumbnails
 
-- `Páginas` left tab;
-- lazy virtualized thumbnails;
-- selection synchronization;
-- click-to-page.
+`Páginas` tab, lazy thumbnails, selection sync, click-to-page.
 
-### F4.3 — Password PDFs
+### F4.3 Password PDFs
 
-- PDFium password error classification;
-- password dialog/retry/cancel;
-- candidate-first safety/privacy.
+Error classification, masked prompt, retry/cancel, candidate-first/privacy.
 
-### F4.4 — Search + Copy Text
+### F4.4 Search + Copy
 
-- PDFium text bindings;
-- find bar;
-- next/previous/wrap;
-- active-match highlight;
-- single-page mouse selection;
-- clipboard copy.
+Text bindings, find bar, next/previous/wrap, active highlight, one-page selection, clipboard copy.
 
-### F4.5 — Bookmarks + Links
+### F4.5 Bookmarks + Links
 
-- `Marcadores` tree;
-- cycle-safe traversal;
-- bookmark destinations;
-- explicit link annotations;
-- internal GOTO;
-- confirmed `http/https` URI launch;
-- unsupported dangerous actions ignored.
+`Marcadores`, cycle-safe outline, destinations, explicit link annotations, internal GOTO, confirmed HTTP/HTTPS URI.
 
-### F4.6 — Shortcuts + Recent Files + Hardening
+### F4.6 Shortcuts + Recents + Hardening
 
-- shortcut routing;
-- local recent-files manifest;
-- stale/corrupt recent handling;
-- integrated regression/performance/offline hardening;
-- closure docs and draft stacked PR.
+Shortcut routing, atomic local recents, stale/corrupt handling, regression/performance/offline hardening, closure docs and draft stacked PR.
 
-Each slice gets its own RED/GREEN evidence and may use a stacked branch/PR pattern consistent with previous phases. No merge to `main` without explicit user approval.
+Each slice gets independent RED/GREEN evidence. No merge to `main` without explicit user approval.
 
 ## 18. Explicit non-goals
 
-F4 does **not** include:
+F4 excludes:
 
-- multi-document tabs;
-- side-by-side/two-page/spread view;
-- page reorder/delete/rotate/insert/merge/split;
+- multiple-document tabs;
+- two-page/spread/side-by-side view;
+- reorder/rotate/delete/insert/merge/split pages;
 - OCR;
 - text editing;
-- comments/highlights saved into the PDF;
+- saved PDF comments/highlights;
 - forms editing;
 - attachments UI;
-- cryptographic signature UI;
-- external remote-GOTO/Launch/JavaScript execution;
-- automatic plain-text URL detection as a required feature;
+- cryptographic-signature UI;
+- remote GOTO, Launch, JavaScript or arbitrary shell/file action execution;
+- required auto-detection of plain-text URLs;
 - cross-page text drag selection;
-- regex/advanced search/indexing;
-- saved search history;
+- regex/advanced search or persistent indexing;
+- search history;
 - password persistence;
 - cloud sync;
 - WebView2/browser PDF viewer;
-- another PDF rendering engine;
+- second PDF engine;
 - database/SQLite;
-- MVVM/DI framework migration;
-- progressive PDFium rendering without measured evidence.
+- app-wide MVVM/DI migration;
+- progressive PDFium rendering without evidence.
 
-Tabs may be reconsidered after F4 only if the stable reader demonstrates a real product need and the added multi-session state is justified.
+Tabs may be reconsidered after a stable F4 only if real product value justifies multi-session complexity.
 
-## 19. Stop conditions / return to design
+## 19. Stop conditions
 
-Stop implementation and return to design if any slice appears to require:
+Return to design if implementation appears to require:
 
 1. replacing PDFium;
-2. a new runtime PDF SDK/package for functionality PDFium already exposes;
-3. moving F3 signature placement into a new continuous-page editing model;
-4. storing passwords persistently;
+2. adding a second runtime PDF SDK for an API PDFium already exposes;
+3. moving F3 signing into a new multi-page edit model;
+4. persisting passwords;
 5. executing unsafe PDF actions;
-6. unbounded full-document bitmap or thumbnail caching;
-7. a custom scrolling/layout engine when standard WPF virtualization can meet the need;
-8. app-wide MVVM/DI/repository refactor;
-9. network service/API for search, text, thumbnails or bookmarks;
-10. scope expansion into F5+ editing/organization features.
+6. unbounded full-document bitmap/thumbnail caching;
+7. a custom scrolling engine before standard WPF virtualization is proven insufficient;
+8. app-wide framework/refactor work;
+9. a network service for reader functions;
+10. scope expansion into F5+ editing/organizing.
 
-## 20. Acceptance summary
+## 20. Acceptance mapping
 
-F4 automated acceptance requires all of the following:
+F4 automated acceptance requires:
 
-- `READER-01`: continuous vertical reader + lazy thumbnails, without all-page full rendering;
-- `READER-02`: local PDFium search and single-page selection/copy;
-- `READER-03`: bookmarks + explicit internal/URI links with safe action handling;
-- `READER-04`: password-protected PDF open/retry/cancel flow;
-- `READER-05`: shortcuts + local recent files; no tabs in F4;
-- existing print behavior still works, with continuous current-page semantics;
-- F3 LEER/FIRMAR transition preserves the existing single-page signature architecture;
+- **READER-01:** continuous vertical reader + lazy thumbnails without eager full-document rendering;
+- **READER-02:** PDFium local search + one-page text selection/copy;
+- **READER-03:** read-only bookmarks + explicit safe internal/URI links;
+- **READER-04:** password open/retry/cancel;
+- **READER-05:** shortcuts + max-10 local recent files; **no tabs in F4**;
+- Print Current Page uses continuous current-page semantics;
+- F3 LEER/FIRMAR transition preserves existing signing architecture;
 - F2 ZPL remains operational;
 - no new normal-operation network dependency;
 - exact-head Windows CI passes full regression;
-- manual Windows QA remains separately reported as PASS/FAIL/NOT RUN, never inferred from CI.
+- manual Windows QA is reported separately as PASS/FAIL/NOT RUN.
 
-## 21. Upstream API evidence used by this design
+## 21. Upstream API evidence
 
-Current PDFium public headers confirm the required primitives:
+Current PDFium public headers expose the primitives this design relies on:
 
 - `public/fpdfview.h`: `FPDF_GetPageSizeByIndexF`, `FPDF_LoadDocument`, `FPDF_GetLastError`, `FPDF_ERR_PASSWORD`;
-- `public/fpdf_text.h`: text-page load/close, hit testing, Unicode extraction, search and text rectangles;
+- `public/fpdf_text.h`: text page load/close, hit testing, Unicode extraction, search and text rectangles;
 - `public/fpdf_doc.h`: bookmarks, destinations, link actions and URI extraction.
 
-The implementation plan must pin tests to the PDFium binary version already used by SG PDF Editor rather than assuming every upstream-main experimental API is present. Only APIs confirmed exported by the pinned runtime may enter product code.
+Implementation must verify exports against the **pinned PDFium binary already used by SG PDF Editor**. Do not assume every experimental API in upstream `main` exists in the pinned runtime.
 
-## 22. Design decisions frozen for planning
+## 22. Frozen decisions for the implementation-plan gate
 
-1. PDFium only; no second PDF engine.
-2. LEER is continuous/virtualized; FIRMAR stays single-active-page.
-3. Visible pages + one neighbor each side; no general full-page LRU cache in F4 design.
-4. Thumbnails are lazy/virtualized, never all eagerly rendered.
-5. Current page is viewport-center based.
-6. Existing zoom modes remain; fit modes resolve per page in continuous view.
-7. Search is on-demand and page-by-page, not permanently indexed.
-8. Text drag selection is one page at a time.
-9. Bookmarks are read-only and cycle-bounded.
-10. Explicit PDF link annotations only are required; URI launch requires confirmation and `http/https`.
+1. PDFium only.
+2. LEER = continuous virtualized; FIRMAR = existing single-active-page editor.
+3. Full-page retention = visible pages + one neighbor each side; no generic LRU in F4 design.
+4. Thumbnails = lazy/virtualized, never eager whole-document render.
+5. Current page = viewport vertical center / nearest page.
+6. Existing zoom modes remain; fit scale resolves per page in continuous view.
+7. Search = on-demand page-by-page; no permanent document index.
+8. Text drag selection = one page at a time.
+9. Bookmarks = read-only, cycle-safe, max 10,000 nodes / depth 128.
+10. Required links = explicit PDF annotations; only internal GOTO and confirmed HTTP/HTTPS URI execute.
 11. Passwords are never persisted.
-12. Recent files store at most 10 paths + timestamp locally and do not probe them at startup.
-13. No tabs in F4.
-14. No product code starts until this written spec is reviewed and approved, followed by a separate written TDD implementation plan.
+12. Recents = max 10 paths + timestamp, atomic local JSON, no startup path probing.
+13. PageUp/PageDown = one viewport-height scroll in continuous LEER.
+14. No tabs in F4.
+15. No product code begins until this written spec is approved and then a separate written TDD implementation plan is reviewed/approved.
