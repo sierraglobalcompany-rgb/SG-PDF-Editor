@@ -30,7 +30,7 @@ Phase continuity index: `.planning/phases/03-f2-zpl-workspace/PLAN.md`.
 - **F3.1 Core placement/save — automated PASS.** Manual real-signature UX remains NOT RUN.
 - **F3.2 Photo/scan preparation — automated PASS.** Real-photo/scanner QA remains NOT RUN.
 - **F3.3 Draw signature / InkCanvas — automated PASS.** Final head `8b5bfd35b59fbc75826f8d7616aaaca3e2f31233`; PR CI `37802865627` PASS; 246 tests. Hardware QA remains NOT RUN.
-- **F3.4 Local signature library — CURRENT.** Written spec exists on `feat/f3-4-local-signature-library`; spec commit `ea1a8f6e6395d60729d8c8a1196b8ae94b8a2103`; push CI `37824381432` PASS. Awaiting user review before TDD plan. No product code yet.
+- **F3.4 Local signature library — CURRENT.** Written spec approved by user. TDD implementation plan exists at `docs/superpowers/plans/2026-10-08-f3-4-local-signature-library.md`, has been self-audited against the spec, and is awaiting user approval. Product code has not started and no F3.4 PR is open yet.
 
 ## Phase 5 — F4 Lector Completo
 **Goal:** continuous scroll, thumbnails, bookmarks/links, search/copy text, password PDFs, shortcuts/recent files.  
@@ -75,8 +75,8 @@ F2.1–F2.6                     automated PASS / private + physical QA pending
 F3.1                          automated PASS / manual QA pending
 F3.2                          automated PASS / real-photo QA pending
 F3.3                          automated PASS / hardware QA pending
-F3.4                          written spec awaiting user review
+F3.4                          spec approved / TDD plan awaiting approval / no code
 F4–F12                        pending
 ```
 
-Next permitted step after spec approval: **write and self-audit the F3.4 TDD implementation plan**. No RED/GREEN before plan approval.
+Next permitted step after plan approval: **execute F3.4 RED → GREEN task-by-task**. No product-code implementation before that approval.

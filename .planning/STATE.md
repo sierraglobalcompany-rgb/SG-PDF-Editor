@@ -32,16 +32,19 @@ See `.planning/PROJECT.md`.
 - Tests: 246 PASS / 0 FAIL / 0 SKIPPED.
 - Hardware mouse/touch/stylus QA: **NOT RUN**.
 
-### F3.4 — current gate
+### F3.4 — current gate: implementation-plan review
 
 - Branch: `feat/f3-4-local-signature-library`.
 - Base: exact F3.3 final head `8b5bfd35b59fbc75826f8d7616aaaca3e2f31233`.
 - Formal spec: `docs/superpowers/specs/2026-10-08-f3-4-local-signature-library-design.md`.
 - Spec commit: `ea1a8f6e6395d60729d8c8a1196b8ae94b8a2103`.
-- Spec push CI `37824381432`: PASS (hygiene, pinned Labelize staging, locked restore, Release build, tests).
+- Spec push CI `37824381432`: PASS.
+- Continuity reconciliation head before plan: `69af1cc46bf54156854554f3974f519e3f127da5` → CI `37825730483` PASS.
+- Written spec gate: **APPROVED by user on 2026-10-08** by asking to continue after review/audit.
+- TDD implementation plan: `docs/superpowers/plans/2026-10-08-f3-4-local-signature-library.md` — written and self-audited; **awaiting user review/approval**.
+- Phase companion: `.planning/phases/04-f3-visual-signature/F3.4-PLAN.md`.
 - Product code: **NOT STARTED**.
-- TDD implementation plan: **NOT WRITTEN**; requires user approval of the written spec first.
-- PR F3.4: **not opened yet**.
+- F3.4 PR: **not opened yet**.
 
 ## Executed Chain
 
@@ -53,7 +56,7 @@ See `.planning/PROJECT.md`.
 - F3.1 Core visual signature: automated PASS.
 - F3.2 Photo/scan preparation: automated PASS; real-photo QA NOT RUN.
 - F3.3 Draw signature: automated PASS; hardware QA NOT RUN.
-- F3.4 Local signature library: formal spec written, awaiting user review.
+- F3.4 Local signature library: spec approved; TDD implementation plan awaiting approval; no product code yet.
 
 ## Parallel Acceptance Gates Still Open
 
@@ -85,12 +88,11 @@ They remain required before the corresponding physical/private acceptance claims
 ## Next Gate
 
 ```text
-user reviews F3.4 written spec
-→ if approved: write + self-audit F3.4 TDD implementation plan
-→ user reviews plan
-→ only then RED → GREEN
+user reviews F3.4 TDD implementation plan
+→ if approved: RED → GREEN task-by-task
 → closure docs + exact-head CI
-→ keep PR draft / no merge
+→ open/keep PR draft stacked on F3.3
+→ no merge without explicit approval
 ```
 
 ## Continuity
