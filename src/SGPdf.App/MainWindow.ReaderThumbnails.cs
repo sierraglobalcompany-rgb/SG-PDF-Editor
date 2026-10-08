@@ -23,7 +23,7 @@ public partial class MainWindow
 
     private Func<PdfDocumentSession, int, double, CancellationToken, PdfRenderedPage> _renderReaderThumbnail =
         static (session, pageIndex, dpi, token) => session.RenderPage(pageIndex, dpi, token);
-    private Func<(int First, int Last)?>? _getThumbnailRealizedRange;
+    private Func<(int First, int Last)?> _getThumbnailRealizedRange = static () => null;
 
     static MainWindow()
     {
@@ -330,7 +330,7 @@ public partial class MainWindow
 
         var sourceSession = _session;
         var request = _thumbnailRenderScheduler.Begin();
-        var requestedRange = _getThumbnailRealizedRange?.Invoke() ?? GetRealizedThumbnailRange();
+        var requestedRange = _getThumbnailRealizedRange() ?? GetRealizedThumbnailRange();
         if (requestedRange is null)
             return;
 
