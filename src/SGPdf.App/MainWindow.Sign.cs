@@ -41,6 +41,8 @@ public partial class MainWindow
     private StackPanel? _signaturePropertiesPanel;
 
     private Func<string, SignatureAsset> _loadSignaturePng = SignaturePngLoader.Load;
+    private Func<Window, string, SignatureAsset?> _prepareSignaturePhoto =
+        static (owner, path) => SignaturePhotoDialog.Prepare(owner, path);
     private Action<string, string, IReadOnlyList<SignaturePlacement>, CancellationToken> _saveVisualSignatures =
         static (source, destination, placements, token) =>
             new PdfVisualSignatureWriter().SaveAsCopy(source, destination, placements, token);
@@ -207,6 +209,18 @@ public partial class MainWindow
         load.Click += LoadSignature_Click;
         panel.Children.Add(load);
 
+        var photo = new Button
+        {
+            Name = "CreateSignatureFromPhotoButton",
+            Content = "Crear desde foto...",
+            Padding = new Thickness(10, 5, 10, 5),
+            HorizontalAlignment = HorizontalAlignment.Left,
+            Margin = new Thickness(0, 8, 0, 0)
+        };
+        RegisterName(photo.Name, photo);
+        photo.Click += PrepareSignaturePhoto_Click;
+        panel.Children.Add(photo);
+
         var duplicate = new Button { Content = "Duplicar", Padding = new Thickness(10, 5, 10, 5), HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 8, 0, 0) };
         duplicate.Click += (_, _) => { if (_signatureEditState?.DuplicateSelected() is not null) RefreshSignatureOverlay(); };
         panel.Children.Add(duplicate);
@@ -221,7 +235,7 @@ public partial class MainWindow
 
         panel.Children.Add(new TextBlock
         {
-            Text = "F3.1: PNG transparente. La limpieza de fondo y la firma dibujada se agregarán en los siguientes slices.",
+            Text = "Puedes cargar un PNG transparente o preparar una firma desde una foto/escaneo sobre papel blanco.",
             TextWrapping = TextWrapping.Wrap,
             Foreground = Brushes.DimGray,
             Margin = new Thickness(0, 14, 0, 0)
@@ -310,6 +324,19 @@ public partial class MainWindow
             TryLoadSignatureFromPath(dialog.FileName);
     }
 
+    private void PrepareSignaturePhoto_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new OpenFileDialog
+        {
+            Title = "Crear firma desde foto o escaneo",
+            Filter = "Imágenes compatibles (*.png;*.jpg;*.jpeg)|*.png;*.jpg;*.jpeg|PNG (*.png)|*.png|JPEG (*.jpg;*.jpeg)|*.jpg;*.jpeg",
+            CheckFileExists = true,
+            Multiselect = false
+        };
+        if (dialog.ShowDialog(this) == true)
+            TryPrepareSignaturePhotoFromPath(dialog.FileName);
+    }
+
     private bool TryLoadSignatureFromPath(string path)
     {
         try
@@ -323,6 +350,26 @@ public partial class MainWindow
         {
             StatusText.Text = "No se pudo cargar la firma.";
             ShowSignatureMessage($"No se pudo cargar la firma PNG.\n\n{ex.Message}", MessageBoxImage.Error);
+            return false;
+        }
+    }
+
+    private bool TryPrepareSignaturePhotoFromPath(string path)
+    {
+        try
+        {
+            var asset = _prepareSignaturePhoto(this, path);
+            if (asset is null)
+                return false;
+
+            AddSignatureAsset(asset);
+            StatusText.Text = "Firma preparada y agregada. Arrástrala o redimensiónala y luego usa Guardar como...";
+            return true;
+        }
+        catch (Exception ex)
+        {
+            StatusText.Text = "No se pudo preparar la firma desde la foto.";
+            ShowSignatureMessage($"No se pudo preparar la firma desde la foto o escaneo.\n\n{ex.Message}", MessageBoxImage.Error);
             return false;
         }
     }

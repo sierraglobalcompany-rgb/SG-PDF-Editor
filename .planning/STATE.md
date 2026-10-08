@@ -4,7 +4,7 @@ status: executing
 progress:
   total_phases: 13
   completed_phases: 0
-  total_plans: 11
+  total_plans: 12
   completed_plans: 0
   percent: 0
 ---
@@ -15,77 +15,92 @@ progress:
 See `.planning/PROJECT.md`.
 
 **Core value:** Resolver PDF + ZPL diario de forma rápida, privada, estable y offline.  
-**Current focus:** Phase 4 — **F3 Firma Visual**. F3.1 Core está funcionalmente GREEN; cierre documental/exact-head CI en curso. Siguiente slice después del cierre: **F3.2 Foto/escaneo → firma transparente**.
+**Current focus:** Phase 4 — **F3 Firma Visual**. F3.1 y F3.2 tienen automated PASS. Siguiente slice: **F3.3 Dibujar firma con WPF InkCanvas**, empezando por design/approval gate.
 
 ## Current Position
 
-F3.1 — **Visual Signature Core: functional automated PASS / closure CI pending on final docs head**.  
-Branch: `feat/f3-visual-signature`.  
-PR: #19 draft, base `feat/f2-6-validation-hardening`, no merge.  
-Functional head: `edc255871f929bc5124220ce5c3ad7380a211b80` → PR CI `37719148872` PASS; Release build **0 warnings / 0 errors**; **173 PASS / 0 FAIL / 0 SKIPPED**.
+F3.2 — **Photo/scan signature preparation: automated PASS**.  
+Branch: `feat/f3-2-photo-preparation`.  
+PR: #20 draft, base `feat/f3-visual-signature`, no merge.  
+Functional head: `710340aed222d4c0bd97fc80099267af35ef6f95` → PR CI `37724154596` PASS; Release build **0 warnings / 0 errors**; **214 PASS / 0 FAIL / 0 SKIPPED**.
+
+F3.1 final: `d559169280f9d9ee2c19f1c245f6657d1b598c6d` → push CI `37719587695` + PR CI `37719593067` PASS; **173 tests**.
 
 Parallel acceptance gates still open:
 - F0 physical Windows UI/print/offline smoke: **NOT RUN**.
 - F1 private Mercado Libre corpus: **NOT RUN**.
 - F2 private real-label corpus: **NOT RUN**.
 - F2 physical thermal printer/ruler/scanner: **NOT RUN**.
+- F3.1 hands-on real transparent-signature UX: **NOT RUN**.
+- F3.2 real phone/scanner photo-quality QA: **NOT RUN**.
 
 ## Runtime / Architecture Decisions
 
 - Windows x64 + C# + .NET 10 + WPF remain frozen.
 - KISS solution remains `SGPdf.App + SGPdf.App.Tests`.
 - PDFium remains primary PDF reader/render/editor; all native calls serialized by `PdfiumRuntime.NativeGate`.
-- PDFsharp 6.2.4 stays limited to label PDF composition/export; F3 signing writes with PDFium only.
-- `Guardar como` remains mandatory for F3.1; the source PDF is never overwritten.
-- Visual-signature state is in-memory and PDF-space points are authoritative; screen/device geometry is derived from the PDFium render transform.
-- F3.1 pending edits are current-page only. Navigation/open/leave/close paths use a Save / Discard / Cancel guard.
-- PNG import in F3.1 requires real transparency. White-background cleanup belongs to F3.2.
-- Existing cryptographic signatures are not modified or created. Save preflight warns when signatures exist and blocks when signature count cannot be evaluated.
-- F3.1 added no package/lock changes and no runtime network.
-- **Ruling:** FIRMAR controls/overlay are created in `MainWindow.Sign.cs` during initialization rather than rewriting the large existing XAML shell. This preserves the same named controls/UX contract while minimizing regression risk during the interrupted-session recovery; no new UI framework was introduced.
+- PDFsharp 6.2.4 stays limited to label PDF composition/export.
+- F3.2 is preprocessing only: it does not modify `PdfVisualSignatureWriter`, coordinate mapping, PDFium P/Invoke, ZPL, or cryptographic-signature behavior.
+- F3.2 accepts local `.png/.jpg/.jpeg`, normalizes to immutable BGRA and reuses the existing F3.1 `SignatureAsset`.
+- Decoded-image limit is shared at exactly **20,000,000 pixels**.
+- Paper/background estimation is performed once from the immutable full-resolution source. The same `SignaturePaperColor` is reused by reduced preview and final Apply.
+- Preview is capped at **1200 px longest side** and is never used as the final asset. Apply always reprocesses the full immutable source.
+- Automatic defaults: background removal 65, brightness 0, contrast 20, original ink, auto-crop ON.
+- Black/blue recolor preserves alpha; blue is fixed at `#194196`.
+- No AI/ML, cloud removal service, OCR, OpenCV/ImageSharp, runtime HTTP, telemetry, upload, or temp signature-image file.
+- Cancel/failure in F3.2 never modifies existing placements, selection, dirty state or active PDF.
+- No package/lockfile changes entered F3.2.
 - No merge to `main` without explicit user approval.
 
-## F3.1 Delivered
+## F3.2 Delivered
 
-- transparent PNG → immutable `SignatureAsset` with decoded-pixel/alpha safety checks;
-- PDFium render device→page affine transform captured and reused for stable placement across zoom/refit;
-- current-page `SignatureEditState` with centered add, select, proportional resize, move/clamp, duplicate, delete, dirty tracking;
-- FIRMAR/LEER mode controls + page-aligned overlay;
-- PDFium image-object insertion with alpha preservation and transactional temp → validate → destination save;
-- reopen/render validation after save, outside `NativeGate`;
-- source==destination block and existing-destination preservation on failure;
-- cryptographic signature count preflight/warning;
-- dirty guard including cancellable window close;
-- headless STA tests remain noninteractive while visible product windows still show messages.
+- safe PNG/JPEG local loader with shared 20M decoded-pixel guard;
+- immutable `SignaturePhotoSource` BGRA contract;
+- deterministic light-paper estimation from perimeter samples;
+- soft alpha background removal preserving antialiased pen edges and original alpha;
+- bounded background-removal / brightness / contrast controls;
+- Original / Negro / Azul ink modes;
+- usable-signature rejection for blank/noise-only inputs;
+- automatic crop with bounded padding;
+- checkerboard WPF preparation dialog;
+- stale-preview version guard + WPF dispatcher-safe updates;
+- reduced preview <=1200 px while Apply uses full source;
+- `Crear desde foto...` integrated into the existing FIRMAR flow;
+- cancel/failure state-preservation seams and automated regressions.
 
 ## Evidence
 
-### F2 closure
-- F2.5 final `c003d6512a5df5be2f53aab2262d09c6dcbf92cf` → push `37682952554` + PR `37682957831` PASS; 136 tests.
-- F2.6 final `6c7d60a5bad22db20860685e955aa5ef03fbfa19` → push `37690690752` + PR `37690696356` PASS; 144 tests.
-
-### F3.1
-- Approved spec: `docs/superpowers/specs/2026-10-07-f3-visual-signature-design.md`.
-- Approved plan: `docs/superpowers/plans/2026-10-07-f3-1-visual-signature-core.md`.
-- Task 4 RED head `f33223e25699644112637e3907748ce70a5647a0` → PR CI `37701394410`: expected missing `PendingSignatureDecision` / `SignatureGuardReason`, build 0 warnings.
-- Task 4 GREEN functional head `edc255871f929bc5124220ce5c3ad7380a211b80` → PR CI `37719148872` PASS; build 0/0; **173 tests**.
-- Whole functional diff against F2.6: 18 files limited to F3 spec/plan, Sign feature/native PDFium additions and tests; no `.csproj`, lockfile or third-party runtime mutation.
+### F3.2
+- Approved spec: `docs/superpowers/specs/2026-10-08-f3-2-photo-preparation-design.md`.
+- Approved plan: `docs/superpowers/plans/2026-10-08-f3-2-photo-preparation.md`.
+- Task 1 RED `b4e9652e6e39d6cd19f45a4987550ef6f83a9c30` → PR CI `37722059194`: expected 12 missing-symbol errors, 0 warnings.
+- Task 1 GREEN correction `ac6c97c481dab1cab0c60706ed6e6cf323115fcf` → PR CI `37722384884` PASS.
+- Task 3 dispatcher hardening `409815eb092b8b1c3fdcd927f4684f6612486a0e` → PR CI `37723699902` PASS.
+- Task 4 RED `46e846d2d0e095af22f15f7bd710eefacc020a8f` → PR CI `37723874534`: Release build 0/0; exactly 4 new FIRMAR-photo tests failed while 210 passed.
+- Functional GREEN `710340aed222d4c0bd97fc80099267af35ef6f95` → PR CI `37724154596` PASS; Release 0/0; **214 tests PASS**.
+- Functional diff against F3.1: 17 files limited to F3.2 spec/plan, Sign preprocessing/UI integration and tests; no `.csproj`, lockfile, PDFium writer, ZPL or network surface change.
+- Final documentation-head CI is recorded in PR #20 after the closure commit and does not change product behavior.
 
 ## Manual QA Pending
 
-F3.1 automated evidence does not replace hands-on Windows QA. Still useful later:
-1. real transparent signature PNG;
-2. drag + resize feel at 100%, Fit Page and Fit Width;
-3. Save As + visual reopen in an external PDF viewer;
-4. PDF containing an existing cryptographic signature to verify warning UX.
+F3.2 automated evidence does not claim arbitrary real-world photo quality. Manual QA later should include:
+1. black pen on white paper;
+2. blue pen on white paper;
+3. phone JPEG + scanner PNG;
+4. warm/cool and moderately uneven lighting;
+5. automatic preset and slider extremes;
+6. Original/Negro/Azul output;
+7. auto-crop + cancel/retry;
+8. Apply → move/resize/save via F3.1;
+9. network disconnected for the full flow.
 
 ## Deferred / Next
 
 | Category | Item | Status | Revisit |
 |---|---|---|---|
-| PDF | F3.1 Core visual signature | **Functional automated PASS; closure exact-head CI pending** | now |
-| PDF | F3.2 Photo/scan cleanup | **Next — design/plan gate** | next slice |
-| PDF | F3.3 Draw signature / InkCanvas | Approved scope, not implemented | after F3.2 |
+| PDF | F3.1 Core visual signature | **Automated PASS** | manual UX later |
+| PDF | F3.2 Photo/scan cleanup | **Automated PASS / real-photo QA NOT RUN** | manual QA later |
+| PDF | F3.3 Draw signature / InkCanvas | **Next — design/approve first** | next slice |
 | PDF | F3.4 Local signature library | Approved scope, deferred | after F3.3 |
 | ZPL | Private real-label corpus | NOT RUN | local QA |
 | ZPL | Physical thermal + scanner | NOT RUN | hardware QA |
@@ -93,6 +108,6 @@ F3.1 automated evidence does not replace hands-on Windows QA. Still useful later
 ## Session Continuity
 
 Last resumed: 2026-10-08.  
-Stopped at: F3.1 functional GREEN (`edc25587…`, 173/173) and Task 5 closure documentation/exact-head CI.  
-Resume files: `docs/history/2026-10-08-F3.1.md`, `.planning/phases/04-f3-visual-signature/F3.1-PLAN.md`, F3 spec/plan, PR #19.  
-After F3.1 exact-head closure, proceed to **F3.2 design/approval**, not directly to implementation.
+Stopped at: F3.2 automated closure after functional head `710340ae…`, 214/214 tests.  
+Resume files: `docs/history/2026-10-08-F3.2.md`, `.planning/phases/04-f3-visual-signature/F3.2-PLAN.md`, F3.2 spec/plan, PR #20.  
+Next product work: **F3.3 Draw signature / InkCanvas — design/approval before code**.

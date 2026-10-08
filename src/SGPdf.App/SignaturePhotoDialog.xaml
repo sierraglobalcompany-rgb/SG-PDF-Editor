@@ -1,0 +1,79 @@
+<Window x:Class="SGPdf.App.SignaturePhotoDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Preparar firma"
+        Width="760" Height="680"
+        MinWidth="620" MinHeight="560"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResizeWithGrip">
+    <Window.Resources>
+        <DrawingBrush x:Key="CheckerboardBrush" Viewport="0,0,16,16" ViewportUnits="Absolute" TileMode="Tile">
+            <DrawingBrush.Drawing>
+                <DrawingGroup>
+                    <GeometryDrawing Brush="White" Geometry="M0,0 H16 V16 H0 Z" />
+                    <GeometryDrawing Brush="#FFE3E3E3" Geometry="M0,0 H8 V8 H0 Z M8,8 H16 V16 H8 Z" />
+                </DrawingGroup>
+            </DrawingBrush.Drawing>
+        </DrawingBrush>
+    </Window.Resources>
+
+    <Grid Margin="18">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Background="{StaticResource CheckerboardBrush}" BorderBrush="#FFBBBBBB" BorderThickness="1" Padding="12" CornerRadius="4">
+            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+                <Image x:Name="SignaturePhotoPreviewImage" Stretch="Uniform" MaxHeight="350" />
+            </ScrollViewer>
+        </Border>
+
+        <Grid Grid.Row="1" Margin="0,16,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="150" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <Button x:Name="SignaturePhotoAutomaticButton" Grid.Row="0" Grid.Column="0" Content="Automático" Padding="10,5" Margin="0,0,12,8" HorizontalAlignment="Left" />
+
+            <TextBlock Grid.Row="1" Grid.Column="0" Text="Quitar fondo" VerticalAlignment="Center" Margin="0,0,12,8" />
+            <Slider x:Name="SignaturePhotoBackgroundSlider" Grid.Row="1" Grid.Column="1" Minimum="0" Maximum="100" TickFrequency="5" Margin="0,0,0,8" />
+
+            <TextBlock Grid.Row="2" Grid.Column="0" Text="Brillo" VerticalAlignment="Center" Margin="0,0,12,8" />
+            <Slider x:Name="SignaturePhotoBrightnessSlider" Grid.Row="2" Grid.Column="1" Minimum="-100" Maximum="100" TickFrequency="10" Margin="0,0,0,8" />
+
+            <TextBlock Grid.Row="3" Grid.Column="0" Text="Contraste" VerticalAlignment="Center" Margin="0,0,12,8" />
+            <Slider x:Name="SignaturePhotoContrastSlider" Grid.Row="3" Grid.Column="1" Minimum="-100" Maximum="100" TickFrequency="10" Margin="0,0,0,8" />
+
+            <TextBlock Grid.Row="4" Grid.Column="0" Text="Tinta" VerticalAlignment="Center" Margin="0,0,12,8" />
+            <ComboBox x:Name="SignaturePhotoInkComboBox" Grid.Row="4" Grid.Column="1" Width="160" HorizontalAlignment="Left" Margin="0,0,0,8" />
+
+            <CheckBox x:Name="SignaturePhotoAutoCropCheckBox" Grid.Row="5" Grid.Column="1" Content="Recorte automático" Margin="0,2,0,0" />
+        </Grid>
+
+        <Grid Grid.Row="2" Margin="0,16,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0">
+                <TextBlock x:Name="SignaturePhotoStatusText" Foreground="DimGray" TextWrapping="Wrap" Margin="0,0,8,8" />
+                <Button x:Name="SignaturePhotoResetButton" Content="Restablecer" Padding="10,5" HorizontalAlignment="Left" />
+            </StackPanel>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Bottom">
+                <Button x:Name="SignaturePhotoCancelButton" Content="Cancelar" Padding="12,6" Margin="0,0,8,0" />
+                <Button x:Name="SignaturePhotoApplyButton" Content="Aplicar" Padding="12,6" IsDefault="True" />
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>

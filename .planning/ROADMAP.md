@@ -25,9 +25,9 @@
 - F3.4 biblioteca local posterior.
 
 **Estado actual:**
-- **F3.1 Core visual signature — functional automated PASS**: PNG transparente, coordenadas PDF estables, move/resize proporcional/duplicate/delete, PDFium writer con alpha, Save As transaccional, reopen validation, crypto-signature warning y dirty guard. Closure exact-head CI en curso.
-- **F3.2 Photo/scan preparation — siguiente slice**, requiere su propio diseño/plan gate antes de código.
-- F3.3 Draw signature — scope aprobado, no implementado.
+- **F3.1 Core visual signature — automated PASS**: PNG transparente, coordenadas PDF estables, move/resize proporcional/duplicate/delete, PDFium writer con alpha, Save As transaccional, reopen validation, crypto-signature warning y dirty guard.
+- **F3.2 Photo/scan preparation — automated PASS / real-photo QA NOT RUN**: PNG/JPEG local, estimación de papel, soft-alpha background removal, brillo/contraste, Original/Negro/Azul, auto-crop, preview <=1200 px y `Crear desde foto...` integrado a FIRMAR. Functional head `710340aed222d4c0bd97fc80099267af35ef6f95` → PR CI `37724154596`, **214 tests PASS**, Release 0 warnings/0 errors.
+- **F3.3 Draw signature — siguiente slice**: iniciar con design/approval gate; no código todavía.
 - F3.4 Local library — scope aprobado, diferido.
 
 ## Phase 5 — F4 Lector Completo
@@ -66,5 +66,6 @@ A0/A1: complete.
 F0: automated PASS / physical smoke pending.  
 F1: synthetic PASS / private corpus pending.  
 F2.1–F2.6: automated PASS / private + physical gates pending.  
-F3.1: **functional automated PASS; closure exact-head CI pending**.  
-**Next product slice after closure: F3.2 Photo/scan preparation — design/approve first.**
+F3.1: **automated PASS**.  
+F3.2: **automated PASS / real-photo manual QA NOT RUN**.  
+**Next product slice: F3.3 Draw signature / InkCanvas — design/approve first.**
