@@ -15,28 +15,27 @@
 - Base exactly F3.2 final head `2aa1f58a6e01397e84d8f8cfcf7eb6e0e168cf62`.
 - Branch `feat/f3-3-drawn-signature`; PR remains draft/unmerged until explicit user approval.
 - Windows x64 + WPF + .NET 10 remain unchanged.
-- Input authority is WPF `StrokeCollection`; do not render the visible `InkCanvas` background/chrome into the signature.
-- Output authority is the existing F3.1 `SignatureAsset`; no second asset/placement/writer hierarchy.
-- Fixed ink colors: Black `#000000`; Blue `#194196`.
-- Fixed logical widths: Thin `2.0 DIP`, Medium `3.5 DIP`, Thick `5.0 DIP`; Medium default.
-- Final raster sampling scale is `300 / 96 = 3.125` relative to WPF DIPs.
-- Reuse `SignatureImageLimits.MaxDecodedPixels = 20_000_000`; validate output geometry before allocating the full pixel buffer where practical.
-- Useful drawing requires at least one stroke with at least two stylus points and union bounds at least `4 DIP × 4 DIP`.
-- Transparent padding: `clamp(max(8, maxStrokeWidth * 2), 8, 24)` DIP on each side.
-- Undo/Redo/Clear are dialog-local only; no application-wide command system.
-- `Clear` is intentionally not undoable in F3.3 MVP and clears both history stacks.
-- Color/width changes affect only newly drawn strokes; existing strokes keep their original `DrawingAttributes`.
-- Cancel/failure must not modify existing placements, selection, dirty state, active PDF, or current page.
-- No temporary signature image files, clipboard requirement, telemetry, cloud/network, AI/ML, pressure engine, custom stylus framework, F3.4 persistence, or new runtime dependency.
-- Do not modify `PdfVisualSignatureWriter`, PDFium P/Invoke, signature coordinate mapping, F3.2 photo processing, ZPL/Labelize, PDFsharp scope, `.csproj`, or lockfiles unless a failing test proves the approved architecture impossible and design is revisited first.
+- Input authority is WPF `StrokeCollection`; never rasterize the visible `InkCanvas` background/chrome into the signature.
+- Output authority is the existing `SignatureAsset`; no second asset/placement/writer hierarchy.
+- Fixed colors: Black `#000000`, Blue `#194196`.
+- Fixed widths: Thin `2.0 DIP`, Medium `3.5 DIP`, Thick `5.0 DIP`; Medium default.
+- Raster sampling scale is `300 / 96 = 3.125` relative to WPF DIPs.
+- Reuse the shared **20,000,000 pixel** safety limit and validate output geometry before full allocation where practical.
+- Useful drawing requires at least one stroke with >=2 stylus points and union bounds >=`4 DIP × 4 DIP`.
+- Transparent padding: `clamp(max(8, maxStrokeWidth * 2), 8, 24)` DIP.
+- Undo/Redo/Clear are dialog-local. Clear is not undoable and empties both history stacks.
+- Selector changes affect only future strokes; existing strokes keep their original `DrawingAttributes`.
+- Cancel/failure must preserve existing placements, selection, dirty state, active PDF and current page.
+- No temp image file, clipboard requirement, telemetry, cloud/network, pressure engine, custom stylus framework, F3.4 persistence, or new runtime dependency.
+- Do not modify `PdfVisualSignatureWriter`, PDFium P/Invoke, signature coordinate mapping, F3.2 processing, ZPL/Labelize, PDFsharp scope, `.csproj`, or lockfiles without returning to design first.
 
 ## Review Focus
 
-1. **Tiny taps / one-point strokes:** Apply stays disabled and renderer rejects them without clearing the canvas. Covered in Task 1 and Task 2.
-2. **Mixed stroke attributes:** black/blue and thin/medium/thick strokes drawn in one signature preserve each stroke's original attributes after later selector changes. Covered in Task 1 and Task 2.
-3. **History mutation:** Undo → Redo must not accidentally enter the "new user stroke" path or clear redo; a genuinely new `StrokeCollected` after Undo must clear redo. Covered in Task 2.
-4. **Very large geometric bounds:** renderer rejects >20M output pixels before full BGRA allocation and leaves dialog strokes intact. Covered in Task 1 and Task 2.
-5. **WPF raster variation:** tests verify geometry, transparency, color presence, crop/padding and relative width behavior; they do not assert the entire antialiased bitmap byte-for-byte across Windows renderer versions. Covered in Task 1.
+1. Tiny taps / one-point strokes are rejected without clearing user ink.
+2. Mixed black/blue and thin/medium/thick strokes preserve per-stroke attributes after later selector changes.
+3. Undo→Redo must not masquerade as a new user stroke; a genuinely new stroke after Undo must clear Redo.
+4. Oversized bounds must hit the 20M guard before full BGRA allocation and leave dialog ink intact.
+5. Renderer tests verify geometry, alpha, color presence, crop/padding and relative width — not every antialiased pixel across Windows versions.
 
 ---
 
@@ -49,21 +48,9 @@
 
 **Interfaces:**
 
-Produces:
-
 ```csharp
-internal enum SignatureInkColor
-{
-    Black,
-    Blue
-}
-
-internal enum SignatureInkWidth
-{
-    Thin,
-    Medium,
-    Thick
-}
+internal enum SignatureInkColor { Black, Blue }
+internal enum SignatureInkWidth { Thin, Medium, Thick }
 
 internal static class SignatureInkStyle
 {
@@ -84,24 +71,17 @@ internal static class SignatureInkRenderer
 }
 ```
 
-`CreateDrawingAttributes` returns normal WPF ink attributes with fixed color and width/height equal to the selected width. Do not add pressure-width logic.
+Renderer rules:
 
-`HasUsefulInk` and `Render` repeat the same useful-ink rule from the spec so UI enablement is not the only validation boundary.
+- snapshot/clone strokes before drawing;
+- union stroke bounds + padding from maximum stroke width;
+- `pixelWidth/Height = ceil(paddedDip * 3.125)`, minimum 1;
+- call `SignatureImageLimits.ValidatePixelCount(...)` before final allocation;
+- draw only strokes into a transparent `DrawingVisual`/`DrawingContext` using WPF `StrokeCollection.Draw(DrawingContext)` and an explicit bounds→raster transform;
+- normalize WPF premultiplied output to `PixelFormats.Bgra32` before creating `SignatureAsset`;
+- never draw a canvas/background rectangle.
 
-`Render` must:
-
-- clone/snapshot the strokes before drawing so the renderer does not mutate the dialog collection;
-- compute union bounds from stroke geometry;
-- calculate padding from the maximum `DrawingAttributes.Width/Height` present in the snapshot;
-- compute pixel width/height as `ceil(paddedDip * 3.125)` with minimum 1;
-- call `SignatureImageLimits.ValidatePixelCount(...)` before allocating/copying the final normalized BGRA buffer;
-- render only the snapshot strokes into a transparent `DrawingVisual`/`DrawingContext` using `StrokeCollection.Draw(DrawingContext)` and a transform from source DIP bounds to the raster target;
-- use `RenderTargetBitmap` with a transparent target; normalize the resulting premultiplied WPF pixels to `PixelFormats.Bgra32` before constructing `SignatureAsset`;
-- never render a white canvas/background rectangle.
-
-- [ ] **Step 1: Write RED renderer/preset tests**
-
-Add focused STA tests named:
+- [ ] **Step 1: Write RED tests**
 
 ```text
 InkStyle_UsesFrozenColorsAndWidths
@@ -117,21 +97,19 @@ Render_RejectsGeometryBeyondTwentyMillionPixelsBeforeOutputAllocation
 EquivalentStrokeGeometry_ProducesStableDimensionsBoundsAndInkColors
 ```
 
-Use synthetic `StylusPointCollection` / `Stroke` objects; no real signature data. For antialiasing, assert transparent corner/background samples, expected ink-color samples/tolerances and coverage/bounds rather than full bitmap byte equality.
+Use synthetic `StylusPointCollection` / `Stroke` objects only. For antialiasing, assert transparent background, expected ink colors/tolerances, coverage and geometry rather than full bitmap byte equality.
 
-- [ ] **Step 2: Run focused tests and confirm RED**
+- [ ] **Step 2: Confirm RED**
 
 ```powershell
 dotnet test tests/SGPdf.App.Tests/SGPdf.App.Tests.csproj --configuration Release --filter "FullyQualifiedName~SignatureInkRendererTests"
 ```
 
-Expected: fail only because `SignatureInkStyle` / `SignatureInkRenderer` contracts do not exist.
+Expected: failure only because renderer/style contracts do not exist.
 
-- [ ] **Step 3: Implement minimum preset + renderer contracts**
+- [ ] **Step 3: Implement minimum contracts with WPF built-ins only.**
 
-Use WPF built-ins only. Do not add a generic image/vector rendering abstraction.
-
-- [ ] **Step 4: Run focused GREEN + full regression**
+- [ ] **Step 4: Focused GREEN + full regression**
 
 ```powershell
 dotnet test tests/SGPdf.App.Tests/SGPdf.App.Tests.csproj --configuration Release --filter "FullyQualifiedName~SignatureInkRendererTests"
@@ -140,9 +118,9 @@ dotnet build SGPdf.slnx --configuration Release --no-restore
 dotnet test SGPdf.slnx --configuration Release --no-build
 ```
 
-Require focused PASS, locked restore PASS, Release build 0 warnings/0 errors, all tests PASS.
+Require focused PASS, locked restore PASS, build 0 warnings/0 errors, all tests PASS.
 
-- [ ] **Step 5: Commit Task 1**
+- [ ] **Step 5: Commit**
 
 ```bash
 git add src/SGPdf.App/Features/Sign/SignatureInkStyle.cs src/SGPdf.App/Features/Sign/SignatureInkRenderer.cs tests/SGPdf.App.Tests/SignatureInkRendererTests.cs
@@ -151,7 +129,7 @@ git commit -m "feat(sign): render drawn signatures transparently"
 
 ---
 
-### Task 2: Dialog-local stroke history + `Dibujar firma` WPF dialog
+### Task 2: Dialog-local stroke history + `Dibujar firma` dialog
 
 **Files:**
 - Create: `src/SGPdf.App/Features/Sign/SignatureInkHistory.cs`
@@ -161,16 +139,6 @@ git commit -m "feat(sign): render drawn signatures transparently"
 - Test: `tests/SGPdf.App.Tests/SignatureDrawDialogTests.cs`
 
 **Interfaces:**
-
-Consumes Task 1:
-
-```csharp
-SignatureInkStyle.CreateDrawingAttributes(SignatureInkColor, SignatureInkWidth)
-SignatureInkRenderer.HasUsefulInk(StrokeCollection)
-SignatureInkRenderer.Render(StrokeCollection, string?)
-```
-
-Produces:
 
 ```csharp
 internal sealed class SignatureInkHistory
@@ -191,15 +159,15 @@ public partial class SignatureDrawDialog : Window
 }
 ```
 
-History semantics:
+History contract:
 
-- `RecordUserStroke` is called only from the InkCanvas user `StrokeCollected` event;
-- it appends the new user stroke to undo order and clears redo;
-- `Undo` removes the most recently undoable stroke from `current` and pushes it to redo;
-- `Redo` adds the most recently undone stroke back to `current` without calling `RecordUserStroke`, preserving the same `Stroke` / attributes;
-- `Clear` empties the collection and both stacks; Clear is not undoable.
+- call `RecordUserStroke` only from the user `StrokeCollected` path;
+- new user stroke clears Redo;
+- Undo removes newest undoable stroke and pushes it to Redo;
+- Redo restores the same stroke/attributes without calling `RecordUserStroke`;
+- Clear empties strokes plus both stacks and is not undoable.
 
-Dialog named controls:
+Named controls:
 
 ```text
 SignatureDrawInkCanvas
@@ -214,26 +182,18 @@ SignatureDrawApplyButton
 SignatureDrawStatusText
 ```
 
-Dialog defaults:
+Defaults: `Ink` mode, Black + Medium, Apply/Undo/Redo/Clear disabled while empty. Selector changes update only `InkCanvas.DefaultDrawingAttributes`.
 
-- `InkCanvas.EditingMode = InkCanvasEditingMode.Ink`;
-- Black selected;
-- Medium selected;
-- Apply/Undo/Redo/Clear disabled on empty canvas;
-- selector changes update only `InkCanvas.DefaultDrawingAttributes`, never existing strokes.
-
-For testability, keep rendering behind one narrow internal delegate or virtual-free seam, e.g.:
+Narrow test seam:
 
 ```csharp
 private Func<StrokeCollection, SignatureAsset> _renderInk =
     static strokes => SignatureInkRenderer.Render(strokes);
 ```
 
-Do not introduce a dialog-service framework.
+No dialog-service framework.
 
-- [ ] **Step 1: Write RED pure history tests**
-
-Tests:
+- [ ] **Step 1: Write RED history tests**
 
 ```text
 RecordUserStroke_EnablesUndoAndClearsRedo
@@ -245,8 +205,6 @@ Clear_RemovesAllStrokesAndResetsHistory
 ```
 
 - [ ] **Step 2: Write RED STA dialog tests**
-
-Tests:
 
 ```text
 Dialog_OpensEmptyWithBlackMediumDefaults
@@ -260,28 +218,19 @@ Apply_RenderFailure_PreservesStrokesHistoryAndDialogState
 ClosingWindow_IsEquivalentToCancel
 ```
 
-For test-generated strokes, add them through a narrow internal helper only if raising the real routed `StrokeCollected` event is impractical in headless STA tests. The helper must execute the same `RecordUserStroke` + button-state path used by the event; do not fork product behavior for tests.
+If raising real `StrokeCollected` is impractical in headless tests, use one internal helper that executes the exact same record/update path; do not fork product behavior.
 
-- [ ] **Step 3: Run Task 2 focused tests and confirm RED**
+- [ ] **Step 3: Confirm RED**
 
 ```powershell
 dotnet test tests/SGPdf.App.Tests/SGPdf.App.Tests.csproj --configuration Release --filter "FullyQualifiedName~SignatureInkHistoryTests|FullyQualifiedName~SignatureDrawDialogTests"
 ```
 
-Expected: fail because history/dialog contracts do not exist.
+- [ ] **Step 4: Implement history + focused WPF dialog.**
 
-- [ ] **Step 4: Implement history + focused WPF dialog**
+Mouse/touch/stylus collection stays delegated to `InkCanvas`; no custom pointer engine. On render failure keep dialog open and preserve strokes/history. Set `DialogResult` only when the window is actually visible so STA tests remain noninteractive.
 
-Keep the dialog conventional WPF. Mouse/touch/stylus collection is delegated to `InkCanvas`; no custom pointer capture or brush engine.
-
-On Apply:
-
-1. call renderer on current strokes;
-2. set `PreparedAsset` only on success;
-3. close with successful dialog result only when the window is actually visible;
-4. on controlled render/validation errors, keep the dialog open, preserve strokes/history, set status text and return no asset.
-
-- [ ] **Step 5: Run focused GREEN + full regression**
+- [ ] **Step 5: Focused GREEN + full regression**
 
 ```powershell
 dotnet test tests/SGPdf.App.Tests/SGPdf.App.Tests.csproj --configuration Release --filter "FullyQualifiedName~SignatureInkHistoryTests|FullyQualifiedName~SignatureDrawDialogTests"
@@ -290,9 +239,9 @@ dotnet build SGPdf.slnx --configuration Release --no-restore
 dotnet test SGPdf.slnx --configuration Release --no-build
 ```
 
-Require 0 warnings/0 errors and all PASS.
+Require build 0/0 and all tests PASS.
 
-- [ ] **Step 6: Commit Task 2**
+- [ ] **Step 6: Commit**
 
 ```bash
 git add src/SGPdf.App/Features/Sign/SignatureInkHistory.cs src/SGPdf.App/SignatureDrawDialog.xaml src/SGPdf.App/SignatureDrawDialog.xaml.cs tests/SGPdf.App.Tests/SignatureInkHistoryTests.cs tests/SGPdf.App.Tests/SignatureDrawDialogTests.cs
@@ -301,7 +250,7 @@ git commit -m "feat(sign): add drawn signature dialog"
 
 ---
 
-### Task 3: Integrate `Dibujar firma...` into existing FIRMAR source flow
+### Task 3: Integrate `Dibujar firma...` into FIRMAR
 
 **Files:**
 - Modify: `src/SGPdf.App/MainWindow.Sign.cs`
@@ -309,46 +258,29 @@ git commit -m "feat(sign): add drawn signature dialog"
 
 **Interfaces:**
 
-Consumes Task 2:
-
-```csharp
-SignatureDrawDialog.Draw(Window owner) -> SignatureAsset?
-```
-
-Add one narrow seam beside `_loadSignaturePng` and `_prepareSignaturePhoto`:
-
 ```csharp
 private Func<Window, SignatureAsset?> _drawSignature =
     static owner => SignatureDrawDialog.Draw(owner);
+
+private bool TryDrawSignature();
 ```
 
-Add a named FIRMAR action:
+Named action:
 
 ```text
 DrawSignatureButton
 Content = "Dibujar firma..."
 ```
 
-Add a focused method:
-
-```csharp
-private bool TryDrawSignature()
-```
-
 Behavior:
 
-- `null` result = user cancel; return false without changing placement state;
-- thrown exception = controlled status/message; return false without changing placement state;
-- valid `SignatureAsset` = call existing `AddSignatureAsset(asset)` exactly once and report normal success status;
-- do not create any new PDF/save path.
+- null = cancel, no state change;
+- exception = controlled status/message, no state change;
+- valid asset = call existing `AddSignatureAsset(asset)` exactly once;
+- no new PDF/save path;
+- informational FIRMAR copy mentions PNG, photo/scan and drawn signature.
 
-Update the informational copy in FIRMAR to mention all three supported sources: transparent PNG, photo/scan, or drawn signature.
-
-- [ ] **Step 1: Write RED MainWindow integration tests**
-
-Use the existing `MainWindowSignaturePhotoTests` reflection/STA pattern in a new focused test file.
-
-Tests:
+- [ ] **Step 1: Write RED STA MainWindow tests using the existing F3.2 reflection pattern**
 
 ```text
 DrawSignature_ActionExistsAndIsVisibleOnlyWithFirmarPanel
@@ -359,21 +291,21 @@ DrawApply_UsesSameAddSignatureAssetFlowAsOtherSources
 ExistingPngAndPhotoSourceActionsRemainAvailable
 ```
 
-Do not open the real modal dialog in tests; replace `_drawSignature` through the narrow seam.
+Replace `_drawSignature` in tests; never open the real modal dialog.
 
-- [ ] **Step 2: Run focused tests and confirm RED**
+- [ ] **Step 2: Confirm RED**
 
 ```powershell
 dotnet test tests/SGPdf.App.Tests/SGPdf.App.Tests.csproj --configuration Release --filter "FullyQualifiedName~MainWindowSignatureDrawTests"
 ```
 
-Expected: fail because `_drawSignature`, `DrawSignatureButton`, and `TryDrawSignature` do not exist.
+Expected: missing seam/button/method only.
 
-- [ ] **Step 3: Implement minimum MainWindow integration**
+- [ ] **Step 3: Implement minimum integration in `MainWindow.Sign.cs`.**
 
-Preserve the existing imperative F3 mode-panel ruling in `MainWindow.Sign.cs`; do not migrate the whole FIRMAR panel into another framework/XAML shell during this slice.
+Preserve the existing imperative F3 panel ruling; do not migrate the whole shell/XAML in this slice.
 
-- [ ] **Step 4: Run focused GREEN + complete regression**
+- [ ] **Step 4: Focused GREEN + full regression**
 
 ```powershell
 dotnet test tests/SGPdf.App.Tests/SGPdf.App.Tests.csproj --configuration Release --filter "FullyQualifiedName~MainWindowSignatureDrawTests|FullyQualifiedName~MainWindowSignaturePhotoTests|FullyQualifiedName~MainWindowSignatureTests"
@@ -382,9 +314,9 @@ dotnet build SGPdf.slnx --configuration Release --no-restore
 dotnet test SGPdf.slnx --configuration Release --no-build
 ```
 
-Require build 0 warnings/0 errors and all tests PASS.
+Require build 0/0 and all tests PASS.
 
-- [ ] **Step 5: Commit Task 3**
+- [ ] **Step 5: Commit**
 
 ```bash
 git add src/SGPdf.App/MainWindow.Sign.cs tests/SGPdf.App.Tests/MainWindowSignatureDrawTests.cs
@@ -393,7 +325,7 @@ git commit -m "feat(sign): integrate drawn signatures into FIRMAR"
 
 ---
 
-### Task 4: Scope audit, documentation, exact-head CI, and automated closure
+### Task 4: Audit, documentation, exact-head CI, automated closure
 
 **Files:**
 - Create: `docs/history/2026-10-08-F3.3.md`
@@ -401,24 +333,13 @@ git commit -m "feat(sign): integrate drawn signatures into FIRMAR"
 - Modify: `.planning/STATE.md`
 - Modify: `.planning/ROADMAP.md`
 - Modify: `AGENTS.md`
-- Open/update: stacked draft PR for `feat/f3-3-drawn-signature` with base `feat/f3-2-photo-preparation`
+- Open/update: stacked draft PR `feat/f3-3-drawn-signature` → base `feat/f3-2-photo-preparation`
 
-- [ ] **Step 1: Audit the complete branch against F3.2 final**
+- [ ] **Step 1: Audit whole branch against F3.2 final**
 
-Require:
+Require changes only in F3.3 spec/plan, feature-local ink renderer/history/dialog, focused `MainWindow.Sign.cs`, tests and closure docs. Require no `.csproj`/lockfile/new package, PDFium writer/PInvoke/coordinates, F3.2 processor, ZPL/Labelize, runtime network/temp signature file or F3.4 persistence changes.
 
-- changes limited to F3.3 spec/plan, feature-local ink renderer/history/dialog, focused `MainWindow.Sign.cs` integration, tests, and closure docs;
-- no `.csproj` or lockfile change;
-- no new runtime package;
-- no PDFium writer/PInvoke/coordinate change;
-- no F3.2 processor behavior change;
-- no ZPL/Labelize change;
-- no runtime HTTP/network/temp signature file;
-- no F3.4 persistence/library behavior.
-
-If any excluded surface changed, explain and return to design/review rather than normalizing the scope expansion.
-
-- [ ] **Step 2: Run fresh functional verification before closure docs**
+- [ ] **Step 2: Run fresh functional verification**
 
 ```powershell
 dotnet restore SGPdf.slnx --locked-mode
@@ -426,70 +347,52 @@ dotnet build SGPdf.slnx --configuration Release --no-restore
 dotnet test SGPdf.slnx --configuration Release --no-build
 ```
 
-Require locked restore PASS, Release build 0 warnings/0 errors, all tests PASS.
+Require locked restore PASS, build 0 warnings/0 errors and all tests PASS.
 
-- [ ] **Step 3: Write closure docs**
+- [ ] **Step 3: Write closure docs and PR body**
 
-Record separately:
+Record automated evidence separately from manual device QA. Mouse/touch/stylus hardware QA remains `NOT RUN` unless actually performed. F3.4 remains deferred. PR remains draft/unmerged.
 
-- automated rendering/history/dialog/MainWindow PASS evidence;
-- exact final head and CI IDs;
-- manual mouse/touch/stylus hardware QA = `NOT RUN` unless actually performed;
-- F3.4 local signature library remains next approved-but-unimplemented slice;
-- branch/PR remains draft/unmerged.
-
-- [ ] **Step 4: Open/update stacked draft PR**
-
-Base: `feat/f3-2-photo-preparation`.
-
-PR body must distinguish:
-
-- automated PASS;
-- manual device QA NOT RUN;
-- no new dependency/network/PDF writer scope;
-- no merge without explicit user approval.
-
-- [ ] **Step 5: Freeze closure head and require push + PR CI on that exact SHA**
-
-After the single closure-doc commit, make no more branch mutations. Require both push CI and pull-request CI to pass on that same head.
-
-- [ ] **Step 6: Verify exact-head evidence before claiming completion**
-
-Read CI logs and record:
-
-- build warning/error count;
-- passed/failed/skipped test counts;
-- repository hygiene/locked restore success;
-- PR still open, draft, unmerged.
-
-Only then mark **F3.3 automated PASS**.
-
-- [ ] **Step 7: Commit Task 4**
+- [ ] **Step 4: Create exactly one closure-doc commit**
 
 ```bash
 git add docs/history/2026-10-08-F3.3.md .planning/phases/04-f3-visual-signature/F3.3-PLAN.md .planning/STATE.md .planning/ROADMAP.md AGENTS.md
 git commit -m "docs(sign): close F3.3 automated slice"
 ```
 
+This commit becomes the **candidate final head**. From this point, make no more branch mutations.
+
+- [ ] **Step 5: Open/update stacked draft PR if not already open**
+
+Base `feat/f3-2-photo-preparation`; body distinguishes automated PASS, hardware QA NOT RUN, no dependency/network/PDF-writer scope, and no merge without explicit user approval. Updating PR metadata/comments does not change the branch SHA.
+
+- [ ] **Step 6: Require push CI + PR CI on the same closure SHA**
+
+Both workflows must run against the exact candidate final head from Step 4.
+
+- [ ] **Step 7: Read exact-head logs and verify before completion claim**
+
+Record:
+
+- build warning/error count;
+- passed/failed/skipped tests;
+- repository hygiene + locked restore success;
+- PR open, draft, unmerged;
+- exact head SHA and both CI IDs.
+
+Only then mark **F3.3 automated PASS**. Do not make another docs commit merely to record CI IDs; place final CI IDs in the PR body/comment and next-slice state update so the verified SHA remains exact.
+
 ---
 
 ## Self-review outcome
 
-- **Spec coverage:** renderer/transparency, 300-DPI-equivalent rasterization, fixed colors/widths, useful-ink validation, dialog-local Undo/Redo/Clear, Cancel/Apply safety, MainWindow convergence, privacy/offline boundaries and manual hardware QA all map to Tasks 1–4.
-- **Type consistency:** `SignatureInkColor`, `SignatureInkWidth`, `SignatureInkStyle`, `SignatureInkRenderer`, `SignatureInkHistory`, `SignatureDrawDialog`, `_drawSignature` and `TryDrawSignature()` are introduced once and consumed with matching signatures.
-- **Review Focus:** tiny taps, mixed attributes, history mutation, oversized bounds and renderer-version antialias variance each have an owning test task.
-- **KISS/YAGNI:** no general command stack, vector format, pressure engine, pointer abstraction, new package, persistence or PDF changes.
-- **Execution size:** four reviewable tasks; Tasks 1–3 each close a RED→GREEN product boundary, Task 4 only audits/closes. This is intentionally smaller than F3.2 execution context.
+- **Spec coverage:** renderer/transparency, 300-DPI-equivalent sampling, colors/widths, useful-ink validation, local history, Apply/Cancel safety, MainWindow convergence, offline/privacy and manual hardware QA all map to Tasks 1–4.
+- **Type consistency:** `SignatureInkColor`, `SignatureInkWidth`, `SignatureInkStyle`, `SignatureInkRenderer`, `SignatureInkHistory`, `SignatureDrawDialog`, `_drawSignature`, `TryDrawSignature()` are introduced once and consumed consistently.
+- **Review Focus:** tiny taps, mixed attributes, history mutation, oversized bounds and antialias variance all have tests.
+- **KISS/YAGNI:** no generic command system, vector format, pressure engine, pointer abstraction, new package, persistence or PDF changes.
+- **Closure ordering:** docs commit precedes exact-head CI; no post-CI branch mutation can invalidate evidence.
+- **Execution size:** four reviewable tasks. Tasks 1–3 each close one RED→GREEN boundary; Task 4 audits/closes.
 
 ## Stop conditions
 
-Stop and return to design if implementation demonstrates that any of these are necessary:
-
-- new runtime drawing/image package;
-- custom low-level stylus/pointer engine;
-- PDFium/PDF writer changes for drawn signatures;
-- temp image files for correctness;
-- pressure-sensitive brush behavior required for acceptable MVP quality;
-- application-wide Undo/Redo framework;
-- F3.4 persistence to make F3.3 usable;
-- cloud/network service.
+Return to design if implementation requires a new runtime drawing/image package, custom low-level stylus engine, PDFium/PDF writer changes, temp image files, pressure-sensitive brush engine, application-wide Undo/Redo, F3.4 persistence, or cloud/network service.
