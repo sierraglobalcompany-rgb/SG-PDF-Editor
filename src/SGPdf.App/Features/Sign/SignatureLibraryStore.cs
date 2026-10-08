@@ -3,7 +3,7 @@ using System.Text.Json;
 
 namespace SGPdf.App.Features.Sign;
 
-internal sealed class SignatureLibraryUnavailableException : InvalidDataException
+internal sealed class SignatureLibraryUnavailableException : IOException
 {
     internal SignatureLibraryUnavailableException(string message)
         : base(message)
