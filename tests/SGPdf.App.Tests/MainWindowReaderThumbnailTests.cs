@@ -25,6 +25,7 @@ public sealed class MainWindowReaderThumbnailTests
         RunInSta(() =>
         {
             var window = new MainWindow();
+            EnsureLoaded(window);
             try
             {
                 var tabs = Element<TabControl>(window, "ReaderNavigationTabs");
@@ -214,12 +215,16 @@ public sealed class MainWindowReaderThumbnailTests
 
     private static async Task<bool> OpenReaderAsync(MainWindow window, string path)
     {
+        EnsureLoaded(window);
         SetField(window, "_getReaderPageSizes",
             (Func<PdfDocumentSession, CancellationToken, IReadOnlyList<PdfPageSize>>)((session, token) => session.GetPageSizes(token)));
         SetField(window, "_renderReaderPage",
             (Func<PdfDocumentSession, int, double, CancellationToken, PdfRenderedPage>)((_, index, dpi, _) => SyntheticRendered(index, dpi, 33)));
         return await InvokeTask<bool>(window, "TryOpenPdfPathAsync", path, null);
     }
+
+    private static void EnsureLoaded(MainWindow window)
+        => window.RaiseEvent(new RoutedEventArgs(FrameworkElement.LoadedEvent, window));
 
     private static PdfRenderedPage SyntheticRendered(int pageIndex, double dpi, byte marker)
     {
