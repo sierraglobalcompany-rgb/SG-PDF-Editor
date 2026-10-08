@@ -539,8 +539,9 @@ public sealed class MainWindowReaderTests
         if (!task.IsCompleted)
         {
             var frame = new DispatcherFrame();
+            var dispatcher = Dispatcher.CurrentDispatcher;
             task.ContinueWith(
-                _ => Dispatcher.CurrentDispatcher.BeginInvoke(new Action(() => frame.Continue = false)),
+                _ => dispatcher.BeginInvoke(new Action(() => frame.Continue = false)),
                 CancellationToken.None,
                 TaskContinuationOptions.None,
                 TaskScheduler.Default);
