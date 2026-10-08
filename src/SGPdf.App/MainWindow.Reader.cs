@@ -163,12 +163,15 @@ public partial class MainWindow
         {
             candidateSession?.Dispose();
             StatusText.Text = "No se pudo abrir el PDF.";
-            MessageBox.Show(
-                this,
-                $"No se pudo abrir el PDF.\n\n{ex.Message}",
-                "SG PDF Editor",
-                MessageBoxButton.OK,
-                MessageBoxImage.Error);
+            if (IsVisible)
+            {
+                MessageBox.Show(
+                    this,
+                    $"No se pudo abrir el PDF.\n\n{ex.Message}",
+                    "SG PDF Editor",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
             return false;
         }
         finally
