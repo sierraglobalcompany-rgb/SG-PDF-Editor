@@ -10,13 +10,13 @@ namespace SGPdf.App.Tests;
 public sealed class SignatureInkRendererTests
 {
     [Fact]
-    public void InkStyle_UsesFrozenColorsAndWidths()
+    public void StrokeStyle_UsesFrozenColorsAndWidths()
     {
-        Assert.Equal(Color.FromRgb(0x00, 0x00, 0x00), SignatureInkStyle.GetColor(SignatureInkColor.Black));
-        Assert.Equal(Color.FromRgb(0x19, 0x41, 0x96), SignatureInkStyle.GetColor(SignatureInkColor.Blue));
-        Assert.Equal(2d, SignatureInkStyle.GetWidthDip(SignatureInkWidth.Thin));
-        Assert.Equal(3.5d, SignatureInkStyle.GetWidthDip(SignatureInkWidth.Medium));
-        Assert.Equal(5d, SignatureInkStyle.GetWidthDip(SignatureInkWidth.Thick));
+        Assert.Equal(Color.FromRgb(0x00, 0x00, 0x00), SignatureStrokeStyle.GetColor(SignatureInkColor.Black));
+        Assert.Equal(Color.FromRgb(0x19, 0x41, 0x96), SignatureStrokeStyle.GetColor(SignatureInkColor.Blue));
+        Assert.Equal(2d, SignatureStrokeStyle.GetWidthDip(SignatureInkWidth.Thin));
+        Assert.Equal(3.5d, SignatureStrokeStyle.GetWidthDip(SignatureInkWidth.Medium));
+        Assert.Equal(5d, SignatureStrokeStyle.GetWidthDip(SignatureInkWidth.Thick));
     }
 
     [Fact]
@@ -119,7 +119,7 @@ public sealed class SignatureInkRendererTests
     private static Stroke CreateStroke((double X, double Y)[] points, SignatureInkColor color, SignatureInkWidth width)
     {
         var stylusPoints = new StylusPointCollection(points.Select(p => new StylusPoint(p.X, p.Y)));
-        return new Stroke(stylusPoints, SignatureInkStyle.CreateDrawingAttributes(color, width));
+        return new Stroke(stylusPoints, SignatureStrokeStyle.CreateDrawingAttributes(color, width));
     }
 
     private static byte[] AlphaValues(SignatureAsset asset)
