@@ -43,6 +43,8 @@ public partial class MainWindow
     private Func<string, SignatureAsset> _loadSignaturePng = SignaturePngLoader.Load;
     private Func<Window, string, SignatureAsset?> _prepareSignaturePhoto =
         static (owner, path) => SignaturePhotoDialog.Prepare(owner, path);
+    private Func<Window, SignatureAsset?> _drawSignature =
+        static owner => SignatureDrawDialog.Draw(owner);
     private Action<string, string, IReadOnlyList<SignaturePlacement>, CancellationToken> _saveVisualSignatures =
         static (source, destination, placements, token) =>
             new PdfVisualSignatureWriter().SaveAsCopy(source, destination, placements, token);
@@ -221,6 +223,18 @@ public partial class MainWindow
         photo.Click += PrepareSignaturePhoto_Click;
         panel.Children.Add(photo);
 
+        var draw = new Button
+        {
+            Name = "DrawSignatureButton",
+            Content = "Dibujar firma...",
+            Padding = new Thickness(10, 5, 10, 5),
+            HorizontalAlignment = HorizontalAlignment.Left,
+            Margin = new Thickness(0, 8, 0, 0)
+        };
+        RegisterName(draw.Name, draw);
+        draw.Click += DrawSignature_Click;
+        panel.Children.Add(draw);
+
         var duplicate = new Button { Content = "Duplicar", Padding = new Thickness(10, 5, 10, 5), HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 8, 0, 0) };
         duplicate.Click += (_, _) => { if (_signatureEditState?.DuplicateSelected() is not null) RefreshSignatureOverlay(); };
         panel.Children.Add(duplicate);
@@ -235,7 +249,7 @@ public partial class MainWindow
 
         panel.Children.Add(new TextBlock
         {
-            Text = "Puedes cargar un PNG transparente o preparar una firma desde una foto/escaneo sobre papel blanco.",
+            Text = "Puedes cargar un PNG transparente, preparar una firma desde una foto/escaneo o dibujarla directamente.",
             TextWrapping = TextWrapping.Wrap,
             Foreground = Brushes.DimGray,
             Margin = new Thickness(0, 14, 0, 0)
@@ -337,6 +351,9 @@ public partial class MainWindow
             TryPrepareSignaturePhotoFromPath(dialog.FileName);
     }
 
+    private void DrawSignature_Click(object sender, RoutedEventArgs e)
+        => TryDrawSignature();
+
     private bool TryLoadSignatureFromPath(string path)
     {
         try
@@ -370,6 +387,26 @@ public partial class MainWindow
         {
             StatusText.Text = "No se pudo preparar la firma desde la foto.";
             ShowSignatureMessage($"No se pudo preparar la firma desde la foto o escaneo.\n\n{ex.Message}", MessageBoxImage.Error);
+            return false;
+        }
+    }
+
+    private bool TryDrawSignature()
+    {
+        try
+        {
+            var asset = _drawSignature(this);
+            if (asset is null)
+                return false;
+
+            AddSignatureAsset(asset);
+            StatusText.Text = "Firma dibujada y agregada. Arrástrala o redimensiónala y luego usa Guardar como...";
+            return true;
+        }
+        catch (Exception ex)
+        {
+            StatusText.Text = "No se pudo dibujar la firma.";
+            ShowSignatureMessage($"No se pudo preparar la firma dibujada.\n\n{ex.Message}", MessageBoxImage.Error);
             return false;
         }
     }
