@@ -24,6 +24,7 @@ internal sealed class ReaderThumbnailItem : INotifyPropertyChanged
     }
 
     public int PageIndex { get; }
+    public int PageNumber => PageIndex + 1;
     public PdfPageSize PageSize { get; }
     public double DisplayWidth => 132d;
     public double DisplayHeight { get; }
