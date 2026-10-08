@@ -220,7 +220,10 @@ public sealed class MainWindowReaderThumbnailTests
             (Func<PdfDocumentSession, CancellationToken, IReadOnlyList<PdfPageSize>>)((session, token) => session.GetPageSizes(token)));
         SetField(window, "_renderReaderPage",
             (Func<PdfDocumentSession, int, double, CancellationToken, PdfRenderedPage>)((_, index, dpi, _) => SyntheticRendered(index, dpi, 33)));
-        return await InvokeTask<bool>(window, "TryOpenPdfPathAsync", path, null);
+        var opened = await InvokeTask<bool>(window, "TryOpenPdfPathAsync", path, null);
+        if (opened)
+            await InvokeTask(window, "RefreshThumbnailRenderWindowAsync");
+        return opened;
     }
 
     private static void EnsureLoaded(MainWindow window)
