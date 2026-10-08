@@ -555,6 +555,11 @@ public sealed class MainWindowReaderTests
         if (GetOptionalField(window, "_signatureEditState") is SignatureEditState state)
             state.DiscardAll();
         window.Close();
+        if (GetOptionalField(window, "_session") is PdfDocumentSession session)
+        {
+            session.Dispose();
+            SetField(window, "_session", null!);
+        }
     }
 
     private static object? GetOptionalField(MainWindow window, string name)
