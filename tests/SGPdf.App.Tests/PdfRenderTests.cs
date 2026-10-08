@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Globalization;
 using System.Reflection;
 using System.Text;
@@ -133,6 +134,69 @@ public sealed class PdfRenderTests
         }
     }
 
+    [Fact]
+    public void GetPageSizes_MixedPortraitLandscape_ReturnsIndexOrderedPointSizes()
+    {
+        var method = typeof(PdfDocumentSession).GetMethod(
+            "GetPageSizes",
+            new[] { typeof(CancellationToken) });
+        Assert.NotNull(method);
+
+        var path = Path.Combine(Path.GetTempPath(), $"sgpdf-page-sizes-{Guid.NewGuid():N}.pdf");
+        try
+        {
+            File.WriteAllBytes(path, CreatePdfWithPageSizes((612d, 792d), (792d, 612d)));
+            using var session = PdfDocumentSession.Open(path);
+
+            var result = method!.Invoke(session, new object[] { CancellationToken.None });
+            var sizes = Assert.IsAssignableFrom<IEnumerable>(result).Cast<object>().ToArray();
+
+            Assert.Equal(2, sizes.Length);
+            Assert.Equal(612d, GetDoubleProperty(sizes[0], "WidthPoints"), 6);
+            Assert.Equal(792d, GetDoubleProperty(sizes[0], "HeightPoints"), 6);
+            Assert.Equal(792d, GetDoubleProperty(sizes[1], "WidthPoints"), 6);
+            Assert.Equal(612d, GetDoubleProperty(sizes[1], "HeightPoints"), 6);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public void GetPageSizes_PreCanceledToken_ThrowsWithoutPartialResult()
+    {
+        var method = typeof(PdfDocumentSession).GetMethod(
+            "GetPageSizes",
+            new[] { typeof(CancellationToken) });
+        Assert.NotNull(method);
+
+        var path = Path.Combine(Path.GetTempPath(), $"sgpdf-page-sizes-cancel-{Guid.NewGuid():N}.pdf");
+        try
+        {
+            File.WriteAllBytes(path, CreatePdfWithPageSizes((612d, 792d), (792d, 612d)));
+            using var session = PdfDocumentSession.Open(path);
+            using var cancellation = new CancellationTokenSource();
+            cancellation.Cancel();
+
+            var ex = Assert.Throws<TargetInvocationException>(() =>
+                method!.Invoke(session, new object[] { cancellation.Token }));
+
+            Assert.IsType<OperationCanceledException>(ex.InnerException);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    private static double GetDoubleProperty(object target, string propertyName)
+    {
+        var property = target.GetType().GetProperty(propertyName);
+        Assert.NotNull(property);
+        return (double)property!.GetValue(target)!;
+    }
+
     private static byte[] CreatePdf(params string[] pageContents)
     {
         if (pageContents.Length == 0)
@@ -159,6 +223,42 @@ public sealed class PdfRenderTests
             objects.Add($"{contentId} 0 obj\n<< /Length {Encoding.ASCII.GetByteCount(content)} >>\nstream\n{content}endstream\nendobj\n");
         }
 
+        return BuildPdf(objects);
+    }
+
+    private static byte[] CreatePdfWithPageSizes(params (double Width, double Height)[] pageSizes)
+    {
+        if (pageSizes.Length == 0)
+            throw new ArgumentException("Se requiere al menos una página.", nameof(pageSizes));
+
+        var objects = new List<string>
+        {
+            "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n"
+        };
+
+        var pageIds = Enumerable.Range(0, pageSizes.Length)
+            .Select(index => 3 + index * 2)
+            .ToArray();
+        var kids = string.Join(" ", pageIds.Select(id => $"{id} 0 R"));
+        objects.Add($"2 0 obj\n<< /Type /Pages /Kids [{kids}] /Count {pageSizes.Length} >>\nendobj\n");
+
+        for (var index = 0; index < pageSizes.Length; index++)
+        {
+            var pageId = pageIds[index];
+            var contentId = pageId + 1;
+            var width = pageSizes[index].Width.ToString(CultureInfo.InvariantCulture);
+            var height = pageSizes[index].Height.ToString(CultureInfo.InvariantCulture);
+            const string content = "";
+
+            objects.Add($"{pageId} 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 {width} {height}] /Contents {contentId} 0 R >>\nendobj\n");
+            objects.Add($"{contentId} 0 obj\n<< /Length 0 >>\nstream\n{content}endstream\nendobj\n");
+        }
+
+        return BuildPdf(objects);
+    }
+
+    private static byte[] BuildPdf(IReadOnlyList<string> objects)
+    {
         using var stream = new MemoryStream();
         WriteAscii(stream, "%PDF-1.4\n");
 
