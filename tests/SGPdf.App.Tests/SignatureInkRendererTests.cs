@@ -24,7 +24,7 @@ public sealed class SignatureInkRendererTests
     {
         Assert.False(SignatureInkRenderer.HasUsefulInk(new StrokeCollection()));
         Assert.False(SignatureInkRenderer.HasUsefulInk(new StrokeCollection { CreateStroke([(10, 10)], SignatureInkColor.Black, SignatureInkWidth.Medium) }));
-        Assert.False(SignatureInkRenderer.HasUsefulInk(new StrokeCollection { CreateStroke([(10, 10), (12, 12)], SignatureInkColor.Black, SignatureInkWidth.Thin) }));
+        Assert.False(SignatureInkRenderer.HasUsefulInk(new StrokeCollection { CreateStroke([(10, 10), (10.25, 10.25)], SignatureInkColor.Black, SignatureInkWidth.Thin) }));
     }
 
     [Fact]
@@ -76,9 +76,10 @@ public sealed class SignatureInkRendererTests
     [Fact]
     public void Render_ThinMediumThick_HaveIncreasingVisibleCoverage()
     {
-        var thin = CountVisible(SignatureInkRenderer.Render(new StrokeCollection { CreateStroke([(10, 20), (100, 20)], SignatureInkColor.Black, SignatureInkWidth.Thin) }));
-        var medium = CountVisible(SignatureInkRenderer.Render(new StrokeCollection { CreateStroke([(10, 20), (100, 20)], SignatureInkColor.Black, SignatureInkWidth.Medium) }));
-        var thick = CountVisible(SignatureInkRenderer.Render(new StrokeCollection { CreateStroke([(10, 20), (100, 20)], SignatureInkColor.Black, SignatureInkWidth.Thick) }));
+        var points = new[] { (10d, 20d), (55d, 28d), (100d, 20d) };
+        var thin = CountVisible(SignatureInkRenderer.Render(new StrokeCollection { CreateStroke(points, SignatureInkColor.Black, SignatureInkWidth.Thin) }));
+        var medium = CountVisible(SignatureInkRenderer.Render(new StrokeCollection { CreateStroke(points, SignatureInkColor.Black, SignatureInkWidth.Medium) }));
+        var thick = CountVisible(SignatureInkRenderer.Render(new StrokeCollection { CreateStroke(points, SignatureInkColor.Black, SignatureInkWidth.Thick) }));
         Assert.True(thin < medium);
         Assert.True(medium < thick);
     }
