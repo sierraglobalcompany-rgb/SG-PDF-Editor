@@ -33,31 +33,32 @@ Delivered: parse/open, Labelize preview, quantities/dimensions, layout/PDF expor
 ## Phase 5 — F4 Lector Completo
 **Goal:** continuous scroll, thumbnails, bookmarks/links, search/copy text, password PDFs, shortcuts and recent files while preserving F3 page-local editing.
 
-**Current gate:** design + TDD plan **APPROVED**. **Tasks 1–3 AUTO PASS**; Task 4 waits for the next user `continúa`.
+**Current gate:** design + TDD plan **APPROVED**. **Tasks 1–4 AUTO PASS**; Task 5 waits for the next user `continúa`.
 
 - Design: `docs/superpowers/specs/2026-10-08-f4-full-reader-design.md`.
 - Plan: `docs/superpowers/plans/2026-10-08-f4-full-reader.md`.
 - Task 1 functional head: `ce167be7ae0b7769c4fc9253c400bc5a9b59216a`; CI `37843337925` PASS; 312 tests PASS.
 - Task 2 functional/verified head: `bfbc774066f91acafc960c8e7f77ba0df5f344f6`; CI `37852149659` PASS; 328 tests PASS.
-- Task 3 RED head: `c4315a10c05f0b21badd6307e47767f157a8cc87`; CI `37854879113` expected build failure for missing `ReaderThumbnailItem`, 0 warnings.
-- Task 3 functional/verified head: `c968aa8e94f8b22820e3aa32ba1097d0e58516a2`.
-- Task 3 CI: `37855511813` PASS.
-- Task 3 verification: Release build 0 warnings / 0 errors; 336 tests PASS.
-- Task 3 scope: four feature/test files only; no package/lock, PDFium, signing, ZPL, print or existing XAML changes.
+- Task 3 functional/verified head: `c968aa8e94f8b22820e3aa32ba1097d0e58516a2`; CI `37855511813` PASS; 336 tests PASS.
+- Task 4 RED head: `a99287dc81623b742032ab234c6d1e37aa4d88b4`; CI `37856357399` expected build failure with 9 missing-contract errors and 0 warnings.
+- Task 4 functional/verified head: `cca16e38daff1509a75d1324ac89b53fab8ee9d8`.
+- Task 4 CI: `37856882768` PASS.
+- Task 4 verification: Release build 0 warnings / 0 errors; 346 tests PASS.
+- Task 4 scope: typed PDFium open errors, masked password dialog and candidate-first retry/cancel only; no password persistence, package/lock, F3, ZPL, print, recents, database or network changes.
 
 Implementation tasks:
 
 1. **F4.1a Native capability + pure layout — AUTO PASS** — pinned PDFium exports verified; page metrics, current-page and visible+neighbor render-window logic delivered.
 2. **F4.1b Continuous reader — AUTO PASS** — virtualized continuous `LEER`, bounded sequential render window, stale-publication protection, isolated page errors and LEER↔FIRMAR bridge delivered while preserving ZPL.
 3. **F4.2 Thumbnails — AUTO PASS** — lazy virtualized page thumbnails, realized+neighbor bounded retention, separate scheduler, stale-result suppression and synchronized navigation delivered.
-4. **F4.3 Password PDFs — NEXT** — typed password error/prompt/retry/cancel, no persistence.
-5. **F4.4a Search** — PDFium text core + find navigation.
+4. **F4.3 Password PDFs — AUTO PASS** — authoritative PDFium error-4 classification, masked prompt, retry/cancel, prior-workspace preservation and no password persistence.
+5. **F4.4a Search — NEXT** — PDFium text core + find navigation.
 6. **F4.4b Copy** — one-page text selection + clipboard copy.
 7. **F4.5 Bookmarks + Links** — read-only cycle-safe outline + safe explicit links.
 8. **F4.6 Shortcuts + Recents + Hardening** — local atomic max-10 recents, no startup path probing.
 9. **Closure** — audit/docs/exact-head CI/draft stacked PR.
 
-Frozen rulings: PDFium only; continuous LEER + single-page FIRMAR; existing `PdfScrollViewer` remains the legacy FIRMAR/ZPL host; visible+one-neighbor full-resolution retention; lazy thumbnails; no tabs; no OCR; no second PDF engine; no required network.
+Frozen rulings: PDFium only; continuous LEER + single-page FIRMAR; existing `PdfScrollViewer` remains the legacy FIRMAR/ZPL host; visible+one-neighbor full-resolution retention; lazy thumbnails; no tabs; no OCR; no second PDF engine; no required network; passwords are transient only and never persisted.
 
 ## Phase 6 — F5 Organizar
 **Goal:** reorder/rotate/delete/duplicate/insert/extract/merge/split with preservation preflight.  
@@ -94,9 +95,9 @@ F0                            automated PASS / physical QA pending
 F1                            synthetic Gate PASS / private corpus pending
 F2.1–F2.6                     automated PASS / private + physical QA pending
 F3.1–F3.4                     automated PASS / corresponding manual QA pending
-F4 Task 1–3                   automated PASS
-F4 Task 4–9                   pending
+F4 Task 1–4                   automated PASS
+F4 Task 5–9                   pending
 F5–F12                        pending
 ```
 
-Next gate: **Task 4 only after the next user `continúa`**. No merge to `main` without explicit user approval.
+Next gate: **Task 5 only after the next user `continúa`**. No merge to `main` without explicit user approval.
