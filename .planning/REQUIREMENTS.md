@@ -2,20 +2,20 @@
 
 **Architecture source:** `docs/MASTER_CONTEXT.md` + `docs/MASTER_PLAN.md`.  
 **Execution/status source:** GitHub exact heads/CI + `.planning/STATE.md`.  
-**Purpose:** concise traceability; slice specs remain authoritative for detailed acceptance.
+**Purpose:** concise traceability; approved slice specs are authoritative for detailed acceptance.
 
 ## Status Semantics
 
-- **AUTO PASS** = automated implementation and CI evidence exists.
-- **NOT RUN** = required real/private/physical QA has not been executed; never infer PASS from CI.
-- Unchecked boxes remain open where final acceptance includes pending physical/private evidence or work has not yet been implemented.
+- **AUTO PASS** = automated implementation + CI evidence exists.
+- **NOT RUN** = required real/private/physical QA not executed.
+- Unchecked boxes remain open where implementation/acceptance is pending.
 
 ## F0 — PDF Base
 
-Automated implementation for PDF-BASE-01..07: **AUTO PASS**. Physical Windows/print/offline smoke: **NOT RUN**.
+Automated implementation PDF-BASE-01..07: **AUTO PASS**. Physical Windows/print/offline smoke: **NOT RUN**.
 
-- [ ] **PDF-BASE-01** Open a local PDF from UI.
-- [ ] **PDF-BASE-02** Render real pages with PDFium without blocking normal UI interaction.
+- [ ] **PDF-BASE-01** Open local PDF from UI.
+- [ ] **PDF-BASE-02** Render real pages with PDFium without normal UI blocking.
 - [ ] **PDF-BASE-03** Previous/next/go-to-page navigation.
 - [ ] **PDF-BASE-04** Zoom + Fit Page + Fit Width.
 - [ ] **PDF-BASE-05** Cancel/ignore obsolete render requests and prioritize current view.
@@ -24,64 +24,68 @@ Automated implementation for PDF-BASE-01..07: **AUTO PASS**. Physical Windows/pr
 
 ## F1 — Gate ZPL-A
 
-Synthetic Gate: **PASS**; Labelize 1.7.0 selected. Private real Mercado Libre corpus: **NOT RUN**.
+Synthetic Gate PASS; Labelize 1.7.0 selected. Private real Mercado Libre corpus **NOT RUN**.
 
 - [ ] **ZPL-GATE-01** Compare BinaryKits.Zpl vs Labelize with synthetic + private real corpus.
-- [x] **ZPL-GATE-02** Synthetic validation for `^CI28`, `^FH`, `^FB`, `^FR`, `^GFA`, `^BC`, `^BQ`, `^PQ`, `^DF`, `^XF`.
+- [x] **ZPL-GATE-02** Synthetic validation for required ZPL commands/content.
 - [x] **ZPL-GATE-03** Synthetic benchmark without multiplying work by `^PQ`.
-- [x] **ZPL-GATE-04** Select one engine using fidelity/codes/performance/packaging/license evidence → Labelize 1.7.0.
-
-`ZPL-GATE-01` stays open until the private corpus is executed.
+- [x] **ZPL-GATE-04** Select engine using fidelity/performance/packaging/license evidence -> Labelize 1.7.0.
 
 ## F2 — ZPL Labels
 
-F2.1–F2.6 automated pipeline: **AUTO PASS**. Private corpus + physical printer/ruler/scanner: **NOT RUN**.
+F2.1–F2.6 automated pipeline: **AUTO PASS**. Private corpus + physical printer/ruler/scanner **NOT RUN**.
 
 - [x] **LABEL-01** Open `.zpl`, `.txt`, `.prn` locally.
-- [x] **LABEL-02** Separate designs and preserve `^PQ` quantity as metadata.
+- [x] **LABEL-02** Separate designs and preserve `^PQ` as metadata.
 - [x] **LABEL-03** Local Labelize preview per design.
 - [x] **LABEL-04** File / one-each / custom quantity.
-- [x] **LABEL-05** Layout 1/2/3/4/6/8/10/12/custom + thermal/A4/Letter/custom media.
+- [x] **LABEL-05** Layouts + thermal/A4/Letter/custom media.
 - [x] **LABEL-06** Export PDF without intentional barcode deformation.
-- [ ] **LABEL-07** Windows-driver thermal printing at exact physical size — automated preflight PASS; physical print **NOT RUN**.
-- [ ] **LABEL-08** Barcode/QR validation — automated decode PASS; physical scanner **NOT RUN**.
+- [ ] **LABEL-07** Windows-driver thermal printing exact physical size — automated preflight PASS; physical print NOT RUN.
+- [ ] **LABEL-08** Barcode/QR validation — automated decode PASS; physical scanner NOT RUN.
 
 ## F3 — Visual Signature
 
 ### F3.1 Core — AUTO PASS
 
-- [x] **SIGN-01** Import a transparent PNG into the visual-signature flow.
-- [x] **SIGN-02** Move, proportional resize, duplicate and delete placements.
-- [x] **SIGN-03** Correct UI/device ↔ PDF coordinate mapping.
-- [x] **SIGN-04** Save as copy and reopen/render preserving placement/transparency semantics.
+- [x] **SIGN-01** Import transparent PNG.
+- [x] **SIGN-02** Move/proportional resize/duplicate/delete placements.
+- [x] **SIGN-03** Correct device↔PDF coordinate mapping.
+- [x] **SIGN-04** Save copy + reopen/render preserving placement/transparency.
 
-Manual real-signature UX/save/open remains **NOT RUN**.
+Manual real-signature UX/save/open: **NOT RUN**.
 
 ### F3.2 Photo/scan — AUTO PASS
 
-- [x] **SIGN-05** Create a transparent `SignatureAsset` locally from PNG/JPG/JPEG photo/scan with bounded brightness/contrast, white-paper cleanup, Original/Black/Blue, auto-crop and full-resolution Apply.
+- [x] **SIGN-05** Create transparent `SignatureAsset` locally from PNG/JPG/JPEG with bounded cleanup/adjustments and full-resolution Apply.
 
-Real phone/scanner photo-quality QA remains **NOT RUN**.
+Real phone/scanner QA: **NOT RUN**.
 
 ### F3.3 Draw — AUTO PASS
 
-- [x] **SIGN-06** Draw a signature locally with WPF InkCanvas/StrokeCollection, fixed black/blue + three widths + dialog-local Undo/Redo/Clear, producing the existing transparent `SignatureAsset` and reusing `AddSignatureAsset(...)`.
+- [x] **SIGN-06** Draw locally with WPF InkCanvas/StrokeCollection and reuse existing `SignatureAsset` + `AddSignatureAsset(...)` path.
 
-Real mouse/touch/stylus hardware QA remains **NOT RUN**.
+Mouse/touch/stylus hardware QA: **NOT RUN**.
 
-### F3.4 Local Library — CURRENT
+### F3.4 Local Library — AUTO PASS
 
-- [ ] **SIGN-07** Persist/reuse transparent `SignatureAsset` entries under local app data using a small versioned JSON manifest + GUID PNG files, with Use/Save selected/Rename/Delete/Close, no cloud/database/network and reuse through exactly one existing `AddSignatureAsset(...)` call.
+- [x] **SIGN-07** Persist/reuse transparent `SignatureAsset` entries under LocalAppData using versioned JSON + GUID PNG, Use/Save selected/Rename/Delete/Close, no cloud/database/network and exactly one existing `AddSignatureAsset(...)` path when used.
 
-Written design spec exists; implementation has **NOT STARTED**.
+Closure head `1bef751962e0b4aaf35fbda9b8a1a9a2ee2ba36b`; closure CI `37837613618` PASS; PR CI `37837833517` PASS; 301 tests. Real Windows QA: **NOT RUN**.
 
-## F4 — Full Reader
+## F4 — Full Reader — DESIGN GATE
 
-- [ ] **READER-01** Continuous scroll and thumbnails.
-- [ ] **READER-02** Search and copy text.
-- [ ] **READER-03** Bookmarks and links.
-- [ ] **READER-04** Password PDFs.
-- [ ] **READER-05** Shortcuts/recent files; tabs only if KISS/stability allow.
+Formal design: `docs/superpowers/specs/2026-10-08-f4-full-reader-design.md` — **WRITTEN + SELF-REVIEWED, awaiting user approval**. Product code NOT STARTED.
+
+- [ ] **READER-01** Continuous vertical virtualized reading + lazy thumbnails, no eager full-document full-resolution render.
+- [ ] **READER-02** Local PDFium search + one-page text selection/copy; image-only PDFs correctly require later OCR.
+- [ ] **READER-03** Read-only cycle-safe bookmarks + explicit PDF internal links and confirmed HTTP/HTTPS URI links only.
+- [ ] **READER-04** Password-protected PDF open/retry/cancel flow with no password persistence.
+- [ ] **READER-05** Reader shortcuts + max-10 local recent-file paths, no startup path probing; no multi-document tabs in F4.
+- [ ] **READER-06** Preserve existing F3 architecture: LEER continuous; FIRMAR uses existing single-active-page `PdfImage`/`SignatureEditState` path.
+- [ ] **READER-07** Visible full-page bitmap retention bounded to visible pages + one neighbor before/after; lazy thumbnails; stale render publication rejected.
+
+No READER item can become PASS from the design spec alone.
 
 ## F5 — Organize
 
@@ -101,7 +105,7 @@ Written design spec exists; implementation has **NOT STARTED**.
 
 - [ ] **TEXT-01** Detect/select text objects.
 - [ ] **TEXT-02** Conservative in-place text editing where safe.
-- [ ] **TEXT-03** Redistributable TTF fallback for new code points/subset limitations.
+- [ ] **TEXT-03** Redistributable TTF fallback for new code points/subset limits.
 - [ ] **TEXT-04** Basic properties + save/reopen validation.
 
 ## F8–F12
@@ -114,13 +118,13 @@ Written design spec exists; implementation has **NOT STARTED**.
 
 ## Cross-cutting
 
-- [ ] **OFFLINE** Normal product functions do not require Internet; automated guards exist, full physical/offline smoke pending.
-- [x] **LICENSE** Current runtime dependencies are permissive/audited for current development scope; Labelize font provenance must be re-audited before public installer.
-- [x] **PRIVACY** Private fixtures are ignored and CI hygiene rejects tracked `tests/PrivateFixtures/**`.
+- [ ] **OFFLINE** Normal functions require no Internet; full physical/offline smoke remains pending where noted.
+- [x] **LICENSE** Current runtime dependencies permissive/audited for current development scope; Labelize font provenance re-audit before public installer.
+- [x] **PRIVACY** Private fixtures ignored and CI hygiene rejects tracked `tests/PrivateFixtures/**`.
 - [x] **ORIGINAL** Early edit/sign flows protect source and use Save As behavior.
 - [x] **CI** Every completed automated slice has final-head Windows CI evidence.
-- [x] **KISS** No preventive enterprise architecture/dependency expansion detected through F3.4 spec gate.
-- [x] **NO-AUTOMERGE** Main remains unchanged; merges require explicit user approval.
+- [x] **KISS** No preventive enterprise architecture/dependency expansion detected through F4 design gate.
+- [x] **NO-AUTOMERGE** Main unchanged; merges require explicit user approval.
 
 ## Traceability
 
