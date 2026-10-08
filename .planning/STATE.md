@@ -17,7 +17,7 @@ See `.planning/PROJECT.md`.
 > Numeric GSD progress is not product-completion truth while automated and physical/private gates are tracked separately. GitHub exact heads/CI + this status are authoritative for executed work.
 
 **Core value:** Resolver PDF + ZPL diario de forma rápida, privada, estable y offline.  
-**Current focus:** Phase 5 — **F4 Lector Completo**, Tasks 1–3 closed automatically; Task 4 is the next user-approved execution gate.
+**Current focus:** Phase 5 — **F4 Lector Completo**, Tasks 1–4 closed automatically; Task 5 is the next user-approved execution gate.
 
 ## Previous Gate — F3.4 closed automatically
 
@@ -30,7 +30,7 @@ See `.planning/PROJECT.md`.
 - PR #22: draft/open/unmerged, stacked on F3.3.
 - Manual real Windows QA: **NOT RUN**.
 
-## Current Gate — F4 Task 4 pending user `continúa`
+## Current Gate — F4 Task 5 pending user `continúa`
 
 - Branch: `feat/f4-full-reader`.
 - Base: exact F3.4 closure head `1bef751962e0b4aaf35fbda9b8a1a9a2ee2ba36b`.
@@ -49,8 +49,6 @@ See `.planning/PROJECT.md`.
 - Exact-head CI `37843337925`: PASS.
 - Release build: 0 warnings / 0 errors.
 - Tests: 312 PASS / 0 FAIL / 0 SKIPPED.
-- Delivered: `FPDF_GetPageSizeByIndexF` binding, `PdfPageSize`, `GetPageSizes`, pure `ReaderPageGeometry` / `ReaderRenderWindow` / `ReaderLayoutPlanner`.
-- Scope audit: only Task 1 PDF/layout/test files changed; no package, UI, signing, ZPL or print changes.
 
 ### Task 2 — AUTO PASS
 
@@ -61,10 +59,6 @@ See `.planning/PROJECT.md`.
 - Release build: 0 warnings / 0 errors.
 - Tests: 328 PASS / 0 FAIL / 0 SKIPPED.
 - Delivered: continuous virtualized `LEER` surface, sequential bounded visible+neighbor rendering, stale-generation protection, isolated per-page render errors, current-page navigation/zoom semantics, current-page bridge into the existing `FIRMAR` edit surface, and preserved ZPL behavior.
-- KISS ruling: existing `PdfScrollViewer` remains the legacy single-page host used by `FIRMAR` and the established ZPL path; only `LEER` uses the new continuous surface.
-- Scope audit against Task 1 closure `cc7575857cd3e90b146b68754c344389fea60687`: final functional tree changes only `ReaderPageItem.cs`, `MainWindow.Reader.cs`, `MainWindow.xaml.cs`, `MainWindowReaderTests.cs` and `ReaderPageItemTests.cs`.
-- No new runtime dependency, package/lock change, PDF/sign writer change, signature placement-model change or ZPL-core refactor.
-- Temporary debugging workflows/tests were removed from the final tree. The apparent PDF lock/hang was traced to the async WPF test harness resuming outside the STA dispatcher, not to a PDFium file-handle leak.
 
 ### Task 3 — AUTO PASS
 
@@ -74,10 +68,21 @@ See `.planning/PROJECT.md`.
 - Exact-head CI `37855511813`: PASS.
 - Release build: 0 warnings / 0 errors.
 - Tests: 336 PASS / 0 FAIL / 0 SKIPPED.
-- Delivered: lazy virtualized thumbnails at ~132 px width, left `Páginas` / `Marcadores` navigation, realized-range + one-neighbor retention, separate sequential thumbnail scheduler, stale-publication suppression, isolated thumbnail errors, thumbnail→reader navigation and reader→thumbnail selection synchronization.
-- KISS ruling: Task 3 follows the existing Task 2 dynamic-WPF pattern; the required named controls are created feature-locally in `MainWindow.ReaderThumbnails.cs` instead of rewriting the large `MainWindow.xaml`.
-- Scope audit against Task 2 closure `8f6ec14ea4b52ee1e6ba56f9c2d1bb07828c4964`: exactly four files added — `ReaderThumbnailItem.cs`, `MainWindow.ReaderThumbnails.cs`, `ReaderThumbnailTests.cs`, `MainWindowReaderThumbnailTests.cs`.
-- No package/lock, PDFium, signature, ZPL, print or existing XAML changes.
+- Delivered: lazy virtualized thumbnails at ~132 px width, left `Páginas` / `Marcadores` navigation, realized-range + one-neighbor retention, separate sequential thumbnail scheduler, stale-publication suppression, isolated thumbnail errors and synchronized navigation.
+
+### Task 4 — AUTO PASS
+
+- RED head: `a99287dc81623b742032ab234c6d1e37aa4d88b4`.
+- RED CI `37856357399`: expected build failure with 9 missing-contract errors for typed PDF open errors/dialog; 0 warnings.
+- Functional/verified head: `cca16e38daff1509a75d1324ac89b53fab8ee9d8`.
+- Exact-head CI `37856882768`: PASS.
+- Release build: 0 warnings / 0 errors.
+- Tests: 346 PASS / 0 FAIL / 0 SKIPPED.
+- Delivered: `PdfDocumentOpenError`, `PdfDocumentOpenException`, authoritative PDFium error-4 password classification, masked WPF password dialog, retry/cancel flow, wrong-password handling and candidate-first workspace preservation.
+- Privacy: password exists only as transient attempt/dialog data; it is not stored in `PdfDocumentSession`, title, status, JSON/settings, recents or any new persistent state.
+- KISS ruling: existing `PdfDocumentSession.Open(path, password)` remains the single native open path; only error classification and MainWindow retry orchestration were added.
+- Scope audit against Task 3 closure `c78eb1fb8ebb5f019d13a1d73c887460e0b9f090`: 9 password/open/test files changed; no package/lock, F3 writer/model, ZPL, print, recents or database/network changes.
+- One legacy invalid-PDF assertion was intentionally widened from exact `InvalidOperationException` to `ThrowsAny<InvalidOperationException>` because the new typed open exception is a required subclass; invalid PDFs remain classified as `OtherPdfiumError`.
 
 ### Frozen F4 direction
 
@@ -99,8 +104,8 @@ See `.planning/PROJECT.md`.
 1. **DONE** — Native capability gate + pure continuous layout.
 2. **DONE** — Continuous WPF surface + bounded rendering + FIRMAR boundary.
 3. **DONE** — Lazy thumbnails + left navigation.
-4. **NEXT** — Password-protected PDFs.
-5. PDFium text core + find navigation.
+4. **DONE** — Password-protected PDFs.
+5. **NEXT** — PDFium text core + find navigation.
 6. One-page text selection + copy.
 7. Bookmarks + safe explicit links.
 8. Shortcuts + atomic recents + hardening.
@@ -116,7 +121,7 @@ Project cadence: one task per user `continúa` unless the user explicitly change
 - F1 Gate ZPL-A: synthetic PASS; private real corpus NOT RUN.
 - F2.1–F2.6 ZPL Workspace: automated PASS.
 - F3.1–F3.4 Visual Signature: automated PASS; corresponding manual QA remains NOT RUN.
-- F4 Tasks 1–3: automated PASS.
+- F4 Tasks 1–4: automated PASS.
 
 ## Parallel Acceptance Gates Still Open
 
@@ -130,6 +135,7 @@ Project cadence: one task per user `continúa` unless the user explicitly change
 - F3.4 real save→restart→reuse/rename/delete/offline QA: **NOT RUN**.
 - F4 continuous-reader real Windows scroll/zoom/performance UX QA: **NOT RUN**.
 - F4 thumbnails real Windows scroll/click/large-document memory UX QA: **NOT RUN**.
+- F4 real protected-PDF prompt/retry/cancel/printing QA: **NOT RUN**.
 
 They remain separate from automated PASS and do not become accepted by inference.
 
@@ -139,7 +145,8 @@ They remain separate from automated PASS and do not become accepted by inference
 - KISS solution remains `SGPdf.App + SGPdf.App.Tests`.
 - PDFium primary; all native calls serialized by `PdfiumRuntime.NativeGate`.
 - Labelize 1.7.0 only approved runtime ZPL renderer.
-- PDFsharp remains labels-only in product runtime; ZXing remains test/QA-only.
+- PDFsharp remains labels-only in product runtime; Task 4 uses it only in tests to generate synthetic protected fixtures.
+- ZXing remains test/QA-only.
 - F3 sources converge to `SignatureAsset` → `AddSignatureAsset(...)`.
 - No merge to `main` without explicit user approval.
 
@@ -147,11 +154,11 @@ They remain separate from automated PASS and do not become accepted by inference
 
 ```text
 next user `continúa`
-→ Task 4 RED for password classification + protected-PDF UI workflow
+→ Task 5 RED for PDFium text extraction/search + pure navigator + find-bar behavior
 → confirm expected RED
-→ minimal GREEN password prompt/retry/cancel with prior-workspace preservation
+→ minimal GREEN PDFium text core + on-demand find navigation
 → full regression + exact-head CI
-→ report evidence and stop before Task 5
+→ report evidence and stop before Task 6
 ```
 
 ## Continuity
