@@ -33,15 +33,18 @@ Delivered: parse/open, Labelize preview, quantities/dimensions, layout/PDF expor
 ## Phase 5 — F4 Lector Completo
 **Goal:** continuous scroll, thumbnails, bookmarks/links, search/copy text, password PDFs, shortcuts and recent files while preserving F3 page-local editing.
 
-**Current gate:** formal design spec **APPROVED**; detailed TDD implementation plan written + self-audited and **awaiting user approval**. Product code **NOT STARTED**.
+**Current gate:** design + TDD plan **APPROVED**. **Task 1 AUTO PASS**; Task 2 waits for the next user `continúa`.
 
 - Design: `docs/superpowers/specs/2026-10-08-f4-full-reader-design.md`.
 - Plan: `docs/superpowers/plans/2026-10-08-f4-full-reader.md`.
+- Task 1 functional head: `ce167be7ae0b7769c4fc9253c400bc5a9b59216a`.
+- Task 1 CI: `37843337925` PASS.
+- Task 1 verification: Release build 0 warnings / 0 errors; 312 tests PASS.
 
-Approved implementation tasks:
+Implementation tasks:
 
-1. **F4.1a Native capability + pure layout** — verify pinned PDFium exports, page metrics, current-page and render-window logic.
-2. **F4.1b Continuous reader** — virtualized WPF pages, bounded render window, LEER↔FIRMAR surface boundary.
+1. **F4.1a Native capability + pure layout — AUTO PASS** — pinned PDFium exports verified; page metrics, current-page and visible+neighbor render-window logic delivered.
+2. **F4.1b Continuous reader — NEXT** — virtualized WPF pages, bounded sequential render window, LEER↔FIRMAR surface boundary.
 3. **F4.2 Thumbnails** — lazy virtualized page thumbnails + synchronized navigation.
 4. **F4.3 Password PDFs** — typed password error/prompt/retry/cancel, no persistence.
 5. **F4.4a Search** — PDFium text core + find navigation.
@@ -87,8 +90,9 @@ F0                            automated PASS / physical QA pending
 F1                            synthetic Gate PASS / private corpus pending
 F2.1–F2.6                     automated PASS / private + physical QA pending
 F3.1–F3.4                     automated PASS / corresponding manual QA pending
-F4                            spec APPROVED / TDD plan written+self-audited / awaiting approval / code NOT STARTED
+F4 Task 1                     automated PASS
+F4 Task 2–9                   pending
 F5–F12                        pending
 ```
 
-Next gate: **user review/approval of the F4 TDD implementation plan**. After approval execute Task 1 only, then stop for the next `continúa`. No merge to `main` without explicit user approval.
+Next gate: **Task 2 only after the next user `continúa`**. No merge to `main` without explicit user approval.

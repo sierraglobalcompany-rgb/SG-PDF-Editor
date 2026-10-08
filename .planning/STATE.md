@@ -1,6 +1,6 @@
 ---
 gsd_state_version: '1.0'
-status: planning
+status: implementing
 progress:
   total_phases: 13
   completed_phases: 0
@@ -17,7 +17,7 @@ See `.planning/PROJECT.md`.
 > Numeric GSD progress is not product-completion truth while automated and physical/private gates are tracked separately. GitHub exact heads/CI + this status are authoritative for executed work.
 
 **Core value:** Resolver PDF + ZPL diario de forma rápida, privada, estable y offline.  
-**Current focus:** Phase 5 — **F4 Lector Completo**, implementation-plan review gate. Product code for F4 has **NOT STARTED**.
+**Current focus:** Phase 5 — **F4 Lector Completo**, Task 1 closed automatically; Task 2 is the next user-approved execution gate.
 
 ## Previous Gate — F3.4 closed automatically
 
@@ -30,19 +30,31 @@ See `.planning/PROJECT.md`.
 - PR #22: draft/open/unmerged, stacked on F3.3.
 - Manual real Windows QA: **NOT RUN**.
 
-## Current Gate — F4 implementation-plan review
+## Current Gate — F4 Task 2 pending user `continúa`
 
 - Branch: `feat/f4-full-reader`.
 - Base: exact F3.4 closure head `1bef751962e0b4aaf35fbda9b8a1a9a2ee2ba36b`.
 - Formal design spec: `docs/superpowers/specs/2026-10-08-f4-full-reader-design.md` — **APPROVED by user on 2026-10-08**.
-- TDD implementation plan: `docs/superpowers/plans/2026-10-08-f4-full-reader.md` — **WRITTEN + SELF-AUDITED; awaiting user approval**.
+- TDD implementation plan: `docs/superpowers/plans/2026-10-08-f4-full-reader.md` — **APPROVED by user on 2026-10-08**.
 - Plan companion: `.planning/phases/05-f4-full-reader/PLAN.md`.
-- F4 product code: **NOT STARTED**.
-- F4 PR: **NOT OPENED**; the approved plan opens the draft PR only at Task 9 closure.
+- F4 PR: **NOT OPENED**; plan opens draft PR only at Task 9 closure.
+
+### Task 1 — AUTO PASS
+
+- Capability test commit: `adb4b0254fdc140ce21f503bd11297ae3cd6b5d3`.
+- Pinned PDFium F4 export gate: PASS; no second PDF engine required.
+- RED head: `ad676a933065eafd2e4ece816d026c8e651e26bb`.
+- RED evidence: build 0 warnings / 0 errors; 10 expected failures for missing `PdfPageSize`, `GetPageSizes` and `ReaderLayoutPlanner`; 302 existing tests PASS.
+- Functional GREEN head: `ce167be7ae0b7769c4fc9253c400bc5a9b59216a`.
+- Exact-head CI `37843337925`: PASS.
+- Release build: 0 warnings / 0 errors.
+- Tests: 312 PASS / 0 FAIL / 0 SKIPPED.
+- Delivered: `FPDF_GetPageSizeByIndexF` binding, `PdfPageSize`, `GetPageSizes`, pure `ReaderPageGeometry` / `ReaderRenderWindow` / `ReaderLayoutPlanner`.
+- Scope audit: only Task 1 PDF/layout/test files changed; no package, UI, signing, ZPL or print changes.
 
 ### Frozen F4 direction
 
-- PDFium only; first implementation gate verifies required exports in the pinned binary.
+- PDFium only; required F4 exports verified in the pinned binary.
 - `LEER` continuous virtualized; `FIRMAR` existing single-active-page edit surface.
 - Full-resolution retention = visible pages + one neighbor before/after.
 - Lazy thumbnails; no eager whole-document render.
@@ -57,8 +69,8 @@ See `.planning/PROJECT.md`.
 
 ## F4 Plan Tasks
 
-1. Native capability gate + pure continuous layout.
-2. Continuous WPF surface + bounded rendering + FIRMAR boundary.
+1. **DONE** — Native capability gate + pure continuous layout.
+2. **NEXT** — Continuous WPF surface + bounded rendering + FIRMAR boundary.
 3. Lazy thumbnails + left navigation.
 4. Password-protected PDFs.
 5. PDFium text core + find navigation.
@@ -67,7 +79,7 @@ See `.planning/PROJECT.md`.
 8. Shortcuts + atomic recents + hardening.
 9. Closure audit/docs + exact-head CI + draft stacked PR.
 
-Project cadence: after plan approval execute **Task 1 only**, report RED/GREEN/CI evidence, then wait for the next `continúa` before Task 2 unless the user explicitly changes cadence.
+Project cadence: one task per user `continúa` unless the user explicitly changes it.
 
 ## Executed Chain
 
@@ -77,6 +89,7 @@ Project cadence: after plan approval execute **Task 1 only**, report RED/GREEN/C
 - F1 Gate ZPL-A: synthetic PASS; private real corpus NOT RUN.
 - F2.1–F2.6 ZPL Workspace: automated PASS.
 - F3.1–F3.4 Visual Signature: automated PASS; corresponding manual QA remains NOT RUN.
+- F4 Task 1: automated PASS.
 
 ## Parallel Acceptance Gates Still Open
 
@@ -104,13 +117,12 @@ They remain separate from automated PASS and do not become accepted by inference
 ## Next Gate
 
 ```text
-user reviews/approves F4 TDD implementation plan
-→ if changes requested: revise + self-audit again
-→ if approved: Task 1 capability probe
-→ Task 1 RED page-size/layout tests
-→ minimal GREEN
+next user `continúa`
+→ Task 2 RED for ReaderPageItem + continuous WPF behavior
+→ confirm expected RED
+→ minimal GREEN continuous LEER surface + bounded sequential rendering + FIRMAR boundary
 → full regression + exact-head CI
-→ report evidence and stop before Task 2
+→ report evidence and stop before Task 3
 ```
 
 ## Continuity
