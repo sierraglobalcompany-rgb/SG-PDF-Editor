@@ -5,6 +5,18 @@ namespace SGPdf.App.Pdf;
 internal static class PdfiumNative
 {
     private const string Library = "pdfium";
+    internal const int FPDFBitmap_BGRA = 4;
+
+    [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+    internal delegate int FileWriteBlock(IntPtr self, IntPtr data, uint size);
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct ExtendedFileWrite
+    {
+        internal int Version;
+        internal IntPtr WriteBlock;
+        internal IntPtr Context;
+    }
 
     [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
     internal static extern void FPDF_InitLibrary();
@@ -36,7 +48,18 @@ internal static class PdfiumNative
     internal static extern float FPDF_GetPageHeightF(IntPtr page);
 
     [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern int FPDF_GetSignatureCount(IntPtr document);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
     internal static extern IntPtr FPDFBitmap_Create(int width, int height, int alpha);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern IntPtr FPDFBitmap_CreateEx(
+        int width,
+        int height,
+        int format,
+        IntPtr firstScan,
+        int stride);
 
     [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
     internal static extern int FPDFBitmap_FillRect(
@@ -66,6 +89,51 @@ internal static class PdfiumNative
         int sizeY,
         int rotate,
         int flags);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern int FPDF_DeviceToPage(
+        IntPtr page,
+        int startX,
+        int startY,
+        int sizeX,
+        int sizeY,
+        int rotate,
+        int deviceX,
+        int deviceY,
+        out double pageX,
+        out double pageY);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern IntPtr FPDFPageObj_NewImageObj(IntPtr document);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern int FPDFImageObj_SetBitmap(
+        IntPtr pages,
+        int count,
+        IntPtr imageObject,
+        IntPtr bitmap);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern int FPDFImageObj_SetMatrix(
+        IntPtr imageObject,
+        double a,
+        double b,
+        double c,
+        double d,
+        double e,
+        double f);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern int FPDFPage_InsertObject(IntPtr page, IntPtr pageObject);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern void FPDFPageObj_Destroy(IntPtr pageObject);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern int FPDFPage_GenerateContent(IntPtr page);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern int FPDF_SaveAsCopy(IntPtr document, IntPtr fileWrite, uint flags);
 
     [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
     internal static extern uint FPDF_GetLastError();

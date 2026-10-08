@@ -6,4 +6,7 @@ public sealed record PdfRenderedPage(
     int PixelHeight,
     int Stride,
     double Dpi,
-    byte[] Pixels);
+    byte[] Pixels)
+{
+    internal PdfPageDeviceTransform? DeviceTransform { get; init; }
+}

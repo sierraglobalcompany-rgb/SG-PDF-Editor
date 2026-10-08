@@ -117,6 +117,7 @@ public sealed class PdfDocumentSession : IDisposable
                 var pageHeight = PdfiumNative.FPDF_GetPageHeightF(page);
                 var pixelWidth = Math.Max(1, checked((int)Math.Ceiling(pageWidth * dpi / 72d)));
                 var pixelHeight = Math.Max(1, checked((int)Math.Ceiling(pageHeight * dpi / 72d)));
+                var deviceTransform = CreateDeviceTransform(page, pixelWidth, pixelHeight);
 
                 bitmap = PdfiumNative.FPDFBitmap_Create(pixelWidth, pixelHeight, 1);
                 if (bitmap == IntPtr.Zero)
@@ -151,7 +152,10 @@ public sealed class PdfDocumentSession : IDisposable
                 Marshal.Copy(buffer, pixels, 0, pixels.Length);
                 cancellationToken.ThrowIfCancellationRequested();
 
-                return new PdfRenderedPage(pageIndex, pixelWidth, pixelHeight, stride, dpi, pixels);
+                return new PdfRenderedPage(pageIndex, pixelWidth, pixelHeight, stride, dpi, pixels)
+                {
+                    DeviceTransform = deviceTransform
+                };
             }
             finally
             {
@@ -160,6 +164,24 @@ public sealed class PdfDocumentSession : IDisposable
 
                 PdfiumNative.FPDF_ClosePage(page);
             }
+        }
+        finally
+        {
+            PdfiumRuntime.NativeGate.Release();
+        }
+    }
+
+    public int GetCryptographicSignatureCount()
+    {
+        ThrowIfDisposed();
+        PdfiumRuntime.NativeGate.Wait();
+        try
+        {
+            ThrowIfDisposed();
+            var count = PdfiumNative.FPDF_GetSignatureCount(_document);
+            if (count < 0)
+                throw new InvalidOperationException("PDFium no pudo consultar las firmas criptográficas del documento.");
+            return count;
         }
         finally
         {
@@ -186,6 +208,37 @@ public sealed class PdfDocumentSession : IDisposable
         {
             PdfiumRuntime.NativeGate.Release();
         }
+    }
+
+    private static PdfPageDeviceTransform CreateDeviceTransform(
+        IntPtr page,
+        int pixelWidth,
+        int pixelHeight)
+    {
+        if (PdfiumNative.FPDF_DeviceToPage(
+                page, 0, 0, pixelWidth, pixelHeight, 0, 0, 0,
+                out var originX, out var originY) == 0 ||
+            PdfiumNative.FPDF_DeviceToPage(
+                page, 0, 0, pixelWidth, pixelHeight, 0, pixelWidth, 0,
+                out var xAnchorX, out var xAnchorY) == 0 ||
+            PdfiumNative.FPDF_DeviceToPage(
+                page, 0, 0, pixelWidth, pixelHeight, 0, 0, pixelHeight,
+                out var yAnchorX, out var yAnchorY) == 0)
+        {
+            throw new InvalidOperationException("PDFium no pudo convertir las coordenadas de la página.");
+        }
+
+        var transform = new PdfPageDeviceTransform(
+            originX,
+            originY,
+            (xAnchorX - originX) / pixelWidth,
+            (xAnchorY - originY) / pixelWidth,
+            (yAnchorX - originX) / pixelHeight,
+            (yAnchorY - originY) / pixelHeight,
+            pixelWidth,
+            pixelHeight);
+        transform.Validate();
+        return transform;
     }
 
     private int GetPageCount(CancellationToken cancellationToken)
