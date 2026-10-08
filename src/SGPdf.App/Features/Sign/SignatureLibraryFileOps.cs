@@ -1,3 +1,5 @@
+using System.IO;
+
 namespace SGPdf.App.Features.Sign;
 
 internal sealed class SignatureLibraryFileOps
