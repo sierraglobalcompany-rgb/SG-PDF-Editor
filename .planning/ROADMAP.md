@@ -1,97 +1,70 @@
 # Roadmap — SG PDF Editor
 
-> GSD-managed product roadmap. A0/A1 fueron fases de preparación. Arquitectura: `docs/MASTER_CONTEXT.md` + `docs/MASTER_PLAN.md`. Estado diario: `.planning/STATE.md`.
+> GSD-managed product roadmap. Arquitectura: `docs/MASTER_CONTEXT.md` + `docs/MASTER_PLAN.md`. Estado diario: `.planning/STATE.md`.
 
 ## Phase 1 — F0 PDF Base
-
-**Goal:** primer lector PDF usable y estable.  
-**Requirements:** PDF-BASE-01..07  
-**Estado:** F0.1–F0.6 automated PASS; cierre físico Windows todavía pendiente.
+**Goal:** lector PDF usable y estable.  
+**Estado:** automated PASS; smoke físico Windows pendiente.
 
 ## Phase 2 — F1 Gate ZPL-A
-
-**Goal:** elegir un único renderer ZPL con evidencia.  
-**Requirements:** ZPL-GATE-01..04  
-**Estado:** Gate sintético PASS y motor aprobado **Labelize 1.7.0**. Falta corpus real privado Mercado Libre para cierre formal F1.
+**Goal:** elegir renderer ZPL con evidencia.  
+**Estado:** synthetic Gate PASS → **Labelize 1.7.0**; corpus privado pendiente.
 
 ## Phase 3 — F2 Etiquetas ZPL
-
-**Goal:** reemplazar el flujo manual de Labelary de forma offline.
-
-**Success criteria:** abrir ZPL/TXT/PRN; preview/cantidades; layouts/tamaños; export PDF; impresión térmica Windows; validación digital y física de códigos.
-
-**Requirements:** LABEL-01..08
-
-**Estado actual:**
-- F2.1 Parse + Open — automated PASS;
-- F2.2 Labelize Adapter + Preview — automated PASS;
-- F2.3 Quantity UX + dimensiones físicas/dpmm — automated PASS;
-- F2.4 Layout + PDF Export — automated PASS;
-- F2.5 Windows Thermal Print — automated PASS / hardware physical QA NOT RUN;
-- **F2.6 Validation + Hardening — automated PASS / private corpus NOT RUN / physical printer-scanner NOT RUN**: exact Code128/QR decode through Labelize→PDF→PDFium at 300 DPI, 90° regression, opt-in private corpus runner, cleanup/offline/privacy evidence.
-
-The automated ZPL pipeline is complete. Private customer-label and physical paper/scanner acceptance remain explicit parallel gates; synthetic CI never substitutes for them.
+**Goal:** reemplazar Labelary manual de forma offline.  
+**Estado:** **F2.1–F2.6 automated PASS**. Private corpus y physical printer/scanner siguen NOT RUN.
 
 ## Phase 4 — F3 Firma Visual
-
 **Goal:** firmar visualmente un PDF sin web.  
-**Requirements:** SIGN-01..04  
-**Estado:** **Next — design/approval first.**
+**Requirements:** SIGN-01..04.
+
+**Diseño aprobado:**
+- F3.1 Core placement + PDF Save;
+- F3.2 Foto/scan → transparencia y mejora local;
+- F3.3 Dibujar firma con WPF InkCanvas;
+- F3.4 biblioteca local posterior.
+
+**Estado actual:**
+- **F3.1 Core visual signature — functional automated PASS**: PNG transparente, coordenadas PDF estables, move/resize proporcional/duplicate/delete, PDFium writer con alpha, Save As transaccional, reopen validation, crypto-signature warning y dirty guard. Closure exact-head CI en curso.
+- **F3.2 Photo/scan preparation — siguiente slice**, requiere su propio diseño/plan gate antes de código.
+- F3.3 Draw signature — scope aprobado, no implementado.
+- F3.4 Local library — scope aprobado, diferido.
 
 ## Phase 5 — F4 Lector Completo
-
-**Goal:** completar la experiencia diaria de lectura.  
-**Requirements:** READER-01..05
+**Goal:** completar experiencia diaria de lectura.  
+**Requirements:** READER-01..05.
 
 ## Phase 6 — F5 Organizar
-
-**Goal:** reorganizar y combinar documentos de forma segura.  
-**Requirements:** ORG-01..04
+**Requirements:** ORG-01..04.
 
 ## Phase 7 — F6 Imágenes
-
-**Goal:** edición práctica de objetos de imagen.  
-**Requirements:** IMG-01..04
+**Requirements:** IMG-01..04.
 
 ## Phase 8 — F7 Texto V1
-
-**Goal:** edición simple y conservadora de texto existente.  
-**Requirements:** TEXT-01..04
+**Requirements:** TEXT-01..04.
 
 ## Phase 9 — F8 Comentarios
-
-**Goal:** anotaciones de uso diario.  
-**Requirements:** COMMENTS
+**Requirements:** COMMENTS.
 
 ## Phase 10 — F9 Utilidades
-
-**Goal:** utilidades offline con valor demostrado.  
-**Requirements:** UTILS
+**Requirements:** UTILS.
 
 ## Phase 11 — F10 OCR
-
-**Goal:** OCR local para escaneados.  
-**Requirements:** OCR
+**Requirements:** OCR.
 
 ## Phase 12 — F11 Texto V2
-
-**Goal:** análisis/layout y reflow limitado.  
-**Requirements:** TEXT-V2
+**Requirements:** TEXT-V2.
 
 ## Phase 13 — F12 Profesional
-
-**Goal:** funciones profesionales como slices independientes.  
-**Requirements:** PRO
+**Requirements:** PRO.
 
 ---
 
 ## Current Position
 
-A0: complete.  
-A1 Development Intelligence: complete.  
-F0: automated PASS; physical Windows smoke pending.  
-F1: synthetic Gate PASS → **Labelize 1.7.0**; private corpus pending formal close.  
-F2.1–F2.6: **automated PASS**.  
-F2 private corpus: **NOT RUN**.  
-F2 physical thermal/scanner acceptance: **NOT RUN**.  
-**Current implementation next:** Phase 4 / F3 — Firma Visual; design/approve before implementation.
+A0/A1: complete.  
+F0: automated PASS / physical smoke pending.  
+F1: synthetic PASS / private corpus pending.  
+F2.1–F2.6: automated PASS / private + physical gates pending.  
+F3.1: **functional automated PASS; closure exact-head CI pending**.  
+**Next product slice after closure: F3.2 Photo/scan preparation — design/approve first.**
