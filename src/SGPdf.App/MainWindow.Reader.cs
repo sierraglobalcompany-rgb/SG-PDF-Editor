@@ -150,6 +150,7 @@ public partial class MainWindow
             _signatureEditState = null;
             candidateSession = null;
 
+            _updatingReaderScroll = true;
             InitializeContinuousReader(loaded.Sizes);
             previousSession?.Dispose();
 
@@ -176,6 +177,7 @@ public partial class MainWindow
         }
         finally
         {
+            _updatingReaderScroll = false;
             SetBusy(false);
         }
     }
