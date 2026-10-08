@@ -109,29 +109,67 @@ public partial class SignaturePhotoDialog : Window
             QueuePreview();
     }
 
-    private async void QueuePreview()
+    private void QueuePreview()
     {
         var version = _previewVersion.BeginRequest();
         var settings = ReadSettings();
         SignaturePhotoStatusText.Text = "Actualizando vista previa...";
 
+        if (!IsVisible)
+        {
+            ProcessPreviewSynchronously(version, settings);
+            return;
+        }
+
+        _ = ProcessPreviewAsync(version, settings);
+    }
+
+    private void ProcessPreviewSynchronously(long version, SignatureImageProcessingSettings settings)
+    {
         try
         {
-            var asset = await Task.Run(() => SignatureImageProcessor.Process(_previewSource, settings, _paper));
-            if (!_previewVersion.IsCurrent(version))
-                return;
-
-            SignaturePhotoPreviewImage.Source = CreateBitmap(asset);
-            SignaturePhotoStatusText.Text = string.Empty;
+            var asset = SignatureImageProcessor.Process(_previewSource, settings, _paper);
+            ApplyPreviewResult(version, asset, null);
         }
         catch (Exception ex) when (ex is InvalidDataException or ArgumentException or OverflowException)
         {
-            if (!_previewVersion.IsCurrent(version))
-                return;
-
-            SignaturePhotoPreviewImage.Source = null;
-            SignaturePhotoStatusText.Text = ex.Message;
+            ApplyPreviewResult(version, null, ex.Message);
         }
+    }
+
+    private async Task ProcessPreviewAsync(long version, SignatureImageProcessingSettings settings)
+    {
+        SignatureAsset? asset = null;
+        string? error = null;
+        try
+        {
+            asset = await Task.Run(() => SignatureImageProcessor.Process(_previewSource, settings, _paper)).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is InvalidDataException or ArgumentException or OverflowException)
+        {
+            error = ex.Message;
+        }
+
+        if (!_previewVersion.IsCurrent(version))
+            return;
+
+        await Dispatcher.InvokeAsync(() => ApplyPreviewResult(version, asset, error));
+    }
+
+    private void ApplyPreviewResult(long version, SignatureAsset? asset, string? error)
+    {
+        if (!_previewVersion.IsCurrent(version))
+            return;
+
+        if (asset is null)
+        {
+            SignaturePhotoPreviewImage.Source = null;
+            SignaturePhotoStatusText.Text = error ?? "No se pudo preparar la vista previa.";
+            return;
+        }
+
+        SignaturePhotoPreviewImage.Source = CreateBitmap(asset);
+        SignaturePhotoStatusText.Text = string.Empty;
     }
 
     private static BitmapSource CreateBitmap(SignatureAsset asset)
