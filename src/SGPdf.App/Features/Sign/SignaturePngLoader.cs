@@ -7,7 +7,6 @@ namespace SGPdf.App.Features.Sign;
 
 internal static class SignaturePngLoader
 {
-    internal const long MaxDecodedPixels = 20_000_000;
     private static ReadOnlySpan<byte> PngSignature => new byte[] { 137, 80, 78, 71, 13, 10, 26, 10 };
 
     internal static SignatureAsset Load(string path)
@@ -35,7 +34,7 @@ internal static class SignaturePngLoader
             throw new InvalidDataException("Las dimensiones del PNG no son válidas.");
         }
 
-        ValidatePixelCount(frame.PixelWidth, frame.PixelHeight);
+        SignatureImageLimits.ValidatePixelCount(frame.PixelWidth, frame.PixelHeight);
 
         BitmapSource source = frame;
         if (source.Format != PixelFormats.Bgra32)
@@ -101,17 +100,7 @@ internal static class SignaturePngLoader
 
         var width = checked((int)widthRaw);
         var height = checked((int)heightRaw);
-        ValidatePixelCount(width, height);
+        SignatureImageLimits.ValidatePixelCount(width, height);
         return (width, height);
-    }
-
-    private static void ValidatePixelCount(int width, int height)
-    {
-        var pixels = checked((long)width * height);
-        if (pixels > MaxDecodedPixels)
-        {
-            throw new InvalidDataException(
-                $"La imagen supera el límite de {MaxDecodedPixels:N0} píxeles decodificados.");
-        }
     }
 }
