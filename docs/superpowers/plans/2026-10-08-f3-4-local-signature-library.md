@@ -15,7 +15,6 @@
 ## Global Constraints
 
 - Work only on `feat/f3-4-local-signature-library`, stacked on F3.3 final head `8b5bfd35b59fbc75826f8d7616aaaca3e2f31233`.
-- Current pre-plan head is `69af1cc46bf54156854554f3974f519e3f127da5`; CI `37825730483` is PASS.
 - PR remains draft/unmerged when opened; no merge to `main` without explicit user approval.
 - Storage root is `%LOCALAPPDATA%\SG PDF Editor\Signatures\`, resolved through `Environment.SpecialFolder.LocalApplicationData`.
 - Opening an empty library must not create the directory/manifest; create lazily only for a successful mutation.
@@ -30,29 +29,29 @@
 - Delete ordering: publish manifest without item → best-effort delete PNG. If PNG deletion fails, logical delete stays committed and the orphan is ignored.
 - Invalid manifest is whole-library unavailable and must never be auto-repaired/overwritten. Missing/corrupt individual PNG is item-level unavailable only.
 - Orphan PNGs are ignored; never auto-import, rename or delete them in ordinary load.
-- **Use** must return an existing `SignatureAsset` to MainWindow and then call existing `AddSignatureAsset(...)` exactly once. Never duplicate centering, coordinates, selection or dirty-state logic.
+- **Use** returns an existing `SignatureAsset` to MainWindow and then calls existing `AddSignatureAsset(...)` exactly once. Never duplicate centering, coordinates, selection or dirty-state logic.
 - Save/rename/delete library operations are not PDF edits and must not alter PDF dirty/selection/page/render state.
 - No new NuGet dependency, SQLite/database, encryption/vault, cloud/network/HTTP, external process, repository framework, app-wide DI, thumbnail cache or migration framework.
 - Do not modify `PdfVisualSignatureWriter`, PDFium P/Invoke/coordinates, F3.2 processing, F3.3 ink behavior, ZPL/Labelize, PDFsharp scope, `.csproj` or lockfiles. If implementation appears to require any of those, stop and return to design.
 
 ## Review Focus
 
-1. **Corrupt-manifest preservation:** invalid JSON/version/IDs/path metadata must disable the library without rewriting user data or breaking the rest of FIRMAR.
-2. **Two-file Add atomicity:** a PNG publication or manifest publication failure must never leave `library.json` referencing an unpublished PNG; rollback may target only files created by that operation.
-3. **Delete semantics:** once the manifest removal succeeds, a later PNG-delete failure is a cleanup warning/orphan, not a reason to resurrect the item.
-4. **Broken-item isolation:** a missing/corrupt PNG must make only that item unavailable while healthy entries remain usable and the broken metadata remains deletable/renamable.
-5. **MainWindow state safety:** dialog cancel/failure must preserve placements/selection/dirty state, while successful Use must add exactly one normal centered selected dirty placement through the existing F3.1 path.
+1. **Corrupt-manifest preservation:** invalid JSON/version/IDs/path metadata disables the library without rewriting user data or breaking the rest of FIRMAR.
+2. **Two-file Add atomicity:** a PNG or manifest publication failure never leaves `library.json` referencing an unpublished PNG; rollback targets only files created by that operation.
+3. **Delete semantics:** after successful manifest removal, later PNG-delete failure is a cleanup warning/orphan, not a reason to resurrect the item.
+4. **Broken-item isolation:** a missing/corrupt PNG makes only that item unavailable while healthy entries remain usable and the broken metadata remains manageable.
+5. **MainWindow state safety:** dialog cancel/failure preserves placements/selection/dirty state; successful Use adds exactly one normal centered selected dirty placement through F3.1.
 
 ---
 
-### Task 1: Manifest model, LocalAppData root and safe load boundary
+### Task 1: Manifest model, LocalAppData root and safe read boundary
 
 **Files:**
 - Create: `src/SGPdf.App/Features/Sign/SignatureLibraryItem.cs`
 - Create: `src/SGPdf.App/Features/Sign/SignatureLibraryStore.cs`
-- Create: `tests/SGPdf.App.Tests/SignatureLibraryStoreTests.cs`
+- Test: `tests/SGPdf.App.Tests/SignatureLibraryStoreTests.cs`
 
-**Minimal contracts:**
+**Task-1 contracts:**
 
 ```csharp
 internal sealed record SignatureLibraryItem(
@@ -60,11 +59,14 @@ internal sealed record SignatureLibraryItem(
     string DisplayName,
     string FileName);
 
+internal sealed class SignatureLibraryUnavailableException : InvalidDataException
+{
+    internal SignatureLibraryUnavailableException(string message, Exception? inner = null);
+}
+
 internal sealed class SignatureLibraryStore
 {
-    internal SignatureLibraryStore(
-        string? rootDirectory = null,
-        SignatureLibraryFileOps? fileOps = null);
+    internal SignatureLibraryStore(string? rootDirectory = null);
 
     internal string RootDirectory { get; }
     internal IReadOnlyList<SignatureLibraryItem> Load();
@@ -72,7 +74,9 @@ internal sealed class SignatureLibraryStore
 }
 ```
 
-The constructor uses an explicit `rootDirectory` only for tests; production default is:
+Important dependency ordering: **Task 1 does not reference `SignatureLibraryFileOps`**. The deterministic failure seam is introduced only in Task 2 when mutation atomicity needs it.
+
+Production root:
 
 ```csharp
 Path.Combine(
@@ -81,23 +85,18 @@ Path.Combine(
     "Signatures")
 ```
 
-Keep manifest DTOs private/internal to the store. Do not expose `JsonDocument`, mutable DTO lists, or physical full paths as product models.
+Manifest read rules:
 
-Manifest validation on `Load()`:
+- missing root / missing `library.json` → empty list, no creation;
+- `System.Text.Json`, UTF-8, require version 1 and non-null items;
+- every ID valid/non-empty/unique;
+- every filename simple basename, `.png`, non-rooted, no separator/traversal;
+- preserve manifest order;
+- structural failure throws controlled `SignatureLibraryUnavailableException` and leaves disk byte-for-byte untouched;
+- orphan PNGs ignored;
+- `LoadAsset(id)` resolves only a validated manifest entry and delegates decode/safety to `SignaturePngLoader.Load(...)`.
 
-- missing root or missing `library.json` → empty list and no directory creation;
-- parse UTF-8 JSON with `System.Text.Json`;
-- require `version == 1` and non-null `items`;
-- parse every `id` as non-empty GUID and reject duplicate IDs;
-- require non-null display name metadata; structural loading may preserve exactly stored display name, while Add/Rename own user-input trimming/duplicate-name rules;
-- require simple `.png` `fileName`: `Path.GetFileName(fileName) == fileName`, no separators, rooted path, `.`/`..`, or alternate extension;
-- preserve manifest item order;
-- invalid structure throws one controlled feature-local exception (for example `SignatureLibraryUnavailableException`) without changing disk;
-- orphan PNGs do not participate in `Load()`.
-
-`LoadAsset(id)` must find the manifest entry from a valid manifest, combine only the validated basename with the library root and delegate decoding to `SignaturePngLoader.Load(...)`.
-
-- [ ] **Step 1: Write RED model/load tests**
+- [ ] **Step 1: Write RED tests**
 
 ```text
 Load_MissingRoot_ReturnsEmptyWithoutCreatingDirectory
@@ -111,7 +110,7 @@ Load_OrphanPng_IsIgnoredAndNotDeleted
 LoadAsset_UsesValidatedManifestEntryAndExistingPngLoader
 ```
 
-Use a unique test root below `Path.GetTempPath()`. Capture original manifest bytes before failure assertions and verify exact byte preservation.
+Use unique roots under `Path.GetTempPath()`. Capture manifest bytes before failure checks and assert exact preservation.
 
 - [ ] **Step 2: Confirm RED**
 
@@ -119,13 +118,13 @@ Use a unique test root below `Path.GetTempPath()`. Capture original manifest byt
 dotnet test tests/SGPdf.App.Tests/SGPdf.App.Tests.csproj --configuration Release --filter "FullyQualifiedName~SignatureLibraryStoreTests"
 ```
 
-Expected: compile/test failure only because F3.4 library contracts do not exist.
+Expected: failure only because Task-1 library contracts do not exist.
 
-- [ ] **Step 3: Implement the minimum model + read-only store boundary.**
+- [ ] **Step 3: Implement minimum read-only store.**
 
-No directory creation from `Load()`/empty browse. No generic repository/filesystem framework.
+No directory creation from normal browse/load. No generic repository/filesystem framework.
 
-- [ ] **Step 4: Focused GREEN + full regression**
+- [ ] **Step 4: GREEN + regression**
 
 ```powershell
 dotnet test tests/SGPdf.App.Tests/SGPdf.App.Tests.csproj --configuration Release --filter "FullyQualifiedName~SignatureLibraryStoreTests"
@@ -134,7 +133,7 @@ dotnet build SGPdf.slnx --configuration Release --no-restore
 dotnet test SGPdf.slnx --configuration Release --no-build
 ```
 
-Require focused PASS, locked restore PASS, Release build 0 warnings/0 errors, all existing tests PASS.
+Require focused PASS, locked restore PASS, Release build 0 warnings/0 errors and all existing tests PASS.
 
 - [ ] **Step 5: Commit**
 
@@ -152,7 +151,7 @@ git commit -m "feat(sign): add local signature library manifest"
 - Modify: `src/SGPdf.App/Features/Sign/SignatureLibraryStore.cs`
 - Modify/Test: `tests/SGPdf.App.Tests/SignatureLibraryStoreTests.cs`
 
-**Additional contracts:**
+**Task-2 contracts:**
 
 ```csharp
 internal sealed class SignatureLibraryFileOps
@@ -165,46 +164,51 @@ internal sealed class SignatureLibraryFileOps
 internal sealed record SignatureLibraryDeleteResult(
     bool FileCleanupSucceeded,
     string? Warning = null);
-
-internal sealed class SignatureLibraryStore
-{
-    internal SignatureLibraryItem Add(string displayName, SignatureAsset asset);
-    internal SignatureLibraryItem Rename(Guid id, string displayName);
-    internal SignatureLibraryDeleteResult Delete(Guid id);
-}
 ```
 
-`SignatureLibraryFileOps` is a **feature-local deterministic failure seam only**, not a general filesystem service. Defaults stay direct `System.IO` operations. Tests may replace publication/delete delegates to force exact failure boundaries.
+Task 2 changes/adds the store mutation constructor seam without breaking Task 1 callers:
 
-PNG encoding:
+```csharp
+internal SignatureLibraryStore(
+    string? rootDirectory = null,
+    SignatureLibraryFileOps? fileOps = null);
+
+internal SignatureLibraryItem Add(string displayName, SignatureAsset asset);
+internal SignatureLibraryItem Rename(Guid id, string displayName);
+internal SignatureLibraryDeleteResult Delete(Guid id);
+```
+
+`SignatureLibraryFileOps` is feature-local and only exists so tests can deterministically fail publication/delete boundaries. Production defaults are direct `System.IO` operations.
+
+PNG path:
 
 ```text
-SignatureAsset.BgraPixels
+SignatureAsset BGRA
 → BitmapSource.Create(... PixelFormats.Bgra32 ...)
-→ BitmapFrame.Create(...)
 → PngBitmapEncoder
-→ request-scoped temp file in RootDirectory
+→ unique temp file in RootDirectory
+→ same-volume publication
 ```
 
 Rules:
 
-- preserve original width/height and alpha; no resize/reprocess;
-- generate `id = Guid.NewGuid()` and `fileName = $"{id:N}.png"`;
-- create the root lazily only when a mutation has passed all validation and is ready to write;
-- temp PNG and temp manifest use unique names in the same root;
-- flush/close temp before publication;
-- manifest publication uses move when absent and same-volume replacement when present;
-- best-effort cleanup is limited to temp/final files provably created by the current operation.
+- no resize/reprocess/JPEG;
+- new GUID + `<id:N>.png`;
+- validate current library and name before creating root/writing;
+- Add publishes PNG before manifest;
+- existing manifest replacement preserves old manifest if replacement fails;
+- Add manifest failure best-effort deletes only the just-published PNG; rollback-delete failure leaves an ignored orphan;
+- Rename changes manifest only;
+- Delete publishes manifest removal before best-effort PNG delete;
+- never sweep unrelated orphan files.
 
-Name normalization used by Add/Rename:
+Name rules:
 
 ```text
 trim → reject empty → reject duplicate OrdinalIgnoreCase → preserve resulting Unicode/casing
 ```
 
-Rename excludes the currently renamed item's own name from duplicate detection.
-
-- [ ] **Step 1: Extend RED tests for Add and PNG round-trip**
+- [ ] **Step 1: RED Add/round-trip tests**
 
 ```text
 Add_TrimsNameAndGeneratesGuidBasedPngName
@@ -216,9 +220,7 @@ Add_RoundTrip_LoadAssetPassesExistingPngValidation
 Add_DisplayNameCharactersNeverAffectPhysicalFilename
 ```
 
-For alpha round-trip, assert dimensions and representative alpha/BGRA semantics rather than implementation-specific PNG bytes.
-
-- [ ] **Step 2: Add RED deterministic failure tests**
+- [ ] **Step 2: RED failure-order tests**
 
 ```text
 Add_PngPublicationFailure_LeavesOldManifestUnchanged
@@ -232,19 +234,17 @@ Delete_SuccessfulManifestThenPngDeleteFailure_RemainsLogicallyDeletedAndReturnsW
 Delete_Success_RemovesMetadataThenBackingPng
 ```
 
-The forced failure seam must distinguish publication destinations by exact path/basename rather than introducing mock infrastructure.
-
 - [ ] **Step 3: Confirm RED**
 
 ```powershell
 dotnet test tests/SGPdf.App.Tests/SGPdf.App.Tests.csproj --configuration Release --filter "FullyQualifiedName~SignatureLibraryStoreTests"
 ```
 
-- [ ] **Step 4: Implement minimum mutation/atomicity behavior.**
+- [ ] **Step 4: Implement mutation/atomicity behavior minimally.**
 
-Never sweep unrelated orphan PNGs. Never rewrite a structurally corrupt manifest as empty. Delete does not roll back a successfully published metadata removal just because physical cleanup fails.
+Temporary PNG/manifest files stay in the same library directory. Never truncate `library.json` in place and never auto-repair corrupt metadata.
 
-- [ ] **Step 5: Focused GREEN + full regression**
+- [ ] **Step 5: GREEN + regression**
 
 ```powershell
 dotnet test tests/SGPdf.App.Tests/SGPdf.App.Tests.csproj --configuration Release --filter "FullyQualifiedName~SignatureLibraryStoreTests"
@@ -252,8 +252,6 @@ dotnet restore SGPdf.slnx --locked-mode
 dotnet build SGPdf.slnx --configuration Release --no-restore
 dotnet test SGPdf.slnx --configuration Release --no-build
 ```
-
-Require 0 warnings/0 errors and all tests PASS.
 
 - [ ] **Step 6: Commit**
 
@@ -271,7 +269,7 @@ git commit -m "feat(sign): persist signature library safely"
 - Create: `src/SGPdf.App/SignatureLibraryDialog.xaml.cs`
 - Create: `src/SGPdf.App/SignatureNameDialog.xaml`
 - Create: `src/SGPdf.App/SignatureNameDialog.xaml.cs`
-- Create/Test: `tests/SGPdf.App.Tests/SignatureLibraryDialogTests.cs`
+- Test: `tests/SGPdf.App.Tests/SignatureLibraryDialogTests.cs`
 
 **Dialog contract:**
 
@@ -290,9 +288,9 @@ public partial class SignatureLibraryDialog : Window
 }
 ```
 
-Production `Open(...)` creates the default `SignatureLibraryStore`. Do not add a service locator or DI container.
+Production `Open(...)` creates the default store. No service locator/DI container.
 
-A small dialog-local view item may carry:
+A small dialog-local row model may contain:
 
 ```csharp
 internal sealed record SignatureLibraryDialogItem(
@@ -302,8 +300,6 @@ internal sealed record SignatureLibraryDialogItem(
     bool IsAvailable,
     string? UnavailableText);
 ```
-
-Thumbnail creation uses the already loaded `SignatureAsset` in memory and `BitmapSource.Create(...)`; no thumbnail sidecar/cache.
 
 **Named controls:**
 
@@ -318,32 +314,31 @@ SignatureLibraryCloseButton
 SignatureLibraryStatusText
 ```
 
-**Narrow dialog test seams:**
+**Narrow test seams:**
 
 ```csharp
 private Func<string, string?, string?> _promptName = ...;
 private Func<string, bool> _confirmDelete = ...;
 ```
 
-Equivalent owner-aware signatures are acceptable if needed by WPF. Keep them private and local to this dialog.
+Equivalent owner-aware signatures are acceptable if WPF needs them. Keep private/dialog-local.
 
 Behavior:
 
 - valid empty library → `No hay firmas guardadas.`;
-- structurally invalid manifest → library-unavailable state, no mutation/Use actions, Close still works;
-- load metadata first, then attempt each `LoadAsset(id)` independently;
-- missing/corrupt PNG → keep display name with unavailable placeholder/status; Use disabled for it, Rename/Delete available, healthy entries unaffected;
-- **Guardar firma seleccionada...** enabled only when constructor received a selected placement asset;
-- Save prompts for name, calls `store.Add(name, selectedPlacementAsset)`, refreshes/selects new entry and keeps dialog open;
-- Rename prompts current name, calls store Rename, refreshes/selects same GUID, no PNG rewrite;
-- Delete confirmation clearly contains/display-identifies the selected name, then calls store Delete; cleanup warning is surfaced without restoring the item;
-- **Usar** loads the selected healthy asset at action time, stores it in `SelectedAsset`, then closes successfully;
-- a Use-time load failure keeps `SelectedAsset == null`, keeps dialog manageable and does not close as success;
-- Close/window-X/cancel returns null.
+- corrupt manifest → unavailable state; Use/mutation disabled; Close works; no repair;
+- load metadata once, then load each PNG independently;
+- missing/corrupt PNG remains visible as broken; Use disabled; Rename/Delete allowed; healthy rows unaffected;
+- bounded in-memory WPF thumbnail from actual asset, no persisted cache;
+- Save selected enabled only if constructor received a placement asset;
+- Save selected prompts name → store.Add(exact asset) → refresh/select new row → dialog stays open;
+- Rename prompts current name → store.Rename → refresh/select same GUID;
+- Delete requires explicit confirmation and surfaces cleanup warning without resurrecting item;
+- Use reloads selected healthy asset at action time → `SelectedAsset` → successful close;
+- Use-time load failure adds/returns nothing and keeps dialog manageable;
+- Close/window-X/cancel → null.
 
-`SignatureNameDialog` is a tiny text prompt only; no metadata editor.
-
-- [ ] **Step 1: Write RED STA dialog tests**
+- [ ] **Step 1: RED STA dialog tests**
 
 ```text
 Dialog_EmptyLibrary_ShowsEmptyStateAndCorrectButtonStates
@@ -354,8 +349,8 @@ Dialog_MissingPng_MarksOnlyThatItemUnavailableAndLeavesHealthyEntryUsable
 Dialog_CorruptPng_MarksOnlyThatItemUnavailable
 Dialog_UseDisabledWithoutSelectionOrForBrokenItem
 Dialog_SaveSelected_UsesSuppliedExactAssetRefreshesAndStaysOpen
-Dialog_SaveSelected_EmptyOrDuplicateName_ShowsControlledValidationAndKeepsState
-Dialog_Rename_KeepsSelectedGuidAndDoesNotAffectThumbnailAsset
+Dialog_SaveSelected_EmptyOrDuplicateName_KeepsState
+Dialog_Rename_KeepsSelectedGuidAndDoesNotRewriteImage
 Dialog_DeleteCancel_IsStateSafe
 Dialog_DeleteConfirmed_RemovesMetadataAndRefreshes
 Dialog_DeleteCleanupWarning_LeavesItemLogicallyRemovedAndShowsWarning
@@ -364,7 +359,7 @@ Dialog_UseTimeFailure_ReturnsNothingAndKeepsDialogOpen
 Dialog_CloseOrWindowX_ReturnsNoAsset
 ```
 
-Follow existing F3 STA test style (`RunInSta`, named controls, direct/internal methods where needed). Do not depend on interactive MessageBox clicks in CI; inject only the two narrow prompt/confirmation seams.
+Follow the existing F3 `RunInSta` + named-control test pattern. Do not require interactive MessageBox clicks in CI.
 
 - [ ] **Step 2: Confirm RED**
 
@@ -372,13 +367,11 @@ Follow existing F3 STA test style (`RunInSta`, named controls, direct/internal m
 dotnet test tests/SGPdf.App.Tests/SGPdf.App.Tests.csproj --configuration Release --filter "FullyQualifiedName~SignatureLibraryDialogTests"
 ```
 
-Expected failures only because dialog contracts do not yet exist.
+- [ ] **Step 3: Implement focused dialogs.**
 
-- [ ] **Step 3: Implement the focused WPF dialogs.**
+UI stays KISS: thumbnail/name/status + Use/Save selected/Rename/Delete/Close. No search, tags, favorites, folders, sorting, reordering or settings page.
 
-Keep UI simple: one bounded list/grid, thumbnail + name + unavailable indication, five actions. No search/tags/favorites/folders/sorting/reorder/settings.
-
-- [ ] **Step 4: Focused GREEN + full regression**
+- [ ] **Step 4: GREEN + regression**
 
 ```powershell
 dotnet test tests/SGPdf.App.Tests/SGPdf.App.Tests.csproj --configuration Release --filter "FullyQualifiedName~SignatureLibraryDialogTests"
@@ -386,8 +379,6 @@ dotnet restore SGPdf.slnx --locked-mode
 dotnet build SGPdf.slnx --configuration Release --no-restore
 dotnet test SGPdf.slnx --configuration Release --no-build
 ```
-
-Require 0 warnings/0 errors and all tests PASS.
 
 - [ ] **Step 5: Commit**
 
@@ -398,7 +389,7 @@ git commit -m "feat(sign): add local signature library dialog"
 
 ---
 
-### Task 4: Integrate library into the existing FIRMAR path
+### Task 4: Integrate library into existing FIRMAR path
 
 **Files:**
 - Modify: `src/SGPdf.App/MainWindow.Sign.cs`
@@ -415,15 +406,15 @@ private SignatureAsset? GetSelectedSignatureAsset();
 private bool TryOpenSignatureLibrary();
 ```
 
-`GetSelectedSignatureAsset()` uses the one existing selection model only:
+`GetSelectedSignatureAsset()` reuses only:
 
 ```text
 _signatureEditState.SelectedId
-→ find matching SignaturePlacement in .Placements
-→ return placement.Asset
+→ matching SignaturePlacement in Placements
+→ placement.Asset
 ```
 
-Do not add a second selected-asset field to `MainWindow` or `SignatureEditState` unless a focused test proves a narrow helper is materially simpler.
+No second selected-asset field/model.
 
 **Named action:**
 
@@ -432,19 +423,19 @@ Name = SignatureLibraryButton
 Content = Biblioteca de firmas...
 ```
 
-Add it in `BuildSignaturePropertiesPanel()` after the three creation-source actions (PNG/photo/draw) and before placement-management actions. Preserve code-built FIRMAR UI; do not rewrite `MainWindow.xaml`.
+Add in `BuildSignaturePropertiesPanel()` after PNG/photo/draw source actions and before placement-management buttons. Preserve code-built FIRMAR UI; do not rewrite `MainWindow.xaml`.
 
 Behavior:
 
-- opening the dialog supplies the exact selected placement asset or null;
-- null return = Close/cancel/no Use, no PDF-state mutation;
-- thrown dialog/store failure = controlled status/message, preserve existing placements/selection/dirty/page/active PDF;
-- non-null return from Use = call existing `AddSignatureAsset(asset)` exactly once;
-- F3.1 remains authoritative for centering, page coordinates, selection, dirty state and overlay refresh;
-- library Save/Rename/Delete happen inside the dialog and never directly mutate `_signatureEditState`;
-- an asset already placed remains valid in memory even if its library item is renamed/deleted.
+- dialog receives exact selected placement asset or null;
+- null return = close/cancel/no Use, no PDF-state mutation;
+- exception = controlled status/message, no state mutation;
+- non-null return = existing `AddSignatureAsset(asset)` exactly once;
+- F3.1 remains authority for centering, coordinates, selection, dirty state and overlay;
+- Save/Rename/Delete happen in dialog/store and never directly change `_signatureEditState`;
+- placed asset remains valid in memory after library rename/delete.
 
-- [ ] **Step 1: Write RED MainWindow tests**
+- [ ] **Step 1: RED MainWindow tests**
 
 ```text
 LibraryAction_ExistsExactlyOnceInFirmarPanel
@@ -454,13 +445,11 @@ LibraryOpen_WithNoSelectedPlacement_ReceivesNull
 LibraryFailure_PreservesPriorPdfSignatureState
 LibraryUse_AddsExactlyOneNormalCenteredSelectedDirtyPlacement
 LibraryUse_UsesSameAddSignatureAssetGeometryAsDirectSource
-LibrarySaveRenameDeleteViaDialogDoNotMutateAlreadyPlacedAsset
+LibraryRenameDeleteDoNotMutateAlreadyPlacedAsset
 ExistingPngPhotoDrawActionsRemainAvailableAndUnchanged
 ```
 
-Use the existing reflection/delegate/STA pattern already used by `MainWindowSignatureDrawTests`; do not introduce a test DI framework.
-
-For the “exact selected asset” test, capture object identity (`Assert.Same`) passed to `_openSignatureLibrary`; this is the guard against accidentally rasterizing the placement overlay or saving placement geometry.
+Use existing reflection/delegate/STA style from `MainWindowSignatureDrawTests`. For selected asset use `Assert.Same` to guard object identity.
 
 - [ ] **Step 2: Confirm RED**
 
@@ -468,11 +457,11 @@ For the “exact selected asset” test, capture object identity (`Assert.Same`)
 dotnet test tests/SGPdf.App.Tests/SGPdf.App.Tests.csproj --configuration Release --filter "FullyQualifiedName~MainWindowSignatureLibraryTests"
 ```
 
-- [ ] **Step 3: Implement minimal MainWindow integration.**
+- [ ] **Step 3: Implement minimal integration.**
 
-No changes to `AddSignatureAsset(...)`, `SignatureCoordinateMapper`, `PdfVisualSignatureWriter`, photo/draw preparation, or PDF Save As flow.
+Do not alter `AddSignatureAsset(...)`, coordinate mapper, PDF writer, photo/draw preparation or Save As behavior.
 
-- [ ] **Step 4: Focused GREEN + F3 regression + full regression**
+- [ ] **Step 4: GREEN + F3 regression + full regression**
 
 ```powershell
 dotnet test tests/SGPdf.App.Tests/SGPdf.App.Tests.csproj --configuration Release --filter "FullyQualifiedName~MainWindowSignatureLibraryTests|FullyQualifiedName~MainWindowSignatureTests|FullyQualifiedName~MainWindowSignaturePhotoTests|FullyQualifiedName~MainWindowSignatureDrawTests"
@@ -480,8 +469,6 @@ dotnet restore SGPdf.slnx --locked-mode
 dotnet build SGPdf.slnx --configuration Release --no-restore
 dotnet test SGPdf.slnx --configuration Release --no-build
 ```
-
-Require build 0/0 and all tests PASS.
 
 - [ ] **Step 5: Commit**
 
@@ -492,16 +479,16 @@ git commit -m "feat(sign): integrate reusable signature library"
 
 ---
 
-### Task 5: Closure, architecture audit, CI evidence and draft PR
+### Task 5: Closure, architecture audit, exact-head CI and draft PR
 
 **Files:**
 - Modify: `.planning/STATE.md`
 - Modify: `.planning/ROADMAP.md`
 - Modify: `.planning/phases/04-f3-visual-signature/F3.4-PLAN.md`
 - Create: `docs/history/2026-10-08-F3.4.md`
-- Do **not** modify product code during the closure-only commit.
+- No product-code changes in closure-only commit.
 
-- [ ] **Step 1: Run exact local verification on the implementation head**
+- [ ] **Step 1: Exact local verification**
 
 ```powershell
 dotnet restore SGPdf.slnx --locked-mode
@@ -509,22 +496,16 @@ dotnet build SGPdf.slnx --configuration Release --no-restore
 dotnet test SGPdf.slnx --configuration Release --no-build
 ```
 
-Require:
+Require locked restore PASS, build 0 warnings/0 errors, all tests PASS.
 
-```text
-restore: PASS locked
-build: 0 warnings / 0 errors
-all tests: PASS / 0 FAIL / 0 SKIPPED unless an explicitly pre-existing skip is documented
-```
-
-- [ ] **Step 2: Scope audit against F3.3 base**
+- [ ] **Step 2: Scope audit vs F3.3**
 
 ```bash
 git diff --stat 8b5bfd35b59fbc75826f8d7616aaaca3e2f31233...HEAD
 git diff --name-only 8b5bfd35b59fbc75826f8d7616aaaca3e2f31233...HEAD
 ```
 
-Explicitly verify **no** unauthorized changes to:
+Explicitly verify no unauthorized changes to:
 
 ```text
 src/SGPdf.App/SGPdf.App.csproj
@@ -532,56 +513,40 @@ src/SGPdf.App/packages.lock.json
 tests/SGPdf.App.Tests/SGPdf.App.Tests.csproj
 tests/SGPdf.App.Tests/packages.lock.json
 src/SGPdf.App/Features/Sign/PdfVisualSignatureWriter.cs
-PDFium interop / coordinate mapping
-F3.2 processor
-F3.3 InkCanvas renderer/history behavior
+SignatureCoordinateMapper / PDFium interop
+F3.2 photo processor
+F3.3 InkCanvas renderer/history
 ZPL / Labelize
 PDFsharp scope
 network/runtime service surface
 ```
 
-Expected new product files are limited to feature-local library store/model/file-op seam, two small WPF dialogs, focused MainWindow sign integration and focused tests.
+- [ ] **Step 3: Recheck the five Review Focus items against concrete tests and disk-side effects.**
 
-- [ ] **Step 3: Failure-policy self-audit**
+- [ ] **Step 4: Update closure docs** with RED/GREEN evidence, functional head, test count, 0/0 build, scope audit and manual Windows QA still NOT RUN unless actually executed.
 
-Re-read the five Review Focus points and confirm test names/evidence exist for each. Specifically inspect disk-side effects in tests rather than relying only on thrown exception types.
-
-- [ ] **Step 4: Update closure docs**
-
-Record:
-
-- final functional head before closure docs;
-- focused RED commits/runs and GREEN commits/runs;
-- final test count;
-- build warning/error count;
-- exact scope audit;
-- manual Windows QA as **NOT RUN** unless actually performed;
-- no new dependency/network/PDF/ZPL scope.
-
-- [ ] **Step 5: Commit closure docs only**
+- [ ] **Step 5: Closure-doc commit only**
 
 ```bash
 git add .planning/STATE.md .planning/ROADMAP.md .planning/phases/04-f3-visual-signature/F3.4-PLAN.md docs/history/2026-10-08-F3.4.md
 git commit -m "docs(sign): close F3.4 local signature library"
 ```
 
-After this closure commit, do not mutate the branch merely to write CI IDs into repository files.
+Do not mutate branch afterward merely to write CI IDs into repo files.
 
-- [ ] **Step 6: Push and require exact-head CI PASS**
+- [ ] **Step 6: Push and require exact-head GitHub CI PASS** for hygiene, pinned Labelize staging, locked restore, Release build and tests.
 
-The existing GitHub workflow must pass repository hygiene, pinned Labelize staging, locked restore, Release build and all tests on the exact closure SHA.
+- [ ] **Step 7: Open/update draft stacked PR**
 
-- [ ] **Step 7: Open/update draft PR stacked on F3.3**
+```text
+base = feat/f3-3-drawn-signature
+head = feat/f3-4-local-signature-library
+draft = true
+```
 
-PR base: `feat/f3-3-drawn-signature`.  
-PR head: `feat/f3-4-local-signature-library`.  
-Keep draft/unmerged.
+Record push/PR CI IDs in PR body after they exist without creating another code/docs commit solely for IDs.
 
-Record final push/PR CI IDs in the PR body after they exist, without changing the code/docs head just to record those IDs.
-
-- [ ] **Step 8: Manual QA remains a separate gate**
-
-Do not call hardware/UX PASS from CI. Later Windows QA should cover save→restart→reuse, rename/delete, LocalAppData inspection, placed-copy survival after deletion, and network-disabled operation.
+- [ ] **Step 8: Keep manual Windows QA separate**: save→restart→reuse, rename/delete, inspect LocalAppData, confirm placed-copy survival, network disabled.
 
 ---
 
@@ -623,15 +588,22 @@ Must remain unchanged
 
 ## Plan Self-Audit
 
-This plan covers every automated-acceptance section of the approved spec:
+Coverage against the approved spec:
 
 - manifest/model + corruption preservation → Task 1;
-- Add/PNG round-trip + display-name rules → Task 2;
-- atomicity/failure ordering/orphans → Task 2;
-- missing/corrupt item isolation → Task 3;
-- empty/dialog/manage/use UX → Task 3;
-- selected-placement asset identity + existing placement pipeline → Task 4;
+- Add/PNG round-trip + name rules → Task 2;
+- atomic publication/failure ordering/orphans → Task 2;
+- broken-item isolation → Task 3;
+- empty/manage/use dialog UX → Task 3;
+- selected-placement asset identity + existing placement path → Task 4;
 - full regression/dependency/architecture boundaries → Task 5;
-- manual Windows QA kept separate and explicitly NOT inferred from CI → Task 5.
+- manual Windows QA remains separate and is never inferred from CI → Task 5.
 
-No spec requirement requires a new package, PDF writer change, database, network, encryption, global repository abstraction or second selection/dirty-state model. If implementation contradicts that statement, stop and return to design before proceeding.
+Dependency-order audit:
+
+- Task 1 compiles independently with `SignatureLibraryStore(string? rootDirectory = null)` and contains no reference to `SignatureLibraryFileOps`.
+- Task 2 creates `SignatureLibraryFileOps` and only then extends the store constructor with the optional failure seam.
+- Task 3 depends only on the fully GREEN Task-2 store.
+- Task 4 depends only on the GREEN dialog contract and existing F3.1 placement path.
+
+No spec requirement needs a new package, PDF writer change, database, network, encryption, global repository abstraction or second selection/dirty-state model. If implementation contradicts that statement, stop and return to design.
