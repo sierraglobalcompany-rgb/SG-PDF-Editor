@@ -4,13 +4,13 @@ namespace SGPdf.App.Features.Sign;
 
 internal sealed class SignatureLibraryFileOps
 {
-    internal Action<string, string> PublishNewFile { get; init; }
+    internal Action<string, string> PublishNewFile { get; set; }
         = static (source, destination) => File.Move(source, destination);
 
-    internal Action<string, string> ReplaceFile { get; init; }
+    internal Action<string, string> ReplaceFile { get; set; }
         = static (source, destination) => File.Replace(source, destination, null);
 
-    internal Action<string> DeleteFile { get; init; }
+    internal Action<string> DeleteFile { get; set; }
         = static path => File.Delete(path);
 }
 
