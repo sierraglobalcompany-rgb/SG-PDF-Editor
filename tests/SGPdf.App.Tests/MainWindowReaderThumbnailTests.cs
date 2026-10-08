@@ -145,7 +145,6 @@ public sealed class MainWindowReaderThumbnailTests
 
                 Assert.True(await OpenReaderAsync(window, fixture.SourcePath));
 
-                PumpUntil(() => GetProperty<bool>(GetThumbnailItems(window)[0], "HasError"));
                 var thumbnails = GetThumbnailItems(window);
                 Assert.True(GetProperty<bool>(thumbnails[0], "HasError"));
                 Assert.NotNull(GetSession(window));
@@ -221,10 +220,18 @@ public sealed class MainWindowReaderThumbnailTests
             (Func<PdfDocumentSession, CancellationToken, IReadOnlyList<PdfPageSize>>)((session, token) => session.GetPageSizes(token)));
         SetField(window, "_renderReaderPage",
             (Func<PdfDocumentSession, int, double, CancellationToken, PdfRenderedPage>)((_, index, dpi, _) => SyntheticRendered(index, dpi, 33)));
-        var opened = await InvokeTask<bool>(window, "TryOpenPdfPathAsync", path, null);
-        if (opened)
-            await InvokeTask(window, "RefreshThumbnailRenderWindowAsync");
-        return opened;
+        SetField(window, "_thumbnailRefreshQueued", true);
+        try
+        {
+            var opened = await InvokeTask<bool>(window, "TryOpenPdfPathAsync", path, null);
+            if (opened)
+                await InvokeTask(window, "RefreshThumbnailRenderWindowAsync");
+            return opened;
+        }
+        finally
+        {
+            SetField(window, "_thumbnailRefreshQueued", false);
+        }
     }
 
     private static void EnsureLoaded(MainWindow window)
