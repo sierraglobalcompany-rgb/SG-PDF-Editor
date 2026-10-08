@@ -33,19 +33,22 @@ Delivered: parse/open, Labelize preview, quantities/dimensions, layout/PDF expor
 ## Phase 5 — F4 Lector Completo
 **Goal:** continuous scroll, thumbnails, bookmarks/links, search/copy text, password PDFs, shortcuts and recent files while preserving F3 page-local editing.
 
-**Current gate:** design + TDD plan **APPROVED**. **Task 1 AUTO PASS**; Task 2 waits for the next user `continúa`.
+**Current gate:** design + TDD plan **APPROVED**. **Tasks 1–2 AUTO PASS**; Task 3 waits for the next user `continúa`.
 
 - Design: `docs/superpowers/specs/2026-10-08-f4-full-reader-design.md`.
 - Plan: `docs/superpowers/plans/2026-10-08-f4-full-reader.md`.
-- Task 1 functional head: `ce167be7ae0b7769c4fc9253c400bc5a9b59216a`.
-- Task 1 CI: `37843337925` PASS.
-- Task 1 verification: Release build 0 warnings / 0 errors; 312 tests PASS.
+- Task 1 functional head: `ce167be7ae0b7769c4fc9253c400bc5a9b59216a`; CI `37843337925` PASS; 312 tests PASS.
+- Task 2 RED head: `91b8d9b97a1d331207d4ecd478b4bce8baddad9d`; CI `37845233691` expected failure with 16 new failing tests and prior 312 tests passing.
+- Task 2 functional/verified head: `bfbc774066f91acafc960c8e7f77ba0df5f344f6`.
+- Task 2 CI: `37852149659` PASS.
+- Task 2 verification: Release build 0 warnings / 0 errors; 328 tests PASS.
+- Task 2 scope: final functional tree changes only `ReaderPageItem.cs`, `MainWindow.Reader.cs`, `MainWindow.xaml.cs`, `MainWindowReaderTests.cs` and `ReaderPageItemTests.cs`; temporary diagnostics removed.
 
 Implementation tasks:
 
 1. **F4.1a Native capability + pure layout — AUTO PASS** — pinned PDFium exports verified; page metrics, current-page and visible+neighbor render-window logic delivered.
-2. **F4.1b Continuous reader — NEXT** — virtualized WPF pages, bounded sequential render window, LEER↔FIRMAR surface boundary.
-3. **F4.2 Thumbnails** — lazy virtualized page thumbnails + synchronized navigation.
+2. **F4.1b Continuous reader — AUTO PASS** — virtualized continuous `LEER`, bounded sequential render window, stale-publication protection, isolated page errors and LEER↔FIRMAR bridge delivered while preserving ZPL.
+3. **F4.2 Thumbnails — NEXT** — lazy virtualized page thumbnails + synchronized navigation.
 4. **F4.3 Password PDFs** — typed password error/prompt/retry/cancel, no persistence.
 5. **F4.4a Search** — PDFium text core + find navigation.
 6. **F4.4b Copy** — one-page text selection + clipboard copy.
@@ -53,7 +56,7 @@ Implementation tasks:
 8. **F4.6 Shortcuts + Recents + Hardening** — local atomic max-10 recents, no startup path probing.
 9. **Closure** — audit/docs/exact-head CI/draft stacked PR.
 
-Frozen rulings: PDFium only; continuous LEER + single-page FIRMAR; visible+one-neighbor full-resolution retention; lazy thumbnails; no tabs; no OCR; no second PDF engine; no required network.
+Frozen rulings: PDFium only; continuous LEER + single-page FIRMAR; existing `PdfScrollViewer` remains the legacy FIRMAR/ZPL host; visible+one-neighbor full-resolution retention; lazy thumbnails; no tabs; no OCR; no second PDF engine; no required network.
 
 ## Phase 6 — F5 Organizar
 **Goal:** reorder/rotate/delete/duplicate/insert/extract/merge/split with preservation preflight.  
@@ -90,9 +93,9 @@ F0                            automated PASS / physical QA pending
 F1                            synthetic Gate PASS / private corpus pending
 F2.1–F2.6                     automated PASS / private + physical QA pending
 F3.1–F3.4                     automated PASS / corresponding manual QA pending
-F4 Task 1                     automated PASS
-F4 Task 2–9                   pending
+F4 Task 1–2                   automated PASS
+F4 Task 3–9                   pending
 F5–F12                        pending
 ```
 
-Next gate: **Task 2 only after the next user `continúa`**. No merge to `main` without explicit user approval.
+Next gate: **Task 3 only after the next user `continúa`**. No merge to `main` without explicit user approval.
