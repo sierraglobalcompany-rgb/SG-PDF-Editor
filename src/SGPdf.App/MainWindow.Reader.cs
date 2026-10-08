@@ -32,6 +32,8 @@ public partial class MainWindow
         static (session, token) => session.GetPageSizes(token);
     private Func<PdfDocumentSession, int, double, CancellationToken, PdfRenderedPage> _renderReaderPage =
         static (session, pageIndex, dpi, token) => session.RenderPage(pageIndex, dpi, token);
+    private Func<Window, string, string?> _requestPdfPassword =
+        static (owner, fileName) => PdfPasswordDialog.Request(owner, fileName);
 
     private void InitializeReaderUi()
     {
@@ -117,48 +119,87 @@ public partial class MainWindow
         _resizeRenderScheduler.CancelCurrent();
         _readerRenderScheduler.CancelCurrent();
         SetBusy(true);
+        var previousStatus = StatusText.Text;
         StatusText.Text = "Abriendo PDF...";
         PdfDocumentSession? candidateSession = null;
+        var attemptPassword = password;
+        var hasAttemptedPassword = password is not null;
 
         try
         {
-            var loaded = await Task.Run(() =>
+            while (true)
             {
-                var session = PdfDocumentSession.Open(path, password);
+                (PdfDocumentSession Session, IReadOnlyList<PdfPageSize> Sizes) loaded;
                 try
                 {
-                    var sizes = _getReaderPageSizes(session, CancellationToken.None);
-                    if (sizes.Count == 0)
-                        throw new InvalidOperationException("El PDF no contiene páginas.");
-                    return (Session: session, Sizes: sizes);
+                    var passwordForAttempt = attemptPassword;
+                    loaded = await Task.Run(() =>
+                    {
+                        var session = PdfDocumentSession.Open(path, passwordForAttempt);
+                        try
+                        {
+                            var sizes = _getReaderPageSizes(session, CancellationToken.None);
+                            if (sizes.Count == 0)
+                                throw new InvalidOperationException("El PDF no contiene páginas.");
+                            return (Session: session, Sizes: sizes);
+                        }
+                        catch
+                        {
+                            session.Dispose();
+                            throw;
+                        }
+                    });
                 }
-                catch
+                catch (PdfDocumentOpenException ex) when (ex.Error == PdfDocumentOpenError.PasswordRequiredOrIncorrect)
                 {
-                    session.Dispose();
-                    throw;
+                    candidateSession?.Dispose();
+                    candidateSession = null;
+
+                    if (hasAttemptedPassword && IsVisible)
+                    {
+                        MessageBox.Show(
+                            this,
+                            "La contraseña no es correcta. Inténtalo de nuevo.",
+                            "PDF protegido",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Warning);
+                    }
+
+                    var requested = _requestPdfPassword(this, Path.GetFileName(path));
+                    if (requested is null)
+                    {
+                        StatusText.Text = previousStatus;
+                        return false;
+                    }
+
+                    attemptPassword = requested;
+                    hasAttemptedPassword = true;
+                    StatusText.Text = "Abriendo PDF...";
+                    continue;
                 }
-            });
 
-            candidateSession = loaded.Session;
-            var previousSession = _session;
-            _session = candidateSession;
-            _navigation = new PageNavigationState(loaded.Sizes.Count);
-            _zoom = new PdfZoomState();
-            _zplDocument = null;
-            _renderedZplLabels = Array.Empty<ZplRenderedLabel>();
-            _signatureModeActive = false;
-            _signatureEditState = null;
-            candidateSession = null;
+                attemptPassword = null;
+                candidateSession = loaded.Session;
+                var previousSession = _session;
+                _session = candidateSession;
+                _navigation = new PageNavigationState(loaded.Sizes.Count);
+                _zoom = new PdfZoomState();
+                _zplDocument = null;
+                _renderedZplLabels = Array.Empty<ZplRenderedLabel>();
+                _signatureModeActive = false;
+                _signatureEditState = null;
+                candidateSession = null;
 
-            _updatingReaderScroll = true;
-            InitializeContinuousReader(loaded.Sizes);
-            previousSession?.Dispose();
+                _updatingReaderScroll = true;
+                InitializeContinuousReader(loaded.Sizes);
+                previousSession?.Dispose();
 
-            Title = $"SG PDF Editor — {Path.GetFileName(_session.FilePath)}";
-            UpdateViewerControlsUi();
-            UpdateCurrentPageStatus();
-            await RefreshReaderRenderWindowAsync();
-            return true;
+                Title = $"SG PDF Editor — {Path.GetFileName(_session.FilePath)}";
+                UpdateViewerControlsUi();
+                UpdateCurrentPageStatus();
+                await RefreshReaderRenderWindowAsync();
+                return true;
+            }
         }
         catch (Exception ex)
         {
@@ -177,6 +218,7 @@ public partial class MainWindow
         }
         finally
         {
+            attemptPassword = null;
             _updatingReaderScroll = false;
             SetBusy(false);
         }
