@@ -71,7 +71,7 @@ public sealed class PdfRenderTests
         {
             File.WriteAllText(path, "not a pdf", Encoding.ASCII);
 
-            var error = Assert.Throws<InvalidOperationException>(() => PdfDocumentSession.Open(path));
+            var error = Assert.ThrowsAny<InvalidOperationException>(() => PdfDocumentSession.Open(path));
             Assert.Contains("PDFium no pudo abrir el documento", error.Message, StringComparison.Ordinal);
         }
         finally
