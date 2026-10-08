@@ -1,108 +1,141 @@
 # Requirements — SG PDF Editor
 
-**Source of truth:** `docs/MASTER_CONTEXT.md` + `docs/MASTER_PLAN.md`.  
-**Purpose:** requisito resumido y trazable para GSD. No reemplaza las especificaciones de cada fase.
+**Architecture source:** `docs/MASTER_CONTEXT.md` + `docs/MASTER_PLAN.md`.  
+**Execution/status source:** GitHub exact heads/CI + `.planning/STATE.md`.  
+**Purpose:** concise traceability; slice specs remain authoritative for detailed acceptance.
 
-## Product Requirements
+## Status Semantics
 
-### F0 — PDF Base
+- **AUTO PASS** = automated implementation and CI evidence exists.
+- **NOT RUN** = required real/private/physical QA has not been executed; never infer PASS from CI.
+- Unchecked boxes remain open where final acceptance includes pending physical/private evidence or work has not yet been implemented.
 
-> **Estado 2026-10-07:** implementación + verificación automatizada de `PDF-BASE-01` a `PDF-BASE-07` = **PASS**. Los checkboxes permanecen abiertos hasta completar el smoke físico Windows, incluyendo Microsoft Print to PDF y prueba con red deshabilitada.
+## F0 — PDF Base
 
-- [ ] **PDF-BASE-01** Abrir un PDF local desde la UI.
-- [ ] **PDF-BASE-02** Renderizar páginas reales con PDFium sin bloquear la UI.
-- [ ] **PDF-BASE-03** Navegar anterior/siguiente/ir a página.
-- [ ] **PDF-BASE-04** Zoom + fit page + fit width.
-- [ ] **PDF-BASE-05** Cancelar renders obsoletos y priorizar la página visible.
-- [ ] **PDF-BASE-06** Imprimir mediante Windows, incluyendo Microsoft Print to PDF.
-- [ ] **PDF-BASE-07** Funcionar con red deshabilitada.
+Automated implementation for PDF-BASE-01..07: **AUTO PASS**. Physical Windows/print/offline smoke: **NOT RUN**.
 
-### F1 — Gate ZPL-A
+- [ ] **PDF-BASE-01** Open a local PDF from UI.
+- [ ] **PDF-BASE-02** Render real pages with PDFium without blocking normal UI interaction.
+- [ ] **PDF-BASE-03** Previous/next/go-to-page navigation.
+- [ ] **PDF-BASE-04** Zoom + Fit Page + Fit Width.
+- [ ] **PDF-BASE-05** Cancel/ignore obsolete render requests and prioritize current view.
+- [ ] **PDF-BASE-06** Print through Windows, including Microsoft Print to PDF.
+- [ ] **PDF-BASE-07** Operate with network disabled.
 
-- [ ] **ZPL-GATE-01** Comparar BinaryKits.Zpl vs Labelize con corpus real privado y sintético.
-- [ ] **ZPL-GATE-02** Validar `^CI28`, `^FH`, `^FB`, `^FR`, `^GFA`, `^BC`, `^BQ`, `^PQ`, `^DF`, `^XF`.
-- [ ] **ZPL-GATE-03** Benchmark de 10/100/500 diseños sin multiplicar por `^PQ`.
-- [ ] **ZPL-GATE-04** Elegir un único motor según fidelidad, códigos, rendimiento, packaging y licencia.
+## F1 — Gate ZPL-A
 
-### F2 — Etiquetas ZPL
+Synthetic Gate: **PASS**; Labelize 1.7.0 selected. Private real Mercado Libre corpus: **NOT RUN**.
 
-- [ ] **LABEL-01** Abrir `.zpl`, `.txt` y `.prn` con ZPL.
-- [ ] **LABEL-02** Separar diseños y conservar cantidad `^PQ` por separado.
-- [ ] **LABEL-03** Preview local por diseño.
-- [ ] **LABEL-04** Cantidad del archivo / una de cada / personalizada.
-- [ ] **LABEL-05** Layout 1/2/3/4/6/8/10/12/custom y tamaños térmicos/A4/Carta/custom.
-- [ ] **LABEL-06** Exportar PDF sin deformar códigos.
-- [ ] **LABEL-07** Imprimir mediante driver Windows a tamaño físico exacto.
-- [ ] **LABEL-08** Validar barcode/QR automáticamente y con prueba física.
+- [ ] **ZPL-GATE-01** Compare BinaryKits.Zpl vs Labelize with synthetic + private real corpus.
+- [x] **ZPL-GATE-02** Synthetic validation for `^CI28`, `^FH`, `^FB`, `^FR`, `^GFA`, `^BC`, `^BQ`, `^PQ`, `^DF`, `^XF`.
+- [x] **ZPL-GATE-03** Synthetic benchmark without multiplying work by `^PQ`.
+- [x] **ZPL-GATE-04** Select one engine using fidelity/codes/performance/packaging/license evidence → Labelize 1.7.0.
 
-### F3 — Firma visual
+`ZPL-GATE-01` stays open until the private corpus is executed.
 
-- [ ] **SIGN-01** Importar PNG transparente.
-- [ ] **SIGN-02** Arrastrar, mover, redimensionar proporcionalmente, duplicar y eliminar.
-- [ ] **SIGN-03** Convertir coordenadas UI ↔ PDF correctamente.
-- [ ] **SIGN-04** Guardar como copia y reabrir preservando posición/transparencia.
+## F2 — ZPL Labels
 
-### F4 — Lector completo
+F2.1–F2.6 automated pipeline: **AUTO PASS**. Private corpus + physical printer/ruler/scanner: **NOT RUN**.
 
-- [ ] **READER-01** Scroll continuo y miniaturas.
-- [ ] **READER-02** Búsqueda y copia de texto.
-- [ ] **READER-03** Bookmarks y links.
-- [ ] **READER-04** PDFs con password.
-- [ ] **READER-05** Atajos/recientes; pestañas solo si no complican estabilidad.
+- [x] **LABEL-01** Open `.zpl`, `.txt`, `.prn` locally.
+- [x] **LABEL-02** Separate designs and preserve `^PQ` quantity as metadata.
+- [x] **LABEL-03** Local Labelize preview per design.
+- [x] **LABEL-04** File / one-each / custom quantity.
+- [x] **LABEL-05** Layout 1/2/3/4/6/8/10/12/custom + thermal/A4/Letter/custom media.
+- [x] **LABEL-06** Export PDF without intentional barcode deformation.
+- [ ] **LABEL-07** Windows-driver thermal printing at exact physical size — automated preflight PASS; physical print **NOT RUN**.
+- [ ] **LABEL-08** Barcode/QR validation — automated decode PASS; physical scanner **NOT RUN**.
 
-### F5 — Organizar
+## F3 — Visual Signature
 
-- [ ] **ORG-01** Mover, reordenar, rotar, eliminar y duplicar páginas.
-- [ ] **ORG-02** Insertar, extraer, unir y dividir.
-- [ ] **ORG-03** Preflight de firmas, formularios, bookmarks/destinations y estructuras relevantes.
-- [ ] **ORG-04** PDFium primero; añadir otra utilidad solo ante una carencia demostrada.
+### F3.1 Core — AUTO PASS
 
-### F6 — Imágenes
+- [x] **SIGN-01** Import a transparent PNG into the visual-signature flow.
+- [x] **SIGN-02** Move, proportional resize, duplicate and delete placements.
+- [x] **SIGN-03** Correct UI/device ↔ PDF coordinate mapping.
+- [x] **SIGN-04** Save as copy and reopen/render preserving placement/transparency semantics.
 
-- [ ] **IMG-01** Detectar/seleccionar imágenes y mostrar menú contextual.
-- [ ] **IMG-02** Extraer/guardar y reemplazar preservando geometría cuando sea viable.
-- [ ] **IMG-03** Mover, resize, rotar, opacidad, orden y eliminar.
+Manual real-signature UX/save/open remains **NOT RUN**.
+
+### F3.2 Photo/scan — AUTO PASS
+
+- [x] **SIGN-05** Create a transparent `SignatureAsset` locally from PNG/JPG/JPEG photo/scan with bounded brightness/contrast, white-paper cleanup, Original/Black/Blue, auto-crop and full-resolution Apply.
+
+Real phone/scanner photo-quality QA remains **NOT RUN**.
+
+### F3.3 Draw — AUTO PASS
+
+- [x] **SIGN-06** Draw a signature locally with WPF InkCanvas/StrokeCollection, fixed black/blue + three widths + dialog-local Undo/Redo/Clear, producing the existing transparent `SignatureAsset` and reusing `AddSignatureAsset(...)`.
+
+Real mouse/touch/stylus hardware QA remains **NOT RUN**.
+
+### F3.4 Local Library — CURRENT
+
+- [ ] **SIGN-07** Persist/reuse transparent `SignatureAsset` entries under local app data using a small versioned JSON manifest + GUID PNG files, with Use/Save selected/Rename/Delete/Close, no cloud/database/network and reuse through exactly one existing `AddSignatureAsset(...)` call.
+
+Written design spec exists; implementation has **NOT STARTED**.
+
+## F4 — Full Reader
+
+- [ ] **READER-01** Continuous scroll and thumbnails.
+- [ ] **READER-02** Search and copy text.
+- [ ] **READER-03** Bookmarks and links.
+- [ ] **READER-04** Password PDFs.
+- [ ] **READER-05** Shortcuts/recent files; tabs only if KISS/stability allow.
+
+## F5 — Organize
+
+- [ ] **ORG-01** Move/reorder/rotate/delete/duplicate pages.
+- [ ] **ORG-02** Insert/extract/merge/split.
+- [ ] **ORG-03** Preflight signatures/forms/bookmarks/destinations and relevant structures.
+- [ ] **ORG-04** PDFium first; another utility only for demonstrated gaps.
+
+## F6 — Images
+
+- [ ] **IMG-01** Detect/select images and contextual actions.
+- [ ] **IMG-02** Extract/save and replace while preserving geometry where viable.
+- [ ] **IMG-03** Move/resize/rotate/opacity/z-order/delete.
 - [ ] **IMG-04** Undo/redo.
 
-### F7 — Texto V1
+## F7 — Text V1
 
-- [ ] **TEXT-01** Detectar/seleccionar objetos de texto.
-- [ ] **TEXT-02** Edición conservadora in-place cuando sea segura.
-- [ ] **TEXT-03** Fallback con TTF redistribuible cuando aparezcan nuevos code points/subset dudoso.
-- [ ] **TEXT-04** Propiedades básicas y save/reopen validation.
+- [ ] **TEXT-01** Detect/select text objects.
+- [ ] **TEXT-02** Conservative in-place text editing where safe.
+- [ ] **TEXT-03** Redistributable TTF fallback for new code points/subset limitations.
+- [ ] **TEXT-04** Basic properties + save/reopen validation.
 
-### F8-F12 — Posteriores
+## F8–F12
 
-- [ ] **COMMENTS** Highlight, underline/strike, notas y dibujo/formas.
-- [ ] **UTILS** Solo utilidades offline justificadas.
-- [ ] **OCR** Tesseract local para texto buscable.
-- [ ] **TEXT-V2** Líneas/párrafos/reading order/reflow limitado.
-- [ ] **PRO** Firma criptográfica, formularios, redacción real, compare, batch y conversiones auditadas.
+- [ ] **COMMENTS** Highlight, underline/strike, notes, ink/shapes.
+- [ ] **UTILS** Only justified offline utilities.
+- [ ] **OCR** Local Tesseract searchable-text workflow.
+- [ ] **TEXT-V2** Reading order/lines/paragraphs/limited reflow.
+- [ ] **PRO** Cryptographic signing, forms, true redaction, compare, batch and audited conversions.
 
-## Cross-cutting Requirements
+## Cross-cutting
 
-- [ ] **OFFLINE** Ninguna función principal requiere Internet.
-- [ ] **LICENSE** Dependencias runtime permisivas o explícitamente aprobadas.
-- [ ] **PRIVACY** Datos reales de clientes/Mercado Libre no se versionan ni envían a servicios externos.
-- [ ] **ORIGINAL** Proteger el original; `Guardar como` durante primeras fases.
-- [ ] **CI** Cada slice debe mantener build/tests Windows verdes.
-- [ ] **KISS** No añadir capas/dependencias preventivas.
-- [ ] **NO-AUTOMERGE** Ningún merge a `main` sin aprobación explícita.
+- [ ] **OFFLINE** Normal product functions do not require Internet; automated guards exist, full physical/offline smoke pending.
+- [x] **LICENSE** Current runtime dependencies are permissive/audited for current development scope; Labelize font provenance must be re-audited before public installer.
+- [x] **PRIVACY** Private fixtures are ignored and CI hygiene rejects tracked `tests/PrivateFixtures/**`.
+- [x] **ORIGINAL** Early edit/sign flows protect source and use Save As behavior.
+- [x] **CI** Every completed automated slice has final-head Windows CI evidence.
+- [x] **KISS** No preventive enterprise architecture/dependency expansion detected through F3.4 spec gate.
+- [x] **NO-AUTOMERGE** Main remains unchanged; merges require explicit user approval.
 
 ## Traceability
 
 | GSD Phase | Product Phase | Requirements |
-|-----------|---------------|--------------|
+|---:|---|---|
 | 1 | F0 PDF Base | PDF-BASE-* |
 | 2 | F1 Gate ZPL-A | ZPL-GATE-* |
-| 3 | F2 Etiquetas | LABEL-* |
-| 4 | F3 Firma visual | SIGN-* |
-| 5 | F4 Lector completo | READER-* |
-| 6 | F5 Organizar | ORG-* |
-| 7 | F6 Imágenes | IMG-* |
-| 8 | F7 Texto V1 | TEXT-* |
-| 9 | F8 Comentarios | COMMENTS |
-| 10 | F9 Utilidades | UTILS |
+| 3 | F2 ZPL Workspace | LABEL-* |
+| 4 | F3 Visual Signature | SIGN-* |
+| 5 | F4 Full Reader | READER-* |
+| 6 | F5 Organize | ORG-* |
+| 7 | F6 Images | IMG-* |
+| 8 | F7 Text V1 | TEXT-* |
+| 9 | F8 Comments | COMMENTS |
+| 10 | F9 Utilities | UTILS |
 | 11 | F10 OCR | OCR |
-| 12 | F11 Texto V2 | TEXT-V2 |
-| 13 | F12 Profesional | PRO |
+| 12 | F11 Text V2 | TEXT-V2 |
+| 13 | F12 Professional | PRO |

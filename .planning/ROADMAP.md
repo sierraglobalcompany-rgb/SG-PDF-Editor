@@ -1,72 +1,82 @@
 # Roadmap — SG PDF Editor
 
-> GSD-managed product roadmap. Arquitectura: `docs/MASTER_CONTEXT.md` + `docs/MASTER_PLAN.md`. Estado diario: `.planning/STATE.md`.
+> GSD-managed product roadmap. Arquitectura: `docs/MASTER_CONTEXT.md` + `docs/MASTER_PLAN.md`. Estado operativo vigente: `.planning/STATE.md`. GitHub exact heads/CI remain the execution authority.
 
 ## Phase 1 — F0 PDF Base
 **Goal:** lector PDF usable y estable.  
-**Estado:** automated PASS; smoke físico Windows pendiente.
+**Estado:** **F0.1–F0.6 automated PASS**; physical Windows UI/print/offline smoke **NOT RUN**.
 
 ## Phase 2 — F1 Gate ZPL-A
 **Goal:** elegir renderer ZPL con evidencia.  
-**Estado:** synthetic Gate PASS → **Labelize 1.7.0**; corpus privado pendiente.
+**Estado:** synthetic Gate PASS → **Labelize 1.7.0 selected**. Private Mercado Libre real corpus **NOT RUN**, so formal private-corpus acceptance remains open.
 
 ## Phase 3 — F2 Etiquetas ZPL
-**Goal:** reemplazar Labelary manual de forma offline.  
-**Estado:** **F2.1–F2.6 automated PASS**. Private corpus y physical printer/scanner siguen NOT RUN.
+**Goal:** reemplazar el flujo manual Labelary de forma local/offline.  
+**Estado:** **F2.1–F2.6 automated PASS**. Private real-label corpus and physical thermal/ruler/scanner QA remain **NOT RUN**.
+
+Delivered automated slices:
+- F2.1 Parse + Open — PASS.
+- F2.2 Labelize + Preview — PASS.
+- F2.3 Quantity + Dimensions — PASS.
+- F2.4 Layout + PDF export — PASS.
+- F2.5 Windows Thermal Print — PASS.
+- F2.6 Validation + Hardening — PASS.
+
+Phase continuity index: `.planning/phases/03-f2-zpl-workspace/PLAN.md`.
 
 ## Phase 4 — F3 Firma Visual
-**Goal:** firmar visualmente un PDF sin web.  
-**Requirements:** SIGN-01..04.
+**Goal:** firmar visualmente PDFs de forma local y reutilizable sin crear un segundo motor de firma.
 
-**Diseño aprobado:**
-- F3.1 Core placement + PDF Save;
-- F3.2 Foto/scan → transparencia y mejora local;
-- F3.3 Dibujar firma con WPF InkCanvas;
-- F3.4 biblioteca local posterior.
-
-**Estado actual:**
-- **F3.1 Core visual signature — automated PASS**: PNG transparente, coordenadas PDF estables, move/resize proporcional/duplicate/delete, PDFium writer con alpha, Save As transaccional, reopen validation, crypto-signature warning y dirty guard.
-- **F3.2 Photo/scan preparation — automated PASS / real-photo QA NOT RUN**: PNG/JPEG local, estimación de papel, soft-alpha background removal, brillo/contraste, Original/Negro/Azul, auto-crop, preview <=1200 px y `Crear desde foto...` integrado a FIRMAR. Final head `2aa1f58a6e01397e84d8f8cfcf7eb6e0e168cf62`; push CI `37796057421` + PR CI `37796065775` PASS; **214 tests PASS**, Release 0 warnings/0 errors.
-- **F3.3 Draw signature / InkCanvas — functional GREEN; closure exact-head CI required**: native WPF ink, negro/azul, 3 grosores, Undo/Redo/Clear, crop transparente, 300-DPI-equivalente, 20M guard y `Dibujar firma...` integrado al mismo `AddSignatureAsset(...)`. Functional head `d3e7d5e0fe460255ec37d41d8b5017272088406d` → CI `37802064739` PASS; **246 tests PASS**, Release 0 warnings/0 errors. Hardware mouse/touch/stylus QA NOT RUN.
-- **F3.4 Local signature library — próximo slice**: design/approval antes de código.
+- **F3.1 Core placement/save — automated PASS.** Manual real-signature UX remains NOT RUN.
+- **F3.2 Photo/scan preparation — automated PASS.** Real-photo/scanner QA remains NOT RUN.
+- **F3.3 Draw signature / InkCanvas — automated PASS.** Final head `8b5bfd35b59fbc75826f8d7616aaaca3e2f31233`; PR CI `37802865627` PASS; 246 tests. Hardware QA remains NOT RUN.
+- **F3.4 Local signature library — automated implementation PASS.** Functional head `c46ddbc9e7bea9ea1dab2eb7678a837d7364f9c0`; functional CI `37834492859` PASS; Release build 0 warnings/0 errors; 301 tests PASS. Closure exact-head CI and draft stacked PR are the remaining automated closure steps. Real Windows save→restart→reuse/rename/delete/offline QA remains **NOT RUN**.
 
 ## Phase 5 — F4 Lector Completo
-**Goal:** completar experiencia diaria de lectura.  
-**Requirements:** READER-01..05.
+**Goal:** continuous scroll, thumbnails, bookmarks/links, search/copy text, password PDFs, shortcuts/recent files.  
+**Estado:** pending design/planning gate after F3.4 automated closure.
 
 ## Phase 6 — F5 Organizar
-**Requirements:** ORG-01..04.
+**Goal:** page reordering/rotation/delete/duplicate/insert/extract/merge/split with preservation preflight.  
+**Estado:** pending.
 
 ## Phase 7 — F6 Imágenes
-**Requirements:** IMG-01..04.
+**Goal:** inspect/extract/replace/edit PDF images conservatively.  
+**Estado:** pending.
 
 ## Phase 8 — F7 Texto V1
-**Requirements:** TEXT-01..04.
+**Goal:** conservative object-level text editing, not Word-like reflow.  
+**Estado:** pending.
 
 ## Phase 9 — F8 Comentarios
-**Requirements:** COMMENTS.
+**Estado:** pending.
 
 ## Phase 10 — F9 Utilidades
-**Requirements:** UTILS.
+**Estado:** pending.
 
 ## Phase 11 — F10 OCR
-**Requirements:** OCR.
+**Estado:** pending.
 
 ## Phase 12 — F11 Texto V2
-**Requirements:** TEXT-V2.
+**Estado:** pending.
 
 ## Phase 13 — F12 Profesional
-**Requirements:** PRO.
+**Estado:** pending.
 
 ---
 
 ## Current Position
 
-A0/A1: complete.  
-F0: automated PASS / physical smoke pending.  
-F1: synthetic PASS / private corpus pending.  
-F2.1–F2.6: automated PASS / private + physical gates pending.  
-F3.1: **automated PASS**.  
-F3.2: **automated PASS / real-photo manual QA NOT RUN**.  
-F3.3: **functional GREEN / exact-head closure CI pending at documentation time / hardware QA NOT RUN**.  
-**Next product slice after F3.3 closure: F3.4 Local Signature Library — design/approve first.**
+```text
+A0/A1                         PASS
+F0                            automated PASS / physical QA pending
+F1                            synthetic Gate PASS / private corpus pending
+F2.1–F2.6                     automated PASS / private + physical QA pending
+F3.1                          automated PASS / manual QA pending
+F3.2                          automated PASS / real-photo QA pending
+F3.3                          automated PASS / hardware QA pending
+F3.4                          automated implementation PASS / closure CI + draft PR pending / manual QA pending
+F4–F12                        pending
+```
+
+Next automated closure step: **exact-head CI for the F3.4 closure-doc commit, then open the draft PR stacked on F3.3**. No merge to `main` without explicit user approval.

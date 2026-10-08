@@ -2,71 +2,82 @@
 
 ## What This Is
 
-SG PDF Editor es una aplicación Windows local-first para leer, imprimir, firmar visualmente, organizar y editar PDF de forma práctica. También incorpora un workspace offline para abrir, previsualizar, maquetar, convertir e imprimir etiquetas térmicas ZPL/TXT/PRN, especialmente las generadas por Mercado Libre.
+SG PDF Editor is a Windows local-first/offline-first application for practical daily PDF work and offline ZPL label workflows. It is built in small verified vertical slices rather than as an all-at-once Acrobat clone.
 
 ## Core Value
 
-Resolver los flujos PDF y ZPL de uso diario de forma rápida, privada, estable y totalmente utilizable sin Internet ni servicios de pago.
+Resolver PDF + ZPL de uso diario de forma rápida, privada, estable y utilizable sin Internet, API keys, SaaS, accounts or mandatory commercial runtime licenses.
 
-## Requirements
+## Validated Foundation
 
-### Validated
+- A0 repository/reproducibility foundation: PASS.
+- A1 GSD Core + Graphify development intelligence: PASS, dev-only.
+- WPF + .NET 10 + Windows x64 remains the frozen platform.
+- PDFium remains the primary PDF engine.
+- F0 PDF Base: automated PASS; physical smoke pending.
+- Gate ZPL-A synthetic evidence selected **Labelize 1.7.0** as the single runtime ZPL renderer.
+- F2.1–F2.6 ZPL Workspace: automated PASS; private/physical QA pending.
+- F3.1–F3.3 visual-signature slices: automated PASS; their real-input/hardware QA remains separate.
 
-- ✓ Base del repositorio reproducible: WPF + .NET 10, App + Tests, restore locked y CI Windows — A0.
-- ✓ Arquitectura KISS/offline y política de licencias documentadas — A0.
-- ✓ Flujo de desarrollo GSD Core + Graphify validado en entorno limpio, sin formar parte del runtime — A1.
+## Active Work
 
-### Active
+**F3.4 — Local Signature Library**
 
-- [ ] F0: lector PDF base — abrir, renderizar, cancelar, zoom, navegar e imprimir.
-- [ ] F1: elegir motor ZPL mediante Gate BinaryKits.Zpl vs Labelize.
-- [ ] F2: workspace de etiquetas ZPL offline.
-- [ ] F3: firma visual PNG transparente.
-- [ ] F4-F12: lector completo, organizar, imágenes, texto, comentarios, OCR y funciones profesionales según roadmap.
-
-### Out of Scope
-
-- Nube/SaaS/API obligatoria — contradice offline-first y privacidad.
-- AGPL/GPL fuerte o licencia comercial obligatoria en el runtime — incompatible con la política del producto salvo aprobación explícita.
-- Electron/Node como runtime del producto — WPF/.NET 10 cubre el objetivo Windows con menos piezas.
-- Arquitectura empresarial preventiva (CQRS, event bus, plugin framework, múltiples proyectos por capas) — YAGNI.
-- OCR, firma criptográfica, formularios y conversiones Office antes de sus fases — no adelantar dependencias.
-
-## Context
-
-- El usuario usa PDF de forma frecuente y necesita firma visual, organización y edición práctica.
-- Mercado Libre genera ZPL que hoy se convierte manualmente con Labelary antes de imprimir; SG PDF Editor debe reemplazar ese flujo offline.
-- PDFium es el motor PDF principal. BinaryKits.Zpl es el candidato ZPL preferente sujeto a Gate real; Labelize es fallback.
-- GSD Core y Graphify son herramientas de desarrollo regenerables y project-scoped; no son requisitos para compilar ni ejecutar el producto.
-- `docs/MASTER_CONTEXT.md` y `docs/MASTER_PLAN.md` conservan el contexto arquitectónico completo.
-
-## Constraints
-
-- **Plataforma**: Windows x64 inicialmente — prioriza el entorno real de uso.
-- **Stack**: C# + .NET 10 LTS + WPF — arquitectura congelada salvo evidencia material.
-- **Offline**: funciones principales deben operar sin Internet — privacidad y continuidad operativa.
-- **Costo**: sin APIs, SaaS, activaciones o SDK comerciales obligatorios — producto gratuito de usar.
-- **Licencias**: priorizar MIT/BSD/Apache-2.0 — evitar copyleft fuerte/comercial obligatorio.
-- **Datos privados**: ZPL reales/clientes nunca se versionan — `tests/PrivateFixtures/` permanece local.
-- **Git**: `main` estable; no merge automático — aprobación explícita del usuario.
-- **PDFium**: llamadas nativas serializadas globalmente — PDFium no es thread-safe.
+- branch: `feat/f3-4-local-signature-library`;
+- base: F3.3 final `8b5bfd35b59fbc75826f8d7616aaaca3e2f31233`;
+- written spec exists and is awaiting user review;
+- no product code yet;
+- no F3.4 PR yet;
+- next allowed gate after spec approval is the TDD implementation plan.
 
 ## Key Decisions
 
-| Decision | Rationale | Outcome |
-|----------|-----------|---------|
-| WPF + .NET 10 | Menor complejidad para Windows, impresión y P/Invoke | ✓ Good |
-| App + Tests inicialmente | KISS; evitar capas sin necesidad | ✓ Good |
-| PDFium como motor PDF primario | Permisivo y cubre render/objetos/páginas | — Pending |
-| BinaryKits.Zpl candidato preferente | .NET in-process, offline, MIT | — Pending Gate ZPL-A |
-| GSD Core 1.15.0 project-scoped | Estado/planes reproducibles sin contaminar otros repos | ✓ Validated in A1 probe |
-| Graphify 0.9.77 project-scoped | Grafo AST local y consultas dirigidas | ✓ Validated in A1 probe |
-| No versionar `.codex/` ni `graphify-out/` | Son generados, grandes/cambiantes y reproducibles | ✓ Good |
-| `Guardar como` inicialmente | Proteger originales mientras madura edición/guardado | — Pending |
+| Decision | Outcome |
+|---|---|
+| Windows x64 + C# + .NET 10 + WPF | Frozen unless evidence forces change |
+| `SGPdf.App + SGPdf.App.Tests` | Keep KISS while sufficient |
+| PDFium primary PDF engine | Active/current |
+| PDFium native calls globally serialized | Required |
+| Labelize 1.7.0 | **Selected runtime ZPL engine** |
+| BinaryKits.Zpl | Historical Gate evidence only; **not fallback runtime** |
+| PDFsharp 6.2.4 | Runtime only for label PDF composition/export |
+| ZXing.Net 0.16.11 | Test/QA-only |
+| GSD Core 1.15.0 / Graphify 0.9.77 | Project-scoped dev-only |
+| Save As during early edit phases | Protect originals |
+| No auto-merge | Explicit user approval required |
 
-## Evolution
+## Constraints
 
-Actualizar este archivo cuando cambie el alcance real, se valide una fase o una decisión material cambie. Mantenerlo resumido; el detalle histórico vive en `docs/history/`.
+- Offline normal operation.
+- No upload of PDFs/ZPL/signatures to runtime services.
+- Real Mercado Libre/client fixtures stay local and ignored.
+- No AGPL/GPL strong-copyleft or mandatory commercial runtime dependency without explicit approval.
+- No preventive CQRS/event bus/plugin framework/complex DI.
+- Do not add qpdf/pdfcpu/PdfPig/Tesseract/OpenCV/ImageSharp/SQLite before a slice demonstrates need.
+- Main remains untouched until explicit merge approval.
+
+## Current Roadmap
+
+```text
+A0/A1        PASS
+F0           automated PASS / physical QA pending
+F1           synthetic Gate PASS / private corpus pending
+F2           F2.1–F2.6 automated PASS / private+physical QA pending
+F3.1         automated PASS
+F3.2         automated PASS / real-photo QA pending
+F3.3         automated PASS / hardware QA pending
+F3.4         current: written spec awaiting review
+F4–F12       pending
+```
+
+## Sources of Truth
+
+Execution: GitHub code/branches/CI.  
+Operational state: `.planning/STATE.md`.  
+Roadmap: `.planning/ROADMAP.md`.  
+Requirements: `.planning/REQUIREMENTS.md`.  
+Architecture: `docs/MASTER_CONTEXT.md` + `docs/MASTER_PLAN.md`.  
+Portable current audit: `docs/history/2026-10-08-CONTINUITY-AUDIT.md`.
 
 ---
-*Last updated: 2026-10-06 after A1 tooling validation.*
+*Updated 2026-10-08 after continuity audit through F3.4 spec gate.*
