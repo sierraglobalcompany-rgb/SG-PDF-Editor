@@ -33,20 +33,24 @@ Delivered: parse/open, Labelize preview, quantities/dimensions, layout/PDF expor
 ## Phase 5 — F4 Lector Completo
 **Goal:** continuous scroll, thumbnails, bookmarks/links, search/copy text, password PDFs, shortcuts and recent files while preserving F3 page-local editing.
 
-**Current gate:** formal design spec written + self-reviewed; **awaiting user approval**. Product code **NOT STARTED**.
+**Current gate:** formal design spec **APPROVED**; detailed TDD implementation plan written + self-audited and **awaiting user approval**. Product code **NOT STARTED**.
 
-Spec: `docs/superpowers/specs/2026-10-08-f4-full-reader-design.md`.
+- Design: `docs/superpowers/specs/2026-10-08-f4-full-reader-design.md`.
+- Plan: `docs/superpowers/plans/2026-10-08-f4-full-reader.md`.
 
-Planned slices after spec + implementation-plan approval:
+Approved implementation tasks:
 
-- **F4.1 Continuous Reader Core** — virtualized continuous pages, current-page tracking, zoom/fit, bounded visible render window, LEER↔FIRMAR surface boundary.
-- **F4.2 Thumbnails** — lazy virtualized page thumbnails + synchronized navigation.
-- **F4.3 Password PDFs** — controlled password error/prompt/retry/cancel, no persistence.
-- **F4.4 Search + Copy** — PDFium text search, active-match highlight, single-page text selection/copy.
-- **F4.5 Bookmarks + Links** — read-only cycle-safe outline, internal destinations, confirmed HTTP/HTTPS links only.
-- **F4.6 Shortcuts + Recents + Hardening** — shortcuts, max-10 LocalAppData recent paths, no startup path probing, regression/performance/offline closure.
+1. **F4.1a Native capability + pure layout** — verify pinned PDFium exports, page metrics, current-page and render-window logic.
+2. **F4.1b Continuous reader** — virtualized WPF pages, bounded render window, LEER↔FIRMAR surface boundary.
+3. **F4.2 Thumbnails** — lazy virtualized page thumbnails + synchronized navigation.
+4. **F4.3 Password PDFs** — typed password error/prompt/retry/cancel, no persistence.
+5. **F4.4a Search** — PDFium text core + find navigation.
+6. **F4.4b Copy** — one-page text selection + clipboard copy.
+7. **F4.5 Bookmarks + Links** — read-only cycle-safe outline + safe explicit links.
+8. **F4.6 Shortcuts + Recents + Hardening** — local atomic max-10 recents, no startup path probing.
+9. **Closure** — audit/docs/exact-head CI/draft stacked PR.
 
-**Explicit design ruling:** no multi-document tabs in F4; reconsider only after a stable reader proves the value.
+Frozen rulings: PDFium only; continuous LEER + single-page FIRMAR; visible+one-neighbor full-resolution retention; lazy thumbnails; no tabs; no OCR; no second PDF engine; no required network.
 
 ## Phase 6 — F5 Organizar
 **Goal:** reorder/rotate/delete/duplicate/insert/extract/merge/split with preservation preflight.  
@@ -83,8 +87,8 @@ F0                            automated PASS / physical QA pending
 F1                            synthetic Gate PASS / private corpus pending
 F2.1–F2.6                     automated PASS / private + physical QA pending
 F3.1–F3.4                     automated PASS / corresponding manual QA pending
-F4                            design spec written/self-reviewed / awaiting approval / code NOT STARTED
+F4                            spec APPROVED / TDD plan written+self-audited / awaiting approval / code NOT STARTED
 F5–F12                        pending
 ```
 
-Next gate: **user review/approval of the written F4 spec**. Only after approval may the detailed TDD implementation plan be written. No merge to `main` without explicit user approval.
+Next gate: **user review/approval of the F4 TDD implementation plan**. After approval execute Task 1 only, then stop for the next `continúa`. No merge to `main` without explicit user approval.
