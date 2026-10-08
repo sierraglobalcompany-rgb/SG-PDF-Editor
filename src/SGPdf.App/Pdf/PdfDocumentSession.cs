@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 
 namespace SGPdf.App.Pdf;
 
-public sealed class PdfDocumentSession : IDisposable
+public sealed partial class PdfDocumentSession : IDisposable
 {
     private IntPtr _document;
 
@@ -80,6 +80,46 @@ public sealed class PdfDocumentSession : IDisposable
         {
             PdfiumRuntime.NativeGate.Release();
         }
+    }
+
+    public IReadOnlyList<PdfPageSize> GetPageSizes(CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        ThrowIfDisposed();
+
+        var pageCount = GetPageCount(cancellationToken);
+        var sizes = new PdfPageSize[pageCount];
+
+        PdfiumRuntime.NativeGate.Wait(cancellationToken);
+        try
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
+
+            for (var pageIndex = 0; pageIndex < pageCount; pageIndex++)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                if (PdfiumNative.FPDF_GetPageSizeByIndexF(_document, pageIndex, out var size) == 0)
+                    throw new InvalidOperationException($"No se pudo consultar el tamaño de la página {pageIndex + 1}.");
+
+                var width = (double)size.Width;
+                var height = (double)size.Height;
+                if (!double.IsFinite(width) || width <= 0d ||
+                    !double.IsFinite(height) || height <= 0d)
+                {
+                    throw new InvalidOperationException($"PDFium devolvió un tamaño inválido para la página {pageIndex + 1}.");
+                }
+
+                sizes[pageIndex] = new PdfPageSize(width, height);
+            }
+        }
+        finally
+        {
+            PdfiumRuntime.NativeGate.Release();
+        }
+
+        return sizes;
     }
 
     public PdfRenderedPage RenderPage(int pageIndex, double dpi = 96d)

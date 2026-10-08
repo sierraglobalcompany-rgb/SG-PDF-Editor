@@ -18,6 +18,13 @@ internal static class PdfiumNative
         internal IntPtr Context;
     }
 
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct SizeF
+    {
+        internal float Width;
+        internal float Height;
+    }
+
     [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
     internal static extern void FPDF_InitLibrary();
 
@@ -34,6 +41,9 @@ internal static class PdfiumNative
 
     [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
     internal static extern int FPDF_GetPageCount(IntPtr document);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern int FPDF_GetPageSizeByIndexF(IntPtr document, int pageIndex, out SizeF size);
 
     [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
     internal static extern IntPtr FPDF_LoadPage(IntPtr document, int pageIndex);
