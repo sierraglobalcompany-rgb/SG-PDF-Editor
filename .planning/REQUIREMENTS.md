@@ -73,9 +73,11 @@ Mouse/touch/stylus hardware QA: **NOT RUN**.
 
 Closure head `1bef751962e0b4aaf35fbda9b8a1a9a2ee2ba36b`; closure CI `37837613618` PASS; PR CI `37837833517` PASS; 301 tests. Real Windows QA: **NOT RUN**.
 
-## F4 — Full Reader — DESIGN GATE
+## F4 — Full Reader — IMPLEMENTATION-PLAN GATE
 
-Formal design: `docs/superpowers/specs/2026-10-08-f4-full-reader-design.md` — **WRITTEN + SELF-REVIEWED, awaiting user approval**. Product code NOT STARTED.
+Formal design: `docs/superpowers/specs/2026-10-08-f4-full-reader-design.md` — **APPROVED by user 2026-10-08**.  
+TDD implementation plan: `docs/superpowers/plans/2026-10-08-f4-full-reader.md` — **WRITTEN + SELF-AUDITED, awaiting user approval**.  
+Product code: **NOT STARTED**.
 
 - [ ] **READER-01** Continuous vertical virtualized reading + lazy thumbnails, no eager full-document full-resolution render.
 - [ ] **READER-02** Local PDFium search + one-page text selection/copy; image-only PDFs correctly require later OCR.
@@ -85,7 +87,7 @@ Formal design: `docs/superpowers/specs/2026-10-08-f4-full-reader-design.md` — 
 - [ ] **READER-06** Preserve existing F3 architecture: LEER continuous; FIRMAR uses existing single-active-page `PdfImage`/`SignatureEditState` path.
 - [ ] **READER-07** Visible full-page bitmap retention bounded to visible pages + one neighbor before/after; lazy thumbnails; stale render publication rejected.
 
-No READER item can become PASS from the design spec alone.
+No READER item becomes PASS from spec or plan approval alone. Each requires its owning RED/GREEN implementation evidence plus exact-head CI; manual Windows QA remains separately reported.
 
 ## F5 — Organize
 
@@ -123,7 +125,7 @@ No READER item can become PASS from the design spec alone.
 - [x] **PRIVACY** Private fixtures ignored and CI hygiene rejects tracked `tests/PrivateFixtures/**`.
 - [x] **ORIGINAL** Early edit/sign flows protect source and use Save As behavior.
 - [x] **CI** Every completed automated slice has final-head Windows CI evidence.
-- [x] **KISS** No preventive enterprise architecture/dependency expansion detected through F4 design gate.
+- [x] **KISS** No preventive enterprise architecture/dependency expansion detected through F4 planning gate.
 - [x] **NO-AUTOMERGE** Main unchanged; merges require explicit user approval.
 
 ## Traceability
