@@ -145,6 +145,7 @@ public sealed class MainWindowReaderThumbnailTests
 
                 Assert.True(await OpenReaderAsync(window, fixture.SourcePath));
 
+                PumpUntil(() => GetProperty<bool>(GetThumbnailItems(window)[0], "HasError"));
                 var thumbnails = GetThumbnailItems(window);
                 Assert.True(GetProperty<bool>(thumbnails[0], "HasError"));
                 Assert.NotNull(GetSession(window));
