@@ -26,9 +26,9 @@
 
 **Estado actual:**
 - **F3.1 Core visual signature — automated PASS**: PNG transparente, coordenadas PDF estables, move/resize proporcional/duplicate/delete, PDFium writer con alpha, Save As transaccional, reopen validation, crypto-signature warning y dirty guard.
-- **F3.2 Photo/scan preparation — automated PASS / real-photo QA NOT RUN**: PNG/JPEG local, estimación de papel, soft-alpha background removal, brillo/contraste, Original/Negro/Azul, auto-crop, preview <=1200 px y `Crear desde foto...` integrado a FIRMAR. Functional head `710340aed222d4c0bd97fc80099267af35ef6f95` → PR CI `37724154596`, **214 tests PASS**, Release 0 warnings/0 errors.
-- **F3.3 Draw signature — siguiente slice**: iniciar con design/approval gate; no código todavía.
-- F3.4 Local library — scope aprobado, diferido.
+- **F3.2 Photo/scan preparation — automated PASS / real-photo QA NOT RUN**: PNG/JPEG local, estimación de papel, soft-alpha background removal, brillo/contraste, Original/Negro/Azul, auto-crop, preview <=1200 px y `Crear desde foto...` integrado a FIRMAR. Final head `2aa1f58a6e01397e84d8f8cfcf7eb6e0e168cf62`; push CI `37796057421` + PR CI `37796065775` PASS; **214 tests PASS**, Release 0 warnings/0 errors.
+- **F3.3 Draw signature / InkCanvas — functional GREEN; closure exact-head CI required**: native WPF ink, negro/azul, 3 grosores, Undo/Redo/Clear, crop transparente, 300-DPI-equivalente, 20M guard y `Dibujar firma...` integrado al mismo `AddSignatureAsset(...)`. Functional head `d3e7d5e0fe460255ec37d41d8b5017272088406d` → CI `37802064739` PASS; **246 tests PASS**, Release 0 warnings/0 errors. Hardware mouse/touch/stylus QA NOT RUN.
+- **F3.4 Local signature library — próximo slice**: design/approval antes de código.
 
 ## Phase 5 — F4 Lector Completo
 **Goal:** completar experiencia diaria de lectura.  
@@ -68,4 +68,5 @@ F1: synthetic PASS / private corpus pending.
 F2.1–F2.6: automated PASS / private + physical gates pending.  
 F3.1: **automated PASS**.  
 F3.2: **automated PASS / real-photo manual QA NOT RUN**.  
-**Next product slice: F3.3 Draw signature / InkCanvas — design/approve first.**
+F3.3: **functional GREEN / exact-head closure CI pending at documentation time / hardware QA NOT RUN**.  
+**Next product slice after F3.3 closure: F3.4 Local Signature Library — design/approve first.**
