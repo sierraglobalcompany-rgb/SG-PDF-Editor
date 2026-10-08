@@ -33,7 +33,10 @@ public sealed partial class PdfDocumentSession : IDisposable
             if (document == IntPtr.Zero)
             {
                 var error = PdfiumNative.FPDF_GetLastError();
-                throw new InvalidOperationException($"PDFium no pudo abrir el documento. Error: {error}.");
+                var classification = error == 4u
+                    ? PdfDocumentOpenError.PasswordRequiredOrIncorrect
+                    : PdfDocumentOpenError.OtherPdfiumError;
+                throw new PdfDocumentOpenException(classification, error);
             }
 
             return new PdfDocumentSession(Path.GetFullPath(filePath), document);
@@ -178,9 +181,6 @@ public sealed partial class PdfDocumentSession : IDisposable
                     0,
                     0);
 
-                // PDFium's current full-page render call is synchronous. We cannot safely
-                // interrupt it mid-call without moving to progressive rendering, but a
-                // canceled request must never continue into buffer copy or UI publication.
                 cancellationToken.ThrowIfCancellationRequested();
 
                 var stride = PdfiumNative.FPDFBitmap_GetStride(bitmap);
