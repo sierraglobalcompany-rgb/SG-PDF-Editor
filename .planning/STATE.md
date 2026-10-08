@@ -17,7 +17,7 @@ See `.planning/PROJECT.md`.
 > Numeric GSD progress is not product-completion truth while automated and physical/private gates are tracked separately. GitHub exact heads/CI + this status are authoritative for executed work.
 
 **Core value:** Resolver PDF + ZPL diario de forma rápida, privada, estable y offline.  
-**Current focus:** Phase 5 — **F4 Lector Completo**, Tasks 1–2 closed automatically; Task 3 is the next user-approved execution gate.
+**Current focus:** Phase 5 — **F4 Lector Completo**, Tasks 1–3 closed automatically; Task 4 is the next user-approved execution gate.
 
 ## Previous Gate — F3.4 closed automatically
 
@@ -30,7 +30,7 @@ See `.planning/PROJECT.md`.
 - PR #22: draft/open/unmerged, stacked on F3.3.
 - Manual real Windows QA: **NOT RUN**.
 
-## Current Gate — F4 Task 3 pending user `continúa`
+## Current Gate — F4 Task 4 pending user `continúa`
 
 - Branch: `feat/f4-full-reader`.
 - Base: exact F3.4 closure head `1bef751962e0b4aaf35fbda9b8a1a9a2ee2ba36b`.
@@ -66,6 +66,19 @@ See `.planning/PROJECT.md`.
 - No new runtime dependency, package/lock change, PDF/sign writer change, signature placement-model change or ZPL-core refactor.
 - Temporary debugging workflows/tests were removed from the final tree. The apparent PDF lock/hang was traced to the async WPF test harness resuming outside the STA dispatcher, not to a PDFium file-handle leak.
 
+### Task 3 — AUTO PASS
+
+- Final RED head: `c4315a10c05f0b21badd6307e47767f157a8cc87`.
+- RED CI `37854879113`: expected build failure only because `ReaderThumbnailItem` did not yet exist; 0 warnings.
+- Functional/verified head: `c968aa8e94f8b22820e3aa32ba1097d0e58516a2`.
+- Exact-head CI `37855511813`: PASS.
+- Release build: 0 warnings / 0 errors.
+- Tests: 336 PASS / 0 FAIL / 0 SKIPPED.
+- Delivered: lazy virtualized thumbnails at ~132 px width, left `Páginas` / `Marcadores` navigation, realized-range + one-neighbor retention, separate sequential thumbnail scheduler, stale-publication suppression, isolated thumbnail errors, thumbnail→reader navigation and reader→thumbnail selection synchronization.
+- KISS ruling: Task 3 follows the existing Task 2 dynamic-WPF pattern; the required named controls are created feature-locally in `MainWindow.ReaderThumbnails.cs` instead of rewriting the large `MainWindow.xaml`.
+- Scope audit against Task 2 closure `8f6ec14ea4b52ee1e6ba56f9c2d1bb07828c4964`: exactly four files added — `ReaderThumbnailItem.cs`, `MainWindow.ReaderThumbnails.cs`, `ReaderThumbnailTests.cs`, `MainWindowReaderThumbnailTests.cs`.
+- No package/lock, PDFium, signature, ZPL, print or existing XAML changes.
+
 ### Frozen F4 direction
 
 - PDFium only; required F4 exports verified in the pinned binary.
@@ -85,8 +98,8 @@ See `.planning/PROJECT.md`.
 
 1. **DONE** — Native capability gate + pure continuous layout.
 2. **DONE** — Continuous WPF surface + bounded rendering + FIRMAR boundary.
-3. **NEXT** — Lazy thumbnails + left navigation.
-4. Password-protected PDFs.
+3. **DONE** — Lazy thumbnails + left navigation.
+4. **NEXT** — Password-protected PDFs.
 5. PDFium text core + find navigation.
 6. One-page text selection + copy.
 7. Bookmarks + safe explicit links.
@@ -103,7 +116,7 @@ Project cadence: one task per user `continúa` unless the user explicitly change
 - F1 Gate ZPL-A: synthetic PASS; private real corpus NOT RUN.
 - F2.1–F2.6 ZPL Workspace: automated PASS.
 - F3.1–F3.4 Visual Signature: automated PASS; corresponding manual QA remains NOT RUN.
-- F4 Tasks 1–2: automated PASS.
+- F4 Tasks 1–3: automated PASS.
 
 ## Parallel Acceptance Gates Still Open
 
@@ -116,6 +129,7 @@ Project cadence: one task per user `continúa` unless the user explicitly change
 - F3.3 real mouse/touch/stylus QA: **NOT RUN**.
 - F3.4 real save→restart→reuse/rename/delete/offline QA: **NOT RUN**.
 - F4 continuous-reader real Windows scroll/zoom/performance UX QA: **NOT RUN**.
+- F4 thumbnails real Windows scroll/click/large-document memory UX QA: **NOT RUN**.
 
 They remain separate from automated PASS and do not become accepted by inference.
 
@@ -133,11 +147,11 @@ They remain separate from automated PASS and do not become accepted by inference
 
 ```text
 next user `continúa`
-→ Task 3 RED for lazy thumbnail state + virtualized left-navigation behavior
+→ Task 4 RED for password classification + protected-PDF UI workflow
 → confirm expected RED
-→ minimal GREEN lazy thumbnail panel + synchronized navigation
+→ minimal GREEN password prompt/retry/cancel with prior-workspace preservation
 → full regression + exact-head CI
-→ report evidence and stop before Task 4
+→ report evidence and stop before Task 5
 ```
 
 ## Continuity
