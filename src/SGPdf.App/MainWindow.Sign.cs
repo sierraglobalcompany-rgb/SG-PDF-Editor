@@ -263,7 +263,7 @@ public partial class MainWindow
         if (_currentPdfDeviceTransform is not null || _session is null || _navigation is null)
             return;
 
-        var source = PdfImage.Source;
+        var source = PdfImage.Source as BitmapSource;
         if (source is null)
             throw new InvalidOperationException("No hay una página renderizada para firmar.");
 
