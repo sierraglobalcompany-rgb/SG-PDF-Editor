@@ -322,7 +322,7 @@ public partial class MainWindow
         catch (Exception ex)
         {
             StatusText.Text = "No se pudo cargar la firma.";
-            MessageBox.Show(this, $"No se pudo cargar la firma PNG.\n\n{ex.Message}", "SG PDF Editor", MessageBoxButton.OK, MessageBoxImage.Error);
+            ShowSignatureMessage($"No se pudo cargar la firma PNG.\n\n{ex.Message}", MessageBoxImage.Error);
             return false;
         }
     }
@@ -454,7 +454,7 @@ public partial class MainWindow
             var target = Path.GetFullPath(destination);
             if (string.Equals(source, target, StringComparison.OrdinalIgnoreCase))
             {
-                MessageBox.Show(this, "F3.1 protege el original. Elige un nombre o ubicación diferente.", "SG PDF Editor", MessageBoxButton.OK, MessageBoxImage.Warning);
+                ShowSignatureMessage("F3.1 protege el original. Elige un nombre o ubicación diferente.", MessageBoxImage.Warning);
                 return false;
             }
 
@@ -466,7 +466,7 @@ public partial class MainWindow
             catch (Exception ex)
             {
                 StatusText.Text = "No se pudo verificar si el PDF contiene firmas criptográficas.";
-                MessageBox.Show(this, $"No se guardó la copia porque no se pudo evaluar la seguridad de firmas existentes.\n\n{ex.Message}", "SG PDF Editor", MessageBoxButton.OK, MessageBoxImage.Warning);
+                ShowSignatureMessage($"No se guardó la copia porque no se pudo evaluar la seguridad de firmas existentes.\n\n{ex.Message}", MessageBoxImage.Warning);
                 return false;
             }
 
@@ -483,13 +483,19 @@ public partial class MainWindow
         catch (Exception ex)
         {
             StatusText.Text = "No se pudo guardar la copia firmada.";
-            MessageBox.Show(this, $"No se pudo guardar el PDF firmado.\n\n{ex.Message}", "SG PDF Editor", MessageBoxButton.OK, MessageBoxImage.Error);
+            ShowSignatureMessage($"No se pudo guardar el PDF firmado.\n\n{ex.Message}", MessageBoxImage.Error);
             return false;
         }
         finally
         {
             SetBusy(false);
         }
+    }
+
+    private void ShowSignatureMessage(string message, MessageBoxImage image)
+    {
+        if (IsVisible)
+            MessageBox.Show(this, message, "SG PDF Editor", MessageBoxButton.OK, image);
     }
 
     private bool TryResolvePendingSignatureEdits(SignatureGuardReason reason)
