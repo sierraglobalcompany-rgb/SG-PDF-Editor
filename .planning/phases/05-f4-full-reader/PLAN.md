@@ -1,6 +1,6 @@
 # Phase 5 — F4 Full Reader
 
-**Status:** design + implementation plan approved; Tasks 1–2 automated PASS; Task 3 next.  
+**Status:** design + implementation plan approved; Tasks 1–3 automated PASS; Task 4 next.  
 **Branch:** `feat/f4-full-reader`  
 **Base:** F3.4 closure `1bef751962e0b4aaf35fbda9b8a1a9a2ee2ba36b`
 
@@ -40,9 +40,15 @@
    - Functional/verified head `bfbc774066f91acafc960c8e7f77ba0df5f344f6`.
    - CI `37852149659`: PASS; 328 tests; 0 failures; build 0 warnings / 0 errors.
    - Delivered continuous virtualized LEER, visible+neighbor sequential rendering, stale-result suppression, per-page error isolation, current-page navigation/zoom and bridge into existing FIRMAR; existing ZPL behavior preserved.
-   - Final functional tree vs Task 1 closure changes only `ReaderPageItem.cs`, `MainWindow.Reader.cs`, `MainWindow.xaml.cs`, `MainWindowReaderTests.cs` and `ReaderPageItemTests.cs`; no dependency/package/sign-writer/ZPL-core changes and no temporary diagnostics remain.
-3. **NEXT** — Lazy thumbnails + left navigation.
-4. Password-protected PDFs.
+3. **DONE / AUTO PASS** — Lazy thumbnails + left navigation.
+   - Final RED head `c4315a10c05f0b21badd6307e47767f157a8cc87`.
+   - RED CI `37854879113`: expected build failure only for missing `ReaderThumbnailItem`; 0 warnings.
+   - Functional/verified head `c968aa8e94f8b22820e3aa32ba1097d0e58516a2`.
+   - CI `37855511813`: PASS; 336 tests; 0 failures; build 0 warnings / 0 errors.
+   - Delivered ~132 px lazy thumbnails, Páginas/Marcadores left navigation, recycling/pixel virtualization, realized+neighbor bounded bitmap retention, separate sequential thumbnail scheduler, stale-result suppression, isolated thumbnail failure, and bidirectional navigation synchronization.
+   - KISS: required named WPF controls are feature-local/dynamic in `MainWindow.ReaderThumbnails.cs`, matching the Task 2 dynamic reader pattern and avoiding a large `MainWindow.xaml` rewrite.
+   - Scope vs Task 2 closure: exactly `ReaderThumbnailItem.cs`, `MainWindow.ReaderThumbnails.cs`, `ReaderThumbnailTests.cs` and `MainWindowReaderThumbnailTests.cs`; no dependency/package/PDFium/F3/ZPL/print/existing-XAML changes.
+4. **NEXT** — Password-protected PDFs.
 5. PDFium text core + find navigation.
 6. One-page text selection + clipboard copy.
 7. Bookmarks + safe explicit PDF links.
@@ -55,6 +61,7 @@ Each task is RED → confirm expected failure → minimal GREEN → focused regr
 
 - stale render publication after rapid scroll/zoom — covered by Task 2 automated PASS;
 - isolated per-page render failure — covered by Task 2 automated PASS;
+- lazy thumbnail range/stale publication — covered by Task 3 automated PASS;
 - wrong/cancelled password preserving prior workspace;
 - cyclic/deep/oversized bookmark outline;
 - UNC/stale recent paths never probed merely by opening the menu.
@@ -81,11 +88,11 @@ Manual Windows performance/UX/offline QA is a separate gate and remains **NOT RU
 ## Current Gate
 
 ```text
-Tasks 1–2 AUTO PASS
+Tasks 1–3 AUTO PASS
 → next user `continúa`
-→ Task 3 RED for lazy thumbnail state + virtualized left-navigation behavior
+→ Task 4 RED for password classification + protected-PDF UI workflow
 → confirm expected RED
 → minimal GREEN
 → exact-head full CI
-→ report evidence and stop before Task 4
+→ report evidence and stop before Task 5
 ```
