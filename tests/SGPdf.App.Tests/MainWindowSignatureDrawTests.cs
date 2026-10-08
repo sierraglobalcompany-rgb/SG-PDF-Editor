@@ -25,11 +25,12 @@ public sealed class MainWindowSignatureDrawTests
             try
             {
                 var panel = Assert.IsType<StackPanel>(window.FindName("SignaturePropertiesPanel"));
-                Assert.Null(window.FindName("DrawSignatureButton"));
+                var button = Assert.IsType<Button>(window.FindName("DrawSignatureButton"));
+                Assert.Equal(Visibility.Collapsed, panel.Visibility);
                 AttachPdfWorkspace(window, fixture.SourcePath);
                 Click(window, "SignModeButton");
                 Assert.Equal(Visibility.Visible, panel.Visibility);
-                Assert.IsType<Button>(window.FindName("DrawSignatureButton"));
+                Assert.True(button.IsEnabled);
             }
             finally
             {
