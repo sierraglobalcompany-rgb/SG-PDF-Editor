@@ -520,6 +520,8 @@ public sealed class MainWindowReaderTests
         {
             try
             {
+                var dispatcher = Dispatcher.CurrentDispatcher;
+                SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext(dispatcher));
                 AwaitWithDispatcher(action());
             }
             catch (Exception ex)
