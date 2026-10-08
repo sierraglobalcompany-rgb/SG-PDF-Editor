@@ -1,3 +1,5 @@
+using System.IO;
+
 namespace SGPdf.App.Features.Sign;
 
 internal static class SignatureImageLimits
