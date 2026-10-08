@@ -31,7 +31,7 @@ public sealed class MainWindowReaderTests
             try
             {
                 Assert.True(await OpenReaderAsync(window, fixture.SourcePath));
-                Assert.Equal(Visibility.Visible, Element<FrameworkElement>(window, "ReaderContinuousSurface").Visibility);
+                Assert.Equal(Visibility.Visible, Element<Grid>(window, "ReaderContinuousSurface").Visibility);
                 Assert.Equal(Visibility.Collapsed, Element<ScrollViewer>(window, "PdfScrollViewer").Visibility);
                 Assert.Equal(Visibility.Collapsed, Element<Canvas>(window, "SignatureOverlayCanvas").Visibility);
             }
@@ -300,7 +300,7 @@ public sealed class MainWindowReaderTests
                 PumpUntil(() => (bool)(GetField(window, "_signatureModeActive") ?? false));
 
                 Assert.Equal(2, GetNavigation(window)!.CurrentPageIndex);
-                Assert.Equal(Visibility.Collapsed, Element<FrameworkElement>(window, "ReaderContinuousSurface").Visibility);
+                Assert.Equal(Visibility.Collapsed, Element<Grid>(window, "ReaderContinuousSurface").Visibility);
                 Assert.Equal(Visibility.Visible, Element<ScrollViewer>(window, "PdfScrollViewer").Visibility);
                 Assert.Equal(Visibility.Visible, Element<Image>(window, "PdfImage").Visibility);
                 Assert.NotNull(Element<Image>(window, "PdfImage").Source);
@@ -329,7 +329,7 @@ public sealed class MainWindowReaderTests
                     (Func<SignatureGuardReason, PendingSignatureDecision>)(_ => PendingSignatureDecision.Cancel));
                 Click(window, "ReadModeButton");
                 Assert.True((bool)GetField(window, "_signatureModeActive")!);
-                Assert.Equal(Visibility.Collapsed, Element<FrameworkElement>(window, "ReaderContinuousSurface").Visibility);
+                Assert.Equal(Visibility.Collapsed, Element<Grid>(window, "ReaderContinuousSurface").Visibility);
                 Assert.Equal(2, GetNavigation(window)!.CurrentPageIndex);
                 Assert.True(((SignatureEditState)GetField(window, "_signatureEditState")!).IsDirty);
 
@@ -337,7 +337,7 @@ public sealed class MainWindowReaderTests
                     (Func<SignatureGuardReason, PendingSignatureDecision>)(_ => PendingSignatureDecision.Discard));
                 Click(window, "ReadModeButton");
                 Assert.False((bool)GetField(window, "_signatureModeActive")!);
-                Assert.Equal(Visibility.Visible, Element<FrameworkElement>(window, "ReaderContinuousSurface").Visibility);
+                Assert.Equal(Visibility.Visible, Element<Grid>(window, "ReaderContinuousSurface").Visibility);
                 Assert.Equal(Visibility.Collapsed, Element<Canvas>(window, "SignatureOverlayCanvas").Visibility);
                 Assert.Equal(2, GetNavigation(window)!.CurrentPageIndex);
             }
@@ -361,7 +361,7 @@ public sealed class MainWindowReaderTests
 
                 Invoke(window, "CommitLoadedZpl", document, rendered);
 
-                Assert.Equal(Visibility.Collapsed, Element<FrameworkElement>(window, "ReaderContinuousSurface").Visibility);
+                Assert.Equal(Visibility.Collapsed, Element<Grid>(window, "ReaderContinuousSurface").Visibility);
                 Assert.Equal(Visibility.Collapsed, Element<Canvas>(window, "SignatureOverlayCanvas").Visibility);
                 Assert.Null(GetSession(window));
                 Assert.Equal(Visibility.Visible, Element<Border>(window, "LabelNavigationBar").Visibility);
