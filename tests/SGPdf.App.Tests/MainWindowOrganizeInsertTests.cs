@@ -123,7 +123,7 @@ public sealed class MainWindowOrganizeInsertTests
     }
 
     [Fact]
-    public void EnterOrganize_EnablesInsertAndMerge_ButLeavesTask8CommandsDisabled()
+    public void EnterOrganize_EnablesInsertMergeAndSplit_ButExtractNeedsSelection()
     {
         OrganizeWindowTestHost.RunInSta(async () =>
         {
@@ -137,7 +137,7 @@ public sealed class MainWindowOrganizeInsertTests
                 Assert.True(OrganizeWindowTestHost.Element<Button>(window, "OrganizeInsertButton").IsEnabled);
                 Assert.True(OrganizeWindowTestHost.Element<Button>(window, "OrganizeMergeButton").IsEnabled);
                 Assert.False(OrganizeWindowTestHost.Element<Button>(window, "OrganizeExtractButton").IsEnabled);
-                Assert.False(OrganizeWindowTestHost.Element<Button>(window, "OrganizeSplitButton").IsEnabled);
+                Assert.True(OrganizeWindowTestHost.Element<Button>(window, "OrganizeSplitButton").IsEnabled);
             }
             finally { OrganizeWindowTestHost.CloseClean(window); }
         });
