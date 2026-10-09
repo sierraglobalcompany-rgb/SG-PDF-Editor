@@ -64,9 +64,48 @@ public sealed class OrganizePreservationTests
         Assert.False(result.RequiresWarningConfirmation);
     }
 
+    [Fact]
+    public void Characterize_RealWriterOutput_ReportsObservedStructures()
+    {
+        var observations = new List<string>();
+        foreach (var fixtureKind in new[]
+                 {
+                     "Metadata", "Navigation", "Form", "NamedDestination",
+                     "TaggedStructure", "PageLabel", "Attachment"
+                 })
+        {
+            using var fixture = CreateFixture(fixtureKind);
+            using var sourceSession = PdfDocumentSession.Open(fixture.Path);
+            var pageCount = sourceSession.PageCount;
+            var sourceResult = new OrganizePreflightInspector().Inspect(sourceSession);
+            var source = OrganizeSource.Capture(fixture.Path, pageCount);
+            var plan = OrganizePlan.FromPrimarySource(source);
+            var destination = Path.Combine(fixture.DirectoryPath, $"{fixtureKind}-output.pdf");
+
+            new PdfOrganizeWriter().SaveAsCopy(
+                plan,
+                fixture.Path,
+                destination,
+                warningsConfirmed: true);
+
+            using var outputSession = PdfDocumentSession.Open(destination);
+            var outputResult = new OrganizePreflightInspector().Inspect(outputSession);
+            observations.Add(
+                $"{fixtureKind}: source=[{Kinds(sourceResult)}] output=[{Kinds(outputResult)}]");
+        }
+
+        Assert.True(false, string.Join(Environment.NewLine, observations));
+    }
+
+    private static string Kinds(OrganizePreflightResult result)
+        => string.Join(",", result.Findings.Select(finding => finding.Kind.ToString()));
+
     private static OrganizePdfFixture CreateFixture(string fixtureKind)
         => fixtureKind switch
         {
+            "Metadata" => OrganizePdfFixtureFactory.CreateMetadata(),
+            "Navigation" => OrganizePdfFixtureFactory.CreateNavigation(),
+            "Form" => OrganizePdfFixtureFactory.CreateAcroForm(),
             "NamedDestination" => OrganizePdfFixtureFactory.CreateNamedDestination(),
             "TaggedStructure" => OrganizePdfFixtureFactory.CreateTagged(),
             "PageLabel" => OrganizePdfFixtureFactory.CreatePageLabels(),
