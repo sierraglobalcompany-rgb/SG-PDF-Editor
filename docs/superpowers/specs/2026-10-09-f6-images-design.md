@@ -12,7 +12,7 @@ F6 adds practical editing of real image page objects inside a PDF without turnin
 
 Success means the user can enter `EDITAR`, select a real PDF image object, extract it as a visually faithful local image, replace it while preserving its geometry when viable, move it, resize it, rotate it, delete it, undo/redo changes, and save the result through a validated `Guardar como...` pipeline.
 
-Opacity and z-order belong to the F6 product requirement, but they are capability-gated against the exact pinned `pdfium.dll`. They are enabled only if the runtime exports and representative save/reopen fixtures prove the required behavior. If either gate fails, F6 closes with that capability explicitly unsupported rather than introducing a second engine or a destructive fallback.
+Opacity and z-order belong to the F6 product requirement, but they are capability-gated against the exact pinned `pdfium.dll`. They are enabled only if the runtime exports and representative save/reopen fixtures prove the required behavior. If either gate fails, the rest of F6 may still close with that limitation explicitly documented, but the corresponding IMG-03 subrequirement remains open/partial rather than being falsely marked AUTO PASS.
 
 F6 edits real PDF image objects. It does not hide originals under white rectangles, flatten the page as a screenshot, or silently replace unsupported operations with raster overlays.
 
@@ -44,7 +44,7 @@ F6 extracts a visually faithful PNG and replaces an image from local PNG/JPEG in
 
 ### IMG-03 — transform and delete
 
-F6 supports move, resize, rotate and delete. Opacity and z-order are included only after exact-runtime capability gates pass.
+F6 supports move, resize, rotate and delete. Opacity and z-order remain explicit IMG-03 subrequirements and can be marked complete only after their exact-runtime capability gates pass.
 
 ### IMG-04 — undo/redo
 
@@ -393,7 +393,7 @@ Gate requirements:
 
 If the gate passes, the UI exposes a 0–100% opacity control.
 
-If it fails, opacity remains documented as unsupported for the pinned runtime. No overlay or page rasterization fallback is allowed.
+If it fails, opacity remains documented as unsupported for the pinned runtime. No overlay or page rasterization fallback is allowed, and IMG-03 cannot be marked fully AUTO PASS.
 
 ## 13. Z-order capability gate
 
@@ -420,7 +420,7 @@ Gate requirements:
 8. prove other page objects remain present;
 9. prove undo/redo reverses/reapplies ordering safely.
 
-If arbitrary safe ordering cannot be proven, F6 does not expose z-order controls and does not add another PDF engine merely for this requirement.
+If arbitrary safe ordering cannot be proven, F6 does not expose z-order controls and does not add another PDF engine merely for this requirement. IMG-03 then remains partial/open for z-order.
 
 ## 14. Save/materialization architecture
 
@@ -733,7 +733,8 @@ The design deliberately splits F6 into small reviewable gates.
 
 - implement opacity only if its F6.1 gate passed;
 - implement z-order only if its F6.1 gate passed;
-- if one or both fail, document unsupported status and do not introduce another engine solely to satisfy them.
+- if one or both fail, document unsupported status and do not introduce another engine solely to satisfy them;
+- a failed optional gate does not block the other core F6 slices, but it prevents full IMG-03 AUTO PASS.
 
 ### F6.7 — Preservation + hardening + closure
 
@@ -778,16 +779,17 @@ Opacity or z-order gate failure alone is **not** a stop condition for the rest o
 - PNG/JPEG candidate-first replacement;
 - replacement geometry preserved initially;
 - source replacement file lifetime no longer matters after capture;
-- transparent PNG behavior either proven or explicitly blocked.
+- transparent PNG behavior either proven or explicitly blocked with that subcase left open.
 
-### IMG-03 AUTO PASS requires
+### IMG-03 AUTO PASS requires all of the following
 
 - move/resize/rotate/delete logical + saved-output verification;
 - source remains untouched;
 - output reopens/renders;
-- opacity and z-order are either separately proven and enabled or explicitly recorded as unsupported by capability evidence.
+- opacity capability passes and is enabled;
+- z-order capability passes and is enabled.
 
-Because IMG-03 names opacity/z-order as requirements, F6 closure documentation must state their exact status; it must not silently mark them complete if a gate failed.
+If opacity or z-order fails its capability gate, **IMG-03 must not be marked AUTO PASS**. The core F6 implementation may still reach automated closure with IMG-03 explicitly `PARTIAL/OPEN`, recording exactly which capability is unsupported on the pinned runtime. No second engine or destructive fallback is added merely to turn that checkbox green.
 
 ### IMG-04 AUTO PASS requires
 
