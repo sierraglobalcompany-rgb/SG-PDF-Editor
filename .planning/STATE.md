@@ -17,7 +17,7 @@ See `.planning/PROJECT.md`.
 > Numeric GSD progress is not product-completion truth while automated and physical/private gates are tracked separately. GitHub exact heads/CI + this status are authoritative for executed work.
 
 **Core value:** Resolver PDF + ZPL diario de forma rápida, privada, estable y offline.  
-**Current focus:** Phase 5 — **F4 Lector Completo**, Tasks 1–6 closed automatically; Task 7 is the next user-approved execution gate.
+**Current focus:** Phase 5 — **F4 Lector Completo**, Tasks 1–7 closed automatically; Task 8 is the next user-approved execution gate.
 
 ## Previous Gate — F3.4 closed automatically
 
@@ -30,7 +30,7 @@ See `.planning/PROJECT.md`.
 - PR #22: draft/open/unmerged, stacked on F3.3.
 - Manual real Windows QA: **NOT RUN**.
 
-## Current Gate — F4 Task 7 pending user `continúa`
+## Current Gate — F4 Task 8 pending user `continúa`
 
 - Branch: `feat/f4-full-reader`.
 - Base: exact F3.4 closure head `1bef751962e0b4aaf35fbda9b8a1a9a2ee2ba36b`.
@@ -93,7 +93,6 @@ See `.planning/PROJECT.md`.
 - Search strategy: on demand only; no OCR and no permanent whole-document index/result cache.
 - KISS ruling: find UI is feature-local/dynamic in `MainWindow.ReaderSearch.cs`, matching the existing F4 reader/thumbnails pattern and avoiding a large `MainWindow.xaml` rewrite.
 - Scope audit against Task 4 closure `c27dfa738d946147bec5cb48c4e7ab2afde776bc`: exactly 8 Task 5 code/test files changed; no package/lock, F3, ZPL, print, persistence/database/network or Task 6 selection/copy changes.
-- Test correction during GREEN: a synthetic WinAnsi test originally mixed default search flags with PDFium `Ñ/ñ` case folding. Unicode extraction remained green; the flag-specific assertion was isolated to ASCII so it tests only case-insensitive + non-whole-word semantics.
 
 ### Task 6 — AUTO PASS
 
@@ -109,6 +108,21 @@ See `.planning/PROJECT.md`.
 - Coordinate ruling: selection uses each rendered page's `PdfPageDeviceTransform`; it does not reuse Sign `PdfRect`, `SignatureCoordinateMapper` or signature overlay state.
 - KISS ruling: all integration stayed feature-local in `MainWindow.ReaderSelection.cs`; the plan allowed a narrow `MainWindow.Reader.cs` edit, but none was necessary because `ReaderPageItem.PropertyChanged` supplies the geometry-change hook directly.
 - Scope audit against Task 5 closure `36e6b3f43115320bd35dd05691384bcfa622503a`: exactly 4 Task 6 files changed; no PDFium bindings, package/lock, F3, ZPL, print, persistence/database/network or Task 7 bookmark/link changes.
+
+### Task 7 — AUTO PASS
+
+- Clean contract RED head: `502ed9ea3722bd8eb45d796e51d9f57a5969e03d`.
+- RED CI `37872082122`: expected build failure with exactly 2 missing `PdfBookmarkNode` / `PdfPageLink` contract errors; 0 warnings.
+- Initial GREEN CI `37872367149`: expected intermediate compile failure with 3 localized integration errors (`DispatcherPriority` import, existing `ValidatePageIndex` signature and nullable rect value); 0 warnings.
+- Functional/verified head: `e85f8c783eaf327c6e133fef172aeda198cfe1bf`.
+- Exact-head functional CI `37872707082`: PASS.
+- Release build: 0 warnings / 0 errors.
+- Tests: 399 PASS / 0 FAIL / 0 SKIPPED.
+- Delivered: read-only hierarchical bookmarks, cycle/repeated-handle protection, depth limit 128, node limit 10,000, internal bookmark/GOTO navigation, explicit link-annotation extraction, lazy visible-page link metadata, PDF-coordinate link geometry and link overlay reprojection.
+- Security ruling: PDFium navigation code only reads metadata. Direct/internal GOTO executes inside the current PDF; URI actions require an absolute `http`/`https` URI and an explicit user confirmation before the OS browser seam is invoked. Launch, JavaScript, remote GOTO, file/shell, mailto/ftp and unknown actions are never executed and degrade to unsupported/no-op.
+- Selection precedence: link overlay is non-hit-testable and link activation requires click-like movement within 5 DIP; text-selection drag remains authoritative.
+- KISS ruling: `ReaderBookmarksTree` created in Task 3 was reused; Task 7 stayed feature-local in `MainWindow.ReaderLinks.cs` and did not require a large XAML/reader refactor.
+- Scope audit against Task 6 closure `a54a299371b2ca745e493499ffa284850ed1b9c6`: exactly 8 Task 7 code/test files changed; no package/lock, F3, ZPL, print, recents, database or required-network changes.
 
 ### Frozen F4 direction
 
@@ -134,8 +148,8 @@ See `.planning/PROJECT.md`.
 4. **DONE** — Password-protected PDFs.
 5. **DONE** — PDFium text core + find navigation.
 6. **DONE** — One-page text selection + copy.
-7. **NEXT** — Bookmarks + safe explicit links.
-8. Shortcuts + atomic recents + hardening.
+7. **DONE** — Bookmarks + safe explicit links.
+8. **NEXT** — Shortcuts + atomic recents + hardening.
 9. Closure audit/docs + exact-head CI + draft stacked PR.
 
 Project cadence: one task per user `continúa` unless the user explicitly changes it.
@@ -148,7 +162,7 @@ Project cadence: one task per user `continúa` unless the user explicitly change
 - F1 Gate ZPL-A: synthetic PASS; private real corpus NOT RUN.
 - F2.1–F2.6 ZPL Workspace: automated PASS.
 - F3.1–F3.4 Visual Signature: automated PASS; corresponding manual QA remains NOT RUN.
-- F4 Tasks 1–6: automated PASS.
+- F4 Tasks 1–7: automated PASS.
 
 ## Parallel Acceptance Gates Still Open
 
@@ -165,6 +179,7 @@ Project cadence: one task per user `continúa` unless the user explicitly change
 - F4 real protected-PDF prompt/retry/cancel/printing QA: **NOT RUN**.
 - F4 real text-search UX/Unicode/large-document performance QA: **NOT RUN**.
 - F4 real mouse text-selection/cross-page/zoom/Unicode clipboard QA: **NOT RUN**.
+- F4 real bookmarks/internal-link/external-link-confirmation Windows QA: **NOT RUN**.
 
 They remain separate from automated PASS and do not become accepted by inference.
 
@@ -183,11 +198,11 @@ They remain separate from automated PASS and do not become accepted by inference
 
 ```text
 next user `continúa`
-→ Task 7 RED for bounded bookmarks + explicit safe PDF links
+→ Task 8 RED for shortcuts + atomic max-10 recents + offline/path-probing hardening
 → confirm expected RED
-→ minimal GREEN bookmark tree + internal GOTO + confirmed HTTP/HTTPS only
+→ minimal GREEN shortcut/recents behavior
 → full regression + exact-head CI
-→ report evidence and stop before Task 8
+→ report evidence and stop before Task 9 closure
 ```
 
 ## Continuity
