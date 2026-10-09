@@ -9,7 +9,7 @@
 **Estado:** synthetic Gate PASS → Labelize 1.7.0 selected; private Mercado Libre corpus **NOT RUN**.
 
 ## Phase 3 — F2 Etiquetas ZPL
-**Estado:** F2.1–F2.6 automated PASS; private real-label corpus + thermal/ruler/scanner QA **NOT RUN**.
+**Estado:** F2.1–F2.6 automated PASS; private corpus + thermal/ruler/scanner QA **NOT RUN**.
 
 ## Phase 4 — F3 Firma Visual
 **Estado:** F3.1–F3.4 automated PASS; corresponding real QA **NOT RUN**.
@@ -24,35 +24,24 @@ Closure `1d620f1b2b9717aab35671e18a9dc78f28a8afdd`; draft PR #23 open/unmerged.
 ## Phase 6 — F5 Organizar
 **Goal:** reorder/rotate/delete/duplicate/insert/extract/merge/split with preservation preflight and transactional Save As.
 
-**Estado:** **AUTOMATED CLOSURE IN FINAL CHECKS**; functional implementation GREEN. Manual Windows QA **NOT RUN**.
+**Estado:** **AUTOMATED CLOSURE PASS**, provided the exact Task-10 checkpoint head has both push and PR Windows CI green. Real Windows/manual QA **NOT RUN**.
 
-Key evidence before final docs/PR checkpoint:
+Closure evidence before the final checkpoint commit:
 
-- exact base F4: `1d620f1b2b9717aab35671e18a9dc78f28a8afdd`;
-- functional Task-10 head: `d92cd0cc60fb7de9a3d9d595bdfd0468ee38ff8a`;
-- CI `37990505245` attempt 2 PASS: **550/550 tests**, Release build **0 warnings / 0 errors**;
-- full F4→F5 audit at functional head: **82 ahead / 0 behind**;
+- stacked base F4: `1d620f1b2b9717aab35671e18a9dc78f28a8afdd`;
+- functional head `d92cd0cc60fb7de9a3d9d595bdfd0468ee38ff8a` → CI `37990505245` attempt 2 PASS, 550/550, build 0/0;
+- reconciled-docs head `e9f96566c1d31a442da6373e1a648cc61a9e5bfc` → push CI `37991289080` PASS, 550/550, build 0/0;
+- draft PR #24 base `feat/f4-full-reader`, head `feat/f5-organize`, open/unmerged;
+- PR CI `37991479820` PASS, 550/550, build 0/0;
 - no project/lock dependency changes, second PDF engine or runtime network layer;
 - preservation matrix: `docs/history/2026-10-09-F5-preservation-matrix.md`;
 - signed/password-opened PDFs hard-block structural output;
 - representative fixtures prove current writer changes/loses forms, bookmarks, internal links, named destinations, tagged structure, page labels, attachments and original metadata, therefore explicit warning confirmation is required;
 - Task 10 adds dirty-plan protection for opening another PDF and switching away from ORGANIZAR; successful Save As clears dirty state.
 
-Tasks:
+Tasks 0–10: **AUTO PASS** when the exact checkpoint head's push + PR CI are green. `ORG-01..04`: **AUTO PASS**.
 
-0. NativeGate prerequisite — AUTO PASS.
-1. Capability gate + protected session marker — AUTO PASS.
-2. Plan model + operations — AUTO PASS.
-3. Structural preflight — AUTO PASS.
-4. Writer + validator — AUTO PASS.
-5. Organize thumbnails/surface — AUTO PASS.
-6. Selection/drag/reorder/save — AUTO PASS.
-7. Insert + merge — AUTO PASS.
-8. Extract + split — AUTO PASS.
-9. Preservation hardening — AUTO PASS.
-10. Closure/hardening/audit/docs/PR — functional GREEN; final exact-head push+PR checks pending.
-
-`ORG-01..04`: **AUTO PASS**. Real Windows organize UX/performance/dialog/offline QA: **NOT RUN**.
+Real Windows organize UX/performance/dialog/offline QA: **NOT RUN**.
 
 ## Phase 7 — F6 Imágenes
 **Estado:** pending. **Next allowed gate after F5 closure: design/spec only.**
@@ -84,8 +73,10 @@ F1                            synthetic PASS / private corpus pending
 F2                            automated PASS / private + physical QA pending
 F3                            automated PASS / manual QA pending
 F4                            automated closure PASS / manual QA pending
-F5                            automated closure final checks / manual QA pending
+F5                            automated closure PASS / manual QA pending
 F6–F12                        pending
 ```
+
+Final F5 exact-head CI evidence is recorded in PR #24 conversation to avoid changing the tested git head solely to cite its own CI.
 
 No merge to `main` without explicit user approval.
