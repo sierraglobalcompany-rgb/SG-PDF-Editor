@@ -66,6 +66,87 @@ public sealed partial class PdfDocumentSession
         }
     }
 
+    internal bool HasOrganizeNamedDestinations(CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        ThrowIfDisposed();
+
+        PdfiumRuntime.NativeGate.Wait(cancellationToken);
+        try
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
+            return PdfiumNative.FPDF_CountNamedDests(_document) > 0u;
+        }
+        finally
+        {
+            PdfiumRuntime.NativeGate.Release();
+        }
+    }
+
+    internal bool IsOrganizeTagged(CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        ThrowIfDisposed();
+
+        PdfiumRuntime.NativeGate.Wait(cancellationToken);
+        try
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
+            return PdfiumNative.FPDFCatalog_IsTagged(_document) != 0;
+        }
+        finally
+        {
+            PdfiumRuntime.NativeGate.Release();
+        }
+    }
+
+    internal bool HasOrganizePageLabels(CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        ThrowIfDisposed();
+
+        PdfiumRuntime.NativeGate.Wait(cancellationToken);
+        try
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
+
+            var pageCount = PdfiumNative.FPDF_GetPageCount(_document);
+            for (var pageIndex = 0; pageIndex < pageCount; pageIndex++)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                if (PdfiumNative.FPDF_GetPageLabel(_document, pageIndex, IntPtr.Zero, 0) > 2u)
+                    return true;
+            }
+
+            return false;
+        }
+        finally
+        {
+            PdfiumRuntime.NativeGate.Release();
+        }
+    }
+
+    internal bool HasOrganizeAttachments(CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        ThrowIfDisposed();
+
+        PdfiumRuntime.NativeGate.Wait(cancellationToken);
+        try
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
+            return PdfiumNative.FPDFDoc_GetAttachmentCount(_document) > 0;
+        }
+        finally
+        {
+            PdfiumRuntime.NativeGate.Release();
+        }
+    }
+
     internal bool HasOrganizeMetadata(CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
