@@ -1,3 +1,5 @@
+using System.IO;
+
 namespace SGPdf.App.Features.Reader;
 
 internal sealed class RecentPdfFileOps

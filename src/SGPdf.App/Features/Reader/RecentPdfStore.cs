@@ -1,3 +1,4 @@
+using System.IO;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -138,7 +139,7 @@ internal sealed class RecentPdfStore
         var manifest = new RecentManifest
         {
             Version = ManifestVersion,
-            Items = entries.Select(item => new RecentManifestItem
+            Items = entries.Select(item => (RecentManifestItem?)new RecentManifestItem
             {
                 FullPath = item.FullPath,
                 LastOpenedUtc = item.LastOpenedUtc.ToUniversalTime()
