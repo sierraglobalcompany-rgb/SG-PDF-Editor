@@ -40,6 +40,8 @@ public partial class MainWindow
         if (_readerShortcutUiInitialized)
             return;
 
+        _openPdfShortcutAction ??= () => OpenPdf_Click(OpenPdfMenuItem, new RoutedEventArgs(MenuItem.ClickEvent));
+        _printPdfShortcutAction ??= () => PrintPdf_Click(PrintPdfMenuItem, new RoutedEventArgs(MenuItem.ClickEvent));
         _readerShortcutUiInitialized = true;
         PreviewKeyDown += ReaderShortcutWindow_PreviewKeyDown;
     }
