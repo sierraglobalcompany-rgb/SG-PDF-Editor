@@ -55,6 +55,19 @@ internal static class PdfiumNative
     }
 
     [StructLayout(LayoutKind.Sequential)]
+    internal struct QuadPointsF
+    {
+        internal float X1;
+        internal float Y1;
+        internal float X2;
+        internal float Y2;
+        internal float X3;
+        internal float Y3;
+        internal float X4;
+        internal float Y4;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
     internal struct ImageMetadata
     {
         internal uint Width;
@@ -136,6 +149,19 @@ internal static class PdfiumNative
     internal static extern int FPDFPageObj_GetMatrix(IntPtr pageObject, out Matrix matrix);
 
     [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern int FPDFPageObj_GetRotatedBounds(
+        IntPtr pageObject,
+        out QuadPointsF quadPoints);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern int FPDFPageObj_SetFillColor(
+        IntPtr pageObject,
+        uint red,
+        uint green,
+        uint blue,
+        uint alpha);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
     internal static extern int FPDFImageObj_GetImageMetadata(
         IntPtr imageObject,
         IntPtr page,
@@ -145,10 +171,22 @@ internal static class PdfiumNative
     internal static extern IntPtr FPDFImageObj_GetBitmap(IntPtr imageObject);
 
     [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern IntPtr FPDFImageObj_GetRenderedBitmap(
+        IntPtr document,
+        IntPtr page,
+        IntPtr imageObject);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
     internal static extern int FPDFPageObj_SetMatrix(IntPtr pageObject, ref Matrix matrix);
 
     [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
     internal static extern int FPDFPage_RemoveObject(IntPtr page, IntPtr pageObject);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern int FPDFPage_InsertObjectAtIndex(
+        IntPtr page,
+        IntPtr pageObject,
+        nuint index);
 
     [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
     internal static extern IntPtr FPDFText_LoadPage(IntPtr page);
