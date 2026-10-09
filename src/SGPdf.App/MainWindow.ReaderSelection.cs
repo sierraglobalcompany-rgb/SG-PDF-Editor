@@ -1,4 +1,5 @@
 using System.Collections.Specialized;
+using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -76,6 +77,8 @@ public partial class MainWindow
             new ScrollChangedEventHandler(ReaderSelectionReaderScrollChanged));
         _readerPageList.SizeChanged += ReaderSelectionReaderSizeChanged;
         _readerPages.CollectionChanged += ReaderSelectionPagesCollectionChanged;
+        foreach (var page in _readerPages)
+            page.PropertyChanged += ReaderSelectionPage_PropertyChanged;
         PreviewKeyDown += ReaderSelectionWindow_PreviewKeyDown;
         if (_signModeButton is not null)
             _signModeButton.Click += ReaderSelectionSignMode_Click;
@@ -376,8 +379,30 @@ public partial class MainWindow
 
     private void ReaderSelectionPagesCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
+        if (e.OldItems is not null)
+        {
+            foreach (ReaderPageItem page in e.OldItems)
+                page.PropertyChanged -= ReaderSelectionPage_PropertyChanged;
+        }
+
+        if (e.NewItems is not null)
+        {
+            foreach (ReaderPageItem page in e.NewItems)
+                page.PropertyChanged += ReaderSelectionPage_PropertyChanged;
+        }
+
         if (e.Action == NotifyCollectionChangedAction.Reset)
             ClearReaderTextSelection();
+    }
+
+    private void ReaderSelectionPage_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(ReaderPageItem.Geometry) &&
+            sender is ReaderPageItem page &&
+            _readerTextSelection?.PageIndex == page.PageIndex)
+        {
+            UpdateReaderSelectionOverlay();
+        }
     }
 
     private void ReaderSelectionSignMode_Click(object sender, RoutedEventArgs e)
