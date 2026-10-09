@@ -5,12 +5,12 @@ using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Shapes;
 using System.Windows.Threading;
 using PdfSharp.Pdf;
 using SGPdf.App.Features.Reader;
 using SGPdf.App.Features.Sign;
 using SGPdf.App.Pdf;
+using Rectangle = System.Windows.Shapes.Rectangle;
 using Xunit;
 
 namespace SGPdf.App.Tests;
@@ -359,9 +359,9 @@ public sealed class MainWindowReaderSelectionTests
 
         internal static PdfFixture Create(int pageCount)
         {
-            var directory = Path.Combine(Path.GetTempPath(), $"sgpdf-reader-selection-{Guid.NewGuid():N}");
+            var directory = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"sgpdf-reader-selection-{Guid.NewGuid():N}");
             Directory.CreateDirectory(directory);
-            var source = Path.Combine(directory, "source.pdf");
+            var source = System.IO.Path.Combine(directory, "source.pdf");
             var document = new PdfDocument();
             for (var index = 0; index < pageCount; index++)
             {
