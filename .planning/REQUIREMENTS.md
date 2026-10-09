@@ -6,9 +6,9 @@
 
 ## Status Semantics
 
-- **AUTO PASS** = automated implementation + CI evidence exists.
+- **AUTO PASS** = automated implementation + exact-head CI evidence exists.
 - **NOT RUN** = required real/private/physical QA not executed.
-- Unchecked boxes remain open where implementation/acceptance is pending.
+- A checked item can be AUTO PASS while a separate physical/manual acceptance gate remains NOT RUN.
 
 ## F0 — PDF Base
 
@@ -22,6 +22,8 @@ Automated implementation PDF-BASE-01..07: **AUTO PASS**. Physical Windows/print/
 - [ ] **PDF-BASE-06** Print through Windows, including Microsoft Print to PDF.
 - [ ] **PDF-BASE-07** Operate with network disabled.
 
+> F0 checkboxes remain open only because their physical Windows gate is tracked on the same requirement list; automated F0.1–F0.6 is already PASS.
+
 ## F1 — Gate ZPL-A
 
 Synthetic Gate PASS; Labelize 1.7.0 selected. Private real Mercado Libre corpus **NOT RUN**.
@@ -29,7 +31,7 @@ Synthetic Gate PASS; Labelize 1.7.0 selected. Private real Mercado Libre corpus 
 - [ ] **ZPL-GATE-01** Compare BinaryKits.Zpl vs Labelize with synthetic + private real corpus.
 - [x] **ZPL-GATE-02** Synthetic validation for required ZPL commands/content.
 - [x] **ZPL-GATE-03** Synthetic benchmark without multiplying work by `^PQ`.
-- [x] **ZPL-GATE-04** Select engine using fidelity/performance/packaging/license evidence -> Labelize 1.7.0.
+- [x] **ZPL-GATE-04** Select engine using fidelity/performance/packaging/license evidence → Labelize 1.7.0.
 
 ## F2 — ZPL Labels
 
@@ -73,21 +75,23 @@ Mouse/touch/stylus hardware QA: **NOT RUN**.
 
 Closure head `1bef751962e0b4aaf35fbda9b8a1a9a2ee2ba36b`; closure CI `37837613618` PASS; PR CI `37837833517` PASS; 301 tests. Real Windows QA: **NOT RUN**.
 
-## F4 — Full Reader — IMPLEMENTATION-PLAN GATE
+## F4 — Full Reader — AUTOMATED CLOSURE GATE
 
-Formal design: `docs/superpowers/specs/2026-10-08-f4-full-reader-design.md` — **APPROVED by user 2026-10-08**.  
-TDD implementation plan: `docs/superpowers/plans/2026-10-08-f4-full-reader.md` — **WRITTEN + SELF-AUDITED, awaiting user approval**.  
-Product code: **NOT STARTED**.
+Formal design: `docs/superpowers/specs/2026-10-08-f4-full-reader-design.md` — **APPROVED 2026-10-08**.  
+TDD implementation plan: `docs/superpowers/plans/2026-10-08-f4-full-reader.md` — **APPROVED 2026-10-08**.  
+Tasks 1–8: **AUTO PASS**. Full-branch Task 9 audit: **PASS**. Final exact-head CI + draft PR/PR-CI remain before formal F4 closure.
 
-- [ ] **READER-01** Continuous vertical virtualized reading + lazy thumbnails, no eager full-document full-resolution render.
-- [ ] **READER-02** Local PDFium search + one-page text selection/copy; image-only PDFs correctly require later OCR.
-- [ ] **READER-03** Read-only cycle-safe bookmarks + explicit PDF internal links and confirmed HTTP/HTTPS URI links only.
-- [ ] **READER-04** Password-protected PDF open/retry/cancel flow with no password persistence.
-- [ ] **READER-05** Reader shortcuts + max-10 local recent-file paths, no startup path probing; no multi-document tabs in F4.
-- [ ] **READER-06** Preserve existing F3 architecture: LEER continuous; FIRMAR uses existing single-active-page `PdfImage`/`SignatureEditState` path.
-- [ ] **READER-07** Visible full-page bitmap retention bounded to visible pages + one neighbor before/after; lazy thumbnails; stale render publication rejected.
+- [x] **READER-01 — AUTO PASS** Continuous vertical virtualized reading + lazy thumbnails, no eager full-document full-resolution render. Evidence: Tasks 1–3; CIs `37843337925`, `37852149659`, `37855511813`.
+- [x] **READER-02 — AUTO PASS** Local PDFium search + one-page text selection/copy; image-only PDFs correctly require later OCR. Evidence: Tasks 5–6; CIs `37867206589`, `37870778333`.
+- [x] **READER-03 — AUTO PASS** Read-only cycle-safe bookmarks + explicit PDF internal links and confirmed HTTP/HTTPS URI links only. Evidence: Task 7; CI `37872707082`.
+- [x] **READER-04 — AUTO PASS** Password-protected PDF open/retry/cancel flow with no password persistence. Evidence: Task 4; CI `37857787178`.
+- [x] **READER-05 — AUTO PASS** Reader shortcuts + max-10 local recent-file paths, no startup/menu target probing; no multi-document tabs in F4. Evidence: Task 8; CI `37875513602`.
+- [x] **READER-06 — AUTO PASS** Preserve existing F3 architecture: LEER continuous; FIRMAR uses existing single-active-page `PdfImage`/`SignatureEditState` path. Evidence: Task 2 integration + Task 6/8 regressions; full diff contains no `Features/Sign` changes.
+- [x] **READER-07 — AUTO PASS** Visible full-page bitmap retention bounded to visible pages + one neighbor before/after; lazy thumbnails; stale render publication rejected. Evidence: Tasks 1–3; CIs `37843337925`, `37852149659`, `37855511813`.
 
-No READER item becomes PASS from spec or plan approval alone. Each requires its owning RED/GREEN implementation evidence plus exact-head CI; manual Windows QA remains separately reported.
+Pre-closure audited head `c36a8630e685cb143b312a0f260301b87a62bbd5`; CI `37875773158` PASS; **417 tests PASS / 0 FAIL / 0 SKIPPED; build 0 warnings / 0 errors**. Full F3.4→F4 compare is 118 commits ahead / 0 behind and adds no project/lock dependency changes, second PDF engine, WebView/network runtime, tabs, OCR, database, password persistence or F5+ editing scope.
+
+F4 real Windows performance/UX/protected-PDF/search/selection/bookmark/link/shortcuts/recents/offline QA: **NOT RUN**.
 
 ## F5 — Organize
 
@@ -124,8 +128,8 @@ No READER item becomes PASS from spec or plan approval alone. Each requires its 
 - [x] **LICENSE** Current runtime dependencies permissive/audited for current development scope; Labelize font provenance re-audit before public installer.
 - [x] **PRIVACY** Private fixtures ignored and CI hygiene rejects tracked `tests/PrivateFixtures/**`.
 - [x] **ORIGINAL** Early edit/sign flows protect source and use Save As behavior.
-- [x] **CI** Every completed automated slice has final-head Windows CI evidence.
-- [x] **KISS** No preventive enterprise architecture/dependency expansion detected through F4 planning gate.
+- [x] **CI** Every completed automated slice has final-head Windows CI evidence; Task 9 final closure CI is still required for the closure docs SHA.
+- [x] **KISS** No preventive enterprise architecture/dependency expansion detected through F4 full-branch audit.
 - [x] **NO-AUTOMERGE** Main unchanged; merges require explicit user approval.
 
 ## Traceability
