@@ -40,17 +40,25 @@ public partial class MainWindow
         var insertButton = Button("OrganizeInsertButton");
         var mergeButton = Button("OrganizeMergeButton");
         var saveButton = Button("OrganizeSaveAsButton");
+        var surface = _organizeSurface
+            ?? throw new InvalidOperationException("La superficie ORGANIZAR no está inicializada.");
 
-        insertButton.Click += (_, _) => TryInsertOrganizePdf();
-        mergeButton.Click += (_, _) => TryMergeOrganizePdf();
+        insertButton.Click += (_, _) =>
+        {
+            TryInsertOrganizePdf();
+            UpdateOrganizeTask7CommandAvailability();
+        };
+        mergeButton.Click += (_, _) =>
+        {
+            TryMergeOrganizePdf();
+            UpdateOrganizeTask7CommandAvailability();
+        };
+        saveButton.Click += (_, _) => UpdateOrganizeTask7CommandAvailability();
 
-        var enabledDescriptor = DependencyPropertyDescriptor.FromProperty(
-            UIElement.IsEnabledProperty,
+        var visibilityDescriptor = DependencyPropertyDescriptor.FromProperty(
+            UIElement.VisibilityProperty,
             typeof(UIElement));
-        enabledDescriptor?.AddValueChanged(saveButton, (_, _) => UpdateOrganizeTask7CommandAvailability());
-
-        if (_organizeSurface is not null)
-            _organizeSurface.IsVisibleChanged += (_, _) => UpdateOrganizeTask7CommandAvailability();
+        visibilityDescriptor?.AddValueChanged(surface, (_, _) => UpdateOrganizeTask7CommandAvailability());
 
         UpdateOrganizeTask7CommandAvailability();
 
