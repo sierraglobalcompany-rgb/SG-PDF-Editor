@@ -1,3 +1,4 @@
+using System.IO;
 using SGPdf.App.Pdf;
 
 namespace SGPdf.App.Features.Organize;
