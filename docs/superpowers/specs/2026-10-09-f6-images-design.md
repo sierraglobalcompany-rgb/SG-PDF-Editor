@@ -273,7 +273,7 @@ Delete marks the selected logical image as deleted. Native removal occurs only d
 
 The workspace must not mutate unrelated page objects.
 
-## 9. Undo/redo
+## 9. Undo/redo and post-save baseline
 
 Undo/redo is command-based and local to the F6 workspace. F6 does not snapshot whole PDF files for history.
 
@@ -301,10 +301,18 @@ Rules:
 - `Ctrl+Y` reapplies one redo command;
 - a new mutation after undo clears the redo stack;
 - selection changes alone are not undoable edits;
-- failed/cancelled commands never enter history;
-- successful Save As does not erase history automatically unless the implementation plan explicitly chooses to reset the workspace to the saved baseline; whichever behavior is selected must be tested and consistent.
+- failed/cancelled commands never enter history.
 
-For KISS, the recommended implementation plan should reset the F6 workspace to the successfully saved baseline after Save As, clear undo/redo and mark clean. This avoids ambiguous undo semantics against a destination that is not reopened as the active source.
+A successful Save As establishes a new **logical saved baseline** without replacing the active source session:
+
+- the current `ImageEditState` values remain in the workspace;
+- the active source path/session remains the original source PDF;
+- undo and redo stacks are cleared;
+- `dirty=false` because the current logical state matches the just-published output;
+- later edits start a new history from that baseline;
+- any later Save As rematerializes the complete current logical state from the unchanged original source, so previously saved edits are not lost merely because the prior destination was not reopened.
+
+A cancelled or failed Save As changes neither history nor dirty state.
 
 ## 10. Extract/save image
 
@@ -479,9 +487,9 @@ The temporary output must be reopened before publication.
 - output opens successfully;
 - page count equals source page count;
 - expected page sizes/rotations remain valid;
-- every page can render at a low validation DPI sequentially or, if full-document validation proves too costly, the implementation plan must retain the F5-quality invariant for all pages unless measured evidence justifies a narrower rule.
+- every page renders sequentially at 36 DPI, one bitmap at a time.
 
-Default design decision: **validate every output page sequentially at 36 DPI**, one bitmap at a time, matching F5's proven safety pattern.
+This retains the F5-quality validation invariant while bounding bitmap memory.
 
 ### Edited-page validation
 
@@ -643,7 +651,9 @@ Cover:
 - multiple commands in order;
 - undo followed by new mutation clears redo;
 - drag gesture yields one history record;
-- failed action does not enter history.
+- failed action does not enter history;
+- successful Save As preserves current logical states, clears undo/redo and marks clean;
+- a later edit/save still materializes all previously saved logical image states from the original source.
 
 ### 19.4 Writer tests
 
