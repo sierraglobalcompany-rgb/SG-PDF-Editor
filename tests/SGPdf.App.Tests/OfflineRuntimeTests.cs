@@ -12,7 +12,8 @@ public sealed class OfflineRuntimeTests
         "System.Net.Http",
         "System.Net.Requests",
         "System.Net.Sockets",
-        "System.Net.WebClient"
+        "System.Net.WebClient",
+        "Microsoft.Web.WebView2"
     };
 
     [Fact]
@@ -54,12 +55,14 @@ public sealed class OfflineRuntimeTests
             "TcpClient",
             "UdpClient",
             "System.Net.Sockets",
+            "WebView2",
             "http://",
             "https://"
         };
         var forbiddenXamlTokens = new[]
         {
             "<WebBrowser",
+            "<WebView2",
             "NavigateUri=\"http://",
             "NavigateUri=\"https://",
             "Source=\"http://",

@@ -1,6 +1,6 @@
 ---
 gsd_state_version: '1.0'
-status: executing
+status: implementing
 progress:
   total_phases: 13
   completed_phases: 0
@@ -14,93 +14,100 @@ progress:
 ## Project Reference
 See `.planning/PROJECT.md`.
 
-> The numeric GSD progress frontmatter is not used as product-completion truth while automated and physical/private acceptance gates are tracked separately. GitHub exact heads + CI and the status below are authoritative for executed work.
+> Numeric GSD progress is not product-completion truth while automated and physical/private gates are tracked separately. GitHub exact heads/CI + this status are authoritative for executed work.
 
 **Core value:** Resolver PDF + ZPL diario de forma rápida, privada, estable y offline.  
-**Current focus:** Phase 4 — **F3 Firma Visual**, slice **F3.4 Local Signature Library** automated implementation complete; closure CI/draft PR gate in progress.
+**Current focus:** **F4 Full Reader automated closure PASS**. The next product gate is F5 Organize design/spec planning; no F5 implementation has started.
 
-## Current Position
+## F3.4 previous gate
 
-### F3.3 — automated PASS
+- Branch `feat/f3-4-local-signature-library`.
+- Closure head `1bef751962e0b4aaf35fbda9b8a1a9a2ee2ba36b`.
+- Push CI `37837613618` PASS; PR CI `37837833517` PASS.
+- 301 tests PASS.
+- PR #22 draft/open/unmerged.
+- Real Windows QA: **NOT RUN**.
 
-- Branch: `feat/f3-3-drawn-signature`.
-- PR: #21 draft/open/unmerged.
-- Final head: `8b5bfd35b59fbc75826f8d7616aaaca3e2f31233`.
-- Push CI `37802857293`: PASS.
-- PR CI `37802865627`: PASS.
-- Release build: 0 warnings / 0 errors.
-- Tests: 246 PASS / 0 FAIL / 0 SKIPPED.
-- Hardware mouse/touch/stylus QA: **NOT RUN**.
+## F4 Full Reader — automated closure PASS
 
-### F3.4 — automated implementation PASS; closure gate
+- Branch `feat/f4-full-reader`.
+- Exact base: F3.4 closure `1bef751962e0b4aaf35fbda9b8a1a9a2ee2ba36b`.
+- Functional/Task-8 checkpoint: `c36a8630e685cb143b312a0f260301b87a62bbd5`.
+- Checkpoint CI `37875773158`: PASS; **417 PASS / 0 FAIL / 0 SKIPPED; Release build 0 warnings / 0 errors**.
+- Task-9 closure-docs checkpoint: `48a79b412f5b4b2903c954f79ab37e420f87e6ae`.
+- Closure-docs push CI `37890536672`: PASS (locked restore, Release build, full Test step).
+- Closure-docs PR CI `37890669463`: PASS on the same SHA.
+- Draft PR: **#23 `F4 — Full Reader`**, base `feat/f3-4-local-signature-library`, head `feat/f4-full-reader`, open/draft/unmerged.
+- `main` verified unchanged at `31c0594758a83ec555d73ecdd7c597cdf8791fd7` after PR creation.
 
-- Branch: `feat/f3-4-local-signature-library`.
-- Base: exact F3.3 final head `8b5bfd35b59fbc75826f8d7616aaaca3e2f31233`.
-- Formal spec: `docs/superpowers/specs/2026-10-08-f3-4-local-signature-library-design.md` — **APPROVED**.
-- TDD plan: `docs/superpowers/plans/2026-10-08-f3-4-local-signature-library.md` — **APPROVED** and executed task-by-task.
-- Functional head: `c46ddbc9e7bea9ea1dab2eb7678a837d7364f9c0`.
-- Functional push CI `37834492859`: **PASS**.
-- Release build: **0 warnings / 0 errors**.
-- Tests: **301 PASS / 0 FAIL / 0 SKIPPED**.
-- Scope audit vs F3.3: PASS; no unauthorized package/lock/PDF writer/coordinate/photo/ink/PDFium/ZPL changes.
-- Closure history: `docs/history/2026-10-08-F3.4.md`.
-- Final closure exact-head CI: pending after this docs-only commit.
-- F3.4 draft PR: pending after exact-head CI; must remain stacked on F3.3 and unmerged.
-- Manual Windows QA: **NOT RUN**.
+> The final docs-only state commit that carries this text must itself keep both push and PR Windows checks green. GitHub exact-head checks are authoritative; the document intentionally does not attempt to self-reference its own commit hash.
 
-## Executed Chain
+### Task 9 audit result
 
-- A0 Foundation: PASS.
-- A1 Development Intelligence: PASS.
-- F0.1–F0.6 PDF Base: automated PASS.
-- F1 Gate ZPL-A: synthetic Gate PASS; Labelize 1.7.0 selected; private real corpus NOT RUN.
-- F2.1–F2.6 ZPL Workspace: automated PASS.
-- F3.1 Core visual signature: automated PASS.
-- F3.2 Photo/scan preparation: automated PASS; real-photo QA NOT RUN.
-- F3.3 Draw signature: automated PASS; hardware QA NOT RUN.
-- F3.4 Local signature library: automated implementation PASS; closure CI/draft PR pending; manual Windows QA NOT RUN.
+Audit range: `1bef751962e0b4aaf35fbda9b8a1a9a2ee2ba36b..c36a8630e685cb143b312a0f260301b87a62bbd5`.
 
-## Parallel Acceptance Gates Still Open
+- Compare: **118 commits ahead / 0 behind**.
+- No product/test `.csproj` or lockfile changes in F4.
+- No new runtime package and no second PDF engine.
+- No files under `src/SGPdf.App/Features/Sign/` changed.
+- No files under `src/SGPdf.App/Features/Labels/` changed.
+- F4 code is scoped to Reader/PDF primitives, narrow `MainWindow` integration, password dialog and tests.
+- FIRMAR remains the existing single-active-page path; continuous LEER is gated out while signing.
+- ZPL retains its established legacy host/runtime.
+- Full-resolution page retention remains visible pages + one neighbor before/after; thumbnails remain lazy.
+- Passwords remain transient and are not persisted.
+- No tabs, OCR, database, cloud/account/server, permanent search index, WebView/network runtime service, or F5+ editing scope was introduced.
+- PDF actions: only current-document GOTO and explicit absolute HTTP/HTTPS URI links after confirmation activate; unsupported/unsafe actions remain no-op.
+- No critical/high bug was found by the full-branch source/diff audit.
 
-These are intentionally separate and do not become PASS from synthetic CI:
+### F4 task status
 
-- F0 physical Windows UI/print/offline smoke: **NOT RUN**.
+1. Task 1 capability/layout — **AUTO PASS** — CI `37843337925`.
+2. Task 2 continuous reader — **AUTO PASS** — CI `37852149659`.
+3. Task 3 thumbnails — **AUTO PASS** — CI `37855511813`.
+4. Task 4 password PDFs — **AUTO PASS** — CI `37857787178`.
+5. Task 5 search — **AUTO PASS** — CI `37867206589`.
+6. Task 6 selection/copy — **AUTO PASS** — CI `37870778333`.
+7. Task 7 bookmarks/links — **AUTO PASS** — CI `37872707082`.
+8. Task 8 shortcuts/recents/hardening — **AUTO PASS** — CI `37875513602`; Task-8 docs CI `37875773158`.
+9. Task 9 closure/audit/docs/draft PR — **AUTO PASS**, subject to the final docs-only exact-head push+PR checks remaining green.
+
+`READER-01..07` are reconciled as **AUTO PASS** in `.planning/REQUIREMENTS.md` from their owning implementation evidence.
+
+## Manual/private/physical gates still open
+
+Automated PASS never implies physical/manual PASS.
+
+- F0 real Windows UI/print/offline: **NOT RUN**.
 - F1 private Mercado Libre corpus: **NOT RUN**.
-- F2 private real-label corpus: **NOT RUN**.
-- F2 thermal printer/ruler/scanner QA: **NOT RUN**.
-- F3.1 real transparent-signature UX/save/open: **NOT RUN**.
-- F3.2 real phone/scanner photo-quality QA: **NOT RUN**.
-- F3.3 real mouse/touch/stylus QA: **NOT RUN**.
-- F3.4 real save→restart→reuse, rename/delete, LocalAppData inspection, placed-copy survival and network-disabled smoke: **NOT RUN**.
+- F2 private corpus + thermal/ruler/scanner: **NOT RUN**.
+- F3.1–F3.4 real Windows/photo/hardware/library QA: **NOT RUN**.
+- F4 real Windows reader performance/thumbnails/protected-PDF/search/selection/bookmarks/links/shortcuts/recents/offline QA: **NOT RUN**.
 
-They remain required before the corresponding physical/private acceptance claims or public-release readiness. They do not invalidate the automated PASS statuses above.
+## Runtime / architecture frozen through F4
 
-## Runtime / Architecture Decisions
-
-- Windows x64 + C# + .NET 10 + WPF.
-- KISS solution remains `SGPdf.App + SGPdf.App.Tests`.
-- PDFium is the primary PDF engine; native calls remain serialized by `PdfiumRuntime.NativeGate`.
-- Labelize 1.7.0 is the single approved runtime ZPL renderer, as a local child process.
-- BinaryKits is historical Gate evidence only, not runtime fallback.
-- PDFsharp 6.2.4 is runtime only for label PDF composition/export.
-- ZXing.Net 0.16.11 is test/QA-only.
-- All visual-signature sources converge to `SignatureAsset` → `AddSignatureAsset(...)`.
-- F3.4 persists/reloads only the transparent `SignatureAsset`; no placement geometry, database, cloud, network, encryption or second signature pipeline.
-- F3.4 storage is `%LOCALAPPDATA%\SG PDF Editor\Signatures\` with manifest v1 + lossless PNG assets.
+- Windows x64 / C# / .NET 10 / WPF.
+- PDFium only PDF engine; native calls behind `PdfiumRuntime.NativeGate`.
+- Labelize 1.7.0 only runtime ZPL renderer.
+- PDFsharp labels-only; ZXing test/QA-only.
+- F3 sources converge to `SignatureAsset` → `AddSignatureAsset(...)`.
 - No merge to `main` without explicit user approval.
 
 ## Next Gate
 
 ```text
-closure docs commit
-→ require exact-head GitHub CI PASS
-→ open F3.4 draft PR stacked on F3.3
-→ keep manual Windows QA separate as NOT RUN
-→ no merge without explicit user approval
-→ after closure, next product-design gate is F4 Lector Completo
+verify final docs-only head: push CI PASS + PR CI PASS
+→ verify PR #23 remains draft/open/unmerged
+→ verify main unchanged
+→ STOP F4
+
+next user continuation
+→ F5 Organize design/spec gate
+→ no implementation until design/plan approval
 ```
 
 ## Continuity
 
-- Cross-project reconciliation audit: `docs/history/2026-10-08-CONTINUITY-AUDIT.md`.
-- F3.4 closure evidence: `docs/history/2026-10-08-F3.4.md`.
+- F4 closure history: `docs/history/2026-10-08-F4.md`.
+- F4 design: `docs/superpowers/specs/2026-10-08-f4-full-reader-design.md`.
+- F4 plan: `docs/superpowers/plans/2026-10-08-f4-full-reader.md`.

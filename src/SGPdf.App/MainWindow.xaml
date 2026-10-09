@@ -12,6 +12,14 @@
                           Header="Abrir _etiquetas ZPL..."
                           Click="OpenZpl_Click"
                           IsEnabled="{Binding IsEnabled, ElementName=OpenPdfMenuItem}" />
+                <MenuItem x:Name="RecentFilesMenuItem"
+                          Header="_Recientes"
+                          SubmenuOpened="RecentFilesMenuItem_SubmenuOpened">
+                    <MenuItem x:Name="ClearRecentFilesMenuItem"
+                              Header="_Borrar recientes"
+                              Click="ClearRecentFilesMenuItem_Click"
+                              IsEnabled="False" />
+                </MenuItem>
                 <MenuItem x:Name="PrintPdfMenuItem" Header="_Imprimir..." Click="PrintPdf_Click" IsEnabled="False" />
                 <Separator />
                 <MenuItem Header="_Salir" Click="Exit_Click" />

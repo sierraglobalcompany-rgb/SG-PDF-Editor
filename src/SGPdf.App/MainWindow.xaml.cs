@@ -27,6 +27,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        InitializeReaderUi();
         UpdateViewerControlsUi();
     }
 
@@ -40,75 +41,15 @@ public partial class MainWindow : Window
             Multiselect = false
         };
 
-        if (dialog.ShowDialog(this) != true)
-            return;
-
-        _resizeRenderScheduler.CancelCurrent();
-        SetBusy(true);
-        StatusText.Text = "Abriendo PDF...";
-        PdfDocumentSession? candidateSession = null;
-
-        try
-        {
-            var loaded = await Task.Run(() =>
-            {
-                var session = PdfDocumentSession.Open(dialog.FileName);
-                try
-                {
-                    var pageCount = session.PageCount;
-                    var rendered = session.RenderPage(0, WpfDisplayDpi);
-                    return (Session: session, PageCount: pageCount, Rendered: rendered);
-                }
-                catch
-                {
-                    session.Dispose();
-                    throw;
-                }
-            });
-
-            candidateSession = loaded.Session;
-            var bitmap = CreateBitmapSource(loaded.Rendered);
-            var candidateNavigation = new PageNavigationState(loaded.PageCount);
-            var candidateZoom = new PdfZoomState();
-
-            var previousSession = _session;
-            _session = candidateSession;
-            _navigation = candidateNavigation;
-            _zoom = candidateZoom;
-            _currentDpi = loaded.Rendered.Dpi;
-            candidateSession = null;
-            previousSession?.Dispose();
-
-            ShowRenderedPage(bitmap);
-            Title = $"SG PDF Editor — {Path.GetFileName(_session.FilePath)}";
-            UpdateCurrentPageStatus();
-        }
-        catch (Exception ex)
-        {
-            candidateSession?.Dispose();
-            StatusText.Text = "No se pudo abrir el PDF.";
-            MessageBox.Show(
-                this,
-                $"No se pudo abrir o renderizar el PDF.\n\n{ex.Message}",
-                "SG PDF Editor",
-                MessageBoxButton.OK,
-                MessageBoxImage.Error);
-        }
-        finally
-        {
-            SetBusy(false);
-        }
+        if (dialog.ShowDialog(this) == true)
+            await TryOpenPdfPathAsync(dialog.FileName);
     }
 
     private async void PreviousPage_Click(object sender, RoutedEventArgs e)
-    {
-        await NavigateAsync(state => state.Previous());
-    }
+        => await NavigateAsync(state => state.Previous());
 
     private async void NextPage_Click(object sender, RoutedEventArgs e)
-    {
-        await NavigateAsync(state => state.Next());
-    }
+        => await NavigateAsync(state => state.Next());
 
     private async void PageNumberTextBox_KeyDown(object sender, KeyEventArgs e)
     {
@@ -124,7 +65,6 @@ public partial class MainWindow : Window
             return;
 
         e.Handled = true;
-
         if (_navigation is null || _isBusy ||
             !int.TryParse(PageNumberTextBox.Text, out var pageNumber) ||
             pageNumber < 1 || pageNumber > _navigation.PageCount)
@@ -140,14 +80,18 @@ public partial class MainWindow : Window
     }
 
     private void PageNumberTextBox_LostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
-    {
-        RestorePageNumberText();
-    }
+        => RestorePageNumberText();
 
     private void RestorePageNumberText()
-    {
-        PageNumberTextBox.Text = (_navigation?.CurrentPageNumber ?? 1).ToString();
-    }
+        => PageNumberTextBox.Text = (_navigation?.CurrentPageNumber ?? 1).ToString();
+
+    private bool IsContinuousReaderActive()
+        => _session is not null &&
+           _navigation is not null &&
+           !_signatureModeActive &&
+           _zplDocument is null &&
+           _readerGeometry.Count == _navigation.PageCount &&
+           _readerContinuousSurface?.Visibility == Visibility.Visible;
 
     private async Task NavigateAsync(Func<PageNavigationState, PageNavigationState> move)
     {
@@ -155,15 +99,20 @@ public partial class MainWindow : Window
             return;
 
         _resizeRenderScheduler.CancelCurrent();
-
-        var sourceSession = _session;
         var sourceNavigation = _navigation;
-        var sourceZoom = _zoom;
         var candidateNavigation = move(sourceNavigation);
-
         if (candidateNavigation.CurrentPageIndex == sourceNavigation.CurrentPageIndex)
             return;
 
+        if (IsContinuousReaderActive())
+        {
+            ScrollReaderToPage(candidateNavigation.CurrentPageIndex);
+            await RefreshReaderRenderWindowAsync();
+            return;
+        }
+
+        var sourceSession = _session;
+        var sourceZoom = _zoom;
         var viewport = GetViewportSize();
         SetBusy(true);
         StatusText.Text = $"Renderizando página {candidateNavigation.CurrentPageNumber}...";
@@ -180,15 +129,17 @@ public partial class MainWindow : Window
             if (!ReferenceEquals(_session, sourceSession) ||
                 !ReferenceEquals(_navigation, sourceNavigation) ||
                 !ReferenceEquals(_zoom, sourceZoom))
-            {
                 return;
-            }
 
             var bitmap = CreateBitmapSource(rendered);
             _navigation = candidateNavigation;
             _currentDpi = rendered.Dpi;
+            _currentPdfDeviceTransform = rendered.DeviceTransform;
             ShowRenderedPage(bitmap);
+            UpdateViewerControlsUi();
             UpdateCurrentPageStatus();
+            if (_signatureModeActive)
+                RefreshSignatureOverlay();
         }
         catch (Exception ex)
         {
@@ -197,12 +148,12 @@ public partial class MainWindow : Window
                 ReferenceEquals(_zoom, sourceZoom))
             {
                 StatusText.Text = $"No se pudo mostrar la página {candidateNavigation.CurrentPageNumber}.";
-                MessageBox.Show(
-                    this,
-                    $"No se pudo renderizar la página {candidateNavigation.CurrentPageNumber}.\n\n{ex.Message}",
-                    "SG PDF Editor",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
+                if (IsVisible)
+                {
+                    MessageBox.Show(this,
+                        $"No se pudo renderizar la página {candidateNavigation.CurrentPageNumber}.\n\n{ex.Message}",
+                        "SG PDF Editor", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             }
         }
         finally
@@ -212,29 +163,19 @@ public partial class MainWindow : Window
     }
 
     private async void ZoomOut_Click(object sender, RoutedEventArgs e)
-    {
-        await ApplyZoomAsync((zoom, currentDpi) => zoom.ZoomOut(currentDpi));
-    }
+        => await ApplyZoomAsync((zoom, currentDpi) => zoom.ZoomOut(currentDpi));
 
     private async void ZoomIn_Click(object sender, RoutedEventArgs e)
-    {
-        await ApplyZoomAsync((zoom, currentDpi) => zoom.ZoomIn(currentDpi));
-    }
+        => await ApplyZoomAsync((zoom, currentDpi) => zoom.ZoomIn(currentDpi));
 
     private async void ActualSize_Click(object sender, RoutedEventArgs e)
-    {
-        await ApplyZoomAsync((zoom, _) => zoom.ActualSize());
-    }
+        => await ApplyZoomAsync((zoom, _) => zoom.ActualSize());
 
     private async void FitPage_Click(object sender, RoutedEventArgs e)
-    {
-        await ApplyZoomAsync((zoom, _) => zoom.FitPage());
-    }
+        => await ApplyZoomAsync((zoom, _) => zoom.FitPage());
 
     private async void FitWidth_Click(object sender, RoutedEventArgs e)
-    {
-        await ApplyZoomAsync((zoom, _) => zoom.FitWidth());
-    }
+        => await ApplyZoomAsync((zoom, _) => zoom.FitWidth());
 
     private async Task ApplyZoomAsync(Func<PdfZoomState, double, PdfZoomState> changeZoom)
     {
@@ -242,24 +183,27 @@ public partial class MainWindow : Window
             return;
 
         _resizeRenderScheduler.CancelCurrent();
-
         var sourceSession = _session;
         var sourceNavigation = _navigation;
         var sourceZoom = _zoom;
         var candidateZoom = changeZoom(sourceZoom, _currentDpi);
 
         if (ReferenceEquals(candidateZoom, sourceZoom) ||
-            (sourceZoom.Mode == PdfZoomMode.Manual &&
-             candidateZoom.Mode == PdfZoomMode.Manual &&
+            (sourceZoom.Mode == PdfZoomMode.Manual && candidateZoom.Mode == PdfZoomMode.Manual &&
              sourceZoom.ManualPercent == candidateZoom.ManualPercent))
+            return;
+
+        if (IsContinuousReaderActive())
         {
+            _zoom = candidateZoom;
+            RebuildReaderGeometry(preserveCurrentPageAnchor: true);
+            await RefreshReaderRenderWindowAsync();
             return;
         }
 
         var viewport = GetViewportSize();
         SetBusy(true);
         StatusText.Text = "Aplicando zoom...";
-
         try
         {
             var rendered = await Task.Run(() => RenderPageForView(
@@ -272,15 +216,17 @@ public partial class MainWindow : Window
             if (!ReferenceEquals(_session, sourceSession) ||
                 !ReferenceEquals(_navigation, sourceNavigation) ||
                 !ReferenceEquals(_zoom, sourceZoom))
-            {
                 return;
-            }
 
             var bitmap = CreateBitmapSource(rendered);
             _zoom = candidateZoom;
             _currentDpi = rendered.Dpi;
+            _currentPdfDeviceTransform = rendered.DeviceTransform;
             ShowRenderedPage(bitmap);
+            UpdateViewerControlsUi();
             UpdateCurrentPageStatus();
+            if (_signatureModeActive)
+                RefreshSignatureOverlay();
         }
         catch (Exception ex)
         {
@@ -289,12 +235,12 @@ public partial class MainWindow : Window
                 ReferenceEquals(_zoom, sourceZoom))
             {
                 StatusText.Text = "No se pudo aplicar el zoom.";
-                MessageBox.Show(
-                    this,
-                    $"No se pudo renderizar el PDF con el zoom solicitado.\n\n{ex.Message}",
-                    "SG PDF Editor",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
+                if (IsVisible)
+                {
+                    MessageBox.Show(this,
+                        $"No se pudo renderizar el PDF con el zoom solicitado.\n\n{ex.Message}",
+                        "SG PDF Editor", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             }
         }
         finally
@@ -305,23 +251,18 @@ public partial class MainWindow : Window
 
     private async void PdfScrollViewer_SizeChanged(object sender, SizeChangedEventArgs e)
     {
-        if (_session is null ||
-            _navigation is null ||
-            _isBusy ||
-            _zoom.Mode == PdfZoomMode.Manual)
-        {
+        if (_session is null || _navigation is null || _isBusy ||
+            _zoom.Mode == PdfZoomMode.Manual ||
+            IsContinuousReaderActive())
             return;
-        }
 
         var request = _resizeRenderScheduler.Begin();
         var sourceSession = _session;
         var sourceNavigation = _navigation;
         var sourceZoom = _zoom;
-
         try
         {
             await Task.Delay(ResizeDebounceMilliseconds, request.CancellationToken);
-
             if (!_resizeRenderScheduler.IsCurrent(request) || _isBusy)
                 return;
 
@@ -334,35 +275,31 @@ public partial class MainWindow : Window
                 viewport.Height,
                 request.CancellationToken), request.CancellationToken);
 
-            if (!_resizeRenderScheduler.IsCurrent(request) ||
-                _isBusy ||
+            if (!_resizeRenderScheduler.IsCurrent(request) || _isBusy ||
                 !ReferenceEquals(_session, sourceSession) ||
                 !ReferenceEquals(_navigation, sourceNavigation) ||
                 !ReferenceEquals(_zoom, sourceZoom))
-            {
                 return;
-            }
 
             var bitmap = CreateBitmapSource(rendered);
             _currentDpi = rendered.Dpi;
+            _currentPdfDeviceTransform = rendered.DeviceTransform;
             ShowRenderedPage(bitmap);
             UpdateViewerControlsUi();
             UpdateCurrentPageStatus();
+            if (_signatureModeActive)
+                RefreshSignatureOverlay();
         }
         catch (OperationCanceledException) when (request.CancellationToken.IsCancellationRequested)
         {
-            // Latest-request-wins: resize renders superseded by a newer request are expected.
         }
         catch (Exception)
         {
-            if (_resizeRenderScheduler.IsCurrent(request) &&
-                !_isBusy &&
+            if (_resizeRenderScheduler.IsCurrent(request) && !_isBusy &&
                 ReferenceEquals(_session, sourceSession) &&
                 ReferenceEquals(_navigation, sourceNavigation) &&
                 ReferenceEquals(_zoom, sourceZoom))
-            {
                 StatusText.Text = "No se pudo reajustar la vista al nuevo tamaño.";
-            }
         }
     }
 
@@ -371,11 +308,9 @@ public partial class MainWindow : Window
         var width = PdfScrollViewer.ViewportWidth;
         if (!double.IsFinite(width) || width <= 0d)
             width = PdfScrollViewer.ActualWidth;
-
         var height = PdfScrollViewer.ViewportHeight;
         if (!double.IsFinite(height) || height <= 0d)
             height = PdfScrollViewer.ActualHeight;
-
         return (Math.Max(1d, width), Math.Max(1d, height));
     }
 
@@ -388,13 +323,7 @@ public partial class MainWindow : Window
         CancellationToken cancellationToken = default)
     {
         var pageSize = session.GetPageSize(pageIndex, cancellationToken);
-        var dpi = zoom.ResolveDpi(
-            pageSize.Width,
-            pageSize.Height,
-            viewportWidth,
-            viewportHeight,
-            PageMarginPixels);
-
+        var dpi = zoom.ResolveDpi(pageSize.Width, pageSize.Height, viewportWidth, viewportHeight, PageMarginPixels);
         cancellationToken.ThrowIfCancellationRequested();
         return session.RenderPage(pageIndex, dpi, cancellationToken);
     }
@@ -418,6 +347,7 @@ public partial class MainWindow : Window
     {
         PdfImage.Source = bitmap;
         PdfImage.Visibility = Visibility.Visible;
+        PdfScrollViewer.Visibility = Visibility.Visible;
         EmptyStateText.Visibility = Visibility.Collapsed;
     }
 
@@ -445,16 +375,20 @@ public partial class MainWindow : Window
             FitPageButton.IsEnabled = false;
             FitWidthButton.IsEnabled = false;
             ZoomPercentButton.Content = "100%";
+            if (_zplDocument is not null)
+                ShowLegacySurfaceForZpl();
+            else if (_readerContinuousSurface is not null)
+                _readerContinuousSurface.Visibility = Visibility.Collapsed;
             return;
         }
 
         NavigationBar.Visibility = Visibility.Visible;
+        LabelNavigationBar.Visibility = Visibility.Collapsed;
         PrintPdfMenuItem.IsEnabled = !_isBusy;
         PageNumberTextBox.Text = _navigation.CurrentPageNumber.ToString();
         PageNumberTextBox.IsEnabled = !_isBusy;
         PageCountText.Text = $"de {_navigation.PageCount}";
         ZoomPercentButton.Content = $"{PdfZoomState.PercentFromDpi(_currentDpi)}%";
-
         PreviousPageButton.IsEnabled = !_isBusy && _navigation.CanMovePrevious;
         NextPageButton.IsEnabled = !_isBusy && _navigation.CanMoveNext;
         ZoomOutButton.IsEnabled = !_isBusy && _currentDpi > WpfDisplayDpi * 0.25d + 0.01d;
@@ -466,10 +400,8 @@ public partial class MainWindow : Window
 
     private void UpdateCurrentPageStatus()
     {
-        if (_session is null || _navigation is null)
-            return;
-
-        StatusText.Text = $"{Path.GetFileName(_session.FilePath)} — página {_navigation.CurrentPageNumber} de {_navigation.PageCount}";
+        if (_session is not null && _navigation is not null)
+            StatusText.Text = $"{Path.GetFileName(_session.FilePath)} — página {_navigation.CurrentPageNumber} de {_navigation.PageCount}";
     }
 
     private void PrintPdf_Click(object sender, RoutedEventArgs e)
@@ -487,40 +419,24 @@ public partial class MainWindow : Window
             MaxPage = checked((uint)_navigation.PageCount),
             PageRangeSelection = PageRangeSelection.AllPages
         };
-
         var printingStarted = false;
-
         try
         {
             if (printDialog.ShowDialog() != true)
                 return;
-
             var range = ResolvePrintRange(printDialog, _navigation);
             SetBusy(true);
             printingStarted = true;
             StatusText.Text = "Enviando a impresora...";
-
-            var paginator = new PdfDocumentPaginator(
-                _session,
-                range,
-                printDialog.PrintableAreaWidth,
-                printDialog.PrintableAreaHeight);
-
-            printDialog.PrintDocument(
-                paginator,
-                $"SG PDF Editor — {Path.GetFileName(_session.FilePath)}");
-
+            var paginator = new PdfDocumentPaginator(_session, range, printDialog.PrintableAreaWidth, printDialog.PrintableAreaHeight);
+            printDialog.PrintDocument(paginator, $"SG PDF Editor — {Path.GetFileName(_session.FilePath)}");
             StatusText.Text = "Trabajo de impresión enviado.";
         }
         catch (Exception ex)
         {
             StatusText.Text = "No se pudo imprimir el PDF.";
-            MessageBox.Show(
-                this,
-                $"No se pudo enviar el PDF a la impresora.\n\n{ex.Message}",
-                "SG PDF Editor",
-                MessageBoxButton.OK,
-                MessageBoxImage.Error);
+            MessageBox.Show(this, $"No se pudo enviar el PDF a la impresora.\n\n{ex.Message}",
+                "SG PDF Editor", MessageBoxButton.OK, MessageBoxImage.Error);
         }
         finally
         {
@@ -530,28 +446,23 @@ public partial class MainWindow : Window
     }
 
     private static PdfPrintRange ResolvePrintRange(PrintDialog dialog, PageNavigationState navigation)
-    {
-        return dialog.PageRangeSelection switch
+        => dialog.PageRangeSelection switch
         {
-            PageRangeSelection.CurrentPage => PdfPrintRange.Current(
-                navigation.CurrentPageIndex,
-                navigation.PageCount),
-            PageRangeSelection.UserPages => PdfPrintRange.UserPages(
-                dialog.PageRange.PageFrom,
-                dialog.PageRange.PageTo,
-                navigation.PageCount),
+            PageRangeSelection.CurrentPage => PdfPrintRange.Current(navigation.CurrentPageIndex, navigation.PageCount),
+            PageRangeSelection.UserPages => PdfPrintRange.UserPages(dialog.PageRange.PageFrom, dialog.PageRange.PageTo, navigation.PageCount),
             _ => PdfPrintRange.All(navigation.PageCount)
         };
-    }
 
     private void Exit_Click(object sender, RoutedEventArgs e)
-    {
-        Close();
-    }
+        => Close();
 
     protected override void OnClosed(EventArgs e)
     {
         _resizeRenderScheduler.Dispose();
+        _readerRenderScheduler.Dispose();
+        _readerPages.Clear();
+        _readerPageSizes = Array.Empty<PdfPageSize>();
+        _readerGeometry = Array.Empty<Features.Reader.ReaderPageGeometry>();
         _navigation = null;
         _session?.Dispose();
         _session = null;
