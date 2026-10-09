@@ -1,10 +1,10 @@
-# F6 — Imágenes — DESIGN CHECKPOINT
+# F6 — Imágenes — PLAN REVIEW CHECKPOINT
 
 **Date:** 2026-10-09  
-**Status:** conversational design APPROVED; formal written spec awaiting user review  
+**Status:** WRITTEN SPEC APPROVED; IMPLEMENTATION PLAN WRITTEN + SELF-REVIEWED; implementation NOT STARTED  
 **Branch:** `design/f6-images`  
 **Base:** exact F5 automated-closure head `327d7064c14131e603e3bce6947b593a10f46363`  
-**No F6 product code has been implemented.**
+**No F6 product code or tests have been implemented.**
 
 ## 1. Frozen prior state
 
@@ -14,11 +14,12 @@ F5 `ORGANIZAR` remains closed at automated level only.
 - Draft PR #24: open / draft / unmerged.
 - F5 push CI `37991847671`: PASS.
 - F5 PR CI `37991854689`: PASS.
-- Build 0 warnings / 0 errors; 550/550 tests PASS.
-- `main` remains untouched at `31c0594758a83ec555d73ecdd7c597cdf8791fd7`.
-- Real/manual Windows F5 QA remains NOT RUN.
+- Build: 0 warnings / 0 errors.
+- Tests: 550/550 PASS.
+- `main`: `31c0594758a83ec555d73ecdd7c597cdf8791fd7`.
+- Real/manual Windows F5 QA: NOT RUN.
 
-F6 design work is isolated on `design/f6-images` and must not modify PR #24 or merge anything.
+F6 planning is isolated on `design/f6-images`; do not modify PR #24 and do not merge anything.
 
 ## 2. F6 requirements
 
@@ -27,160 +28,180 @@ F6 design work is isolated on `design/f6-images` and must not modify PR #24 or m
 - **IMG-03:** move/resize/rotate/opacity/z-order/delete.
 - **IMG-04:** undo/redo.
 
+Opacity and z-order are exact-runtime capability gates. If either fails, core F6 may continue but IMG-03 remains `PARTIAL/OPEN`; never falsify AUTO PASS and never add a second engine merely to satisfy the checkbox.
+
 ## 3. Process state
 
-F6 is architectural. The user approved all four conversational design sections.
+F6 is architectural.
 
-The formal specification now exists at:
+Completed gates:
+
+1. read-only project exploration;
+2. architecture alternatives;
+3. conversational design section 1 approved;
+4. conversational design section 2 approved;
+5. conversational design section 3 approved;
+6. conversational design section 4 approved;
+7. formal written spec created + self-reviewed;
+8. user explicitly approved the written spec with `continua`;
+9. implementation plan created + self-reviewed.
+
+Current gate: **user review/approval of the implementation plan and execution method**.
+
+Do not start F6 code/TDD until that gate is approved.
+
+## 4. Authoritative documents
+
+Formal design spec:
 
 `docs/superpowers/specs/2026-10-09-f6-images-design.md`
 
-Current spec commit after self-review corrections:
+Implementation plan:
 
-`558ca8d6c2dff985750a625ab809adbbe742f7ec`
+`docs/superpowers/plans/2026-10-09-f6-images.md`
 
-The next gate is **user review/approval of the written spec**. Do not create an implementation plan or product code until that approval occurs.
+The spec header may still contain the earlier phrase “written spec awaiting user review”; this checkpoint records the later user approval and is the authoritative process-state correction until normal documentation reconciliation updates that metadata line.
 
-## 4. Approved architecture
+## 5. Approved architecture
 
-### Real PDF image objects only
+### Real image objects only
 
-`EDITAR` operates on `FPDF_PAGEOBJ_IMAGE` objects. No hidden white rectangles, page screenshots or silent raster overlays are allowed as fallbacks.
+`EDITAR` operates on actual `FPDF_PAGEOBJ_IMAGE` objects. No hidden white rectangles, page screenshots, flattening or silent raster-overlay fallback.
 
 ### Logical plan first
 
-UI gestures mutate in-memory logical image state. Native PDF mutation occurs only during `Guardar como...`.
-
-Conceptual state:
-
-```text
-ImageEditPlan
-ImageObjectRef(PageIndex, PageObjectIndex, OriginalBounds, OriginalMatrix, OriginalImageMetadata)
-ImageEditState(CurrentMatrix, ReplacementAsset?, Opacity?, ZOrderOperation?, Deleted)
-```
+UI gestures mutate `ImageEditWorkspace`; no source PDF mutation occurs during mouse/keyboard interaction.
 
 No native `IntPtr` is retained as durable UI identity.
 
+Logical identity starts from `PageIndex + PageObjectIndex`, source fingerprint and original object descriptors. During materialization all edited original objects for a touched page must be resolved before any delete/z-order action can shift object indices.
+
 ### Single selection
 
-Initial F6 edits one active image at a time. Multi-select, crop, copy/paste and advanced properties are out of initial scope.
+Initial F6 edits one active image at a time. Multi-select, crop, copy/paste and advanced properties remain outside initial scope.
 
 ### Hit-test
 
-Use real PDF geometry. Prefer proven rotated/quad bounds; otherwise derive geometry from the affine image matrix. Axis-aligned fallback is acceptable only if fixtures demonstrate acceptable behavior.
+Use real PDF geometry: proven rotated bounds when available or quadrilateral derived from affine matrix. Never rely blindly on AABB for rotated images.
 
-Overlapping-image topmost selection is not assumed; it must be characterized against the pinned runtime or replaced by deterministic cycling.
+Overlapping-object topmost behavior is used only if the pinned runtime proves enumeration/paint-order mapping; otherwise deterministic cycling.
 
-### Transforms
+### Transform/history
 
 - move;
 - proportional resize by default;
-- `Shift` permits free-aspect resize;
-- rotate around visual center;
-- delete logically until save.
-
-### Undo/redo
-
-Command-based history for every enabled mutation. A continuous drag becomes one history item. New mutation after undo clears redo.
+- Shift = free aspect resize;
+- rotate around center;
+- logical delete;
+- command-based undo/redo;
+- one continuous drag = one history entry.
 
 After successful Save As:
 
-- current logical image states remain;
-- original source remains the active source;
+- logical image states remain;
+- original source remains active source;
 - undo/redo clear;
-- dirty becomes false;
-- later saves rematerialize the complete current logical state from the unchanged original source.
+- dirty=false;
+- later saves rematerialize full logical state from unchanged original source.
 
-### Extract
+### Extract/replace
 
-Initial extraction is visually faithful PNG, not a promise of exact original embedded bytes.
+- extraction: visually faithful PNG, not claimed original embedded bytes;
+- replace: PNG/JPEG;
+- replacement bytes captured into immutable in-memory asset;
+- geometry unchanged initially;
+- transparent PNG requires evidence; no flatten-to-white fallback.
 
-### Replace
+### Writer
 
-Initial replacement input: PNG and JPEG/JPG. Replacement bytes are captured into an immutable in-memory asset so later save does not depend on the selected replacement file remaining unchanged. Geometry stays unchanged initially.
-
-Transparent PNG must pass save/reopen/render evidence or that subcase is blocked; no silent white flattening.
-
-## 5. Capability gates
-
-The exact pinned `pdfium.dll` is the authority. Public/upstream API availability is only a candidate route.
-
-Core F6.1 must prove:
-
-1. page-object count/get;
-2. image type detection;
-3. bounds/matrix access;
-4. extraction bitmap route;
-5. bitmap replacement;
-6. JPEG route if selected;
-7. matrix mutation for move/resize/rotate;
-8. object removal;
-9. page content regeneration;
-10. whole-document save/reopen after mutation.
-
-Conditional gates:
-
-- opacity;
-- exact-index insertion/reordering for z-order;
-- tighter rotated bounds;
-- rendered image-object bitmap extraction.
-
-Opacity and z-order failure do not block the rest of F6, but **IMG-03 may not be marked AUTO PASS** if either remains unsupported.
-
-No second engine or destructive fallback is introduced merely to turn those capabilities green.
-
-## 6. Save/materialization
-
-F6 does not reuse F5's page-import writer as its normal writer.
-
-Pipeline:
+F6 does not reuse F5 page-import writer.
 
 ```text
 validate fingerprint + preflight
-→ reopen original source fresh
-→ resolve all edited objects per touched page
-→ apply native edits
-→ FPDFPage_GenerateContent on touched pages
-→ save to destination-directory temp
+→ fresh open original source
+→ resolve all edited original objects on touched page
+→ apply edits
+→ GenerateContent once/touched page
+→ save same-directory temp
 → close native handles
 → reopen temp
-→ validate every output page at 36 DPI sequentially + edited-object expectations
+→ validate count/sizes/rotations + every page at 36 DPI sequentially
+→ validate edited-object expectations
 → atomic publish
 → cleanup
 ```
 
-The source is never overwritten. Existing destination is preserved on failure.
+Signatures/password-opened sources are Block. Source and valid existing destination survive any failed/cancelled output.
 
-## 7. Safety/preflight
+## 6. Plan decomposition
 
-- cryptographic signatures: Block, no override;
-- password-opened source: Block, no password persistence/reuse;
-- stale/missing source: Block;
-- object mismatch: Block;
-- invalid replacement/transparency failure/native failure/save failure/validation failure/cancel/publication failure: no source mutation and no invalid destination publication.
+The implementation plan has 10 task gates:
 
-F6 gets its own preservation matrix because its writer differs from F5. Representative fixtures must classify forms, bookmarks, destinations, links, tagged structure, page labels, attachments and metadata as `PROVEN PRESERVED`, `PROVEN CHANGED/LOST` or `UNKNOWN`.
+1. **F6.1:** exact PDFium capability gate + image discovery.
+2. **F6.1:** logical edit model + fingerprint + history.
+3. **F6.2:** EDITAR surface + hit-test + selection overlay.
+4. **F6.3:** move/resize/rotate/delete + undo/redo + dirty guard.
+5. **F6.4:** PNG extraction + PNG/JPEG replacement assets.
+6. **F6.5:** transactional writer + validator.
+7. **F6.6:** opacity/z-order conditionally, only if exact gates pass.
+8. **F6.7:** independent preservation matrix + warning policy + Save As UI.
+9. **F6.7:** hardening/regressions/offline/temp safety.
+10. **F6 closure:** docs/audit/stacked draft PR/exact-head CI; stop before F7.
 
-## 8. Approved slices
+Every implementation task is RED → minimum GREEN → full regression → exact-head Windows CI → checkpoint. Availability probes may legitimately pass immediately; they are probes, not fake TDD REDs. Behavior depending on them still receives a witnessed RED before production code.
 
-1. **F6.1** capability gate + model.
-2. **F6.2** selection + hit-test + overlay.
-3. **F6.3** move/resize/rotate/delete + undo/redo + dirty state.
-4. **F6.4** extract + replace.
-5. **F6.5** transactional writer.
-6. **F6.6** opacity + z-order only when their gates pass.
-7. **F6.7** preservation + hardening + regression + closure.
+## 7. Review-focus tests frozen in the plan
 
-## 9. Current exact next step
+1. `Writer_TwoEditedImagesSamePage_DeleteAndReorder_ResolvesAllOriginalHandlesBeforeMutation`
+2. `ReplacementAsset_SourceFileDeletedAfterSelection_SaveStillUsesCapturedBytes`
+3. `SaveBaseline_SecondSaveFromOriginalReappliesPreviouslySavedLogicalEdits`
+4. `HitTest_RotatedOverlappingImages_IsDeterministicAtMultipleZooms`
+5. `SaveAs_ValidationFailure_WithExistingDestination_PreservesDestinationAndCleansTemp`
 
-Stop at the written-spec review gate.
+These are cross-task correctness anchors and must not be removed merely to make CI green.
 
-If the user approves `docs/superpowers/specs/2026-10-09-f6-images-design.md`, then and only then:
+## 8. Plan self-review corrections
 
-1. read the writing-plans skill;
-2. create a detailed F6 implementation plan preserving F6.1–F6.7 boundaries;
-3. commit the plan on the design/planning branch;
-4. stop again for plan review/execution-method approval;
-5. do not start TDD implementation in the same step.
+The first plan draft was corrected before this checkpoint:
 
-No F6 code, tests, native bindings or dependency changes have been created yet.
+- exact-export availability tests are explicitly capability probes and are not mislabeled as mandatory RED;
+- `ImageEditWorkspace` now exposes `SourcePath`, `SourceFingerprint` and `SourceOpenedWithPassword`, which the writer requires;
+- optional opacity/z-order paths remain conditional;
+- Save As UI is deliberately delayed until preservation policy is characterized;
+- Task 6 writer resolves all original handles for a touched page before mutating object order;
+- Task 10 truthfully allows F6 closure with IMG-03 `PARTIAL/OPEN` when an optional gate fails.
+
+No placeholders/TODO implementation decisions are intentionally left in the plan. A missing core PDFium capability is a stop condition, not permission to improvise a second engine.
+
+## 9. Stop conditions
+
+Return to design if:
+
+1. pinned PDFium lacks a core capability for detect/select/extract/replace/move/resize/rotate/delete;
+2. image identity requires durable native handles;
+3. normal PNG/JPEG replacement requires page flattening/raster overlay;
+4. transactional output cannot protect source/prior destination;
+5. credentials must be retained/reused;
+6. core F6 requires a second engine;
+7. WPF selection requires a large custom renderer;
+8. preservation needs a generic PDF object-tree rewriter;
+9. an F0–F5 regression cannot be narrowly isolated.
+
+Opacity/z-order failure alone is not a stop condition for core F6.
+
+## 10. Exact next step
+
+Wait for user approval of `docs/superpowers/plans/2026-10-09-f6-images.md` and execution method.
+
+Recommended execution in this chat/product: **inline/native executing-plans**, one task per user `continua`, because F6 tasks are sequential and depend on exact CI evidence from the previous gate.
+
+On approval:
+
+1. read `executing-plans`, TDD and verification skills;
+2. create `feat/f6-images` from the approved planning head;
+3. execute **Task 1 only**;
+4. capability probe first, then behavior RED → GREEN;
+5. exact-head Windows CI + Task-1 checkpoint;
+6. STOP before Task 2.
+
+Do not create the F6 PR until closure Task 10. Do not merge anything.
