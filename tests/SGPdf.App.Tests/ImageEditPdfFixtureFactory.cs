@@ -24,6 +24,24 @@ internal sealed class ImageEditPdfFixture : IDisposable
 
 internal static class ImageEditPdfFixtureFactory
 {
+    internal static ImageEditPdfFixture CreateSingleImage()
+    {
+        var directory = NewDirectory();
+        var imagePath = System.IO.Path.Combine(directory, "single.png");
+        CreatePng(imagePath, 14, 9, SKColors.SeaGreen);
+
+        var pdfPath = System.IO.Path.Combine(directory, "single-image.pdf");
+        using (var document = CreateDocument(out var page))
+        {
+            using var graphics = XGraphics.FromPdfPage(page);
+            using var image = XImage.FromFile(imagePath);
+            graphics.DrawImage(image, 75, 90, 105, 68);
+            document.Save(pdfPath);
+        }
+
+        return new ImageEditPdfFixture(directory, pdfPath);
+    }
+
     internal static ImageEditPdfFixture CreateImageWithVectorNeighbor()
     {
         var directory = NewDirectory();
