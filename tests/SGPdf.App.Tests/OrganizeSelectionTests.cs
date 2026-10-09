@@ -90,9 +90,9 @@ public sealed class OrganizeSelectionTests
         var plan = CreatePlan(2);
         var selection = new OrganizeSelection();
         selection.SelectSingle(plan.Pages[0].ItemId);
+        Action action = () => selection.SelectRange(plan, Guid.NewGuid());
 
-        var exception = Record.Exception(() => selection.SelectRange(plan, Guid.NewGuid()));
-        Assert.IsType<ArgumentException>(exception);
+        Assert.Throws<ArgumentException>(action);
     }
 
     private static OrganizePlan CreatePlan(int pageCount)
