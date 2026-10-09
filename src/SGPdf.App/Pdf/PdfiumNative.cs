@@ -5,6 +5,9 @@ namespace SGPdf.App.Pdf;
 internal static class PdfiumNative
 {
     private const string Library = "pdfium";
+    internal const int FPDFBitmap_Gray = 1;
+    internal const int FPDFBitmap_BGR = 2;
+    internal const int FPDFBitmap_BGRx = 3;
     internal const int FPDFBitmap_BGRA = 4;
     internal const int FPDF_PAGEOBJ_IMAGE = 3;
     internal const uint PDFACTION_UNSUPPORTED = 0;
@@ -292,6 +295,15 @@ internal static class PdfiumNative
 
     [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
     internal static extern IntPtr FPDFBitmap_GetBuffer(IntPtr bitmap);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern int FPDFBitmap_GetWidth(IntPtr bitmap);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern int FPDFBitmap_GetHeight(IntPtr bitmap);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern int FPDFBitmap_GetFormat(IntPtr bitmap);
 
     [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
     internal static extern int FPDFBitmap_GetStride(IntPtr bitmap);
