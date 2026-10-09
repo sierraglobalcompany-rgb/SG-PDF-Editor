@@ -233,8 +233,11 @@ internal sealed class PdfOrganizeWriter
                     PdfiumNative.FPDF_ClosePage(importedPage);
                 }
 
+                var swapsVisibleAxes = (pagePlan.RotationDeltaQuarterTurns & 1) != 0;
                 expectedPages.Add(new OrganizeExpectedPage(
-                    new PdfPageSize(width, height),
+                    swapsVisibleAxes
+                        ? new PdfPageSize(height, width)
+                        : new PdfPageSize(width, height),
                     absoluteRotation));
             }
 
