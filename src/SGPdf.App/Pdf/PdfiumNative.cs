@@ -51,6 +51,17 @@ internal static class PdfiumNative
         [MarshalAs(UnmanagedType.LPUTF8Str)] string? password);
 
     [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern IntPtr FPDF_CreateNewDocument();
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern int FPDF_ImportPagesByIndex(
+        IntPtr destinationDocument,
+        IntPtr sourceDocument,
+        [In] int[] pageIndices,
+        uint length,
+        int destinationIndex);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
     internal static extern void FPDF_CloseDocument(IntPtr document);
 
     [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
@@ -64,6 +75,12 @@ internal static class PdfiumNative
 
     [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
     internal static extern void FPDF_ClosePage(IntPtr page);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern int FPDFPage_GetRotation(IntPtr page);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern void FPDFPage_SetRotation(IntPtr page, int rotation);
 
     [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
     internal static extern float FPDF_GetPageWidthF(IntPtr page);

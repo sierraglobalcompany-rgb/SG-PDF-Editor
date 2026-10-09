@@ -7,13 +7,16 @@ public sealed partial class PdfDocumentSession : IDisposable
 {
     private IntPtr _document;
 
-    private PdfDocumentSession(string filePath, IntPtr document)
+    private PdfDocumentSession(string filePath, IntPtr document, bool openedWithPassword)
     {
         FilePath = filePath;
         _document = document;
+        OpenedWithPassword = openedWithPassword;
     }
 
     public string FilePath { get; }
+
+    public bool OpenedWithPassword { get; }
 
     public int PageCount => GetPageCount(CancellationToken.None);
 
@@ -39,7 +42,10 @@ public sealed partial class PdfDocumentSession : IDisposable
                 throw new PdfDocumentOpenException(classification, error);
             }
 
-            return new PdfDocumentSession(Path.GetFullPath(filePath), document);
+            return new PdfDocumentSession(
+                Path.GetFullPath(filePath),
+                document,
+                openedWithPassword: !string.IsNullOrEmpty(password));
         }
         finally
         {
