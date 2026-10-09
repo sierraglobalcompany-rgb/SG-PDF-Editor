@@ -1,71 +1,58 @@
 # Roadmap — SG PDF Editor
 
-> Arquitectura: `docs/MASTER_CONTEXT.md` + `docs/MASTER_PLAN.md`. Estado operativo vigente: `.planning/STATE.md`. GitHub exact heads/CI remain the execution authority.
+> Arquitectura: `docs/MASTER_CONTEXT.md` + `docs/MASTER_PLAN.md`. Estado operativo vigente: `.planning/STATE.md`. GitHub exact heads/CI are the execution authority.
 
 ## Phase 1 — F0 PDF Base
-**Goal:** lector PDF usable y estable.  
-**Estado:** **F0.1–F0.6 automated PASS**; physical Windows UI/print/offline smoke **NOT RUN**.
+**Estado:** F0.1–F0.6 automated PASS; physical Windows UI/print/offline smoke **NOT RUN**.
 
 ## Phase 2 — F1 Gate ZPL-A
-**Goal:** elegir renderer ZPL con evidencia.  
-**Estado:** synthetic Gate PASS → **Labelize 1.7.0 selected**. Private Mercado Libre real corpus **NOT RUN**.
+**Estado:** synthetic Gate PASS → Labelize 1.7.0 selected; private Mercado Libre corpus **NOT RUN**.
 
 ## Phase 3 — F2 Etiquetas ZPL
-**Goal:** reemplazar el flujo manual Labelary local/offline.  
-**Estado:** **F2.1–F2.6 automated PASS**. Private real-label corpus + thermal/ruler/scanner QA **NOT RUN**.
-
-Delivered: parse/open, Labelize preview, quantities/dimensions, layout/PDF export, Windows thermal print preflight, validation/hardening.
+**Estado:** F2.1–F2.6 automated PASS; private real-label corpus + thermal/ruler/scanner QA **NOT RUN**.
 
 ## Phase 4 — F3 Firma Visual
-**Goal:** firmar visualmente PDFs localmente sin crear un segundo motor de firma.
+**Estado:** F3.1–F3.4 automated PASS; corresponding real QA **NOT RUN**.
 
-- F3.1 Core placement/save — automated PASS; manual real-signature QA NOT RUN.
-- F3.2 Photo/scan — automated PASS; real-photo/scanner QA NOT RUN.
-- F3.3 Draw/InkCanvas — automated PASS; hardware QA NOT RUN.
-- F3.4 Local signature library — **automated closure PASS**.
-  - closure head `1bef751962e0b4aaf35fbda9b8a1a9a2ee2ba36b`;
-  - closure CI `37837613618` PASS;
-  - PR CI `37837833517` PASS;
-  - 301 tests, 0 failures;
-  - PR #22 draft/open/unmerged;
-  - real Windows save→restart→reuse/rename/delete/offline QA **NOT RUN**.
+F3.4 closure `1bef751962e0b4aaf35fbda9b8a1a9a2ee2ba36b`; PR #22 draft/open/unmerged.
 
 ## Phase 5 — F4 Lector Completo
-**Goal:** continuous scroll, thumbnails, bookmarks/links, search/copy text, password PDFs, shortcuts and recent files while preserving F3 page-local editing.
+**Goal:** continuous reader, thumbnails, protected PDFs, search/copy, bookmarks/safe links, shortcuts and recents while preserving F3/ZPL boundaries.
 
-**Status:** Tasks 1–8 **AUTO PASS**. Task 9 full-branch audit and documentation reconciliation are complete; final exact-head CI + draft PR/PR-CI are the remaining closure evidence.
+**Estado:** **AUTOMATED CLOSURE PASS**. Manual Windows QA remains **NOT RUN**.
 
-- Design: `docs/superpowers/specs/2026-10-08-f4-full-reader-design.md`.
-- Plan: `docs/superpowers/plans/2026-10-08-f4-full-reader.md`.
-- Exact F3.4 base: `1bef751962e0b4aaf35fbda9b8a1a9a2ee2ba36b`.
-- Pre-closure audited F4 head: `c36a8630e685cb143b312a0f260301b87a62bbd5`.
-- Pre-closure CI `37875773158`: PASS; **417 tests PASS; build 0 warnings / 0 errors**.
-- Full compare F3.4→F4: **118 commits ahead / 0 behind**.
-- No product/test `.csproj` or lockfile changes; no new runtime package, second PDF engine, WebView/network service, database, OCR or tabs.
-- No changes under `src/SGPdf.App/Features/Sign/` or `src/SGPdf.App/Features/Labels/`.
-- FIRMAR stays on the existing single-page editing path; ZPL keeps the established legacy host.
-- Unsafe PDF actions remain unsupported/no-op; only current-document GOTO and confirmed absolute HTTP/HTTPS URI links activate.
-- Passwords remain transient; render retention stays bounded; thumbnails remain lazy.
+Key evidence:
 
-Implementation tasks:
+- exact base F3.4: `1bef751962e0b4aaf35fbda9b8a1a9a2ee2ba36b`;
+- functional/Task-8 checkpoint `c36a8630e685cb143b312a0f260301b87a62bbd5`;
+- CI `37875773158` PASS; 417 tests PASS; build 0 warnings / 0 errors;
+- full audit: 118 commits ahead / 0 behind; no product/test csproj or lockfile changes; no Sign/Labels feature-file changes;
+- Task-9 closure-docs checkpoint `48a79b412f5b4b2903c954f79ab37e420f87e6ae`;
+- push CI `37890536672` PASS and PR CI `37890669463` PASS on that same SHA;
+- draft PR #23 `F4 — Full Reader`, correct stacked base/head, open/unmerged;
+- `main` verified unchanged at `31c0594758a83ec555d73ecdd7c597cdf8791fd7`.
 
-1. **F4.1a Native capability + pure layout — AUTO PASS** — `ce167be7...`; CI `37843337925`.
-2. **F4.1b Continuous reader — AUTO PASS** — `bfbc7740...`; CI `37852149659`.
-3. **F4.2 Thumbnails — AUTO PASS** — `c968aa8e...`; CI `37855511813`.
-4. **F4.3 Password PDFs — AUTO PASS** — `c27dfa73...`; CI `37857787178`.
-5. **F4.4a Search — AUTO PASS** — `984545a8...`; CI `37867206589`.
-6. **F4.4b Copy — AUTO PASS** — `0a5a8cff...`; CI `37870778333`.
-7. **F4.5 Bookmarks + Links — AUTO PASS** — `e85f8c78...`; CI `37872707082`.
-8. **F4.6 Shortcuts + Recents + Hardening — AUTO PASS** — `02c979f2...`; CI `37875513602`; Task-8 docs checkpoint `c36a8630...`, CI `37875773158`.
-9. **Closure — IN PROGRESS** — audit/docs complete; final exact-head CI + draft stacked PR + PR CI remain.
+The final docs-only state commit after PR creation must keep both push and PR checks green; GitHub exact-head is authoritative.
 
-READER-01..07 are reconciled as **AUTO PASS** in `.planning/REQUIREMENTS.md`. Manual Windows QA remains **NOT RUN** and is not inferred from automation.
+Tasks:
 
-Frozen rulings: PDFium only; continuous LEER + single-page FIRMAR; existing `PdfScrollViewer` remains the legacy FIRMAR/ZPL host; visible+one-neighbor full-resolution retention; lazy thumbnails; search page-by-page without permanent index; one-page selection; bookmarks max 10,000/depth 128; only current-document GOTO and confirmed HTTP/HTTPS explicit annotations activate; recents max 10 in atomic LocalAppData JSON with no menu/startup target probing; no tabs; no OCR; no second PDF engine; no required network; passwords transient only.
+1. Capability/layout — AUTO PASS.
+2. Continuous reader + FIRMAR boundary — AUTO PASS.
+3. Lazy thumbnails — AUTO PASS.
+4. Password PDFs — AUTO PASS.
+5. Unicode search — AUTO PASS.
+6. One-page selection/copy — AUTO PASS.
+7. Bookmarks + safe explicit links — AUTO PASS.
+8. Shortcuts + atomic recents + offline hardening — AUTO PASS.
+9. Full closure audit/docs/draft PR — AUTO PASS subject to final docs-only exact-head checks staying green.
+
+`READER-01..07`: AUTO PASS. Manual real Windows performance/UX/protected-PDF/search/selection/bookmark/link/shortcuts/recents/offline QA: **NOT RUN**.
+
+Frozen through F4: PDFium only; continuous LEER + existing single-page FIRMAR; legacy FIRMAR/ZPL host preserved; bounded visible+neighbor page retention; lazy thumbnails; no OCR/index/tabs/database/cloud/network runtime/password persistence/F5 editing.
 
 ## Phase 6 — F5 Organizar
 **Goal:** reorder/rotate/delete/duplicate/insert/extract/merge/split with preservation preflight.  
-**Estado:** pending. **Next design/spec gate only after formal F4 closure.**
+**Estado:** pending. **Next gate: design/spec planning only after the final F4 exact-head checks are green.**
 
 ## Phase 7 — F6 Imágenes
 **Estado:** pending.
@@ -88,18 +75,15 @@ Frozen rulings: PDFium only; continuous LEER + single-page FIRMAR; existing `Pdf
 ## Phase 13 — F12 Profesional
 **Estado:** pending.
 
----
-
 ## Current Position
 
 ```text
 A0/A1                         PASS
 F0                            automated PASS / physical QA pending
-F1                            synthetic Gate PASS / private corpus pending
-F2.1–F2.6                     automated PASS / private + physical QA pending
-F3.1–F3.4                     automated PASS / corresponding manual QA pending
-F4 Tasks 1–8                  automated PASS
-F4 Task 9                     audit/docs complete; exact-head CI + draft PR/PR-CI pending
+F1                            synthetic PASS / private corpus pending
+F2                            automated PASS / private + physical QA pending
+F3                            automated PASS / manual QA pending
+F4                            automated closure PASS / manual QA pending
 F5–F12                        pending
 ```
 
