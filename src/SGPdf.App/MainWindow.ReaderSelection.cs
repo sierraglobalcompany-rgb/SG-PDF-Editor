@@ -270,7 +270,7 @@ public partial class MainWindow
 
     private void ReaderSelectionWindow_PreviewKeyDown(object sender, KeyEventArgs e)
     {
-        if (HandleReaderSelectionKey(e.Key, Keyboard.Modifiers))
+        if (HandleReaderSelectionKey(e.Key, Keyboard.Modifiers, e.OriginalSource as DependencyObject))
             e.Handled = true;
     }
 
