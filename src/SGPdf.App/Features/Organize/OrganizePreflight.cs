@@ -103,11 +103,43 @@ internal sealed class OrganizePreflightInspector
         }
 
         cancellationToken.ThrowIfCancellationRequested();
+        if (session.HasOrganizeNamedDestinations(cancellationToken))
+        {
+            findings.Add(CreateUnknownWarning(
+                OrganizeFindingKind.NamedDestination,
+                "El PDF contiene destinos nombrados; su preservación todavía no está demostrada."));
+        }
+
+        cancellationToken.ThrowIfCancellationRequested();
         if (ContainsInternalLink(session, cancellationToken))
         {
             findings.Add(CreateUnknownWarning(
                 OrganizeFindingKind.InternalLink,
                 "El PDF contiene enlaces internos; su preservación todavía no está demostrada."));
+        }
+
+        cancellationToken.ThrowIfCancellationRequested();
+        if (session.IsOrganizeTagged(cancellationToken))
+        {
+            findings.Add(CreateUnknownWarning(
+                OrganizeFindingKind.TaggedStructure,
+                "El PDF contiene estructura etiquetada; su preservación todavía no está demostrada."));
+        }
+
+        cancellationToken.ThrowIfCancellationRequested();
+        if (session.HasOrganizePageLabels(cancellationToken))
+        {
+            findings.Add(CreateUnknownWarning(
+                OrganizeFindingKind.PageLabel,
+                "El PDF contiene etiquetas de página; su preservación todavía no está demostrada."));
+        }
+
+        cancellationToken.ThrowIfCancellationRequested();
+        if (session.HasOrganizeAttachments(cancellationToken))
+        {
+            findings.Add(CreateUnknownWarning(
+                OrganizeFindingKind.Attachment,
+                "El PDF contiene archivos adjuntos; su preservación todavía no está demostrada."));
         }
 
         cancellationToken.ThrowIfCancellationRequested();
