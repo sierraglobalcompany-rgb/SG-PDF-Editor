@@ -233,7 +233,6 @@ public sealed class MainWindowReaderSearchTests
             (Func<PdfDocumentSession, CancellationToken, IReadOnlyList<PdfPageSize>>)((session, token) => session.GetPageSizes(token)));
         SetField(window, "_renderReaderPage",
             (Func<PdfDocumentSession, int, double, CancellationToken, PdfRenderedPage>)((_, index, dpi, _) => SyntheticRendered(index, dpi)));
-        SetField(window, "_queueThumbnailRefreshOverride", (Action)(() => { }));
         return await InvokeTask<bool>(window, "TryOpenPdfPathAsync", path, null);
     }
 
