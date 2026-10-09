@@ -500,12 +500,15 @@ public partial class MainWindow
 
             try
             {
-                if (sourceId != sourcePlan.Sources[0].SourceId)
-                    throw new InvalidOperationException("La miniatura pertenece a un origen que todavía no está activo en Task 5.");
-
                 var dpi = item.ResolveThumbnailDpi();
                 var rendered = await Task.Run(() =>
-                    _renderOrganizeThumbnail(sourceSession, sourcePageIndex, dpi, request.CancellationToken));
+                    RenderOrganizeThumbnailFromSource(
+                        sourceSession,
+                        sourcePlan,
+                        sourceId,
+                        sourcePageIndex,
+                        dpi,
+                        request.CancellationToken));
 
                 if (!IsCurrentOrganizeItem(request, sourceSession, sourcePlan, item, itemId, sourceId, sourcePageIndex, rotation))
                     return;
@@ -528,6 +531,24 @@ public partial class MainWindow
                     item.MarkError(ex.Message);
             }
         }
+    }
+
+    private PdfRenderedPage RenderOrganizeThumbnailFromSource(
+        PdfDocumentSession primarySession,
+        OrganizePlan plan,
+        Guid sourceId,
+        int sourcePageIndex,
+        double dpi,
+        CancellationToken cancellationToken)
+    {
+        if (sourceId == plan.Sources[0].SourceId)
+            return _renderOrganizeThumbnail(primarySession, sourcePageIndex, dpi, cancellationToken);
+
+        var source = plan.Sources.SingleOrDefault(candidate => candidate.SourceId == sourceId)
+            ?? throw new InvalidOperationException("No se encontró el origen de la miniatura en el plan actual.");
+
+        using var secondarySession = PdfDocumentSession.Open(source.Path);
+        return _renderOrganizeThumbnail(secondarySession, sourcePageIndex, dpi, cancellationToken);
     }
 
     private bool IsCurrentOrganizeRequest(
