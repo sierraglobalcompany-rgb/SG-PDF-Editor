@@ -1,3 +1,5 @@
+using System.IO;
+
 namespace SGPdf.App.Features.Organize;
 
 internal readonly record struct OrganizeSourceFingerprint(
