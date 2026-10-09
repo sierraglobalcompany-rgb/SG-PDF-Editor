@@ -362,6 +362,7 @@ public partial class MainWindow
                 warningsConfirmed,
                 CancellationToken.None);
 
+            _organizePlanDirty = false;
             StatusText.Text = $"Copia organizada guardada: {destinationPath}";
             return true;
         }
@@ -414,6 +415,7 @@ public partial class MainWindow
     private void ApplyTask6OrganizePlan(OrganizePlan plan)
     {
         ApplyOrganizePlanSnapshot(plan);
+        _organizePlanDirty = true;
         _organizeSelection.Reconcile(plan);
         SyncOrganizeListSelection();
         UpdateOrganizeCommandAvailability();
