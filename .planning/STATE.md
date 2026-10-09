@@ -17,7 +17,7 @@ See `.planning/PROJECT.md`.
 > Numeric GSD progress is not product-completion truth while automated and physical/private gates are tracked separately. GitHub exact heads/CI + this status are authoritative for executed work.
 
 **Core value:** Resolver PDF + ZPL diario de forma rápida, privada, estable y offline.  
-**Current focus:** Phase 5 — **F4 Lector Completo**, Tasks 1–7 closed automatically; Task 8 is the next user-approved execution gate.
+**Current focus:** Phase 5 — **F4 Lector Completo**, Tasks 1–8 closed automatically; Task 9 closure is the next user-approved execution gate.
 
 ## Previous Gate — F3.4 closed automatically
 
@@ -30,7 +30,7 @@ See `.planning/PROJECT.md`.
 - PR #22: draft/open/unmerged, stacked on F3.3.
 - Manual real Windows QA: **NOT RUN**.
 
-## Current Gate — F4 Task 8 pending user `continúa`
+## Current Gate — F4 Task 9 pending user `continúa`
 
 - Branch: `feat/f4-full-reader`.
 - Base: exact F3.4 closure head `1bef751962e0b4aaf35fbda9b8a1a9a2ee2ba36b`.
@@ -92,7 +92,6 @@ See `.planning/PROJECT.md`.
 - Delivered: `PdfTextRect` / `PdfTextMatch`, PDFium text load/search/range/hit-test/rect APIs behind `NativeGate`, Unicode extraction, case-insensitive non-whole-word search defaults, pure page-by-page next/previous/wrap navigator, compact find bar, Ctrl+F / Enter / Shift+Enter / Escape behavior, active-match-only highlight and stale-generation rejection.
 - Search strategy: on demand only; no OCR and no permanent whole-document index/result cache.
 - KISS ruling: find UI is feature-local/dynamic in `MainWindow.ReaderSearch.cs`, matching the existing F4 reader/thumbnails pattern and avoiding a large `MainWindow.xaml` rewrite.
-- Scope audit against Task 4 closure `c27dfa738d946147bec5cb48c4e7ab2afde776bc`: exactly 8 Task 5 code/test files changed; no package/lock, F3, ZPL, print, persistence/database/network or Task 6 selection/copy changes.
 
 ### Task 6 — AUTO PASS
 
@@ -106,23 +105,35 @@ See `.planning/PROJECT.md`.
 - Tests: 379 PASS / 0 FAIL / 0 SKIPPED.
 - Delivered: one-page inclusive text-range normalization, drag selection, cross-page rejection, click-to-clear, PDF-coordinate rectangle state, automatic overlay reprojection on page geometry/zoom changes, exact Unicode `Ctrl+C`, no-op copy without selection, FIRMAR selection clearing without signature-state mutation, and selection-gesture precedence over future link activation.
 - Coordinate ruling: selection uses each rendered page's `PdfPageDeviceTransform`; it does not reuse Sign `PdfRect`, `SignatureCoordinateMapper` or signature overlay state.
-- KISS ruling: all integration stayed feature-local in `MainWindow.ReaderSelection.cs`; the plan allowed a narrow `MainWindow.Reader.cs` edit, but none was necessary because `ReaderPageItem.PropertyChanged` supplies the geometry-change hook directly.
-- Scope audit against Task 5 closure `36e6b3f43115320bd35dd05691384bcfa622503a`: exactly 4 Task 6 files changed; no PDFium bindings, package/lock, F3, ZPL, print, persistence/database/network or Task 7 bookmark/link changes.
 
 ### Task 7 — AUTO PASS
 
 - Clean contract RED head: `502ed9ea3722bd8eb45d796e51d9f57a5969e03d`.
 - RED CI `37872082122`: expected build failure with exactly 2 missing `PdfBookmarkNode` / `PdfPageLink` contract errors; 0 warnings.
-- Initial GREEN CI `37872367149`: expected intermediate compile failure with 3 localized integration errors (`DispatcherPriority` import, existing `ValidatePageIndex` signature and nullable rect value); 0 warnings.
 - Functional/verified head: `e85f8c783eaf327c6e133fef172aeda198cfe1bf`.
 - Exact-head functional CI `37872707082`: PASS.
 - Release build: 0 warnings / 0 errors.
 - Tests: 399 PASS / 0 FAIL / 0 SKIPPED.
 - Delivered: read-only hierarchical bookmarks, cycle/repeated-handle protection, depth limit 128, node limit 10,000, internal bookmark/GOTO navigation, explicit link-annotation extraction, lazy visible-page link metadata, PDF-coordinate link geometry and link overlay reprojection.
-- Security ruling: PDFium navigation code only reads metadata. Direct/internal GOTO executes inside the current PDF; URI actions require an absolute `http`/`https` URI and an explicit user confirmation before the OS browser seam is invoked. Launch, JavaScript, remote GOTO, file/shell, mailto/ftp and unknown actions are never executed and degrade to unsupported/no-op.
-- Selection precedence: link overlay is non-hit-testable and link activation requires click-like movement within 5 DIP; text-selection drag remains authoritative.
-- KISS ruling: `ReaderBookmarksTree` created in Task 3 was reused; Task 7 stayed feature-local in `MainWindow.ReaderLinks.cs` and did not require a large XAML/reader refactor.
-- Scope audit against Task 6 closure `a54a299371b2ca745e493499ffa284850ed1b9c6`: exactly 8 Task 7 code/test files changed; no package/lock, F3, ZPL, print, recents, database or required-network changes.
+- Security ruling: only current-PDF GOTO and confirmed absolute HTTP/HTTPS URI actions activate; Launch, JavaScript, remote GOTO, file/shell and other schemes are unsupported/no-op.
+
+### Task 8 — AUTO PASS
+
+- Recent-store clean RED head: `9f35ca757e9ca57306b5b2ae222dad395ff43958`.
+- Recent-store RED CI `37873804490`: expected build failure with 9 missing recent-store contract errors; 0 warnings.
+- Recent-store GREEN head: `e03486e2e6b1347450328ad1fe2c81c3f960a92a`; CI `37874120048` PASS; 406 tests PASS; build 0 warnings / 0 errors.
+- Recent-menu RED head: `2f6e5d2982b83e827d668359bed20d7da7a93a68`; CI `37874355272`: build clean; 406 previous tests PASS / 4 expected new failures.
+- Recent-menu GREEN head: `cffaa2b2a05f9387bb47b81f78b6f90532061c56`; CI `37874690176` PASS; 410 tests PASS; build 0 warnings / 0 errors.
+- Shortcut clean RED head: `9228d45d7cc3801117d2e9a4521b7b576c65e395`; CI `37874910978`: build clean; 410 previous tests PASS / 7 expected new failures.
+- Functional/verified head: `02c979f2dbd6a0d62154ccb7f85d9d64bf9ee67d`.
+- Exact-head functional CI `37875513602`: PASS.
+- Release build: **0 warnings / 0 errors**.
+- Tests: **417 PASS / 0 FAIL / 0 SKIPPED**.
+- Recents: versioned atomic `%LOCALAPPDATA%\SG PDF Editor\recent-files.json`, normalized case-insensitive dedupe, newest-first max 10, same-volume temp publication, corrupt-read non-destructive behavior and metadata-only clear.
+- Privacy/offline: opening/rebuilding the recents menu reads JSON only and does not probe stored local/UNC targets. A path is probed only after the user explicitly selects that recent and opening fails. WebView2/network-client/runtime-package regression barriers remain green.
+- Shortcuts: Ctrl+O/P/F/C, Ctrl++/−/0, Home/End and PageUp/PageDown exactly one viewport height. Editable TextBox/PasswordBox/editable ComboBox retain ownership.
+- F3 precedence: Ctrl+O resolves dirty signatures before invoking open; existing F3 Enter/Delete guards were not modified and remain authoritative.
+- Scope audit against Task 7 closure `9240a849e6233cfa50f3199a82ecc05698cf5e0e`: exactly 11 Task 8 code/test files changed; no package/lock, F3, ZPL, print implementation, PDFium or Task 9 changes.
 
 ### Frozen F4 direction
 
@@ -136,7 +147,7 @@ See `.planning/PROJECT.md`.
 - Read-only cycle/depth/node-bounded bookmarks.
 - Explicit internal PDF links + confirmed HTTP/HTTPS URI links only.
 - Passwords never persisted.
-- Recents = max 10 local paths + UTC timestamp; no startup path probing.
+- Recents = max 10 local paths + UTC timestamp; no startup/menu path probing.
 - PageUp/PageDown = one viewport-height scroll.
 - No multi-document tabs in F4.
 
@@ -149,8 +160,8 @@ See `.planning/PROJECT.md`.
 5. **DONE** — PDFium text core + find navigation.
 6. **DONE** — One-page text selection + copy.
 7. **DONE** — Bookmarks + safe explicit links.
-8. **NEXT** — Shortcuts + atomic recents + hardening.
-9. Closure audit/docs + exact-head CI + draft stacked PR.
+8. **DONE** — Shortcuts + atomic recents + hardening.
+9. **NEXT** — Closure audit/docs + exact-head CI + draft stacked PR.
 
 Project cadence: one task per user `continúa` unless the user explicitly changes it.
 
@@ -162,7 +173,7 @@ Project cadence: one task per user `continúa` unless the user explicitly change
 - F1 Gate ZPL-A: synthetic PASS; private real corpus NOT RUN.
 - F2.1–F2.6 ZPL Workspace: automated PASS.
 - F3.1–F3.4 Visual Signature: automated PASS; corresponding manual QA remains NOT RUN.
-- F4 Tasks 1–7: automated PASS.
+- F4 Tasks 1–8: automated PASS.
 
 ## Parallel Acceptance Gates Still Open
 
@@ -180,6 +191,7 @@ Project cadence: one task per user `continúa` unless the user explicitly change
 - F4 real text-search UX/Unicode/large-document performance QA: **NOT RUN**.
 - F4 real mouse text-selection/cross-page/zoom/Unicode clipboard QA: **NOT RUN**.
 - F4 real bookmarks/internal-link/external-link-confirmation Windows QA: **NOT RUN**.
+- F4 real shortcuts/recents/stale-UNC/offline Windows QA: **NOT RUN**.
 
 They remain separate from automated PASS and do not become accepted by inference.
 
@@ -198,11 +210,11 @@ They remain separate from automated PASS and do not become accepted by inference
 
 ```text
 next user `continúa`
-→ Task 8 RED for shortcuts + atomic max-10 recents + offline/path-probing hardening
-→ confirm expected RED
-→ minimal GREEN shortcut/recents behavior
-→ full regression + exact-head CI
-→ report evidence and stop before Task 9 closure
+→ Task 9 closure audit across full F4 branch
+→ closure history/docs + final exact-head CI
+→ open draft stacked PR for F4 only after closure evidence
+→ verify main unchanged
+→ stop without merge
 ```
 
 ## Continuity
