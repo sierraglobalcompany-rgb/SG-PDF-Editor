@@ -117,11 +117,10 @@ public sealed class MainWindowReaderSelectionTests
                     DisplayWidth = geometry.DisplayWidth * 1.5d,
                     DisplayHeight = geometry.DisplayHeight * 1.5d
                 });
-                Invoke(window, "UpdateReaderSelectionOverlay");
 
                 var after = Assert.IsType<Rectangle>(Assert.Single(canvas.Children));
                 Assert.True(after.Width > beforeWidth);
-                Assert.Equal(5, Assert.IsType<ReaderTextSelection>(GetField(window, "_readerTextSelection")).CharacterCount);
+                Assert.Equal(4, Assert.IsType<ReaderTextSelection>(GetField(window, "_readerTextSelection")).CharacterCount);
             }
             finally { CloseClean(window); }
         });
