@@ -198,6 +198,7 @@ public partial class MainWindow
                 UpdateViewerControlsUi();
                 UpdateCurrentPageStatus();
                 await RefreshReaderRenderWindowAsync();
+                TryRecordRecentPdf(_session.FilePath);
                 return true;
             }
         }
