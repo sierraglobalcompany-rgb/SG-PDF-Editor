@@ -83,10 +83,10 @@ public sealed class ImageEditBehaviorCharacterizationTests
     }
 
     [Fact]
-    public void Opacity_SaveReopenRender_CharacterizationReport()
+    public void Opacity_SaveReopenRender_ProvesFullHalfAndZeroAlpha()
     {
         using var fixture = ImageEditPdfFixtureFactory.CreateImageWithVectorNeighbor();
-        var samples = new List<string>();
+        var samples = new Dictionary<byte, Rgba>();
         foreach (var alpha in new byte[] { 255, 128, 0 })
         {
             var output = Path.Combine(fixture.DirectoryPath, $"opacity-{alpha}.pdf");
@@ -95,15 +95,19 @@ public sealed class ImageEditBehaviorCharacterizationTests
                 output,
                 context => context.SetOpacity(context.GetFirstImage().Handle, alpha));
             using var session = PdfDocumentSession.Open(output);
-            var pixel = PixelAt(session.RenderPage(0, 72d), 100, 95);
-            samples.Add($"{alpha}=R{pixel.R},G{pixel.G},B{pixel.B},A{pixel.A}");
+            samples[alpha] = PixelAt(session.RenderPage(0, 72d), 100, 95);
         }
 
-        Assert.Fail("F6 opacity characterization: " + string.Join("; ", samples));
+        Assert.Equal(new Rgba(100, 149, 237, 255), samples[255]);
+        Assert.Equal(new Rgba(255, 255, 255, 255), samples[0]);
+        Assert.InRange(samples[128].R, (byte)175, (byte)180);
+        Assert.InRange(samples[128].G, (byte)198, (byte)204);
+        Assert.InRange(samples[128].B, (byte)242, (byte)248);
+        Assert.Equal((byte)255, samples[128].A);
     }
 
     [Fact]
-    public void ZOrder_SaveReopenRender_CharacterizationReport()
+    public void ZOrder_SaveReopenRender_ReordersAcrossVectorAndImageWithoutLoss()
     {
         using var fixture = ImageEditPdfFixtureFactory.CreateOverlappingImagesAndVector();
         Rgba before;
@@ -132,9 +136,13 @@ public sealed class ImageEditBehaviorCharacterizationTests
             output,
             context => context.GetObjects().Select(item => item.Type).ToArray());
 
-        Assert.Fail(
-            $"F6 z-order characterization: before={before}; after={after}; " +
-            $"beforeTypes=[{string.Join(',', beforeTypes)}]; afterTypes=[{string.Join(',', afterTypes)}]");
+        Assert.Equal(new Rgba(0, 0, 255, 255), before);
+        Assert.Equal(new Rgba(255, 0, 0, 255), after);
+        Assert.Equal(new[] { 3, 2, 3 }, beforeTypes);
+        Assert.Equal(new[] { 2, 3, 3 }, afterTypes);
+        Assert.Equal(beforeTypes.Length, afterTypes.Length);
+        Assert.Equal(2, afterTypes.Count(type => type == 3));
+        Assert.Contains(afterTypes, type => type != 3);
     }
 
     private static Rgba PixelAt(PdfRenderedPage page, int x, int y)
