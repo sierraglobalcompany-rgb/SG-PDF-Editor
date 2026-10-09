@@ -20,13 +20,13 @@ public sealed class PdfTextTests
     [Fact]
     public void FindTextOnPage_IsCaseInsensitiveAndNonWholeWordByDefault()
     {
-        using var fixture = TextPdfFixture.Create("El niño y el NIÑEZ parcial");
+        using var fixture = TextPdfFixture.Create("alpha y ALPHABET parcial");
         using var session = PdfDocumentSession.Open(fixture.SourcePath);
 
-        var matches = session.FindTextOnPage(0, "NIÑ");
+        var matches = session.FindTextOnPage(0, "ALPHA");
 
         Assert.Equal(2, matches.Count);
-        Assert.All(matches, match => Assert.Equal(3, match.CharacterCount));
+        Assert.All(matches, match => Assert.Equal(5, match.CharacterCount));
     }
 
     [Fact]
