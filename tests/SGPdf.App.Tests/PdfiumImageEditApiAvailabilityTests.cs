@@ -83,11 +83,14 @@ public sealed class PdfiumImageEditApiAvailabilityTests
         if (File.Exists(direct) && NativeLibrary.TryLoad(direct, out var directLibrary))
             return directLibrary;
 
-        var candidate = Directory
-            .EnumerateFiles(AppContext.BaseDirectory, "pdfium.dll", SearchOption.AllDirectories)
-            .FirstOrDefault();
-        Assert.False(string.IsNullOrWhiteSpace(candidate), "No se encontró el pdfium.dll pinneado en la salida de tests.");
-        Assert.True(NativeLibrary.TryLoad(candidate!, out var library), $"No se pudo cargar el pdfium.dll pinneado: {candidate}");
+        var x64 = Path.Combine(
+            AppContext.BaseDirectory,
+            "runtimes",
+            "win-x64",
+            "native",
+            "pdfium.dll");
+        Assert.True(File.Exists(x64), $"No se encontró el pdfium.dll x64 pinneado: {x64}");
+        Assert.True(NativeLibrary.TryLoad(x64, out var library), $"No se pudo cargar el pdfium.dll x64 pinneado: {x64}");
         return library;
     }
 }
