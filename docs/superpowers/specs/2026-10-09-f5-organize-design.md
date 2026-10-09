@@ -1,7 +1,7 @@
 # F5 — Organizar PDF — Design Specification
 
 **Date:** 2026-10-09  
-**Status:** WRITTEN — awaiting user review  
+**Status:** APPROVED + IMPLEMENTED — automated closure; manual Windows QA NOT RUN  
 **Branch:** `feat/f5-organize`  
 **Base:** F4 closure head `1d620f1b2b9717aab35671e18a9dc78f28a8afdd`  
 **Product:** SG PDF Editor — Windows x64, C#/.NET 10, WPF, local-first/offline
@@ -69,9 +69,9 @@ Drag-and-drop is the primary reorder interaction. Multi-selected pages move as o
 
 Entering `ORGANIZAR` creates an in-memory workspace from the currently open PDF. LEER is hidden while organizing; FIRMAR overlays and ZPL controls are inactive.
 
-If FIRMAR has unresolved dirty state, the existing guard resolves it before ORGANIZAR opens. F5 does not create a second dirty-state authority.
+If FIRMAR has unresolved dirty state, the existing guard resolves it before ORGANIZAR opens. F5 does not create a second signature dirty-state authority.
 
-Leaving ORGANIZAR without saving discards only the plan; it never changes the source PDF.
+Leaving a dirty ORGANIZAR workspace is guarded before opening another PDF or switching to LEER/FIRMAR/ZPL. Cancel preserves the current plan/session; confirmed discard affects only the in-memory plan and never changes the source PDF. A successful Save As clears the organize dirty state.
 
 ## 4. Core architecture — plan first, materialize once
 
@@ -133,9 +133,11 @@ If a required API is absent:
 3. only after a demonstrated PDFium gap may qpdf/pdfcpu or another permissive utility be proposed;
 4. no second engine is introduced preemptively.
 
+Implementation result: the exact pinned DLL exposes the critical writer route used by F5, so no second PDF engine or package expansion was needed.
+
 ## 6. Native materialization
 
-Preferred pipeline:
+Preferred and implemented pipeline:
 
 ```text
 validated OrganizePlan
@@ -182,6 +184,7 @@ OrganizeFinding
   Kind
   Severity: Info | Warning | Block
   Message
+  PreservationStatus: ProvenPreserved | ProvenChangedOrLost | Unknown
 ```
 
 F5 investigates, to the practical extent supported by stable APIs/tests:
@@ -207,23 +210,23 @@ Each structure is documented as exactly one of:
 
 ### 7.1 Cryptographic signatures — frozen policy
 
-**Initial F5 blocks structural output when `FPDF_GetSignatureCount(document) > 0`.**
+**F5 blocks structural output when `FPDF_GetSignatureCount(document) > 0`.**
 
-Reason: page structure changes can invalidate cryptographic signatures even if signature objects remain visible. F5 will not offer a warning-and-continue override. Re-signing, signature validation and stripping signatures are outside F5.
+Reason: page structure changes can invalidate cryptographic signatures even if signature objects remain visible. F5 offers no warning-and-continue override. Re-signing, signature validation and stripping signatures are outside F5.
 
 ### 7.2 Protected/password PDFs — frozen policy
 
-**Initial F5 does not write or import from a source that required a password to open.**
+**F5 does not write or import from a source that required a password to open.**
 
-F4 may read such PDFs with transient credentials, but F5 will not persist passwords or introduce a general encrypted-writer credential model. ORGANIZAR must show a controlled limitation rather than failing later during save. Protected secondary sources are likewise rejected candidate-first.
+F4 may read such PDFs with transient credentials, but F5 does not persist passwords or introduce a general encrypted-writer credential model. ORGANIZAR shows a controlled limitation rather than failing later during save. Protected secondary sources are likewise rejected candidate-first.
 
 ### 7.3 Forms, bookmarks, destinations, links and other structures
 
 `FPDF_ImportPages*` is treated as page import, not as proof that document-level structures remain valid.
 
-F5.1 must build representative fixtures and inspect reopened output. If a structure is lost, altered or points to the wrong page after reorder/delete/duplicate/import, that structure is classified honestly and the approved warning/block behavior is enforced.
+Representative fixtures passed through the real F5 writer demonstrate that the current identity page-import route changes/loses forms, bookmarks, internal links, named destinations, tagged structure, page labels, attachments and original metadata values. These structures are classified `ProvenChangedOrLost`, surfaced as warnings and require explicit confirmation before materialization. See `docs/history/2026-10-09-F5-preservation-matrix.md`.
 
-F5 will not implement a generic low-level PDF object-tree rewriter merely to preserve an edge case. A proven gap that is important enough becomes a separate architecture decision.
+F5 does not implement a generic low-level PDF object-tree rewriter merely to preserve these structures. A future gap important enough for a different architecture remains a separate decision.
 
 ## 8. ORG-01 — intra-document operations
 
@@ -244,7 +247,6 @@ F5 will not implement a generic low-level PDF object-tree rewriter merely to pre
 ### Delete
 
 - removes selected plan items;
-- confirmation for consequential deletion;
 - cannot reduce plan to zero pages.
 
 ### Duplicate
@@ -263,7 +265,7 @@ Candidate-first local flow:
 2. open/validate source;
 3. reject protected/password-required sources;
 4. choose `Todas` or a validated page/range expression;
-5. insert before/after selection, or append when no insertion point is active.
+5. insert at the resolved plan position.
 
 Failure leaves the current plan unchanged.
 
@@ -290,19 +292,19 @@ Example:
 
 Every group must be valid and non-empty. Output names derive deterministically from the chosen base name plus range/ordinal suffix.
 
-Split stops on the first failed output. Previously validated/published outputs remain; the failed temp is not published. A distributed multi-file transaction is out of scope.
+Split checks all target collisions before the first write and stops on the first failed output. Previously published outputs remain; the failed temp is not published. A distributed multi-file transaction is out of scope.
 
 ## 10. Thumbnail and rendering strategy
 
 Reuse F4 render primitives and visual conventions where practical, but organize state is independent from `ReaderPageItem`.
 
-Organize thumbnails are lazy, low-resolution and virtualized. Reordering alone reuses the bitmap. Planned rotation may rotate the thumbnail visually or request a low-resolution rerender, whichever is simpler and correct.
+Organize thumbnails are lazy, low-resolution and virtualized. Reordering alone reuses the bitmap. Retention stays bounded to realized tiles plus a small neighbor window.
 
 F5 never rasterizes the whole PDF to perform structural organization.
 
 ## 11. State, cancellation and failure safety
 
-New source PDFs are always candidate-first: validate first, then publish the plan change.
+New source PDFs are candidate-first: validate first, then publish the plan change.
 
 Materialization accepts cancellation around source open/import/save/validation boundaries. Native PDFium calls remain synchronous and globally serialized; F5 does not add progressive editing solely for cancellation.
 
@@ -313,6 +315,8 @@ While saving/merging/splitting:
 - failure returns to the valid in-memory plan;
 - temp files are removed best-effort in `finally`;
 - source files are never changed.
+
+Task-10 closure hardening also guards dirty ORGANIZAR state before opening another PDF or switching surfaces. Successful Save As is the point that clears dirty state.
 
 ## 12. Output validation — frozen strategy
 
@@ -331,7 +335,7 @@ Preservation validation is separate: bookmarks/forms/destinations/etc. are inspe
 
 ## 13. Testing strategy
 
-TDD remains mandatory.
+TDD is mandatory and was used through F5.
 
 ### Pure plan tests
 
@@ -360,15 +364,19 @@ Against the pinned `pdfium.dll`:
 
 Fixtures cover:
 
-- unique page text markers;
+- unique page identity markers;
 - portrait/landscape mixes;
 - pre-rotated pages;
 - multiple source PDFs;
-- bookmarks;
-- internal destinations/links;
-- forms where practical;
-- cryptographic-signature detection;
-- larger page counts for virtualization/performance smoke.
+- bookmarks/internal links;
+- forms;
+- named destinations;
+- tagged structure;
+- page labels;
+- attachments;
+- representative metadata;
+- cryptographic-signature policy;
+- larger page counts for virtualization/memory smoke.
 
 No private customer/Mercado Libre PDF is committed.
 
@@ -382,9 +390,11 @@ CI continues protecting:
 - locked restore/offline-runtime policy;
 - no dependency/lock change unless explicitly justified by an approved gap decision.
 
+Functional Task-10 closure evidence before docs: CI `37990505245` attempt 2 PASS, Release build 0 warnings / 0 errors, 550/550 tests PASS.
+
 ## 14. Module boundaries
 
-Expected shape:
+Implemented shape remains concentrated around:
 
 ```text
 src/SGPdf.App/Features/Organize/
@@ -394,62 +404,47 @@ src/SGPdf.App/Features/Organize/
   OrganizeSelection.cs
   OrganizePreflight.cs
   OrganizeSplitPlanner.cs
+  OrganizeOutputNaming.cs
+  OrganizeBatchPublisher.cs
+  OrganizePageItem.cs
 
 src/SGPdf.App/Pdf/
   PdfDocumentSession.Organize.cs
   PdfOrganizeWriter.cs
+  OrganizeOutputValidator.cs
 
 src/SGPdf.App/
-  MainWindow.Organize.cs
+  MainWindow.Organize*.cs
 ```
 
-Exact filenames may change, but boundaries are frozen:
+Boundaries remain:
 
 - plan/state logic independent of WPF;
 - native writer independent of UI tile controls;
 - raw native document handles are not broadly exposed;
-- no new project/layer unless implementation evidence requires it.
+- no new project/layer was required.
 
 ## 15. Implementation slices
 
 ### F5.1 — Capability + plan + preflight
 
-- pinned PDFium export gate;
-- pure plan operations;
-- preflight contracts/detectors;
-- representative preservation probes;
-- no broad writer/UI claim until evidence is green.
+Implemented and automated PASS.
 
 ### F5.2 — Intra-document organize
 
-- organize grid;
-- selection + drag reorder;
-- rotate/delete/duplicate;
-- transactional writer;
-- reopen/order/rotation/render validation.
+Implemented and automated PASS: organize grid, selection/drag, rotate/delete/duplicate, transactional writer and reopen/render validation.
 
 ### F5.3 — Insert + merge
 
-- candidate secondary sources;
-- insert ranges;
-- append/merge reuse;
-- multi-source validation.
+Implemented and automated PASS: candidate secondary sources, ranges, append/merge reuse and multi-source validation.
 
 ### F5.4 — Extract + split
 
-- extraction;
-- every-N-pages split;
-- explicit ranges;
-- deterministic names;
-- stop-on-first-failure publication rule.
+Implemented and automated PASS: extraction, every-N split, explicit ranges, deterministic names and stop-on-first-failure publication rule.
 
 ### F5.5 — Preservation hardening + closure
 
-- reconcile preservation matrix from evidence;
-- warnings/blocks;
-- large-document/manual Windows QA checklist;
-- offline/privacy/temp-residue audit;
-- state/history/draft PR closure.
+Preservation matrix and dirty-state hardening are implemented and automated GREEN. Final closure consists of reconciled docs, stacked draft PR and exact-head push/PR CI checks. Manual Windows QA remains NOT RUN.
 
 ## 16. Explicitly out of scope
 
@@ -472,31 +467,36 @@ Exact filenames may change, but boundaries are frozen:
 
 ## 17. Acceptance mapping
 
-**ORG-01 PASS** only when move/reorder/rotate/delete/duplicate are deterministic, source-safe and validated after transactional output.
+**ORG-01 AUTO PASS:** move/reorder/rotate/delete/duplicate are deterministic, source-safe and validated after transactional output.
 
-**ORG-02 PASS** only when insert/merge/extract/split all reuse the plan/materializer architecture and publish only validated outputs.
+**ORG-02 AUTO PASS:** insert/merge/extract/split reuse the plan/materializer architecture and publish only validated outputs.
 
-**ORG-03 PASS** only when preservation findings are evidence-based and signed/protected inputs obey the frozen block policies above.
+**ORG-03 AUTO PASS:** preservation findings are evidence-based and signed/protected inputs obey the frozen block policies; proven changed/lost non-crypto structures require explicit warning confirmation.
 
-**ORG-04 PASS** only when required PDFium APIs are verified against the exact pinned runtime and no second engine enters without a demonstrated gap plus separate approval.
+**ORG-04 AUTO PASS:** required PDFium APIs are verified against the exact pinned runtime and no second engine entered F5.
+
+Manual real-Windows acceptance remains NOT RUN and is not implied by these automated statuses.
 
 ## 18. Frozen design decisions
 
 1. F5 is plan-first; no immediate source mutation.
 2. One page-reference model powers reorder/delete/duplicate/insert/merge/extract/split.
-3. First F5 output is always `Guardar como...`; no source overwrite.
-4. Preferred writer = new destination + exact page imports + rotation + save/reopen/validate.
-5. PDFium capability is verified against the pinned binary before writer implementation.
+3. F5 structural output is always `Guardar como...`; no source overwrite.
+4. Writer = new destination + exact page imports + rotation + save/reopen/validate.
+5. PDFium capability is verified against the pinned binary before writer use.
 6. Successful page import is not proof of document-level preservation.
 7. Cryptographically signed PDFs are blocked from F5 structural output.
-8. Password-required PDFs are blocked from F5 structural output/import in the initial version.
+8. Password-required PDFs are blocked from F5 structural output/import.
 9. Runtime output validation renders every page sequentially at 36 DPI before publication.
 10. Organize thumbnails remain lazy/bounded and do not become a second reader.
 11. LEER, FIRMAR and ZPL remain separate surfaces.
-12. No second PDF engine or generic document graph enters F5 without demonstrated necessity.
+12. No second PDF engine or generic document graph entered F5.
+13. Dirty organize state is explicitly guarded before destructive surface/document switches.
 
-## 19. User-review gate
+## 19. Closure gate
 
-This file defines F5 architecture and scope only.
+The original user-review/design gate was completed before implementation. The approved TDD plan is `docs/superpowers/plans/2026-10-09-f5-organize.md`.
 
-After the user approves this written specification, the next permitted step is `writing-plans` to produce the detailed TDD implementation plan. Product code must not begin before that plan is written and approved according to the project workflow.
+F5 implementation is now at automated closure. Completion requires the final stacked draft PR to remain open/unmerged with exact-head push and PR Windows CI green, plus verification that `main` is unchanged. Manual Windows QA remains a separate NOT RUN gate.
+
+After F5 automated closure, the next permitted product step is **F6 Images design/spec only**. No F6 implementation begins until its design and TDD plan are separately approved.
