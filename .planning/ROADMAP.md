@@ -33,7 +33,7 @@ Delivered: parse/open, Labelize preview, quantities/dimensions, layout/PDF expor
 ## Phase 5 — F4 Lector Completo
 **Goal:** continuous scroll, thumbnails, bookmarks/links, search/copy text, password PDFs, shortcuts and recent files while preserving F3 page-local editing.
 
-**Current gate:** design + TDD plan **APPROVED**. **Tasks 1–6 AUTO PASS**; Task 7 waits for the next user `continúa`.
+**Current gate:** design + TDD plan **APPROVED**. **Tasks 1–7 AUTO PASS**; Task 8 waits for the next user `continúa`.
 
 - Design: `docs/superpowers/specs/2026-10-08-f4-full-reader-design.md`.
 - Plan: `docs/superpowers/plans/2026-10-08-f4-full-reader.md`.
@@ -42,12 +42,12 @@ Delivered: parse/open, Labelize preview, quantities/dimensions, layout/PDF expor
 - Task 3 functional/verified head: `c968aa8e94f8b22820e3aa32ba1097d0e58516a2`; CI `37855511813` PASS; 336 tests PASS.
 - Task 4 final head: `c27dfa738d946147bec5cb48c4e7ab2afde776bc`; CI `37857787178` PASS; 346 tests PASS; build 0 warnings / 0 errors.
 - Task 5 functional/verified head: `984545a8e8b6b098a55dad55b5059aa4c6020b3b`; CI `37867206589` PASS; 368 tests PASS; build 0 warnings / 0 errors.
-- Task 6 clean RED head: `3e0ef221dcc40a98ec9337bdea725f2d5ce8b0e0`; CI `37870209624` expected build failure with 8 missing selection-contract errors and 0 warnings.
-- Task 6 strengthened zoom RED head: `670a9d8416f5ec29b0456f8dead7b171e07149d5`; CI `37870595171` build clean with 378 PASS / 1 expected failure for missing automatic geometry reprojection.
-- Task 6 functional/verified head: `0a5a8cff5677956b3498ec333c5b4d76f59e0180`.
-- Task 6 CI: `37870778333` PASS.
-- Task 6 verification: Release build 0 warnings / 0 errors; 379 tests PASS.
-- Task 6 scope: one-page selection model + feature-local reader selection integration + tests only; no PDFium binding, package/lock, F3, ZPL, print, persistence/database/network or bookmark/link changes.
+- Task 6 functional/verified head: `0a5a8cff5677956b3498ec333c5b4d76f59e0180`; CI `37870778333` PASS; 379 tests PASS; build 0 warnings / 0 errors.
+- Task 7 clean RED head: `502ed9ea3722bd8eb45d796e51d9f57a5969e03d`; CI `37872082122` expected build failure with 2 missing navigation-model errors and 0 warnings.
+- Task 7 functional/verified head: `e85f8c783eaf327c6e133fef172aeda198cfe1bf`.
+- Task 7 CI: `37872707082` PASS.
+- Task 7 verification: Release build 0 warnings / 0 errors; 399 tests PASS.
+- Task 7 scope/security: exactly 8 code/test files; bounded read-only bookmarks, current-PDF GOTO and explicit confirmed HTTP/HTTPS only. Launch, JavaScript, remote GOTO, file/shell and non-HTTP schemes never execute. No package/lock, F3, ZPL, print, recents, database or required-network changes.
 
 Implementation tasks:
 
@@ -57,11 +57,11 @@ Implementation tasks:
 4. **F4.3 Password PDFs — AUTO PASS** — authoritative PDFium error-4 classification, masked prompt, retry/cancel, prior-workspace preservation and no password persistence.
 5. **F4.4a Search — AUTO PASS** — PDFium Unicode text primitives, page-by-page on-demand find navigation, Ctrl+F/Enter/Shift+Enter/Escape, active-match highlight and stale-search suppression; no OCR/index.
 6. **F4.4b Copy — AUTO PASS** — one-page PDF-coordinate drag selection, cross-page rejection, automatic zoom reprojection and exact Unicode clipboard copy; independent from F3 signature geometry.
-7. **F4.5 Bookmarks + Links — NEXT** — read-only cycle-safe outline + safe explicit links.
-8. **F4.6 Shortcuts + Recents + Hardening** — local atomic max-10 recents, no startup path probing.
+7. **F4.5 Bookmarks + Links — AUTO PASS** — read-only bounded outline, internal GOTO, explicit link annotations and confirmed HTTP/HTTPS only; unsafe/unsupported PDF actions are no-op.
+8. **F4.6 Shortcuts + Recents + Hardening — NEXT** — local atomic max-10 recents, no startup path probing.
 9. **Closure** — audit/docs/exact-head CI/draft stacked PR.
 
-Frozen rulings: PDFium only; continuous LEER + single-page FIRMAR; existing `PdfScrollViewer` remains the legacy FIRMAR/ZPL host; visible+one-neighbor full-resolution retention; lazy thumbnails; search page-by-page without permanent index; one-page selection uses `PdfPageDeviceTransform` and stored PDF text rects; no tabs; no OCR; no second PDF engine; no required network; passwords are transient only and never persisted.
+Frozen rulings: PDFium only; continuous LEER + single-page FIRMAR; existing `PdfScrollViewer` remains the legacy FIRMAR/ZPL host; visible+one-neighbor full-resolution retention; lazy thumbnails; search page-by-page without permanent index; one-page selection uses `PdfPageDeviceTransform` and stored PDF text rects; bookmarks max 10,000/depth 128 with repeated-handle rejection; only current-document GOTO and confirmed HTTP/HTTPS explicit annotations activate; no tabs; no OCR; no second PDF engine; no required network; passwords are transient only and never persisted.
 
 ## Phase 6 — F5 Organizar
 **Goal:** reorder/rotate/delete/duplicate/insert/extract/merge/split with preservation preflight.  
@@ -98,9 +98,9 @@ F0                            automated PASS / physical QA pending
 F1                            synthetic Gate PASS / private corpus pending
 F2.1–F2.6                     automated PASS / private + physical QA pending
 F3.1–F3.4                     automated PASS / corresponding manual QA pending
-F4 Task 1–6                   automated PASS
-F4 Task 7–9                   pending
+F4 Task 1–7                   automated PASS
+F4 Task 8–9                   pending
 F5–F12                        pending
 ```
 
-Next gate: **Task 7 only after the next user `continúa`**. No merge to `main` without explicit user approval.
+Next gate: **Task 8 only after the next user `continúa`**. No merge to `main` without explicit user approval.
