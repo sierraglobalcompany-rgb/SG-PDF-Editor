@@ -22,8 +22,6 @@ internal static class ImageEditNativeCharacterizationHarness
         ?? throw new InvalidOperationException("PdfiumRuntime not found.");
     private static readonly Type MatrixType = NativeType.GetNestedType("Matrix", BindingFlags.NonPublic)
         ?? throw new InvalidOperationException("PdfiumNative.Matrix not found.");
-    private static readonly Type QuadType = NativeType.GetNestedType("QuadPointsF", BindingFlags.NonPublic)
-        ?? throw new InvalidOperationException("PdfiumNative.QuadPointsF not found.");
 
     internal static void MutateAndSave(
         string sourcePath,
@@ -225,8 +223,6 @@ internal static class ImageEditNativeCharacterizationHarness
     private static T Invoke<T>(string name, params object?[] args)
     {
         var result = Method(name).Invoke(null, args);
-        if (typeof(T) == typeof(object) || typeof(T) == typeof(object?))
-            return (T)(object?)result!;
         return result is null ? default! : (T)result;
     }
 
