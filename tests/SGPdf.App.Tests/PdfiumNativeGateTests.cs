@@ -4,6 +4,13 @@ using Xunit;
 
 namespace SGPdf.App.Tests;
 
+[CollectionDefinition(Name, DisableParallelization = true)]
+public sealed class PdfiumNativeGateCollection
+{
+    public const string Name = "Pdfium native gate";
+}
+
+[Collection(PdfiumNativeGateCollection.Name)]
 public sealed class PdfiumNativeGateTests
 {
     [Fact]
