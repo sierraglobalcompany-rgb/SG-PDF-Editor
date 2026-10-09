@@ -52,6 +52,6 @@ public sealed class PdfImageObjectDiscoveryTests
             propertyName,
             BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
         Assert.NotNull(property);
-        return Assert.IsType<T>(property!.GetValue(target));
+        return Assert.IsAssignableFrom<T>(property!.GetValue(target));
     }
 }
