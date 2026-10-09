@@ -8,43 +8,30 @@
 
 ## 1. Purpose
 
-F5 adds practical page organization without turning SG PDF Editor into a general document-rewrite engine.
+F5 adds practical page organization without turning SG PDF Editor into a generic PDF object-tree editor.
 
-Success means a user can enter `ORGANIZAR`, see the document as page thumbnails, select one or many pages, reorder them visually, rotate, delete or duplicate them, then insert pages from another PDF, extract selected pages, merge PDFs and split a PDF into useful outputs. The original file is never modified in place by default: the result is materialized through `Guardar como...`, reopened and validated before publication.
+Success means the user can enter `ORGANIZAR`, work from page thumbnails, select one or many pages, reorder, rotate, delete or duplicate them, insert pages from another PDF, merge PDFs, extract selected pages and split a PDF. The source file is not modified in place: the result is produced with `Guardar como...`, reopened and validated before publication.
 
-F5 is explicitly preservation-aware. Page operations may affect signatures, forms, bookmarks, named destinations, internal links, tagged structure, page labels, attachments or other document-level structures. SG PDF Editor must detect what it can, test actual behavior against the pinned PDFium build and never claim preservation that has not been demonstrated.
+F5 is preservation-aware. Structural operations may affect signatures, forms, bookmarks, named destinations, links, tagged structure, page labels, attachments or other document-level data. SG PDF Editor must never claim preservation that has not been demonstrated against the exact pinned PDFium runtime.
 
-F5 does not add image editing, text editing, annotations, OCR, cryptographic signing, generic repair/optimization or a second PDF engine.
+F5 does not add image/text editing, comments, OCR, cryptographic signing, generic repair/optimization or a second PDF engine.
 
-## 2. Existing baseline and non-negotiable constraints
-
-The F4 baseline already provides:
-
-- `PdfDocumentSession` as the native PDFium document owner;
-- `PdfiumRuntime.NativeGate` as the global PDFium serialization boundary;
-- continuous `LEER` with bounded full-resolution rendering;
-- lazy PDF thumbnails;
-- bookmark/link inspection;
-- `FPDF_GetSignatureCount` already bound for signature preflight;
-- existing `Guardar como...` transactional behavior in the visual-signature writer: temporary file, close/reopen validation and atomic publication;
-- existing FIRMAR and ZPL surfaces that must remain isolated from page organization.
-
-Project constraints remain:
+## 2. Frozen project constraints
 
 1. Windows x64, C#/.NET 10 and WPF.
-2. PDFium remains the only PDF engine unless a concrete, tested gap proves another utility necessary.
-3. All native PDFium activity remains behind `PdfiumRuntime.NativeGate`.
-4. No cloud, SaaS, account, API key, telemetry or runtime Internet dependency.
+2. PDFium remains the primary and only PDF engine unless a demonstrated gap later justifies another permissive utility.
+3. All native PDFium activity stays behind `PdfiumRuntime.NativeGate`.
+4. No cloud, account, API key, telemetry or runtime Internet dependency.
 5. No commercial runtime dependency.
-6. KISS/YAGNI: no generic document graph, MVVM framework, DI container, event bus, repository layer or plugin system.
-7. `Guardar como...` remains the default for structural editing.
-8. No merge to `main` without explicit user approval.
-9. Existing F2/F3/F4 behavior must not be silently changed.
-10. Automated PASS never upgrades unresolved manual/private/physical gates from earlier phases.
+6. KISS/YAGNI: no generic document graph, MVVM framework, DI container, event bus or plugin system.
+7. `Guardar como...` is mandatory for the first F5 writer; source overwrite is out of scope.
+8. Existing F2 ZPL, F3 FIRMAR and F4 LEER behavior must not be silently changed.
+9. No merge to `main` without explicit user approval.
+10. Earlier manual/private/physical QA remains independent of F5 automated work.
 
-## 3. Product UX model
+## 3. UX model
 
-The top-level mode concept remains:
+The product modes remain:
 
 ```text
 LEER | FIRMAR | EDITAR | ORGANIZAR | COMENTAR
@@ -54,80 +41,43 @@ F5 implements `ORGANIZAR` only.
 
 ### 3.1 Organize surface
 
-`ORGANIZAR` uses a dedicated center surface rather than mutating the continuous reader UI.
-
-Recommended commercial/KISS pattern:
+`ORGANIZAR` uses a dedicated center surface with a virtualized thumbnail grid and a small action bar:
 
 ```text
-┌───────────────────────────────────────────────────────────┐
-│ Rotar izq. | Rotar der. | Eliminar | Duplicar | Insertar │
-│ Extraer | Dividir | Guardar como...                      │
-├───────────────────────────────────────────────────────────┤
-│ [ 1 ] [ 2 ] [ 3 ] [ 4 ]                                 │
-│ [ 5 ] [ 6 ] [ 7 ] [ 8 ]     thumbnail grid              │
-│ ...                                                       │
-└───────────────────────────────────────────────────────────┘
+Rotar izq. | Rotar der. | Eliminar | Duplicar | Insertar
+Extraer | Dividir | Guardar como...
+
+[ 1 ] [ 2 ] [ 3 ] [ 4 ]
+[ 5 ] [ 6 ] [ 7 ] [ 8 ]
+...
 ```
 
-Each tile shows:
+Each tile shows the thumbnail, current plan number, selection state and an optional source indicator for pages inserted from another PDF.
 
-- page thumbnail;
-- visible page number in the current plan;
-- selection state;
-- rotation indicator only when useful;
-- optional source indicator when pages came from another PDF.
+Selection follows familiar Windows behavior:
 
-No dense metadata panel is required in F5.
-
-### 3.2 Selection
-
-Minimum interaction:
-
-- click = select one page;
-- Ctrl+click = toggle individual pages;
-- Shift+click = contiguous range from selection anchor;
-- Ctrl+A = select all pages in the organize workspace;
+- click = one page;
+- Ctrl+click = toggle;
+- Shift+click = range;
+- Ctrl+A = all;
 - Escape = clear selection;
-- Delete = request deletion of selected pages, subject to confirmation when appropriate.
+- Delete = request deletion.
 
-Selection follows current plan order, not original source page numbers.
+Drag-and-drop is the primary reorder interaction. Multi-selected pages move as one ordered block and preserve relative order. Dropping inside the selected block is a no-op.
 
-### 3.3 Reorder
+### 3.2 Mode boundaries
 
-Drag-and-drop is the primary reorder interaction.
+Entering `ORGANIZAR` creates an in-memory workspace from the currently open PDF. LEER is hidden while organizing; FIRMAR overlays and ZPL controls are inactive.
 
-Rules:
+If FIRMAR has unresolved dirty state, the existing guard resolves it before ORGANIZAR opens. F5 does not create a second dirty-state authority.
 
-- dragging one selected tile moves the complete selected set while preserving its relative order;
-- a visible insertion marker shows the destination;
-- dropping inside the selected block is a no-op;
-- reorder only mutates the in-memory plan; it does not rewrite the PDF immediately;
-- keyboard-only reorder shortcuts are optional in F5 and are not an acceptance requirement.
-
-### 3.4 Mode boundaries
-
-Entering `ORGANIZAR` from an open PDF creates an organize workspace from the current document.
-
-While `ORGANIZAR` is active:
-
-- continuous LEER is hidden;
-- FIRMAR overlays are not active;
-- ZPL controls remain hidden;
-- reader search/selection/bookmark interactions do not mutate the organize workspace.
-
-Returning to `LEER` without saving discards only the organize plan, never the source PDF.
-
-If FIRMAR has unresolved visual-signature changes, the existing dirty guard must resolve them before entering structural organization. F5 must not invent a second dirty-state authority.
+Leaving ORGANIZAR without saving discards only the plan; it never changes the source PDF.
 
 ## 4. Core architecture — plan first, materialize once
 
-F5 does not perform a native PDF operation for every mouse action.
+Mouse/UI actions do not rewrite the native PDF immediately. They mutate a logical `OrganizePlan`; native PDF work occurs only when producing an output.
 
-All UI operations modify an immutable or copy-on-write logical `OrganizePlan`. Native PDF rewrite occurs only when an output is requested.
-
-### 4.1 OrganizePlan
-
-Conceptual shape:
+Conceptual model:
 
 ```text
 OrganizePlan
@@ -146,42 +96,26 @@ OrganizePage
   RotationDeltaQuarterTurns
 ```
 
-`ItemId` is unique per logical tile. This is important because duplicating the same source page creates two independent plan items while both may reference the same source page index.
+`ItemId` is unique per logical tile. Duplicates receive new IDs even when they point to the same source page.
 
-The plan order is the desired output order.
+One model powers all operations:
 
-### 4.2 Operation mapping
+- reorder → reorder `Pages[]`;
+- rotate → modify quarter-turn delta modulo 4;
+- delete → remove plan items;
+- duplicate → clone plan items with new IDs;
+- insert → add a source plus page references;
+- merge → insert all pages from another source, normally at the end;
+- extract → materialize a derived plan containing selected items;
+- split → materialize several derived plans.
 
-The same plan model covers the main features:
-
-- **move/reorder** → reorder `Pages[]`;
-- **rotate** → update `RotationDeltaQuarterTurns` modulo 4;
-- **delete** → remove page items;
-- **duplicate** → copy selected page items with new `ItemId`s;
-- **insert from PDF** → add another `OrganizeSource`, then insert selected/all source-page references;
-- **merge** → same mechanism as insert, normally append all pages from one or more PDFs;
-- **extract** → materialize a plan containing only the selected items;
-- **split** → materialize several derived plans from deterministic ranges.
-
-This avoids separate reorder, merge, extract and split engines.
-
-### 4.3 No in-place source mutation during editing
-
-The source document remains unchanged while the workspace is open.
-
-Advantages:
-
-- Cancel is trivial and safe.
-- UI operations are fast and testable without native PDF calls.
-- Reorder/delete/duplicate share one state model.
-- Structural preflight can run before native rewrite.
-- Save failure leaves the source and current valid document untouched.
+This is the central KISS decision for F5: there is no separate merge, extract or split engine.
 
 ## 5. PDFium capability gate
 
-Before F5 writer implementation is considered viable, the exact pinned `pdfium.dll` must be tested for the native exports actually required by the chosen implementation.
+Before any F5 writer is accepted, CI must verify the exact pinned `pdfium.dll` exports the APIs actually required.
 
-Candidate APIs include:
+Candidate APIs:
 
 - `FPDF_CreateNewDocument`;
 - `FPDF_ImportPagesByIndex` and/or `FPDF_ImportPages`;
@@ -190,36 +124,29 @@ Candidate APIs include:
 - `FPDF_SaveAsCopy`;
 - existing open/page/render APIs used for validation.
 
-`FPDFPage_Delete` / `FPDFPage_New` may be tested because PDFium exposes them, but the preferred F5 architecture does not require destructive source mutation if a new output document can be composed from the plan.
+`FPDFPage_New` and `FPDFPage_Delete` may also be probed, but the preferred design does not mutate the source document if a new output can be composed from page imports.
 
-The capability test must run against the same pinned runtime used by CI/product. Documentation saying an API exists is not enough.
+If a required API is absent:
 
-If a required function is absent from the pinned binary:
-
-1. first determine whether the same feature can be expressed with another already-exported PDFium API;
-2. then evaluate a PDFium package upgrade with its own regression/license audit if justified;
+1. try another already-exported PDFium route;
+2. evaluate a PDFium package upgrade only with regression/license evidence;
 3. only after a demonstrated PDFium gap may qpdf/pdfcpu or another permissive utility be proposed;
-4. no second engine is added preemptively.
+4. no second engine is introduced preemptively.
 
-## 6. Native materialization strategy
+## 6. Native materialization
 
-### 6.1 Preferred writer model
-
-Create a new destination PDF and import source pages into it in final plan order.
-
-Conceptual flow:
+Preferred pipeline:
 
 ```text
 validated OrganizePlan
   ↓
-preflight result
+preflight
   ↓
-create temporary output document
+create temporary destination document
   ↓
-for each source/run needed by the plan:
-    import exact source page indices at destination position
+import exact source page indices in final plan order
   ↓
-apply planned quarter-turn rotations to output pages
+apply planned quarter-turn rotations
   ↓
 save temporary PDF
   ↓
@@ -229,214 +156,131 @@ reopen with PdfDocumentSession
   ↓
 validate
   ↓
-atomic publish to chosen destination
+atomic publication to destination
 ```
 
-Batch contiguous import runs when it materially simplifies/native-call count, but do not create a complex optimizer. Correct plan order is more important than minimizing native calls.
+Batch contiguous import runs only when it stays simple. Correct plan order matters more than reducing native call count.
 
-### 6.2 Rotation semantics
-
-`RotationDeltaQuarterTurns` is relative to the source page's current rotation.
-
-At materialization:
+Rotation is relative to the original page rotation:
 
 ```text
 outputRotation = (sourceRotation + delta) mod 4
 ```
 
-The UI may show only clockwise/counter-clockwise actions. Arbitrary-angle rotation is outside F5.
+Deleting every page is blocked; F5 does not create zero-page PDFs.
 
-### 6.3 Zero-page result
+Destination must differ from the active source path. Existing destination replacement is transactional only after successful temp validation.
 
-A PDF cannot be saved from an empty organize plan in F5.
+## 7. Preflight and preservation
 
-Deleting all pages is blocked with a controlled message. If the user wants no pages, they can cancel rather than produce a malformed/meaningless output.
+A PDF that reopens and renders is not automatically semantically preserved.
 
-### 6.4 Source overwrite
-
-The initial F5 contract follows existing structural-edit safety:
-
-- destination must be different from the active source path;
-- existing destination may be replaced transactionally only after successful temp validation;
-- the original active PDF is not overwritten by the first F5 implementation.
-
-In-place replace may be revisited later only after broader preservation confidence.
-
-## 7. Preflight and preservation policy
-
-F5 does not equate “PDF saved and renders” with “all semantic structures were preserved.”
-
-### 7.1 Preflight result
-
-Use a small explicit result model, for example:
+Preflight uses a small result model:
 
 ```text
-OrganizePreflightResult
-  Findings[]
-  CanProceed
-
 OrganizeFinding
   Kind
-  Severity
+  Severity: Info | Warning | Block
   Message
 ```
 
-Severity remains intentionally small:
-
-```text
-Info | Warning | Block
-```
-
-No generic rules engine is needed.
-
-### 7.2 Structures to inspect
-
-At minimum, F5 preflight investigates:
+F5 investigates, to the practical extent supported by stable APIs/tests:
 
 1. cryptographic signatures;
-2. forms / AcroForm presence or form type;
+2. forms / form type;
 3. bookmarks / outline presence;
 4. named destinations;
-5. internal links/destinations relevant to page indices;
-6. tagged/structure-tree presence when a stable detection route is available;
-7. page labels when detectable with reasonable complexity;
-8. embedded-file/attachment presence when detectable with reasonable complexity;
-9. encryption/protected-document write limitations.
+5. internal links/destinations;
+6. tagged/structure-tree presence;
+7. page labels;
+8. embedded files/attachments;
+9. protected/encrypted-document write limitations;
+10. representative metadata preservation.
 
-Metadata by itself is lower risk than navigation/form structures but must still be included in preservation tests when the writer is evaluated.
+Each structure is documented as exactly one of:
 
-### 7.3 Preservation classifications
+- `PROVEN PRESERVED`;
+- `PROVEN CHANGED/LOST`;
+- `UNKNOWN`.
 
-For each structure, project documentation must distinguish:
+`UNKNOWN` is never presented as preserved.
 
-- **PROVEN PRESERVED** — synthetic/representative test demonstrates structure survives the exact operation/writer path and reopen inspection;
-- **PROVEN CHANGED/LOST** — test demonstrates degradation;
-- **UNKNOWN** — not yet demonstrated.
+### 7.1 Cryptographic signatures — frozen policy
 
-The UI must never turn `UNKNOWN` into a preservation promise.
+**Initial F5 blocks structural output when `FPDF_GetSignatureCount(document) > 0`.**
 
-### 7.4 Cryptographic signatures
+Reason: page structure changes can invalidate cryptographic signatures even if signature objects remain visible. F5 will not offer a warning-and-continue override. Re-signing, signature validation and stripping signatures are outside F5.
 
-Structural page changes can invalidate cryptographic signatures even if the signature objects remain present.
+### 7.2 Protected/password PDFs — frozen policy
 
-F5 therefore treats cryptographic signatures as a high-risk finding. The initial implementation must not silently save a reorganized signed PDF as if the signature remained valid.
+**Initial F5 does not write or import from a source that required a password to open.**
 
-The implementation plan must choose and test one conservative policy before shipping the write path:
+F4 may read such PDFs with transient credentials, but F5 will not persist passwords or introduce a general encrypted-writer credential model. ORGANIZAR must show a controlled limitation rather than failing later during save. Protected secondary sources are likewise rejected candidate-first.
 
-- block organization of cryptographically signed PDFs; or
-- require an explicit warning/confirmation that structural modification can invalidate signatures.
+### 7.3 Forms, bookmarks, destinations, links and other structures
 
-Automatic stripping, re-signing or cryptographic validation is outside F5.
+`FPDF_ImportPages*` is treated as page import, not as proof that document-level structures remain valid.
 
-### 7.5 Forms, bookmarks, destinations and links
+F5.1 must build representative fixtures and inspect reopened output. If a structure is lost, altered or points to the wrong page after reorder/delete/duplicate/import, that structure is classified honestly and the approved warning/block behavior is enforced.
 
-`FPDF_ImportPages*` is a page-import API, not a blanket guarantee that every document-level structure will be reconstructed consistently after page reorder/duplication/deletion.
+F5 will not implement a generic low-level PDF object-tree rewriter merely to preserve an edge case. A proven gap that is important enough becomes a separate architecture decision.
 
-Therefore:
+## 8. ORG-01 — intra-document operations
 
-- do not claim preservation based only on successful import;
-- build representative fixtures;
-- inspect reopened output using PDFium APIs where available;
-- if a structure is lost or points to wrong pages, classify it honestly and gate/warn accordingly;
-- do not implement a generic low-level PDF object-tree rewriter in F5 merely to rescue an edge case.
+### Reorder
 
-If preserving one structure requires a disproportionate document-graph rewrite, that is evidence for a later dedicated utility/gap decision, not permission to expand F5 indefinitely.
-
-## 8. Intra-document operations — ORG-01
-
-### 8.1 Reorder/move
-
-Plan-only operation. Supports single and multi-selection.
-
-Acceptance:
-
-- exact relative order of moved selection is preserved;
-- no lost/duplicated item IDs;
+- one or many selected pages;
+- relative order preserved;
 - page count unchanged;
-- source PDF untouched until save.
-
-### 8.2 Rotate
-
-Rotate selected pages left/right by 90° increments.
-
-Acceptance:
-
-- multiple rotations compose modulo 4;
-- mixed source rotations are handled correctly;
-- thumbnail orientation reflects plan state without rewriting source;
-- final reopened PDF reports/visually renders expected orientation.
-
-### 8.3 Delete
-
-Remove selected plan items after confirmation when the action is consequential.
-
-Acceptance:
-
-- page count updates immediately in plan/UI;
-- deletion can never produce zero output pages;
 - source remains untouched before save.
 
-### 8.4 Duplicate
+### Rotate
 
-Duplicate selected pages immediately after the selection by default, preserving selected relative order.
+- left/right in 90° increments;
+- repeated operations compose modulo 4;
+- thumbnail orientation reflects plan state;
+- reopened output reports/renders expected rotation.
 
-Acceptance:
+### Delete
 
-- duplicates have new logical IDs;
-- source page references may be shared safely;
-- output contains separate page instances after materialization.
+- removes selected plan items;
+- confirmation for consequential deletion;
+- cannot reduce plan to zero pages.
 
-## 9. Inter-document operations — ORG-02
+### Duplicate
 
-### 9.1 Insert pages from PDF
+- duplicates are inserted immediately after the selected block by default;
+- new logical IDs;
+- materialized output contains independent page instances.
 
-`Insertar desde PDF...` opens a local PDF candidate-first.
+## 9. ORG-02 — insert, merge, extract and split
 
-If the candidate cannot be opened, the active organize workspace remains unchanged.
+### Insert from PDF
 
-Default KISS insertion UX:
+Candidate-first local flow:
 
 1. choose PDF;
-2. show page-count/source summary;
-3. choose `Todas` or a validated page/range expression;
-4. insert before/after the current selection or append if no insertion point is active.
+2. open/validate source;
+3. reject protected/password-required sources;
+4. choose `Todas` or a validated page/range expression;
+5. insert before/after selection, or append when no insertion point is active.
 
-A second full document-management window is not required.
+Failure leaves the current plan unchanged.
 
-### 9.2 Merge
+### Merge
 
-`Combinar PDF...` reuses the same insertion mechanism with all pages selected and append semantics by default.
+`Combinar PDF...` reuses the insertion mechanism with all pages and append semantics by default. No separate merge engine.
 
-F5 does not need a separate merge engine or a separate output format.
+### Extract
 
-### 9.3 Protected secondary sources
+`Extraer` materializes the selected pages in current plan order into one new PDF. The organize workspace itself is unchanged; extraction does not implicitly delete pages.
 
-F4 supports transient password entry for reading protected PDFs, but existing edit writers do not yet establish a general encrypted-write credential model.
+### Split
 
-F5 must not persist passwords simply to make inter-document composition easier.
-
-The first implementation may conservatively reject protected secondary-source composition if it cannot keep the operation transient and safely reopen/save through PDFium. This limitation must be explicit rather than silently failing later.
-
-## 10. Extract and split
-
-### 10.1 Extract selected pages
-
-`Extraer` creates a new derived plan from the selected pages in their current organize order.
-
-The original workspace is unchanged.
-
-The user chooses an output path and receives one PDF containing the selection.
-
-No automatic deletion from the source plan occurs unless a future explicit “extract and remove” option is separately designed.
-
-### 10.2 Split
-
-F5 provides a small practical split surface, not a batch-processing framework.
-
-Initial supported split modes:
+Initial modes:
 
 - every N pages;
-- explicit page ranges.
+- explicit non-overlapping ranges.
 
 Example:
 
@@ -444,174 +288,103 @@ Example:
 1-3, 4-7, 8-10
 ```
 
-Each resulting group must be non-empty, valid and non-overlapping for the first implementation. Complex overlapping batch recipes are outside F5.
+Every group must be valid and non-empty. Output names derive deterministically from the chosen base name plus range/ordinal suffix.
 
-Output filenames are deterministic from the chosen base name plus an ordinal/range suffix. Existing output files are never silently overwritten in bulk.
+Split stops on the first failed output. Previously validated/published outputs remain; the failed temp is not published. A distributed multi-file transaction is out of scope.
 
-### 10.3 Many-output failure behavior
+## 10. Thumbnail and rendering strategy
 
-Split publication is per output file.
+Reuse F4 render primitives and visual conventions where practical, but organize state is independent from `ReaderPageItem`.
 
-If one output fails:
+Organize thumbnails are lazy, low-resolution and virtualized. Reordering alone reuses the bitmap. Planned rotation may rotate the thumbnail visually or request a low-resolution rerender, whichever is simpler and correct.
 
-- already validated/published previous outputs remain valid;
-- the failed output is not published from an invalid temp;
-- remaining behavior must be deterministic and documented by the implementation plan (stop on first failure is the preferred KISS default).
+F5 never rasterizes the whole PDF to perform structural organization.
 
-A cross-file distributed transaction is not required.
+## 11. State, cancellation and failure safety
 
-## 11. Thumbnail strategy
+New source PDFs are always candidate-first: validate first, then publish the plan change.
 
-Reuse F4 PDF render primitives and visual conventions where practical, but do not couple organize state to `ReaderPageItem` state.
+Materialization accepts cancellation around source open/import/save/validation boundaries. Native PDFium calls remain synchronous and globally serialized; F5 does not add progressive editing solely for cancellation.
 
-`OrganizePageItem` may contain:
+While saving/merging/splitting:
 
-- logical ID;
-- source/page reference;
-- planned rotation;
-- display number;
-- selection state;
-- lazy thumbnail bitmap/state.
+- plan mutation is disabled;
+- a second materialization cannot run concurrently;
+- failure returns to the valid in-memory plan;
+- temp files are removed best-effort in `finally`;
+- source files are never changed.
 
-Thumbnail rendering stays low resolution and lazy/virtualized. Do not render full-resolution page bitmaps merely to populate the organize grid.
+## 12. Output validation — frozen strategy
 
-When a page is only reordered, its existing thumbnail can be reused. A planned rotation may rotate the thumbnail visually in WPF or request a low-resolution rerender; choose the simpler implementation that produces correct orientation and does not mutate the source PDF.
+Every produced PDF is reopened with `PdfDocumentSession` before publication.
 
-## 12. State, cancellation and error handling
+Validation always checks:
 
-### 12.1 Candidate-first state changes
+- exact expected page count;
+- valid page size for every page;
+- expected rotation for every page;
+- source/order identity using deterministic test fixtures.
 
-Operations that introduce a source PDF must be candidate-first:
+For runtime structural smoke, every output page is rendered sequentially at **36 DPI** before publication. Only one validation bitmap needs to be alive at a time. This is intentionally stronger and simpler than a sampling policy; physical performance is measured later and the rule may only be relaxed with evidence.
 
-```text
-open/validate candidate source
-  ↓ success
-publish source + plan change
-```
+Preservation validation is separate: bookmarks/forms/destinations/etc. are inspected explicitly when the relevant fixture is under test.
 
-Failure leaves current plan/source list unchanged.
+## 13. Testing strategy
 
-### 12.2 Native materialization cancellation
+TDD remains mandatory.
 
-Longer save/merge/split work accepts `CancellationToken` around source open/import/save/validation boundaries.
-
-PDFium calls remain synchronous unless existing project behavior already wraps them. F5 does not add progressive native editing solely for cancellation.
-
-Cancellation before publication cleans temporary output and leaves source/destination state valid.
-
-### 12.3 UI busy state
-
-During materialization:
-
-- prevent concurrent plan mutations;
-- keep cancel behavior explicit where supported;
-- do not allow a second save/materialize operation concurrently;
-- return to the existing valid plan after failure.
-
-### 12.4 Temporary files
-
-Use request-scoped temporary files in the destination directory where atomic replacement semantics matter. Clean them in `finally` best-effort, matching existing project safety patterns.
-
-Do not create persistent working copies of every source page.
-
-## 13. Output validation
-
-Every F5 output must be reopened with the project reader before publication is considered successful.
-
-Minimum structural checks:
-
-- output opens with PDFium;
-- expected page count;
-- every output page reports valid page size;
-- expected page rotations;
-- selected representative pages render successfully;
-- full render validation of every page for smaller outputs, or a bounded deterministic validation strategy for very large outputs defined by implementation tests.
-
-Operation-specific checks:
-
-- reorder → identifiable page sequence matches plan;
-- duplicate → expected duplicated page content/order exists;
-- delete → removed pages absent and count correct;
-- insert/merge → source-boundary pages appear in correct positions;
-- extract/split → each output matches its derived plan.
-
-Fixtures should use deterministic page markers/text so order can be verified semantically rather than only by page count.
-
-Preservation checks are separate from basic structural validation and must inspect the relevant structure explicitly.
-
-## 14. Testing strategy
-
-Implementation uses TDD and exact-head Windows CI as established by prior phases.
-
-### 14.1 Pure plan tests
-
-Test without PDFium where possible:
+### Pure plan tests
 
 - move one/many;
-- contiguous/non-contiguous selections;
+- contiguous and non-contiguous selection;
 - duplicate;
-- delete guard against zero pages;
-- rotate modulo 4;
-- insert at beginning/middle/end;
+- zero-page delete guard;
+- rotation modulo 4;
+- insert beginning/middle/end;
 - extract derivation;
-- split range parsing/planning;
-- invariants: stable source references, unique item IDs, deterministic order.
+- split planning/range validation;
+- unique IDs and deterministic order.
 
-### 14.2 Native capability tests
+### Native capability tests
 
-Against pinned `pdfium.dll`:
+Against the pinned `pdfium.dll`:
 
-- required export availability;
-- create destination document;
+- required exports;
+- create destination;
 - import exact page indices;
-- duplicate same source page through repeated import/reference plan;
-- apply/get rotation;
+- duplicate the same source page;
+- set/get rotation;
 - save/reopen.
 
-### 14.3 End-to-end synthetic PDFs
+### Synthetic end-to-end fixtures
 
-Generate deterministic PDFs covering:
+Fixtures cover:
 
-- mixed portrait/landscape sizes;
-- unique text/page markers;
-- existing rotations;
-- multiple source documents;
-- internal links/destinations;
+- unique page text markers;
+- portrait/landscape mixes;
+- pre-rotated pages;
+- multiple source PDFs;
 - bookmarks;
+- internal destinations/links;
 - forms where practical;
-- signed fixture metadata/signature detection where a safe synthetic fixture is feasible;
-- large-enough page count for virtualization/performance smoke.
+- cryptographic-signature detection;
+- larger page counts for virtualization/performance smoke.
 
-Private customer PDFs never enter the repository.
+No private customer/Mercado Libre PDF is committed.
 
-### 14.4 Regression boundaries
+### Regression boundaries
 
-CI must continue protecting:
+CI continues protecting:
 
-- F4 LEER open/render/navigation;
-- F3 FIRMAR entry/save architecture;
-- F2 ZPL workflow;
+- F4 LEER;
+- F3 FIRMAR;
+- F2 ZPL;
 - locked restore/offline-runtime policy;
-- no new package/lock change unless explicitly justified by a later approved gap decision.
+- no dependency/lock change unless explicitly justified by an approved gap decision.
 
-## 15. Performance and scale boundaries
+## 14. Module boundaries
 
-F5 targets normal business PDFs and must remain bounded rather than pre-rendering/copying everything eagerly.
-
-Rules:
-
-- plan mutations are in-memory metadata operations;
-- thumbnails are lazy and low-resolution;
-- no page rasterization is required for native import itself;
-- no whole-document image conversion;
-- split/merge processing is sequential by default rather than spawning many native writers;
-- all PDFium calls still respect the one global native gate.
-
-Do not add a background worker pool for structural PDF writes without measured evidence.
-
-## 16. File/module boundaries
-
-Expected feature-local shape, subject to implementation-plan refinement:
+Expected shape:
 
 ```text
 src/SGPdf.App/Features/Organize/
@@ -621,139 +394,109 @@ src/SGPdf.App/Features/Organize/
   OrganizeSelection.cs
   OrganizePreflight.cs
   OrganizeSplitPlanner.cs
-  ...small focused UI/state helpers
 
 src/SGPdf.App/Pdf/
-  PdfDocumentSession.Organize.cs      // narrow inspection/native operations if appropriate
-  PdfOrganizeWriter.cs               // transactional materialization
+  PdfDocumentSession.Organize.cs
+  PdfOrganizeWriter.cs
 
 src/SGPdf.App/
-  MainWindow.Organize.cs              // narrow WPF integration
+  MainWindow.Organize.cs
 ```
 
-Names are not mandatory API commitments. The architectural boundaries are:
+Exact filenames may change, but boundaries are frozen:
 
-- plan/state logic independent from WPF;
-- native writer independent from tile/selection controls;
-- raw PDF document handles are not exposed broadly to UI feature classes;
+- plan/state logic independent of WPF;
+- native writer independent of UI tile controls;
+- raw native document handles are not broadly exposed;
 - no new project/layer unless implementation evidence requires it.
 
-## 17. Proposed implementation slices
+## 15. Implementation slices
 
-The later implementation plan should preserve small gates:
+### F5.1 — Capability + plan + preflight
 
-### F5.1 — Capability + plan + preflight foundation
-
-- pinned PDFium export test;
-- pure `OrganizePlan` operations;
-- preservation/preflight detection contracts;
-- representative import-preservation probes;
-- no broad UI/write claim until capability evidence is green.
+- pinned PDFium export gate;
+- pure plan operations;
+- preflight contracts/detectors;
+- representative preservation probes;
+- no broad writer/UI claim until evidence is green.
 
 ### F5.2 — Intra-document organize
 
 - organize grid;
 - selection + drag reorder;
 - rotate/delete/duplicate;
-- transactional single-output writer;
-- reopen/order/rotation validation.
+- transactional writer;
+- reopen/order/rotation/render validation.
 
 ### F5.3 — Insert + merge
 
-- secondary local PDF candidate flow;
+- candidate secondary sources;
 - insert ranges;
 - append/merge reuse;
 - multi-source validation.
 
 ### F5.4 — Extract + split
 
-- selected-page extraction;
-- every-N-pages + explicit-range split;
-- deterministic filenames and per-output transactional save.
+- extraction;
+- every-N-pages split;
+- explicit ranges;
+- deterministic names;
+- stop-on-first-failure publication rule.
 
 ### F5.5 — Preservation hardening + closure
 
-- fixtures and preflight reconciliation;
-- warnings/blocks based on evidence;
+- reconcile preservation matrix from evidence;
+- warnings/blocks;
 - large-document/manual Windows QA checklist;
 - offline/privacy/temp-residue audit;
-- docs/history/draft PR closure.
+- state/history/draft PR closure.
 
-No later slice should be started merely because the preceding one exists; each slice requires its own red/green evidence and scope audit.
+## 16. Explicitly out of scope
 
-## 18. Explicitly out of scope
-
-F5 does **not** include:
-
-- arbitrary page crop/redimensioning;
+- crop or arbitrary page resizing;
 - page-content editing;
 - image/text object editing;
-- annotations/comments;
+- comments/annotations;
 - OCR;
 - redaction;
 - cryptographic signing/re-signing;
 - form editing;
-- bookmark editor;
-- named-destination editor;
-- generic PDF object-tree repair;
+- bookmark/destination editing;
+- generic PDF repair;
 - optimize/compress;
-- cloud merge/upload;
-- batch folder processing;
+- cloud upload/merge;
+- folder batch processing;
 - command-line product surface;
-- tabs/multi-document workspace redesign;
-- qpdf/pdfcpu or another structural utility without demonstrated PDFium failure.
+- multi-document tab redesign;
+- qpdf/pdfcpu without demonstrated PDFium failure.
 
-## 19. Acceptance mapping
+## 17. Acceptance mapping
 
-### ORG-01 — Move/reorder/rotate/delete/duplicate pages
+**ORG-01 PASS** only when move/reorder/rotate/delete/duplicate are deterministic, source-safe and validated after transactional output.
 
-PASS only when:
+**ORG-02 PASS** only when insert/merge/extract/split all reuse the plan/materializer architecture and publish only validated outputs.
 
-- plan operations are deterministic and TDD-covered;
-- UI can perform them without mutating source;
-- transactional output reopens;
-- page order/count/rotation match the plan.
+**ORG-03 PASS** only when preservation findings are evidence-based and signed/protected inputs obey the frozen block policies above.
 
-### ORG-02 — Insert/extract/merge/split
+**ORG-04 PASS** only when required PDFium APIs are verified against the exact pinned runtime and no second engine enters without a demonstrated gap plus separate approval.
 
-PASS only when:
+## 18. Frozen design decisions
 
-- multiple sources remain candidate-first and local/offline;
-- insert/merge use the same plan/materializer architecture;
-- extract/split generate correct independently validated outputs;
-- failures do not corrupt source or publish invalid temp outputs.
-
-### ORG-03 — Preservation preflight
-
-PASS only when:
-
-- required structures are inspected to the practical extent defined here;
-- preservation status is evidence-based;
-- risky/unknown structures produce the approved warning/block behavior;
-- the product does not claim unsupported preservation.
-
-### ORG-04 — PDFium first
-
-PASS only when:
-
-- required APIs are verified against the pinned build;
-- no second structural engine is introduced without a demonstrated, documented PDFium gap and separate approval.
-
-## 20. Design decisions frozen by this specification
-
-1. F5 is **plan-first**, not immediate native mutation.
+1. F5 is plan-first; no immediate source mutation.
 2. One page-reference model powers reorder/delete/duplicate/insert/merge/extract/split.
-3. The default output is **Guardar como...** and source overwrite is not part of initial F5.
-4. Preferred writer = create destination + import exact page indices + apply planned rotations + save/reopen/validate.
-5. PDFium capability is tested against the exact pinned binary before implementation relies on it.
-6. `FPDF_ImportPages*` success alone is not evidence of preservation of document-level structures.
-7. Cryptographic signatures are never silently represented as still valid after structural changes.
-8. Organize thumbnails are lazy/bounded and do not become a second full-resolution reader.
-9. Existing LEER/FIRMAR/ZPL surfaces remain separate.
-10. No second PDF engine, generic document graph or enterprise framework enters F5 without demonstrated necessity.
+3. First F5 output is always `Guardar como...`; no source overwrite.
+4. Preferred writer = new destination + exact page imports + rotation + save/reopen/validate.
+5. PDFium capability is verified against the pinned binary before writer implementation.
+6. Successful page import is not proof of document-level preservation.
+7. Cryptographically signed PDFs are blocked from F5 structural output.
+8. Password-required PDFs are blocked from F5 structural output/import in the initial version.
+9. Runtime output validation renders every page sequentially at 36 DPI before publication.
+10. Organize thumbnails remain lazy/bounded and do not become a second reader.
+11. LEER, FIRMAR and ZPL remain separate surfaces.
+12. No second PDF engine or generic document graph enters F5 without demonstrated necessity.
 
-## 21. User-review gate
+## 19. User-review gate
 
-This document defines the F5 architecture and scope only.
+This file defines F5 architecture and scope only.
 
-After user approval of this written specification, the next permitted step is to create the detailed TDD implementation plan with `writing-plans`. Product-code implementation must not begin before that plan is written, reviewed and approved according to the project workflow.
+After the user approves this written specification, the next permitted step is `writing-plans` to produce the detailed TDD implementation plan. Product code must not begin before that plan is written and approved according to the project workflow.
