@@ -1,3 +1,4 @@
+using System.Reflection;
 using PdfSharp.Pdf;
 using SGPdf.App.Pdf;
 using Xunit;
@@ -42,6 +43,33 @@ public sealed class PdfPasswordTests
     }
 
     [Fact]
+    public void ProtectedPdf_OpenCorrectPassword_SetsOpenedWithPasswordTrue()
+    {
+        using var fixture = ProtectedPdfFixture.Create();
+        using var session = PdfDocumentSession.Open(fixture.Path, "secret");
+
+        Assert.True(ReadOpenedWithPassword(session));
+    }
+
+    [Fact]
+    public void ProtectedPdf_FailedAttempts_NeverCreateSessionMarker()
+    {
+        using var fixture = ProtectedPdfFixture.Create();
+        PdfDocumentSession? session = null;
+
+        try
+        {
+            session = PdfDocumentSession.Open(fixture.Path, "wrong-password");
+        }
+        catch (PdfDocumentOpenException error)
+        {
+            Assert.Equal(PdfDocumentOpenError.PasswordRequiredOrIncorrect, error.Error);
+        }
+
+        Assert.Null(session);
+    }
+
+    [Fact]
     public void InvalidPdf_StillClassifiesAsOtherPdfiumError()
     {
         var root = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"sgpdf-invalid-{Guid.NewGuid():N}");
@@ -70,6 +98,16 @@ public sealed class PdfPasswordTests
 
         Assert.DoesNotContain(password, error.Message, StringComparison.Ordinal);
         Assert.DoesNotContain(password, error.ToString(), StringComparison.Ordinal);
+    }
+
+    private static bool ReadOpenedWithPassword(PdfDocumentSession session)
+    {
+        var property = typeof(PdfDocumentSession).GetProperty(
+            "OpenedWithPassword",
+            BindingFlags.Instance | BindingFlags.Public);
+        Assert.NotNull(property);
+        Assert.Equal(typeof(bool), property.PropertyType);
+        return Assert.IsType<bool>(property.GetValue(session));
     }
 
     private sealed class ProtectedPdfFixture : IDisposable

@@ -14,7 +14,8 @@ public sealed partial class PdfDocumentSession
         ThrowIfDisposed();
         cancellationToken.ThrowIfCancellationRequested();
 
-        lock (PdfiumRuntime.NativeGate)
+        PdfiumRuntime.NativeGate.Wait(cancellationToken);
+        try
         {
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
@@ -25,6 +26,10 @@ public sealed partial class PdfDocumentSession
             var guard = new ReaderBookmarkTraversalGuard();
             return ReadBookmarkSiblings(first, 0, guard, cancellationToken);
         }
+        finally
+        {
+            PdfiumRuntime.NativeGate.Release();
+        }
     }
 
     public IReadOnlyList<PdfPageLink> GetPageLinks(int pageIndex, CancellationToken cancellationToken = default)
@@ -33,7 +38,8 @@ public sealed partial class PdfDocumentSession
         ValidatePageIndex(pageIndex, cancellationToken);
         cancellationToken.ThrowIfCancellationRequested();
 
-        lock (PdfiumRuntime.NativeGate)
+        PdfiumRuntime.NativeGate.Wait(cancellationToken);
+        try
         {
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
@@ -65,6 +71,10 @@ public sealed partial class PdfDocumentSession
             {
                 PdfiumNative.FPDF_ClosePage(page);
             }
+        }
+        finally
+        {
+            PdfiumRuntime.NativeGate.Release();
         }
     }
 
@@ -213,7 +223,8 @@ public sealed partial class PdfDocumentSession
             return null;
 
         var pageIndex = PdfiumNative.FPDFDest_GetDestPageIndex(_document, destination);
-        return pageIndex >= 0 && pageIndex < PageCount ? pageIndex : null;
+        var pageCount = PdfiumNative.FPDF_GetPageCount(_document);
+        return pageIndex >= 0 && pageCount > 0 && pageIndex < pageCount ? pageIndex : null;
     }
 
     private static PdfTextRect? NormalizeRect(PdfiumNative.RectF rect)

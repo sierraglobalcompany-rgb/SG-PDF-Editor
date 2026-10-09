@@ -115,6 +115,9 @@ public partial class MainWindow
 
     private async Task<bool> TryOpenPdfPathAsync(string path, string? password = null)
     {
+        if (_organizeModeActive && !TryLeaveOrganizeModeWithGuard())
+            return false;
+
         InitializeReaderUi();
         _resizeRenderScheduler.CancelCurrent();
         _readerRenderScheduler.CancelCurrent();
