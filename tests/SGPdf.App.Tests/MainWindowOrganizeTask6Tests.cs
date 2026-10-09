@@ -90,7 +90,7 @@ public sealed class MainWindowOrganizeTask6Tests
     }
 
     [Fact]
-    public void EnterOrganize_EnablesOnlyTask6OwnedCommands()
+    public void EnterOrganize_EnablesImplementedCommandsThroughTask7()
     {
         OrganizeWindowTestHost.RunInSta(async () =>
         {
@@ -101,10 +101,16 @@ public sealed class MainWindowOrganizeTask6Tests
                 Assert.True(await OrganizeWindowTestHost.OpenReaderAsync(window, fixture.Path));
                 Assert.True((bool)OrganizeWindowTestHost.Invoke(window, "TryEnterOrganizeMode")!);
 
-                foreach (var name in new[] { "OrganizeRotateLeftButton", "OrganizeRotateRightButton", "OrganizeDeleteButton", "OrganizeDuplicateButton", "OrganizeSaveAsButton" })
+                foreach (var name in new[]
+                {
+                    "OrganizeRotateLeftButton", "OrganizeRotateRightButton", "OrganizeDeleteButton",
+                    "OrganizeDuplicateButton", "OrganizeInsertButton", "OrganizeMergeButton", "OrganizeSaveAsButton"
+                })
+                {
                     Assert.True(OrganizeWindowTestHost.Element<Button>(window, name).IsEnabled);
+                }
 
-                foreach (var name in new[] { "OrganizeInsertButton", "OrganizeMergeButton", "OrganizeExtractButton", "OrganizeSplitButton" })
+                foreach (var name in new[] { "OrganizeExtractButton", "OrganizeSplitButton" })
                     Assert.False(OrganizeWindowTestHost.Element<Button>(window, name).IsEnabled);
             }
             finally { OrganizeWindowTestHost.CloseClean(window); }
