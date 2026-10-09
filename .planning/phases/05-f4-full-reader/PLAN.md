@@ -1,6 +1,6 @@
 # Phase 5 — F4 Full Reader
 
-**Status:** design + implementation plan approved; Tasks 1–5 automated PASS; Task 6 next.  
+**Status:** design + implementation plan approved; Tasks 1–6 automated PASS; Task 7 next.  
 **Branch:** `feat/f4-full-reader`  
 **Base:** F3.4 closure `1bef751962e0b4aaf35fbda9b8a1a9a2ee2ba36b`
 
@@ -21,7 +21,7 @@
 - Lazy thumbnails; no eager whole-document render.
 - Search/copy via PDFium; no OCR in F4.
 - Search is on demand page-by-page; no permanent whole-document index.
-- One-page text drag selection.
+- One-page text drag selection; PDF text rectangles remain the durable interaction geometry.
 - Bookmarks read-only, cycle-safe, max 10,000 nodes/depth 128.
 - Only internal GOTO + confirmed HTTP/HTTPS URI links execute.
 - Passwords never persisted.
@@ -58,10 +58,19 @@
    - CI `37867206589`: PASS; 368 tests; 0 failures; build 0 warnings / 0 errors.
    - Delivered PDFium text search/range/hit-test/rect primitives behind `NativeGate`, Unicode extraction, pure next/previous/wrap navigator, compact Ctrl+F find bar, active-result-only highlight and stale-generation rejection.
    - Search remains on demand page-by-page with no permanent index/global results cache and no OCR.
-   - KISS: required named search controls are feature-local/dynamic in `MainWindow.ReaderSearch.cs`, matching Tasks 2–3 and avoiding a large XAML rewrite.
-   - Scope vs Task 4 closure: exactly 8 Task 5 code/test files; no package/lock, F3, ZPL, print, persistence/database/network or Task 6 selection/copy changes.
-6. **NEXT** — One-page text selection + clipboard copy.
-7. Bookmarks + safe explicit PDF links.
+6. **DONE / AUTO PASS** — One-page text selection + clipboard copy.
+   - Clean contract RED head `3e0ef221dcc40a98ec9337bdea725f2d5ce8b0e0`.
+   - RED CI `37870209624`: expected build failure with 8 missing selection-model/range errors; 0 warnings.
+   - Strengthened zoom RED head `670a9d8416f5ec29b0456f8dead7b171e07149d5`.
+   - Zoom RED CI `37870595171`: build clean; 378 tests PASS and one expected failure proving page geometry did not yet automatically reproject selection.
+   - Functional/verified head `0a5a8cff5677956b3498ec333c5b4d76f59e0180`.
+   - CI `37870778333`: PASS; 379 tests; 0 failures; build 0 warnings / 0 errors.
+   - Delivered inclusive forward/back text range normalization, one-page drag selection, cross-page rejection, click-to-clear, PDF-coordinate rectangle overlay, geometry/zoom reprojection and exact Unicode Ctrl+C.
+   - Entering FIRMAR clears reader selection only; signature state is unchanged. Selection gestures are marked handled before Task 7 link activation.
+   - Coordinate ruling: uses each page's `PdfPageDeviceTransform`; does not reuse Sign `PdfRect`, `SignatureCoordinateMapper` or signature overlay state.
+   - KISS: integration stayed in `MainWindow.ReaderSelection.cs`; no `MainWindow.Reader.cs` edit was needed because `ReaderPageItem.PropertyChanged` exposes geometry changes directly.
+   - Scope vs Task 5 closure: exactly 4 Task 6 files; no PDFium binding, package/lock, F3, ZPL, print, persistence/database/network or bookmark/link changes.
+7. **NEXT** — Bookmarks + safe explicit PDF links.
 8. Shortcuts + atomic recent files + offline hardening.
 9. Closure audit/docs + exact-head CI + draft stacked PR.
 
@@ -74,6 +83,7 @@ Each task is RED → confirm expected failure → minimal GREEN → focused regr
 - lazy thumbnail range/stale publication — covered by Task 3 automated PASS;
 - wrong/cancelled password preserving prior workspace and password non-persistence — covered by Task 4 automated PASS;
 - stale search generation, Unicode extraction and active-match-only highlight — covered by Task 5 automated PASS;
+- one-page selection range, cross-page rejection, zoom reprojection, Unicode clipboard and future-link precedence — covered by Task 6 automated PASS;
 - cyclic/deep/oversized bookmark outline;
 - UNC/stale recent paths never probed merely by opening the menu.
 
@@ -94,16 +104,16 @@ Return to design before continuing if implementation appears to require:
 
 ## Manual QA
 
-Manual Windows performance/UX/offline QA is a separate gate and remains **NOT RUN** until actually executed. Automated PASS never implies physical/manual PASS. Protected-PDF and real text-search/Unicode/large-document UX QA are also still **NOT RUN** physically.
+Manual Windows performance/UX/offline QA is a separate gate and remains **NOT RUN** until actually executed. Automated PASS never implies physical/manual PASS. Protected-PDF, real text-search/Unicode and real mouse text-selection/copy/zoom QA are also still **NOT RUN** physically.
 
 ## Current Gate
 
 ```text
-Tasks 1–5 AUTO PASS
+Tasks 1–6 AUTO PASS
 → next user `continúa`
-→ Task 6 RED for one-page text selection + clipboard behavior
+→ Task 7 RED for bounded bookmark traversal + safe explicit links
 → confirm expected RED
-→ minimal GREEN selection overlay + Unicode copy
+→ minimal GREEN bookmark tree + internal GOTO + confirmed HTTP/HTTPS links only
 → exact-head full CI
-→ report evidence and stop before Task 7
+→ report evidence and stop before Task 8
 ```
