@@ -157,7 +157,7 @@ public partial class MainWindow
 
     private async void ReaderSearchWindow_PreviewKeyDown(object sender, KeyEventArgs e)
     {
-        if (await HandleReaderSearchKeyAsync(e.Key, Keyboard.Modifiers))
+        if (await HandleReaderSearchKeyAsync(e.Key, Keyboard.Modifiers, e.OriginalSource as DependencyObject))
             e.Handled = true;
     }
 
