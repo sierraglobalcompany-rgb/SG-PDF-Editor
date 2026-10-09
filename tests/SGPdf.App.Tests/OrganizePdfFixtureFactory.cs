@@ -79,6 +79,60 @@ internal static class OrganizePdfFixtureFactory
         }, "<< /Size 8 /Root 1 0 R >>"));
     }
 
+    internal static OrganizePdfFixture CreateNamedDestination()
+    {
+        return CreateRaw("named-destination.pdf", BuildPdf(new[]
+        {
+            "1 0 obj\n<< /Type /Catalog /Pages 2 0 R /Names << /Dests 6 0 R >> >>\nendobj\n",
+            "2 0 obj\n<< /Type /Pages /Kids [4 0 R] /Count 1 >>\nendobj\n",
+            "3 0 obj\n<< >>\nendobj\n",
+            "4 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 400] /Contents 5 0 R >>\nendobj\n",
+            "5 0 obj\n<< /Length 0 >>\nstream\nendstream\nendobj\n",
+            "6 0 obj\n<< /Names [(ChapterOne) [4 0 R /Fit]] >>\nendobj\n"
+        }, "<< /Size 7 /Root 1 0 R >>"));
+    }
+
+    internal static OrganizePdfFixture CreateTagged()
+    {
+        return CreateRaw("tagged.pdf", BuildPdf(new[]
+        {
+            "1 0 obj\n<< /Type /Catalog /Pages 2 0 R /MarkInfo << /Marked true >> /StructTreeRoot 6 0 R >>\nendobj\n",
+            "2 0 obj\n<< /Type /Pages /Kids [4 0 R] /Count 1 >>\nendobj\n",
+            "3 0 obj\n<< >>\nendobj\n",
+            "4 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 400] /Contents 5 0 R >>\nendobj\n",
+            "5 0 obj\n<< /Length 0 >>\nstream\nendstream\nendobj\n",
+            "6 0 obj\n<< /Type /StructTreeRoot /K [] >>\nendobj\n"
+        }, "<< /Size 7 /Root 1 0 R >>"));
+    }
+
+    internal static OrganizePdfFixture CreatePageLabels()
+    {
+        return CreateRaw("page-labels.pdf", BuildPdf(new[]
+        {
+            "1 0 obj\n<< /Type /Catalog /Pages 2 0 R /PageLabels 6 0 R >>\nendobj\n",
+            "2 0 obj\n<< /Type /Pages /Kids [4 0 R] /Count 1 >>\nendobj\n",
+            "3 0 obj\n<< >>\nendobj\n",
+            "4 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 400] /Contents 5 0 R >>\nendobj\n",
+            "5 0 obj\n<< /Length 0 >>\nstream\nendstream\nendobj\n",
+            "6 0 obj\n<< /Nums [0 << /S /D /P (A-) >>] >>\nendobj\n"
+        }, "<< /Size 7 /Root 1 0 R >>"));
+    }
+
+    internal static OrganizePdfFixture CreateAttachment()
+    {
+        return CreateRaw("attachment.pdf", BuildPdf(new[]
+        {
+            "1 0 obj\n<< /Type /Catalog /Pages 2 0 R /Names << /EmbeddedFiles 6 0 R >> >>\nendobj\n",
+            "2 0 obj\n<< /Type /Pages /Kids [4 0 R] /Count 1 >>\nendobj\n",
+            "3 0 obj\n<< >>\nendobj\n",
+            "4 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 400] /Contents 5 0 R >>\nendobj\n",
+            "5 0 obj\n<< /Length 0 >>\nstream\nendstream\nendobj\n",
+            "6 0 obj\n<< /Names [(note.txt) 7 0 R] >>\nendobj\n",
+            "7 0 obj\n<< /Type /Filespec /F (note.txt) /UF (note.txt) /EF << /F 8 0 R >> >>\nendobj\n",
+            "8 0 obj\n<< /Type /EmbeddedFile /Length 5 >>\nstream\nhello\nendstream\nendobj\n"
+        }, "<< /Size 9 /Root 1 0 R >>"));
+    }
+
     internal static OrganizePdfFixture CreateProtected()
     {
         var directory = NewDirectory();
