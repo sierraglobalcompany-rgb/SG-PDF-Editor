@@ -39,6 +39,66 @@ public sealed class PdfOrganizeWriterTests
     }
 
     [Fact]
+    public void SaveAsCopy_MultipleSources_PreservesExactLogicalOrder()
+    {
+        using var firstFixture = Task4PdfFixture.CreateMarkerSource("A-");
+        using var secondFixture = Task4PdfFixture.CreateMarkerSource("B-");
+        var first = OrganizeSource.Capture(firstFixture.Path, 3);
+        var second = OrganizeSource.Capture(secondFixture.Path, 3);
+        var plan = new OrganizePlan(
+            new[] { first, second },
+            new[]
+            {
+                new OrganizePage(Guid.NewGuid(), second.SourceId, 1, 0),
+                new OrganizePage(Guid.NewGuid(), first.SourceId, 0, 0),
+                new OrganizePage(Guid.NewGuid(), second.SourceId, 2, 0),
+                new OrganizePage(Guid.NewGuid(), first.SourceId, 2, 0)
+            });
+        var destination = firstFixture.PathFor("multi-source.pdf");
+
+        new PdfOrganizeWriter().SaveAsCopy(
+            plan,
+            firstFixture.Path,
+            destination,
+            warningsConfirmed: false);
+
+        using var output = PdfDocumentSession.Open(destination);
+        Assert.Equal(4, output.PageCount);
+        Assert.NotEmpty(output.FindTextOnPage(0, "B-TWO"));
+        Assert.NotEmpty(output.FindTextOnPage(1, "A-ONE"));
+        Assert.NotEmpty(output.FindTextOnPage(2, "B-THREE"));
+        Assert.NotEmpty(output.FindTextOnPage(3, "A-THREE"));
+    }
+
+    [Fact]
+    public void SaveAsCopy_StaleSecondarySource_PreservesExistingDestination()
+    {
+        using var firstFixture = Task4PdfFixture.CreateMarkerSource("A-");
+        using var secondFixture = Task4PdfFixture.CreateMarkerSource("B-");
+        var first = OrganizeSource.Capture(firstFixture.Path, 3);
+        var second = OrganizeSource.Capture(secondFixture.Path, 3);
+        var plan = new OrganizePlan(
+            new[] { first, second },
+            new[]
+            {
+                new OrganizePage(Guid.NewGuid(), first.SourceId, 0, 0),
+                new OrganizePage(Guid.NewGuid(), second.SourceId, 0, 0)
+            });
+        var destination = firstFixture.PathFor("existing-secondary-stale.pdf");
+        File.WriteAllText(destination, "KEEP");
+        File.Delete(secondFixture.Path);
+
+        Assert.ThrowsAny<Exception>((Action)(() => new PdfOrganizeWriter().SaveAsCopy(
+            plan,
+            firstFixture.Path,
+            destination,
+            warningsConfirmed: false)));
+
+        Assert.Equal("KEEP", File.ReadAllText(destination));
+        AssertNoTempResidue(destination);
+    }
+
+    [Fact]
     public void SaveAsCopy_DestinationEqualsActiveSource_IsRejectedBeforeWrite()
     {
         using var fixture = Task4PdfFixture.CreateMarkerSource();
@@ -223,12 +283,12 @@ internal sealed class Task4PdfFixture : IDisposable
     internal string Path { get; }
     internal string PathFor(string fileName) => System.IO.Path.Combine(DirectoryPath, fileName);
 
-    internal static Task4PdfFixture CreateMarkerSource()
+    internal static Task4PdfFixture CreateMarkerSource(string markerPrefix = "")
     {
         var directory = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"sgpdf-organize-writer-{Guid.NewGuid():N}");
         Directory.CreateDirectory(directory);
         var path = System.IO.Path.Combine(directory, "source.pdf");
-        File.WriteAllBytes(path, BuildMarkerPdf());
+        File.WriteAllBytes(path, BuildMarkerPdf(markerPrefix));
         return new Task4PdfFixture(directory, path);
     }
 
@@ -238,7 +298,7 @@ internal sealed class Task4PdfFixture : IDisposable
             Directory.Delete(DirectoryPath, recursive: true);
     }
 
-    private static byte[] BuildMarkerPdf()
+    private static byte[] BuildMarkerPdf(string markerPrefix)
     {
         static string StreamObject(string marker)
         {
@@ -252,11 +312,11 @@ internal sealed class Task4PdfFixture : IDisposable
             "<< /Type /Catalog /Pages 2 0 R >>",
             "<< /Type /Pages /Kids [3 0 R 5 0 R 7 0 R] /Count 3 >>",
             "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 300] /Rotate 0 /Resources << /Font << /F1 9 0 R >> >> /Contents 4 0 R >>",
-            StreamObject("ONE"),
+            StreamObject($"{markerPrefix}ONE"),
             "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 200] /Rotate 90 /Resources << /Font << /F1 9 0 R >> >> /Contents 6 0 R >>",
-            StreamObject("TWO"),
+            StreamObject($"{markerPrefix}TWO"),
             "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 400 250] /Rotate 180 /Resources << /Font << /F1 9 0 R >> >> /Contents 8 0 R >>",
-            StreamObject("THREE"),
+            StreamObject($"{markerPrefix}THREE"),
             "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>"
         };
 
