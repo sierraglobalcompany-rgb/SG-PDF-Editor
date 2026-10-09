@@ -1,201 +1,186 @@
-# F6 — Imágenes — DESIGN WIP CHECKPOINT
+# F6 — Imágenes — DESIGN CHECKPOINT
 
 **Date:** 2026-10-09  
-**Status:** DESIGN ONLY — WIP / not yet approved  
+**Status:** conversational design APPROVED; formal written spec awaiting user review  
 **Branch:** `design/f6-images`  
-**Base commit:** `327d7064c14131e603e3bce6947b593a10f46363` (exact F5 automated-closure checkpoint)  
-**No product code has been changed for F6.**
+**Base:** exact F5 automated-closure head `327d7064c14131e603e3bce6947b593a10f46363`  
+**No F6 product code has been implemented.**
 
-## 1. Why this checkpoint exists
+## 1. Frozen prior state
 
-The conversation may be interrupted or exhaust context. This checkpoint records the exact F6 design state so another chat/agent can resume without reconstructing F5 or re-opening architectural decisions already discussed.
+F5 `ORGANIZAR` remains closed at automated level only.
 
-## 2. Prior phase state — frozen
-
-F5 `ORGANIZAR` is closed at automated level only.
-
-- F5 head: `327d7064c14131e603e3bce6947b593a10f46363`
-- Draft PR: #24 `F5 — Organizar PDF`
-- PR base: `feat/f4-full-reader`
-- PR head: `feat/f5-organize`
-- PR is draft/open/unmerged.
-- Push CI on final F5 checkpoint: `37991847671` PASS.
-- PR CI on final F5 checkpoint: `37991854689` PASS.
-- Build: 0 warnings / 0 errors.
-- Tests: 550/550 PASS.
+- F5 head: `327d7064c14131e603e3bce6947b593a10f46363`.
+- Draft PR #24: open / draft / unmerged.
+- F5 push CI `37991847671`: PASS.
+- F5 PR CI `37991854689`: PASS.
+- Build 0 warnings / 0 errors; 550/550 tests PASS.
 - `main` remains untouched at `31c0594758a83ec555d73ecdd7c597cdf8791fd7`.
 - Real/manual Windows F5 QA remains NOT RUN.
-- No merge is authorized.
 
-F6 design work must not modify PR #24 or its branch.
+F6 design work is isolated on `design/f6-images` and must not modify PR #24 or merge anything.
 
-## 3. F6 source requirements already present in project
+## 2. F6 requirements
 
-From `docs/MASTER_PLAN.md` and `.planning/REQUIREMENTS.md`:
+- **IMG-01:** detect/select real PDF images and contextual actions.
+- **IMG-02:** extract/save and replace while preserving geometry where viable.
+- **IMG-03:** move/resize/rotate/opacity/z-order/delete.
+- **IMG-04:** undo/redo.
 
-### IMG-01
-Detect/select images and expose contextual actions.
+## 3. Process state
 
-### IMG-02
-Extract/save images and replace them while preserving geometry where viable.
+F6 is architectural. The user approved all four conversational design sections.
 
-### IMG-03
-Move / resize / rotate / opacity / z-order / delete.
+The formal specification now exists at:
 
-### IMG-04
-Undo / redo.
+`docs/superpowers/specs/2026-10-09-f6-images-design.md`
 
-Historical broader UX ideas in `MASTER_CONTEXT.md` also mention contextual image actions such as copy, crop and properties, but these are **not frozen for the initial F6 slice**.
+Current spec commit after self-review corrections:
 
-## 4. Process classification
+`558ca8d6c2dff985750a625ab809adbbe742f7ec`
 
-F6 is classified as **architectural**, not bounded, because it introduces a new PDF object-editing subsystem and affects save/materialization semantics.
+The next gate is **user review/approval of the written spec**. Do not create an implementation plan or product code until that approval occurs.
 
-Required workflow:
+## 4. Approved architecture
 
-1. read-only project exploration;
-2. clarify intent where needed;
-3. propose 2–3 approaches;
-4. present design in sections and obtain user approval;
-5. only after design approval, write the formal spec;
-6. user reviews/approves written spec;
-7. only then create implementation plan;
-8. only after plan approval may implementation/TDD begin.
+### Real PDF image objects only
 
-**Current gate:** still inside step 4. No spec file has been written yet and implementation is forbidden.
+`EDITAR` operates on `FPDF_PAGEOBJ_IMAGE` objects. No hidden white rectangles, page screenshots or silent raster overlays are allowed as fallbacks.
 
-## 5. Architecture options considered
+### Logical plan first
 
-Three approaches were presented:
+UI gestures mutate in-memory logical image state. Native PDF mutation occurs only during `Guardar como...`.
 
-### Option A — PDFium object editor conservador — RECOMMENDED
-
-Select real `FPDF_PAGEOBJ_IMAGE` objects, edit image/object state through PDFium and materialize a validated Save As copy. Unsupported operations remain explicitly unsupported rather than being silently simulated.
-
-Advantages:
-
-- edits real PDF objects;
-- preserves vector/text surroundings;
-- aligns with PDFium-first rule;
-- avoids hidden destructive fallback behavior;
-- compatible with transaction/save/reopen validation patterns already proven in F3/F5.
-
-### Option B — Overlay/raster replacement — REJECTED
-
-Cover old image and place another raster object above it.
-
-Rejected because the original object remains beneath the overlay, semantics become misleading and PDFs become progressively harder to maintain.
-
-### Option C — Hybrid object edit + silent raster fallback — REJECTED for initial F6
-
-Try native object editing first and silently fallback to raster/overlay when unsupported.
-
-Rejected because it increases complexity and makes undo/preservation/quality behavior inconsistent.
-
-## 6. Proposed architecture section 1 — NOT YET USER-APPROVED
-
-The assistant presented the following base design and asked for explicit approval. The user requested this checkpoint before answering that approval question.
-
-### Proposed base
-
-`EDITAR` mode gets a real-image-object editing workspace:
+Conceptual state:
 
 ```text
-PDF page
-  ↓
-PDFium page-object discovery
-  ↓
-hit-test / select only image objects
-  ↓
-logical image-edit state in memory
-  ↓
-move / resize / rotate / replace / delete / supported properties
-  ↓
-Guardar como...
-  ↓
-transactional materialization
-  ↓
-reopen + render / structural validation
+ImageEditPlan
+ImageObjectRef(PageIndex, PageObjectIndex, OriginalBounds, OriginalMatrix, OriginalImageMetadata)
+ImageEditState(CurrentMatrix, ReplacementAsset?, Opacity?, ZOrderOperation?, Deleted)
 ```
 
-Important proposal details:
+No native `IntPtr` is retained as durable UI identity.
 
-- mouse/UI operations should not immediately rewrite the source PDF;
-- source PDF remains untouched;
-- Save As remains the initial write behavior;
-- selection operates on real PDF image page objects, not screen captures;
-- no cloud, SaaS, account, API key or runtime Internet;
-- PDFium remains the primary/only PDF engine unless a demonstrated gap justifies a separate decision later;
-- do not use an overlay/raster trick as an invisible fallback;
-- if an operation cannot be proven safe against the pinned runtime, expose it as unsupported rather than pretending it worked;
-- initial F6 should focus on IMG-01..04;
-- crop/copy/advanced properties are candidates for a later slice rather than initial scope unless the user explicitly expands F6.
+### Single selection
 
-### Pending user gate
+Initial F6 edits one active image at a time. Multi-select, crop, copy/paste and advanced properties are out of initial scope.
 
-The exact question that was pending when this checkpoint was requested:
+### Hit-test
 
-> Approve/revise the architecture base above before proceeding to design section 2: selection model, hit-test, transforms and undo/redo.
+Use real PDF geometry. Prefer proven rotated/quad bounds; otherwise derive geometry from the affine image matrix. Axis-aligned fallback is acceptable only if fixtures demonstrate acceptable behavior.
 
-Do **not** treat this checkpoint request as approval of section 1.
+Overlapping-image topmost selection is not assumed; it must be characterized against the pinned runtime or replaced by deterministic cycling.
 
-## 7. PDFium feasibility observations already made
+### Transforms
 
-Existing repository `PdfiumNative.cs` currently contains reader/organize bindings but not the image object editing API surface yet.
+- move;
+- proportional resize by default;
+- `Shift` permits free-aspect resize;
+- rotate around visual center;
+- delete logically until save.
 
-Design exploration concluded that PDFium public page-object/image APIs appear capable of supporting the core direction: object enumeration/type, object bounds/matrix transforms, image bitmap access/replacement, page remove/insert and content regeneration/materialization.
+### Undo/redo
 
-However two areas were explicitly flagged as capability gates before any product promise:
+Command-based history for every enabled mutation. A continuous drag becomes one history item. New mutation after undo clears redo.
 
-### Z-order
+After successful Save As:
 
-Do not assume arbitrary object-index reordering is directly supported. The design must verify the exact pinned PDFium exports and define safe semantics before promising `bring forward/send backward` behavior.
+- current logical image states remain;
+- original source remains the active source;
+- undo/redo clear;
+- dirty becomes false;
+- later saves rematerialize the complete current logical state from the unchanged original source.
 
-### Opacity
+### Extract
 
-Do not promise full commercial-editor opacity behavior until the relevant graphics-state APIs are verified against the exact pinned `pdfium.dll` and representative fixtures.
+Initial extraction is visually faithful PNG, not a promise of exact original embedded bytes.
 
-These are design questions, not implementation blockers yet.
+### Replace
 
-## 8. Frozen constraints inherited into F6
+Initial replacement input: PNG and JPEG/JPG. Replacement bytes are captured into an immutable in-memory asset so later save does not depend on the selected replacement file remaining unchanged. Geometry stays unchanged initially.
 
-- Windows x64.
-- C# / .NET 10 / WPF.
-- Local-first/offline.
-- KISS/YAGNI.
-- PDFium first and normally only PDF engine.
-- All PDFium native activity serialized through `PdfiumRuntime.NativeGate` (`SemaphoreSlim`, `Wait()/Release()`, never `lock`).
-- No runtime SaaS/account/API key/network dependency.
-- No commercial mandatory runtime dependency.
-- Save As by default for editing flows until preservation is mature.
-- Never modify original source on failed/cancelled output.
-- Reopen/validate before publication.
-- No private customer/Mercado Libre fixtures committed.
-- No merge to `main` without explicit user approval.
-- LEER / FIRMAR / ORGANIZAR / ZPL behavior must not regress silently.
+Transparent PNG must pass save/reopen/render evidence or that subcase is blocked; no silent white flattening.
 
-## 9. What has NOT been done in F6
+## 5. Capability gates
 
-- no F6 spec file written;
-- no F6 implementation plan written;
-- no F6 production code;
-- no F6 tests;
-- no PDFium image-object bindings added;
-- no dependency changes;
-- no UI added;
-- no new PR;
-- no merge;
-- no changes to `feat/f5-organize` or PR #24.
+The exact pinned `pdfium.dll` is the authority. Public/upstream API availability is only a candidate route.
 
-## 10. Exact next step
+Core F6.1 must prove:
 
-Resume at the **design approval gate**, not implementation.
+1. page-object count/get;
+2. image type detection;
+3. bounds/matrix access;
+4. extraction bitmap route;
+5. bitmap replacement;
+6. JPEG route if selected;
+7. matrix mutation for move/resize/rotate;
+8. object removal;
+9. page content regeneration;
+10. whole-document save/reopen after mutation.
 
-1. Present/recall proposed architecture section 1 if needed.
-2. Obtain explicit user approval or requested changes.
-3. If approved, continue with **design section 2: selection model + hit-test + move/resize/rotate + undo/redo**.
-4. Then continue remaining design sections (replace/extract, save/materialization/preservation, error handling/testing/capability gates).
-5. Only after conversational design approval, write `docs/superpowers/specs/2026-10-09-f6-images-design.md` and commit it on `design/f6-images`.
-6. Stop for user review of the written spec.
+Conditional gates:
 
-Do not write implementation code or implementation plan before those gates are passed.
+- opacity;
+- exact-index insertion/reordering for z-order;
+- tighter rotated bounds;
+- rendered image-object bitmap extraction.
+
+Opacity and z-order failure do not block the rest of F6, but **IMG-03 may not be marked AUTO PASS** if either remains unsupported.
+
+No second engine or destructive fallback is introduced merely to turn those capabilities green.
+
+## 6. Save/materialization
+
+F6 does not reuse F5's page-import writer as its normal writer.
+
+Pipeline:
+
+```text
+validate fingerprint + preflight
+→ reopen original source fresh
+→ resolve all edited objects per touched page
+→ apply native edits
+→ FPDFPage_GenerateContent on touched pages
+→ save to destination-directory temp
+→ close native handles
+→ reopen temp
+→ validate every output page at 36 DPI sequentially + edited-object expectations
+→ atomic publish
+→ cleanup
+```
+
+The source is never overwritten. Existing destination is preserved on failure.
+
+## 7. Safety/preflight
+
+- cryptographic signatures: Block, no override;
+- password-opened source: Block, no password persistence/reuse;
+- stale/missing source: Block;
+- object mismatch: Block;
+- invalid replacement/transparency failure/native failure/save failure/validation failure/cancel/publication failure: no source mutation and no invalid destination publication.
+
+F6 gets its own preservation matrix because its writer differs from F5. Representative fixtures must classify forms, bookmarks, destinations, links, tagged structure, page labels, attachments and metadata as `PROVEN PRESERVED`, `PROVEN CHANGED/LOST` or `UNKNOWN`.
+
+## 8. Approved slices
+
+1. **F6.1** capability gate + model.
+2. **F6.2** selection + hit-test + overlay.
+3. **F6.3** move/resize/rotate/delete + undo/redo + dirty state.
+4. **F6.4** extract + replace.
+5. **F6.5** transactional writer.
+6. **F6.6** opacity + z-order only when their gates pass.
+7. **F6.7** preservation + hardening + regression + closure.
+
+## 9. Current exact next step
+
+Stop at the written-spec review gate.
+
+If the user approves `docs/superpowers/specs/2026-10-09-f6-images-design.md`, then and only then:
+
+1. read the writing-plans skill;
+2. create a detailed F6 implementation plan preserving F6.1–F6.7 boundaries;
+3. commit the plan on the design/planning branch;
+4. stop again for plan review/execution-method approval;
+5. do not start TDD implementation in the same step.
+
+No F6 code, tests, native bindings or dependency changes have been created yet.
