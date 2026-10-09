@@ -7,16 +7,17 @@ namespace SGPdf.App.Tests;
 public sealed class OrganizePreservationTests
 {
     [Theory]
-    [InlineData("NamedDestination", OrganizeFindingKind.NamedDestination)]
-    [InlineData("TaggedStructure", OrganizeFindingKind.TaggedStructure)]
-    [InlineData("PageLabel", OrganizeFindingKind.PageLabel)]
-    [InlineData("Attachment", OrganizeFindingKind.Attachment)]
+    [InlineData("NamedDestination", "NamedDestination")]
+    [InlineData("TaggedStructure", "TaggedStructure")]
+    [InlineData("PageLabel", "PageLabel")]
+    [InlineData("Attachment", "Attachment")]
     public void ExtendedDocumentStructures_AreDetectedConservatively(
         string fixtureKind,
-        OrganizeFindingKind expectedKind)
+        string expectedKindName)
     {
         using var fixture = CreateFixture(fixtureKind);
         using var session = PdfDocumentSession.Open(fixture.Path);
+        var expectedKind = Enum.Parse<OrganizeFindingKind>(expectedKindName);
 
         var result = new OrganizePreflightInspector().Inspect(session);
 
@@ -28,11 +29,12 @@ public sealed class OrganizePreservationTests
     }
 
     [Theory]
-    [InlineData(OrganizePreservationStatus.Unknown)]
-    [InlineData(OrganizePreservationStatus.ProvenChangedOrLost)]
+    [InlineData("Unknown")]
+    [InlineData("ProvenChangedOrLost")]
     public void Preflight_UnknownOrChangedNonCryptoStructure_RequiresExplicitWarning(
-        OrganizePreservationStatus preservationStatus)
+        string preservationStatusName)
     {
+        var preservationStatus = Enum.Parse<OrganizePreservationStatus>(preservationStatusName);
         var result = new OrganizePreflightResult(new[]
         {
             new OrganizeFinding(
