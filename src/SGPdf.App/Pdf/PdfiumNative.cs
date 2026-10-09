@@ -186,6 +186,16 @@ internal static class PdfiumNative
     internal static extern int FPDF_GetSignatureCount(IntPtr document);
 
     [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern int FPDF_GetFormType(IntPtr document);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern uint FPDF_GetMetaText(
+        IntPtr document,
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string tag,
+        IntPtr buffer,
+        uint buflen);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
     internal static extern IntPtr FPDFBitmap_Create(int width, int height, int alpha);
 
     [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
