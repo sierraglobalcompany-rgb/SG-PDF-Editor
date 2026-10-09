@@ -12,7 +12,7 @@ public sealed class OrganizePreservationTests
     [InlineData("TaggedStructure", "TaggedStructure")]
     [InlineData("PageLabel", "PageLabel")]
     [InlineData("Attachment", "Attachment")]
-    public void ExtendedDocumentStructures_AreDetectedConservatively(
+    public void ExtendedDocumentStructures_AreWarningsWithProvenLossEvidence(
         string fixtureKind,
         string expectedKindName)
     {
@@ -24,7 +24,7 @@ public sealed class OrganizePreservationTests
 
         var finding = Assert.Single(result.Findings, item => item.Kind == expectedKind);
         Assert.Equal(OrganizeFindingSeverity.Warning, finding.Severity);
-        Assert.Equal(OrganizePreservationStatus.Unknown, finding.PreservationStatus);
+        Assert.Equal(OrganizePreservationStatus.ProvenChangedOrLost, finding.PreservationStatus);
         Assert.True(result.CanProceed);
         Assert.True(result.RequiresWarningConfirmation);
     }
