@@ -49,10 +49,7 @@ public sealed class MainWindowOrganizeExtractSplitTests
             {
                 Assert.True(await OrganizeWindowTestHost.OpenReaderAsync(window, fixture.Path));
                 Assert.True((bool)OrganizeWindowTestHost.Invoke(window, "TryEnterOrganizeMode")!);
-                OrganizeWindowTestHost.SetField(
-                    window,
-                    "_inspectCurrentOrganizePreflight",
-                    (Func<PdfDocumentSession, CancellationToken, OrganizePreflightResult>)((_, _) => new OrganizePreflightResult(Array.Empty<OrganizeFinding>())));
+                SetWarningAuthorization(window);
 
                 var original = CurrentPlan(window);
                 OrganizeWindowTestHost.Invoke(window, "ApplyOrganizeSelectionClick", original.Pages[1].ItemId, ModifierKeys.None);
@@ -81,10 +78,7 @@ public sealed class MainWindowOrganizeExtractSplitTests
             {
                 Assert.True(await OrganizeWindowTestHost.OpenReaderAsync(window, fixture.Path));
                 Assert.True((bool)OrganizeWindowTestHost.Invoke(window, "TryEnterOrganizeMode")!);
-                OrganizeWindowTestHost.SetField(
-                    window,
-                    "_inspectCurrentOrganizePreflight",
-                    (Func<PdfDocumentSession, CancellationToken, OrganizePreflightResult>)((_, _) => new OrganizePreflightResult(Array.Empty<OrganizeFinding>())));
+                SetWarningAuthorization(window);
                 var original = CurrentPlan(window);
 
                 Assert.True(InvokeBool(window, "TrySplitOrganizeEvery", 2, basePath));
@@ -128,6 +122,28 @@ public sealed class MainWindowOrganizeExtractSplitTests
             finally { OrganizeWindowTestHost.CloseClean(window); }
         });
     }
+
+    private static void SetWarningAuthorization(MainWindow window)
+    {
+        OrganizeWindowTestHost.SetField(
+            window,
+            "_inspectCurrentOrganizePreflight",
+            (Func<PdfDocumentSession, CancellationToken, OrganizePreflightResult>)((_, _) => WarningPreflight()));
+        OrganizeWindowTestHost.SetField(
+            window,
+            "_confirmOrganizeWarnings",
+            (Func<OrganizePreflightResult, bool>)(_ => true));
+    }
+
+    private static OrganizePreflightResult WarningPreflight()
+        => new(new[]
+        {
+            new OrganizeFinding(
+                OrganizeFindingKind.Metadata,
+                OrganizeFindingSeverity.Warning,
+                "fixture metadata",
+                OrganizePreservationStatus.Unknown)
+        });
 
     private static OrganizePlan CurrentPlan(MainWindow window)
         => (OrganizePlan)OrganizeWindowTestHost.GetField(window, "_organizePlan")!;
