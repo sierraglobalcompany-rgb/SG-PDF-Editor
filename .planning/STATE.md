@@ -17,7 +17,7 @@ See `.planning/PROJECT.md`.
 > Numeric GSD progress is not product-completion truth while automated and physical/private gates are tracked separately. GitHub exact heads/CI + this status are authoritative for executed work.
 
 **Core value:** Resolver PDF + ZPL diario de forma rápida, privada, estable y offline.  
-**Current focus:** Phase 5 — **F4 Lector Completo**, Tasks 1–5 closed automatically; Task 6 is the next user-approved execution gate.
+**Current focus:** Phase 5 — **F4 Lector Completo**, Tasks 1–6 closed automatically; Task 7 is the next user-approved execution gate.
 
 ## Previous Gate — F3.4 closed automatically
 
@@ -30,7 +30,7 @@ See `.planning/PROJECT.md`.
 - PR #22: draft/open/unmerged, stacked on F3.3.
 - Manual real Windows QA: **NOT RUN**.
 
-## Current Gate — F4 Task 6 pending user `continúa`
+## Current Gate — F4 Task 7 pending user `continúa`
 
 - Branch: `feat/f4-full-reader`.
 - Base: exact F3.4 closure head `1bef751962e0b4aaf35fbda9b8a1a9a2ee2ba36b`.
@@ -95,6 +95,21 @@ See `.planning/PROJECT.md`.
 - Scope audit against Task 4 closure `c27dfa738d946147bec5cb48c4e7ab2afde776bc`: exactly 8 Task 5 code/test files changed; no package/lock, F3, ZPL, print, persistence/database/network or Task 6 selection/copy changes.
 - Test correction during GREEN: a synthetic WinAnsi test originally mixed default search flags with PDFium `Ñ/ñ` case folding. Unicode extraction remained green; the flag-specific assertion was isolated to ASCII so it tests only case-insensitive + non-whole-word semantics.
 
+### Task 6 — AUTO PASS
+
+- Clean contract RED head: `3e0ef221dcc40a98ec9337bdea725f2d5ce8b0e0`.
+- RED CI `37870209624`: expected build failure with 8 missing `ReaderTextSelection` / `ReaderTextSelectionRange` contract errors; 0 warnings.
+- Strengthened zoom RED head: `670a9d8416f5ec29b0456f8dead7b171e07149d5`.
+- Zoom RED CI `37870595171`: build clean; 378 PASS / 1 expected failure proving geometry changes did not yet automatically reproject the selection overlay.
+- Functional/verified head: `0a5a8cff5677956b3498ec333c5b4d76f59e0180`.
+- Exact-head functional CI `37870778333`: PASS.
+- Release build: 0 warnings / 0 errors.
+- Tests: 379 PASS / 0 FAIL / 0 SKIPPED.
+- Delivered: one-page inclusive text-range normalization, drag selection, cross-page rejection, click-to-clear, PDF-coordinate rectangle state, automatic overlay reprojection on page geometry/zoom changes, exact Unicode `Ctrl+C`, no-op copy without selection, FIRMAR selection clearing without signature-state mutation, and selection-gesture precedence over future link activation.
+- Coordinate ruling: selection uses each rendered page's `PdfPageDeviceTransform`; it does not reuse Sign `PdfRect`, `SignatureCoordinateMapper` or signature overlay state.
+- KISS ruling: all integration stayed feature-local in `MainWindow.ReaderSelection.cs`; the plan allowed a narrow `MainWindow.Reader.cs` edit, but none was necessary because `ReaderPageItem.PropertyChanged` supplies the geometry-change hook directly.
+- Scope audit against Task 5 closure `36e6b3f43115320bd35dd05691384bcfa622503a`: exactly 4 Task 6 files changed; no PDFium bindings, package/lock, F3, ZPL, print, persistence/database/network or Task 7 bookmark/link changes.
+
 ### Frozen F4 direction
 
 - PDFium only; required F4 exports verified in the pinned binary.
@@ -118,8 +133,8 @@ See `.planning/PROJECT.md`.
 3. **DONE** — Lazy thumbnails + left navigation.
 4. **DONE** — Password-protected PDFs.
 5. **DONE** — PDFium text core + find navigation.
-6. **NEXT** — One-page text selection + copy.
-7. Bookmarks + safe explicit links.
+6. **DONE** — One-page text selection + copy.
+7. **NEXT** — Bookmarks + safe explicit links.
 8. Shortcuts + atomic recents + hardening.
 9. Closure audit/docs + exact-head CI + draft stacked PR.
 
@@ -133,7 +148,7 @@ Project cadence: one task per user `continúa` unless the user explicitly change
 - F1 Gate ZPL-A: synthetic PASS; private real corpus NOT RUN.
 - F2.1–F2.6 ZPL Workspace: automated PASS.
 - F3.1–F3.4 Visual Signature: automated PASS; corresponding manual QA remains NOT RUN.
-- F4 Tasks 1–5: automated PASS.
+- F4 Tasks 1–6: automated PASS.
 
 ## Parallel Acceptance Gates Still Open
 
@@ -149,6 +164,7 @@ Project cadence: one task per user `continúa` unless the user explicitly change
 - F4 thumbnails real Windows scroll/click/large-document memory UX QA: **NOT RUN**.
 - F4 real protected-PDF prompt/retry/cancel/printing QA: **NOT RUN**.
 - F4 real text-search UX/Unicode/large-document performance QA: **NOT RUN**.
+- F4 real mouse text-selection/cross-page/zoom/Unicode clipboard QA: **NOT RUN**.
 
 They remain separate from automated PASS and do not become accepted by inference.
 
@@ -167,11 +183,11 @@ They remain separate from automated PASS and do not become accepted by inference
 
 ```text
 next user `continúa`
-→ Task 6 RED for one-page text selection range + reader drag/overlay/copy behavior
+→ Task 7 RED for bounded bookmarks + explicit safe PDF links
 → confirm expected RED
-→ minimal GREEN one-page selection + exact Unicode clipboard copy
+→ minimal GREEN bookmark tree + internal GOTO + confirmed HTTP/HTTPS only
 → full regression + exact-head CI
-→ report evidence and stop before Task 7
+→ report evidence and stop before Task 8
 ```
 
 ## Continuity
