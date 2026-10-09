@@ -301,7 +301,7 @@ public partial class MainWindow
                 ? _readerPageSizes.ToArray()
                 : _session.GetPageSizes().ToArray();
 
-            if (sizes.Count != source.OriginalPageCount)
+            if (sizes.Length != source.OriginalPageCount)
                 throw new InvalidOperationException("No se pudo obtener la geometría completa del PDF.");
 
             _organizeSourcePageSizes.Clear();
