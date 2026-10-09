@@ -8,6 +8,13 @@ public sealed class ImageEditBehaviorCharacterizationTests
     [Fact]
     public void GeometryFixtures_ExposeExpectedImageObjectsAndOptionalGeometryRoutes()
     {
+        using var single = ImageEditPdfFixtureFactory.CreateSingleImage();
+        var singleTypes = ImageEditNativeCharacterizationHarness.Inspect(
+            single.Path,
+            context => context.GetObjects().Select(item => item.Type).ToArray());
+        Assert.Single(singleTypes);
+        Assert.Equal(3, singleTypes[0]);
+
         using var multiple = ImageEditPdfFixtureFactory.CreateMultipleImages();
         var multipleTypes = ImageEditNativeCharacterizationHarness.Inspect(
             multiple.Path,
