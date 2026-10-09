@@ -90,7 +90,7 @@ public sealed class MainWindowOrganizeTask6Tests
     }
 
     [Fact]
-    public void EnterOrganize_EnablesImplementedCommandsThroughTask7()
+    public void EnterOrganize_EnablesImplementedCommandsThroughTask8()
     {
         OrganizeWindowTestHost.RunInSta(async () =>
         {
@@ -104,14 +104,14 @@ public sealed class MainWindowOrganizeTask6Tests
                 foreach (var name in new[]
                 {
                     "OrganizeRotateLeftButton", "OrganizeRotateRightButton", "OrganizeDeleteButton",
-                    "OrganizeDuplicateButton", "OrganizeInsertButton", "OrganizeMergeButton", "OrganizeSaveAsButton"
+                    "OrganizeDuplicateButton", "OrganizeInsertButton", "OrganizeMergeButton", "OrganizeSaveAsButton",
+                    "OrganizeSplitButton"
                 })
                 {
                     Assert.True(OrganizeWindowTestHost.Element<Button>(window, name).IsEnabled);
                 }
 
-                foreach (var name in new[] { "OrganizeExtractButton", "OrganizeSplitButton" })
-                    Assert.False(OrganizeWindowTestHost.Element<Button>(window, name).IsEnabled);
+                Assert.False(OrganizeWindowTestHost.Element<Button>(window, "OrganizeExtractButton").IsEnabled);
             }
             finally { OrganizeWindowTestHost.CloseClean(window); }
         });
