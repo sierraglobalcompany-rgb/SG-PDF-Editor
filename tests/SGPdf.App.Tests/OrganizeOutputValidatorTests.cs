@@ -15,7 +15,7 @@ public sealed class OrganizeOutputValidatorTests
         var expected = new[]
         {
             new OrganizeExpectedPage(new PdfPageSize(200d, 300d), 0),
-            new OrganizeExpectedPage(new PdfPageSize(300d, 200d), 1),
+            new OrganizeExpectedPage(new PdfPageSize(200d, 300d), 1),
             new OrganizeExpectedPage(new PdfPageSize(400d, 250d), 2)
         };
 
@@ -45,7 +45,7 @@ public sealed class OrganizeOutputValidatorTests
         var expected = new[]
         {
             new OrganizeExpectedPage(new PdfPageSize(201d, 300d), 0),
-            new OrganizeExpectedPage(new PdfPageSize(300d, 200d), 1),
+            new OrganizeExpectedPage(new PdfPageSize(200d, 300d), 1),
             new OrganizeExpectedPage(new PdfPageSize(400d, 250d), 2)
         };
 
@@ -60,7 +60,7 @@ public sealed class OrganizeOutputValidatorTests
         var expected = new[]
         {
             new OrganizeExpectedPage(new PdfPageSize(200d, 300d), 0),
-            new OrganizeExpectedPage(new PdfPageSize(300d, 200d), 0),
+            new OrganizeExpectedPage(new PdfPageSize(200d, 300d), 0),
             new OrganizeExpectedPage(new PdfPageSize(400d, 250d), 2)
         };
 
@@ -77,7 +77,7 @@ public sealed class OrganizeOutputValidatorTests
         var expected = new[]
         {
             new OrganizeExpectedPage(new PdfPageSize(200d, 300d), 0),
-            new OrganizeExpectedPage(new PdfPageSize(300d, 200d), 1),
+            new OrganizeExpectedPage(new PdfPageSize(200d, 300d), 1),
             new OrganizeExpectedPage(new PdfPageSize(400d, 250d), 2)
         };
 
