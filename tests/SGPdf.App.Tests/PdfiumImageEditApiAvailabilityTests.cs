@@ -6,7 +6,7 @@ namespace SGPdf.App.Tests;
 
 public sealed class PdfiumImageEditApiAvailabilityTests
 {
-    private static readonly string[] CriticalExports =
+    internal static readonly string[] CriticalExports =
     {
         "FPDFPage_CountObjects",
         "FPDFPage_GetObject",
@@ -24,7 +24,7 @@ public sealed class PdfiumImageEditApiAvailabilityTests
         "FPDF_SaveAsCopy"
     };
 
-    private static readonly string[] ConditionalExports =
+    internal static readonly string[] ConditionalExports =
     {
         "FPDFPageObj_SetFillColor",
         "FPDFPage_InsertObjectAtIndex",
@@ -42,8 +42,7 @@ public sealed class PdfiumImageEditApiAvailabilityTests
     [Fact]
     public void PinnedPdfium_ExportsAllF6CoreImageEditFunctions()
     {
-        Assert.True(NativeLibrary.TryLoad("pdfium", out var library), "No se pudo cargar el pdfium.dll pinneado por el proyecto.");
-
+        var library = LoadPinnedPdfium();
         try
         {
             var missing = CriticalExports
@@ -63,8 +62,7 @@ public sealed class PdfiumImageEditApiAvailabilityTests
     [Fact]
     public void PinnedPdfium_ReportsConditionalF6ImageEditFunctions()
     {
-        Assert.True(NativeLibrary.TryLoad("pdfium", out var library), "No se pudo cargar el pdfium.dll pinneado por el proyecto.");
-
+        var library = LoadPinnedPdfium();
         try
         {
             foreach (var export in ConditionalExports)
@@ -77,5 +75,19 @@ public sealed class PdfiumImageEditApiAvailabilityTests
         {
             NativeLibrary.Free(library);
         }
+    }
+
+    internal static IntPtr LoadPinnedPdfium()
+    {
+        var direct = Path.Combine(AppContext.BaseDirectory, "pdfium.dll");
+        if (File.Exists(direct) && NativeLibrary.TryLoad(direct, out var directLibrary))
+            return directLibrary;
+
+        var candidate = Directory
+            .EnumerateFiles(AppContext.BaseDirectory, "pdfium.dll", SearchOption.AllDirectories)
+            .FirstOrDefault();
+        Assert.False(string.IsNullOrWhiteSpace(candidate), "No se encontró el pdfium.dll pinneado en la salida de tests.");
+        Assert.True(NativeLibrary.TryLoad(candidate!, out var library), $"No se pudo cargar el pdfium.dll pinneado: {candidate}");
+        return library;
     }
 }
