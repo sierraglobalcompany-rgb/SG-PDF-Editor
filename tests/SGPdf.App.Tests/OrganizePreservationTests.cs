@@ -1,3 +1,4 @@
+using System.Reflection;
 using SGPdf.App.Features.Organize;
 using SGPdf.App.Pdf;
 using Xunit;
@@ -64,41 +65,67 @@ public sealed class OrganizePreservationTests
         Assert.False(result.RequiresWarningConfirmation);
     }
 
-    [Fact]
-    public void Characterize_RealWriterOutput_ReportsObservedStructures()
+    [Theory]
+    [InlineData("Navigation", "Bookmark")]
+    [InlineData("Navigation", "InternalLink")]
+    [InlineData("Form", "Form")]
+    [InlineData("NamedDestination", "NamedDestination")]
+    [InlineData("TaggedStructure", "TaggedStructure")]
+    [InlineData("PageLabel", "PageLabel")]
+    [InlineData("Attachment", "Attachment")]
+    public void RealWriter_IdentityImport_DropsDetectedNonMetadataStructure(
+        string fixtureKind,
+        string findingKindName)
     {
-        var observations = new List<string>();
-        foreach (var fixtureKind in new[]
-                 {
-                     "Metadata", "Navigation", "Form", "NamedDestination",
-                     "TaggedStructure", "PageLabel", "Attachment"
-                 })
-        {
-            using var fixture = CreateFixture(fixtureKind);
-            using var sourceSession = PdfDocumentSession.Open(fixture.Path);
-            var pageCount = sourceSession.PageCount;
-            var sourceResult = new OrganizePreflightInspector().Inspect(sourceSession);
-            var source = OrganizeSource.Capture(fixture.Path, pageCount);
-            var plan = OrganizePlan.FromPrimarySource(source);
-            var destination = Path.Combine(fixture.DirectoryPath, $"{fixtureKind}-output.pdf");
+        using var fixture = CreateFixture(fixtureKind);
+        var findingKind = Enum.Parse<OrganizeFindingKind>(findingKindName);
+        var destination = WriteIdentityCopy(fixture);
 
-            new PdfOrganizeWriter().SaveAsCopy(
-                plan,
-                fixture.Path,
-                destination,
-                warningsConfirmed: true);
+        using var sourceSession = PdfDocumentSession.Open(fixture.Path);
+        using var outputSession = PdfDocumentSession.Open(destination);
+        var inspector = new OrganizePreflightInspector();
 
-            using var outputSession = PdfDocumentSession.Open(destination);
-            var outputResult = new OrganizePreflightInspector().Inspect(outputSession);
-            observations.Add(
-                $"{fixtureKind}: source=[{Kinds(sourceResult)}] output=[{Kinds(outputResult)}]");
-        }
-
-        Assert.True(false, string.Join(Environment.NewLine, observations));
+        Assert.Contains(inspector.Inspect(sourceSession).Findings, finding => finding.Kind == findingKind);
+        Assert.DoesNotContain(inspector.Inspect(outputSession).Findings, finding => finding.Kind == findingKind);
     }
 
-    private static string Kinds(OrganizePreflightResult result)
-        => string.Join(",", result.Findings.Select(finding => finding.Kind.ToString()));
+    [Fact]
+    public void Metadata_IdentityImport_DoesNotPreserveSourceTitleOrAuthor()
+    {
+        using var fixture = OrganizePdfFixtureFactory.CreateMetadata();
+        var method = typeof(PdfDocumentSession).GetMethod(
+            "GetOrganizeMetadataText",
+            BindingFlags.Instance | BindingFlags.NonPublic);
+        Assert.NotNull(method);
+
+        var destination = WriteIdentityCopy(fixture);
+        using var sourceSession = PdfDocumentSession.Open(fixture.Path);
+        using var outputSession = PdfDocumentSession.Open(destination);
+
+        var sourceTitle = Assert.IsType<string>(method.Invoke(sourceSession, new object[] { "Title", CancellationToken.None }));
+        var sourceAuthor = Assert.IsType<string>(method.Invoke(sourceSession, new object[] { "Author", CancellationToken.None }));
+        var outputTitle = Assert.IsType<string>(method.Invoke(outputSession, new object[] { "Title", CancellationToken.None }));
+        var outputAuthor = Assert.IsType<string>(method.Invoke(outputSession, new object[] { "Author", CancellationToken.None }));
+
+        Assert.Equal("SG PDF metadata fixture", sourceTitle);
+        Assert.Equal("SG PDF tests", sourceAuthor);
+        Assert.NotEqual(sourceTitle, outputTitle);
+        Assert.NotEqual(sourceAuthor, outputAuthor);
+    }
+
+    private static string WriteIdentityCopy(OrganizePdfFixture fixture)
+    {
+        using var sourceSession = PdfDocumentSession.Open(fixture.Path);
+        var source = OrganizeSource.Capture(fixture.Path, sourceSession.PageCount);
+        var plan = OrganizePlan.FromPrimarySource(source);
+        var destination = Path.Combine(fixture.DirectoryPath, $"identity-{Guid.NewGuid():N}.pdf");
+        new PdfOrganizeWriter().SaveAsCopy(
+            plan,
+            fixture.Path,
+            destination,
+            warningsConfirmed: true);
+        return destination;
+    }
 
     private static OrganizePdfFixture CreateFixture(string fixtureKind)
         => fixtureKind switch
