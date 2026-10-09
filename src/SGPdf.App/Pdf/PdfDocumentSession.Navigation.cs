@@ -223,7 +223,8 @@ public sealed partial class PdfDocumentSession
             return null;
 
         var pageIndex = PdfiumNative.FPDFDest_GetDestPageIndex(_document, destination);
-        return pageIndex >= 0 && pageIndex < PageCount ? pageIndex : null;
+        var pageCount = PdfiumNative.FPDF_GetPageCount(_document);
+        return pageIndex >= 0 && pageCount > 0 && pageIndex < pageCount ? pageIndex : null;
     }
 
     private static PdfTextRect? NormalizeRect(PdfiumNative.RectF rect)
