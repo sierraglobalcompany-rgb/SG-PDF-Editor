@@ -58,6 +58,61 @@ internal static class PdfiumNative
     internal static extern float FPDF_GetPageHeightF(IntPtr page);
 
     [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern IntPtr FPDFText_LoadPage(IntPtr page);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern void FPDFText_ClosePage(IntPtr textPage);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern IntPtr FPDFText_FindStart(
+        IntPtr textPage,
+        [MarshalAs(UnmanagedType.LPWStr)] string findWhat,
+        uint flags,
+        int startIndex);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern int FPDFText_FindNext(IntPtr search);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern int FPDFText_FindPrev(IntPtr search);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern void FPDFText_FindClose(IntPtr search);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern int FPDFText_GetSchResultIndex(IntPtr search);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern int FPDFText_GetSchCount(IntPtr search);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern int FPDFText_GetCharIndexAtPos(
+        IntPtr textPage,
+        double x,
+        double y,
+        double xTolerance,
+        double yTolerance);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern int FPDFText_GetText(
+        IntPtr textPage,
+        int startIndex,
+        int count,
+        [Out] ushort[] result);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern int FPDFText_CountRects(IntPtr textPage, int startIndex, int count);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern int FPDFText_GetRect(
+        IntPtr textPage,
+        int rectIndex,
+        out double left,
+        out double top,
+        out double right,
+        out double bottom);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
     internal static extern int FPDF_GetSignatureCount(IntPtr document);
 
     [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
