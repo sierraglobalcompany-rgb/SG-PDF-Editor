@@ -32,9 +32,9 @@ public sealed class OrganizeOutputValidatorTests
         using var fixture = Task4PdfFixture.CreateMarkerSource();
         var validator = new OrganizeOutputValidator();
 
-        Assert.Throws<InvalidDataException>(() => validator.Validate(
+        Assert.Throws<InvalidDataException>((Action)(() => validator.Validate(
             fixture.Path,
-            new[] { new OrganizeExpectedPage(new PdfPageSize(200d, 300d), 0) }));
+            new[] { new OrganizeExpectedPage(new PdfPageSize(200d, 300d), 0) })));
     }
 
     [Fact]
@@ -49,7 +49,7 @@ public sealed class OrganizeOutputValidatorTests
             new OrganizeExpectedPage(new PdfPageSize(400d, 250d), 2)
         };
 
-        Assert.Throws<InvalidDataException>(() => validator.Validate(fixture.Path, expected));
+        Assert.Throws<InvalidDataException>((Action)(() => validator.Validate(fixture.Path, expected)));
     }
 
     [Fact]
@@ -64,7 +64,7 @@ public sealed class OrganizeOutputValidatorTests
             new OrganizeExpectedPage(new PdfPageSize(400d, 250d), 2)
         };
 
-        Assert.Throws<InvalidDataException>(() => validator.Validate(fixture.Path, expected));
+        Assert.Throws<InvalidDataException>((Action)(() => validator.Validate(fixture.Path, expected)));
     }
 
     [Fact]
@@ -81,6 +81,6 @@ public sealed class OrganizeOutputValidatorTests
             new OrganizeExpectedPage(new PdfPageSize(400d, 250d), 2)
         };
 
-        Assert.Throws<OperationCanceledException>(() => validator.Validate(fixture.Path, expected, cancellation.Token));
+        Assert.Throws<OperationCanceledException>((Action)(() => validator.Validate(fixture.Path, expected, cancellation.Token)));
     }
 }
