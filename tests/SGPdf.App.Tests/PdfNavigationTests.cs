@@ -31,7 +31,7 @@ public sealed class PdfNavigationTests
         using var session = PdfDocumentSession.Open(fixture.SourcePath);
 
         var links = session.GetPageLinks(0);
-        var link = Assert.Single(links.Where(item => item.ActionKind == PdfLinkActionKind.InternalGoto));
+        var link = Assert.Single(links, item => item.ActionKind == PdfLinkActionKind.InternalGoto);
 
         Assert.Equal(0, link.PageIndex);
         Assert.Equal(1, link.DestinationPageIndex);
@@ -48,7 +48,8 @@ public sealed class PdfNavigationTests
         using var fixture = NavigationPdfFixture.Create();
         using var session = PdfDocumentSession.Open(fixture.SourcePath);
 
-        var link = Assert.Single(session.GetPageLinks(0).Where(item => item.ActionKind == PdfLinkActionKind.Uri));
+        var links = session.GetPageLinks(0);
+        var link = Assert.Single(links, item => item.ActionKind == PdfLinkActionKind.Uri);
 
         Assert.Equal("https://example.invalid/path", link.Uri);
         Assert.Null(link.DestinationPageIndex);
