@@ -145,7 +145,9 @@ public sealed class OrganizePreflightTests
         Assert.NotNull(method);
         try
         {
-            return Assert.NotNull(method.Invoke(inspector, new object[] { session, cancellationToken }));
+            var value = method.Invoke(inspector, new object[] { session, cancellationToken });
+            Assert.NotNull(value);
+            return value;
         }
         catch (TargetInvocationException error) when (error.InnerException is not null)
         {
@@ -156,12 +158,14 @@ public sealed class OrganizePreflightTests
 
     private static object CreateInstance(Type type, object[] arguments)
     {
-        return Assert.NotNull(Activator.CreateInstance(
+        var value = Activator.CreateInstance(
             type,
             BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public,
             binder: null,
             args: arguments,
-            culture: null));
+            culture: null);
+        Assert.NotNull(value);
+        return value;
     }
 
     private static Type RequiredType(string fullName)
@@ -200,6 +204,8 @@ public sealed class OrganizePreflightTests
     {
         var property = instance.GetType().GetProperty(propertyName, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
         Assert.NotNull(property);
-        return Assert.NotNull(property.GetValue(instance)).ToString()!;
+        var value = property.GetValue(instance);
+        Assert.NotNull(value);
+        return value.ToString()!;
     }
 }
