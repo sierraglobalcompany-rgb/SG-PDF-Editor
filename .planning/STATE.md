@@ -17,7 +17,7 @@ See `.planning/PROJECT.md`.
 > Numeric GSD progress is not product-completion truth while automated and physical/private gates are tracked separately. GitHub exact heads/CI + this status are authoritative for executed work.
 
 **Core value:** Resolver PDF + ZPL diario de forma rápida, privada, estable y offline.  
-**Current focus:** Phase 5 — **F4 Lector Completo**, Tasks 1–4 closed automatically; Task 5 is the next user-approved execution gate.
+**Current focus:** Phase 5 — **F4 Lector Completo**, Tasks 1–5 closed automatically; Task 6 is the next user-approved execution gate.
 
 ## Previous Gate — F3.4 closed automatically
 
@@ -30,7 +30,7 @@ See `.planning/PROJECT.md`.
 - PR #22: draft/open/unmerged, stacked on F3.3.
 - Manual real Windows QA: **NOT RUN**.
 
-## Current Gate — F4 Task 5 pending user `continúa`
+## Current Gate — F4 Task 6 pending user `continúa`
 
 - Branch: `feat/f4-full-reader`.
 - Base: exact F3.4 closure head `1bef751962e0b4aaf35fbda9b8a1a9a2ee2ba36b`.
@@ -74,15 +74,26 @@ See `.planning/PROJECT.md`.
 
 - RED head: `a99287dc81623b742032ab234c6d1e37aa4d88b4`.
 - RED CI `37856357399`: expected build failure with 9 missing-contract errors for typed PDF open errors/dialog; 0 warnings.
-- Functional/verified head: `cca16e38daff1509a75d1324ac89b53fab8ee9d8`.
-- Exact-head CI `37856882768`: PASS.
+- Functional/verified head: `c27dfa738d946147bec5cb48c4e7ab2afde776bc`.
+- Exact-head CI `37857787178`: PASS.
 - Release build: 0 warnings / 0 errors.
 - Tests: 346 PASS / 0 FAIL / 0 SKIPPED.
 - Delivered: `PdfDocumentOpenError`, `PdfDocumentOpenException`, authoritative PDFium error-4 password classification, masked WPF password dialog, retry/cancel flow, wrong-password handling and candidate-first workspace preservation.
-- Privacy: password exists only as transient attempt/dialog data; it is not stored in `PdfDocumentSession`, title, status, JSON/settings, recents or any new persistent state.
-- KISS ruling: existing `PdfDocumentSession.Open(path, password)` remains the single native open path; only error classification and MainWindow retry orchestration were added.
-- Scope audit against Task 3 closure `c78eb1fb8ebb5f019d13a1d73c887460e0b9f090`: 9 password/open/test files changed; no package/lock, F3 writer/model, ZPL, print, recents or database/network changes.
-- One legacy invalid-PDF assertion was intentionally widened from exact `InvalidOperationException` to `ThrowsAny<InvalidOperationException>` because the new typed open exception is a required subclass; invalid PDFs remain classified as `OtherPdfiumError`.
+- Privacy: password exists only as transient attempt/dialog data; it is not persisted.
+
+### Task 5 — AUTO PASS
+
+- RED head: `b1e6f68922d52c92a76a93de23301cf3096872a9`.
+- RED CI `37866817670`: expected build failure with 6 missing-contract errors for `PdfTextMatch` / `ReaderSearchCursor`; 0 warnings.
+- Functional/verified head: `984545a8e8b6b098a55dad55b5059aa4c6020b3b`.
+- Exact-head functional CI `37867206589`: PASS.
+- Release build: 0 warnings / 0 errors.
+- Tests: 368 PASS / 0 FAIL / 0 SKIPPED.
+- Delivered: `PdfTextRect` / `PdfTextMatch`, PDFium text load/search/range/hit-test/rect APIs behind `NativeGate`, Unicode extraction, case-insensitive non-whole-word search defaults, pure page-by-page next/previous/wrap navigator, compact find bar, Ctrl+F / Enter / Shift+Enter / Escape behavior, active-match-only highlight and stale-generation rejection.
+- Search strategy: on demand only; no OCR and no permanent whole-document index/result cache.
+- KISS ruling: find UI is feature-local/dynamic in `MainWindow.ReaderSearch.cs`, matching the existing F4 reader/thumbnails pattern and avoiding a large `MainWindow.xaml` rewrite.
+- Scope audit against Task 4 closure `c27dfa738d946147bec5cb48c4e7ab2afde776bc`: exactly 8 Task 5 code/test files changed; no package/lock, F3, ZPL, print, persistence/database/network or Task 6 selection/copy changes.
+- Test correction during GREEN: a synthetic WinAnsi test originally mixed default search flags with PDFium `Ñ/ñ` case folding. Unicode extraction remained green; the flag-specific assertion was isolated to ASCII so it tests only case-insensitive + non-whole-word semantics.
 
 ### Frozen F4 direction
 
@@ -91,6 +102,7 @@ See `.planning/PROJECT.md`.
 - Full-resolution retention = visible pages + one neighbor before/after.
 - Lazy thumbnails; no eager whole-document render.
 - Search/copy uses PDFium text APIs; no OCR in F4.
+- Search is page-by-page on demand; no permanent index.
 - One-page text drag selection.
 - Read-only cycle/depth/node-bounded bookmarks.
 - Explicit internal PDF links + confirmed HTTP/HTTPS URI links only.
@@ -105,8 +117,8 @@ See `.planning/PROJECT.md`.
 2. **DONE** — Continuous WPF surface + bounded rendering + FIRMAR boundary.
 3. **DONE** — Lazy thumbnails + left navigation.
 4. **DONE** — Password-protected PDFs.
-5. **NEXT** — PDFium text core + find navigation.
-6. One-page text selection + copy.
+5. **DONE** — PDFium text core + find navigation.
+6. **NEXT** — One-page text selection + copy.
 7. Bookmarks + safe explicit links.
 8. Shortcuts + atomic recents + hardening.
 9. Closure audit/docs + exact-head CI + draft stacked PR.
@@ -121,7 +133,7 @@ Project cadence: one task per user `continúa` unless the user explicitly change
 - F1 Gate ZPL-A: synthetic PASS; private real corpus NOT RUN.
 - F2.1–F2.6 ZPL Workspace: automated PASS.
 - F3.1–F3.4 Visual Signature: automated PASS; corresponding manual QA remains NOT RUN.
-- F4 Tasks 1–4: automated PASS.
+- F4 Tasks 1–5: automated PASS.
 
 ## Parallel Acceptance Gates Still Open
 
@@ -136,6 +148,7 @@ Project cadence: one task per user `continúa` unless the user explicitly change
 - F4 continuous-reader real Windows scroll/zoom/performance UX QA: **NOT RUN**.
 - F4 thumbnails real Windows scroll/click/large-document memory UX QA: **NOT RUN**.
 - F4 real protected-PDF prompt/retry/cancel/printing QA: **NOT RUN**.
+- F4 real text-search UX/Unicode/large-document performance QA: **NOT RUN**.
 
 They remain separate from automated PASS and do not become accepted by inference.
 
@@ -145,7 +158,7 @@ They remain separate from automated PASS and do not become accepted by inference
 - KISS solution remains `SGPdf.App + SGPdf.App.Tests`.
 - PDFium primary; all native calls serialized by `PdfiumRuntime.NativeGate`.
 - Labelize 1.7.0 only approved runtime ZPL renderer.
-- PDFsharp remains labels-only in product runtime; Task 4 uses it only in tests to generate synthetic protected fixtures.
+- PDFsharp remains labels-only in product runtime; test fixtures may use the existing test dependency graph.
 - ZXing remains test/QA-only.
 - F3 sources converge to `SignatureAsset` → `AddSignatureAsset(...)`.
 - No merge to `main` without explicit user approval.
@@ -154,11 +167,11 @@ They remain separate from automated PASS and do not become accepted by inference
 
 ```text
 next user `continúa`
-→ Task 5 RED for PDFium text extraction/search + pure navigator + find-bar behavior
+→ Task 6 RED for one-page text selection range + reader drag/overlay/copy behavior
 → confirm expected RED
-→ minimal GREEN PDFium text core + on-demand find navigation
+→ minimal GREEN one-page selection + exact Unicode clipboard copy
 → full regression + exact-head CI
-→ report evidence and stop before Task 6
+→ report evidence and stop before Task 7
 ```
 
 ## Continuity
