@@ -30,7 +30,7 @@ public sealed partial class PdfDocumentSession
     public IReadOnlyList<PdfPageLink> GetPageLinks(int pageIndex, CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
-        ValidatePageIndex(pageIndex);
+        ValidatePageIndex(pageIndex, cancellationToken);
         cancellationToken.ThrowIfCancellationRequested();
 
         lock (PdfiumRuntime.NativeGate)
@@ -56,7 +56,7 @@ public sealed partial class PdfDocumentSession
                     if (rect is null)
                         continue;
 
-                    links.Add(ReadPageLink(pageIndex, rect, nativeLink));
+                    links.Add(ReadPageLink(pageIndex, rect.Value, nativeLink));
                 }
 
                 return links;
