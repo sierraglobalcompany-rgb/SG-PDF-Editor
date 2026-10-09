@@ -13,17 +13,7 @@ public sealed class PdfImageObjectDiscoveryTests
         using var fixture = ImageEditPdfFixtureFactory.CreateImageWithVectorNeighbor();
         using var session = PdfDocumentSession.Open(fixture.Path);
 
-        var method = typeof(PdfDocumentSession).GetMethod(
-            "GetImageObjects",
-            BindingFlags.Instance | BindingFlags.NonPublic);
-
-        Assert.NotNull(method);
-
-        var result = Assert.IsAssignableFrom<IEnumerable>(
-            method!.Invoke(session, new object?[] { 0, CancellationToken.None }));
-        var items = result.Cast<object>().ToArray();
-
-        var image = Assert.Single(items);
+        var image = GetSingleImage(session);
         Assert.Equal(0, Read<int>(image, "PageIndex"));
         Assert.True(Read<int>(image, "PageObjectIndex") >= 0);
 
@@ -44,6 +34,43 @@ public sealed class PdfImageObjectDiscoveryTests
         Assert.Equal((uint)16, Read<uint>(metadata, "PixelWidth"));
         Assert.Equal((uint)10, Read<uint>(metadata, "PixelHeight"));
         Assert.True(Read<uint>(metadata, "BitsPerPixel") > 0);
+    }
+
+    [Fact]
+    public void ImageBitmap_IsCopiedToManagedBgraSnapshot()
+    {
+        using var fixture = ImageEditPdfFixtureFactory.CreateImageWithVectorNeighbor();
+        using var session = PdfDocumentSession.Open(fixture.Path);
+        var image = GetSingleImage(session);
+        var objectIndex = Read<int>(image, "PageObjectIndex");
+
+        var method = typeof(PdfDocumentSession).GetMethod(
+            "GetImageBitmap",
+            BindingFlags.Instance | BindingFlags.NonPublic);
+        Assert.NotNull(method);
+
+        var bitmap = Assert.IsAssignableFrom<object>(
+            method!.Invoke(session, new object?[] { 0, objectIndex, false, CancellationToken.None }));
+
+        Assert.Equal(16, Read<int>(bitmap, "PixelWidth"));
+        Assert.Equal(10, Read<int>(bitmap, "PixelHeight"));
+        var stride = Read<int>(bitmap, "Stride");
+        Assert.True(stride >= 16 * 4);
+        var pixels = Read<ReadOnlyMemory<byte>>(bitmap, "BgraPixels");
+        Assert.Equal(stride * 10, pixels.Length);
+        Assert.Contains(pixels.Span.ToArray(), value => value != 0);
+    }
+
+    private static object GetSingleImage(PdfDocumentSession session)
+    {
+        var method = typeof(PdfDocumentSession).GetMethod(
+            "GetImageObjects",
+            BindingFlags.Instance | BindingFlags.NonPublic);
+        Assert.NotNull(method);
+
+        var result = Assert.IsAssignableFrom<IEnumerable>(
+            method!.Invoke(session, new object?[] { 0, CancellationToken.None }));
+        return Assert.Single(result.Cast<object>());
     }
 
     private static T Read<T>(object target, string propertyName)
