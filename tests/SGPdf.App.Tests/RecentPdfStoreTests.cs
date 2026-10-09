@@ -98,9 +98,9 @@ public sealed class RecentPdfStoreTests
         fileOps.ReplaceFile = (_, _) => throw new IOException("synthetic replace failure");
         var failingStore = new RecentPdfStore(fixture.RootPath, fileOps);
 
-        Assert.Throws<IOException>(() => failingStore.RecordSuccessfulOpen(
+        Assert.Throws<IOException>((Action)(() => failingStore.RecordSuccessfulOpen(
             Path.Combine(fixture.SourcePath, "second.pdf"),
-            DateTimeOffset.UtcNow));
+            DateTimeOffset.UtcNow)));
         Assert.Equal(previous, File.ReadAllText(manifestPath));
     }
 
