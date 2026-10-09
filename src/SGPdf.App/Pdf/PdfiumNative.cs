@@ -189,6 +189,22 @@ internal static class PdfiumNative
     internal static extern int FPDF_GetFormType(IntPtr document);
 
     [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern uint FPDF_CountNamedDests(IntPtr document);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern int FPDFCatalog_IsTagged(IntPtr document);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern int FPDFDoc_GetAttachmentCount(IntPtr document);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern uint FPDF_GetPageLabel(
+        IntPtr document,
+        int pageIndex,
+        IntPtr buffer,
+        uint buflen);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
     internal static extern uint FPDF_GetMetaText(
         IntPtr document,
         [MarshalAs(UnmanagedType.LPUTF8Str)] string tag,
