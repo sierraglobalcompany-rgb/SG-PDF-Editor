@@ -89,65 +89,65 @@ internal sealed class OrganizePreflightInspector
         cancellationToken.ThrowIfCancellationRequested();
         if (session.GetOrganizeFormType(cancellationToken) != 0)
         {
-            findings.Add(CreateUnknownWarning(
+            findings.Add(CreateChangedOrLostWarning(
                 OrganizeFindingKind.Form,
-                "El PDF contiene un formulario; su preservación todavía no está demostrada."));
+                "El PDF contiene un formulario. La escritura estructural actual cambia o pierde esta estructura; confirma para continuar."));
         }
 
         cancellationToken.ThrowIfCancellationRequested();
         if (session.GetBookmarks(cancellationToken).Count > 0)
         {
-            findings.Add(CreateUnknownWarning(
+            findings.Add(CreateChangedOrLostWarning(
                 OrganizeFindingKind.Bookmark,
-                "El PDF contiene marcadores; su preservación todavía no está demostrada."));
+                "El PDF contiene marcadores. La escritura estructural actual cambia o pierde esta estructura; confirma para continuar."));
         }
 
         cancellationToken.ThrowIfCancellationRequested();
         if (session.HasOrganizeNamedDestinations(cancellationToken))
         {
-            findings.Add(CreateUnknownWarning(
+            findings.Add(CreateChangedOrLostWarning(
                 OrganizeFindingKind.NamedDestination,
-                "El PDF contiene destinos nombrados; su preservación todavía no está demostrada."));
+                "El PDF contiene destinos nombrados. La escritura estructural actual cambia o pierde esta estructura; confirma para continuar."));
         }
 
         cancellationToken.ThrowIfCancellationRequested();
         if (ContainsInternalLink(session, cancellationToken))
         {
-            findings.Add(CreateUnknownWarning(
+            findings.Add(CreateChangedOrLostWarning(
                 OrganizeFindingKind.InternalLink,
-                "El PDF contiene enlaces internos; su preservación todavía no está demostrada."));
+                "El PDF contiene enlaces internos. La escritura estructural actual cambia o pierde esta estructura; confirma para continuar."));
         }
 
         cancellationToken.ThrowIfCancellationRequested();
         if (session.IsOrganizeTagged(cancellationToken))
         {
-            findings.Add(CreateUnknownWarning(
+            findings.Add(CreateChangedOrLostWarning(
                 OrganizeFindingKind.TaggedStructure,
-                "El PDF contiene estructura etiquetada; su preservación todavía no está demostrada."));
+                "El PDF contiene estructura etiquetada. La escritura estructural actual cambia o pierde esta estructura; confirma para continuar."));
         }
 
         cancellationToken.ThrowIfCancellationRequested();
         if (session.HasOrganizePageLabels(cancellationToken))
         {
-            findings.Add(CreateUnknownWarning(
+            findings.Add(CreateChangedOrLostWarning(
                 OrganizeFindingKind.PageLabel,
-                "El PDF contiene etiquetas de página; su preservación todavía no está demostrada."));
+                "El PDF contiene etiquetas de página. La escritura estructural actual cambia o pierde esta estructura; confirma para continuar."));
         }
 
         cancellationToken.ThrowIfCancellationRequested();
         if (session.HasOrganizeAttachments(cancellationToken))
         {
-            findings.Add(CreateUnknownWarning(
+            findings.Add(CreateChangedOrLostWarning(
                 OrganizeFindingKind.Attachment,
-                "El PDF contiene archivos adjuntos; su preservación todavía no está demostrada."));
+                "El PDF contiene archivos adjuntos. La escritura estructural actual cambia o pierde esta estructura; confirma para continuar."));
         }
 
         cancellationToken.ThrowIfCancellationRequested();
         if (session.HasOrganizeMetadata(cancellationToken))
         {
-            findings.Add(CreateUnknownWarning(
+            findings.Add(CreateChangedOrLostWarning(
                 OrganizeFindingKind.Metadata,
-                "El PDF contiene metadatos; su preservación todavía no está demostrada."));
+                "El PDF contiene metadatos. La copia estructural actual no preserva los valores originales de metadatos; confirma para continuar."));
         }
 
         cancellationToken.ThrowIfCancellationRequested();
@@ -184,7 +184,7 @@ internal sealed class OrganizePreflightInspector
         return false;
     }
 
-    private static OrganizeFinding CreateUnknownWarning(
+    private static OrganizeFinding CreateChangedOrLostWarning(
         OrganizeFindingKind kind,
         string message)
     {
@@ -192,6 +192,6 @@ internal sealed class OrganizePreflightInspector
             kind,
             OrganizeFindingSeverity.Warning,
             message,
-            OrganizePreservationStatus.Unknown);
+            OrganizePreservationStatus.ProvenChangedOrLost);
     }
 }
