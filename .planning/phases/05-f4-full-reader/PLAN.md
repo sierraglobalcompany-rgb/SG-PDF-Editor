@@ -1,6 +1,6 @@
 # Phase 5 — F4 Full Reader
 
-**Status:** design + implementation plan approved; Tasks 1–7 automated PASS; Task 8 next.  
+**Status:** design + implementation plan approved; Tasks 1–8 automated PASS; Task 9 closure next.  
 **Branch:** `feat/f4-full-reader`  
 **Base:** F3.4 closure `1bef751962e0b4aaf35fbda9b8a1a9a2ee2ba36b`
 
@@ -73,16 +73,22 @@
 7. **DONE / AUTO PASS** — Bookmarks + safe explicit PDF links.
    - Clean contract RED head `502ed9ea3722bd8eb45d796e51d9f57a5969e03d`.
    - RED CI `37872082122`: expected build failure with exactly 2 missing navigation-model errors; 0 warnings.
-   - Intermediate GREEN CI `37872367149`: compile failed only on three localized integration mistakes; no runtime/safety redesign required.
    - Functional/verified head `e85f8c783eaf327c6e133fef172aeda198cfe1bf`.
    - CI `37872707082`: PASS; 399 tests; 0 failures; build 0 warnings / 0 errors.
-   - Delivered `PdfBookmarkNode` / `PdfPageLink`, read-only PDFium bookmark/action/link extraction behind `NativeGate`, UTF-16 bookmark titles, strict bounded UTF-8 URI extraction, cycle/repeated-handle guard, max depth 128, max 10,000 accepted nodes and cancellation.
-   - Existing `ReaderBookmarksTree` is populated hierarchically; valid bookmarks and internal GOTO annotations navigate only inside the current PDF.
-   - URI actions are accepted only when absolute `http`/`https`; the exact URL is confirmed before the OS-browser seam. Launch, JavaScript, remote GOTO, file/shell and other/non-HTTP actions never execute and are unsupported/no-op.
-   - Link metadata is loaded lazily for visible pages, stored as PDF-coordinate rectangles and reprojected on geometry/zoom changes. The link overlay is non-hit-testable; click-like motion is required so text-selection drag wins.
+   - Delivered read-only bounded bookmark tree, current-document GOTO, explicit link annotations and confirmed HTTP/HTTPS only. Unsafe/unsupported actions never execute.
    - Scope vs Task 6 closure `a54a299371b2ca745e493499ffa284850ed1b9c6`: exactly 8 Task 7 code/test files; no package/lock, F3, ZPL, print, recents, database or required-network changes.
-8. **NEXT** — Shortcuts + atomic recent files + offline hardening.
-9. Closure audit/docs + exact-head CI + draft stacked PR.
+8. **DONE / AUTO PASS** — Shortcuts + atomic recent files + offline hardening.
+   - Clean recent-store RED head `9f35ca757e9ca57306b5b2ae222dad395ff43958`; CI `37873804490`: build failed only on 9 missing recent-store contracts; 0 warnings.
+   - Recent-store GREEN head `e03486e2e6b1347450328ad1fe2c81c3f960a92a`; CI `37874120048`: PASS; 406 tests; build 0 warnings / 0 errors.
+   - Recent-menu RED head `2f6e5d2982b83e827d668359bed20d7da7a93a68`; CI `37874355272`: build clean; 406 prior PASS / 4 expected new failures.
+   - Recent-menu GREEN head `cffaa2b2a05f9387bb47b81f78b6f90532061c56`; CI `37874690176`: PASS; 410 tests; build 0 warnings / 0 errors.
+   - Shortcut RED head `9228d45d7cc3801117d2e9a4521b7b576c65e395`; CI `37874910978`: build clean; 410 prior PASS / 7 expected new failures.
+   - Functional/verified head `02c979f2dbd6a0d62154ccb7f85d9d64bf9ee67d`; CI `37875513602`: PASS; **417 tests; 0 failures; build 0 warnings / 0 errors**.
+   - Delivered versioned atomic `recent-files.json` under LocalAppData, normalized OrdinalIgnoreCase dedupe, newest-first max 10, corruption-safe non-destructive reads, same-volume temp publication, clear metadata-only, JSON-only menu rebuild and target probing only after explicit stale-recent selection fails.
+   - Standard reader shortcuts delivered: Ctrl+O/P/F/C, Ctrl++/−/0, Home/End and PageUp/PageDown by exactly one viewport. Editable TextBox/PasswordBox/editable ComboBox retain keyboard ownership. Ctrl+O resolves dirty F3 edits first; existing F3 Enter/Delete guards remain untouched and authoritative.
+   - Offline hardening extends package/source checks to reject WebView2 in addition to existing network clients/remote navigation. No network runtime was added; explicit confirmed HTTP/HTTPS links still leave through the already-approved OS browser seam only.
+   - Scope vs Task 7 closure `9240a849e6233cfa50f3199a82ecc05698cf5e0e`: exactly 11 Task 8 code/test files; no package/lock, F3, ZPL, print implementation, PDFium or Task 9 changes.
+9. **NEXT** — Closure audit/docs + exact-head CI + draft stacked PR.
 
 Each task is RED → confirm expected failure → minimal GREEN → focused regression → full exact-head CI. Project cadence is one task per user `continúa` unless the user explicitly changes it.
 
@@ -95,7 +101,7 @@ Each task is RED → confirm expected failure → minimal GREEN → focused regr
 - stale search generation, Unicode extraction and active-match-only highlight — covered by Task 5 automated PASS;
 - one-page selection range, cross-page rejection, zoom reprojection, Unicode clipboard and future-link precedence — covered by Task 6 automated PASS;
 - cyclic/deep/oversized bookmark outline, unsupported action no-op and confirmed HTTP/HTTPS only — covered by Task 7 automated PASS;
-- UNC/stale recent paths never probed merely by opening the menu.
+- atomic recents, stale/UNC menu non-probing, guarded standard shortcuts and WebView2/network absence — covered by Task 8 automated PASS.
 
 ## Stop Conditions
 
@@ -114,16 +120,15 @@ Return to design before continuing if implementation appears to require:
 
 ## Manual QA
 
-Manual Windows performance/UX/offline QA is a separate gate and remains **NOT RUN** until actually executed. Automated PASS never implies physical/manual PASS. Protected-PDF, real text-search/Unicode, real mouse text-selection/copy/zoom, and real bookmark/internal-link/external-link confirmation QA are still **NOT RUN** physically.
+Manual Windows performance/UX/offline QA is a separate gate and remains **NOT RUN** until actually executed. Automated PASS never implies physical/manual PASS. Protected-PDF, real text-search/Unicode, real mouse text-selection/copy/zoom, real bookmark/link confirmation, and real shortcuts/recents/offline UX QA are still **NOT RUN** physically.
 
 ## Current Gate
 
 ```text
-Tasks 1–7 AUTO PASS
+Tasks 1–8 AUTO PASS
 → next user `continúa`
-→ Task 8 RED for keyboard shortcuts + atomic max-10 recents + no menu/startup path probing
-→ confirm expected RED
-→ minimal GREEN shortcuts/recents/offline hardening
-→ exact-head full CI
-→ report evidence and stop before Task 9 closure
+→ Task 9 closure audit across the full F4 branch
+→ closure docs/history + exact-head CI
+→ open draft stacked PR only after closure evidence
+→ stop without merge to main
 ```
