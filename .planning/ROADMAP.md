@@ -33,7 +33,7 @@ Delivered: parse/open, Labelize preview, quantities/dimensions, layout/PDF expor
 ## Phase 5 — F4 Lector Completo
 **Goal:** continuous scroll, thumbnails, bookmarks/links, search/copy text, password PDFs, shortcuts and recent files while preserving F3 page-local editing.
 
-**Current gate:** design + TDD plan **APPROVED**. **Tasks 1–7 AUTO PASS**; Task 8 waits for the next user `continúa`.
+**Current gate:** design + TDD plan **APPROVED**. **Tasks 1–8 AUTO PASS**; Task 9 closure is next.
 
 - Design: `docs/superpowers/specs/2026-10-08-f4-full-reader-design.md`.
 - Plan: `docs/superpowers/plans/2026-10-08-f4-full-reader.md`.
@@ -43,11 +43,15 @@ Delivered: parse/open, Labelize preview, quantities/dimensions, layout/PDF expor
 - Task 4 final head: `c27dfa738d946147bec5cb48c4e7ab2afde776bc`; CI `37857787178` PASS; 346 tests PASS; build 0 warnings / 0 errors.
 - Task 5 functional/verified head: `984545a8e8b6b098a55dad55b5059aa4c6020b3b`; CI `37867206589` PASS; 368 tests PASS; build 0 warnings / 0 errors.
 - Task 6 functional/verified head: `0a5a8cff5677956b3498ec333c5b4d76f59e0180`; CI `37870778333` PASS; 379 tests PASS; build 0 warnings / 0 errors.
-- Task 7 clean RED head: `502ed9ea3722bd8eb45d796e51d9f57a5969e03d`; CI `37872082122` expected build failure with 2 missing navigation-model errors and 0 warnings.
-- Task 7 functional/verified head: `e85f8c783eaf327c6e133fef172aeda198cfe1bf`.
-- Task 7 CI: `37872707082` PASS.
-- Task 7 verification: Release build 0 warnings / 0 errors; 399 tests PASS.
-- Task 7 scope/security: exactly 8 code/test files; bounded read-only bookmarks, current-PDF GOTO and explicit confirmed HTTP/HTTPS only. Launch, JavaScript, remote GOTO, file/shell and non-HTTP schemes never execute. No package/lock, F3, ZPL, print, recents, database or required-network changes.
+- Task 7 functional/verified head: `e85f8c783eaf327c6e133fef172aeda198cfe1bf`; CI `37872707082` PASS; 399 tests PASS; build 0 warnings / 0 errors.
+- Task 8 recent-store RED head: `9f35ca757e9ca57306b5b2ae222dad395ff43958`; CI `37873804490` expected build failure only for missing recent-store contracts; 0 warnings.
+- Task 8 recent-store GREEN head: `e03486e2e6b1347450328ad1fe2c81c3f960a92a`; CI `37874120048` PASS; 406 tests PASS; build 0 warnings / 0 errors.
+- Task 8 recent-menu RED head: `2f6e5d2982b83e827d668359bed20d7da7a93a68`; CI `37874355272` expected 4 new failures while 406 prior tests passed; build 0 warnings / 0 errors.
+- Task 8 recent-menu GREEN head: `cffaa2b2a05f9387bb47b81f78b6f90532061c56`; CI `37874690176` PASS; 410 tests PASS; build 0 warnings / 0 errors.
+- Task 8 shortcut RED head: `9228d45d7cc3801117d2e9a4521b7b576c65e395`; CI `37874910978` expected 7 new failures while 410 prior tests passed; build 0 warnings / 0 errors.
+- Task 8 functional/verified head: `02c979f2dbd6a0d62154ccb7f85d9d64bf9ee67d`; CI `37875513602` PASS; **417 tests PASS; build 0 warnings / 0 errors**.
+- Task 8 delivered atomic max-10 recents, JSON-only menu rebuild with no stored-path probing, explicit-click stale cleanup, Ctrl+O/P/F/C/+/-/0, Home/End, exact one-viewport PageUp/PageDown, editable-control precedence, F3 dirty-open guard precedence and offline/WebView2 hardening.
+- Task 8 scope vs Task 7 closure `9240a849e6233cfa50f3199a82ecc05698cf5e0e`: exactly 11 Task 8 code/test files; no package/lock, F3, ZPL, print implementation, PDFium or Task 9 changes.
 
 Implementation tasks:
 
@@ -58,10 +62,10 @@ Implementation tasks:
 5. **F4.4a Search — AUTO PASS** — PDFium Unicode text primitives, page-by-page on-demand find navigation, Ctrl+F/Enter/Shift+Enter/Escape, active-match highlight and stale-search suppression; no OCR/index.
 6. **F4.4b Copy — AUTO PASS** — one-page PDF-coordinate drag selection, cross-page rejection, automatic zoom reprojection and exact Unicode clipboard copy; independent from F3 signature geometry.
 7. **F4.5 Bookmarks + Links — AUTO PASS** — read-only bounded outline, internal GOTO, explicit link annotations and confirmed HTTP/HTTPS only; unsafe/unsupported PDF actions are no-op.
-8. **F4.6 Shortcuts + Recents + Hardening — NEXT** — local atomic max-10 recents, no startup path probing.
-9. **Closure** — audit/docs/exact-head CI/draft stacked PR.
+8. **F4.6 Shortcuts + Recents + Hardening — AUTO PASS** — local atomic max-10 recents, no menu/startup path probing, guarded standard shortcuts and offline/WebView2 regression barriers.
+9. **Closure — NEXT** — audit/docs/exact-head CI/draft stacked PR.
 
-Frozen rulings: PDFium only; continuous LEER + single-page FIRMAR; existing `PdfScrollViewer` remains the legacy FIRMAR/ZPL host; visible+one-neighbor full-resolution retention; lazy thumbnails; search page-by-page without permanent index; one-page selection uses `PdfPageDeviceTransform` and stored PDF text rects; bookmarks max 10,000/depth 128 with repeated-handle rejection; only current-document GOTO and confirmed HTTP/HTTPS explicit annotations activate; no tabs; no OCR; no second PDF engine; no required network; passwords are transient only and never persisted.
+Frozen rulings: PDFium only; continuous LEER + single-page FIRMAR; existing `PdfScrollViewer` remains the legacy FIRMAR/ZPL host; visible+one-neighbor full-resolution retention; lazy thumbnails; search page-by-page without permanent index; one-page selection uses `PdfPageDeviceTransform` and stored PDF text rects; bookmarks max 10,000/depth 128 with repeated-handle rejection; only current-document GOTO and confirmed HTTP/HTTPS explicit annotations activate; recents max 10 in atomic LocalAppData JSON with no menu/startup target probing; no tabs; no OCR; no second PDF engine; no required network; passwords are transient only and never persisted.
 
 ## Phase 6 — F5 Organizar
 **Goal:** reorder/rotate/delete/duplicate/insert/extract/merge/split with preservation preflight.  
@@ -98,9 +102,9 @@ F0                            automated PASS / physical QA pending
 F1                            synthetic Gate PASS / private corpus pending
 F2.1–F2.6                     automated PASS / private + physical QA pending
 F3.1–F3.4                     automated PASS / corresponding manual QA pending
-F4 Task 1–7                   automated PASS
-F4 Task 8–9                   pending
+F4 Task 1–8                   automated PASS
+F4 Task 9                     pending
 F5–F12                        pending
 ```
 
-Next gate: **Task 8 only after the next user `continúa`**. No merge to `main` without explicit user approval.
+Next gate: **Task 9 closure only after the next user `continúa`**. No merge to `main` without explicit user approval.
