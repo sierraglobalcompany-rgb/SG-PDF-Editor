@@ -35,7 +35,7 @@ public sealed class PdfOrganizeWriterTests
         Assert.NotEmpty(output.FindTextOnPage(1, "ONE"));
         Assert.NotEmpty(output.FindTextOnPage(2, "ONE"));
         Assert.Empty(output.FindTextOnPage(0, "TWO"));
-        Assert.Equal(new[] { 3, 0, 1 }, Enumerable.Range(0, 3).Select(output.GetPageRotation).ToArray());
+        Assert.Equal(new[] { 3, 0, 1 }, Enumerable.Range(0, 3).Select(index => output.GetPageRotation(index)).ToArray());
     }
 
     [Fact]
@@ -46,11 +46,11 @@ public sealed class PdfOrganizeWriterTests
         var plan = OrganizePlan.FromPrimarySource(source);
         var original = File.ReadAllBytes(fixture.Path);
 
-        Assert.Throws<ArgumentException>(() => new PdfOrganizeWriter().SaveAsCopy(
+        Assert.Throws<ArgumentException>((Action)(() => new PdfOrganizeWriter().SaveAsCopy(
             plan,
             fixture.Path,
             fixture.Path,
-            warningsConfirmed: false));
+            warningsConfirmed: false)));
 
         Assert.Equal(original, File.ReadAllBytes(fixture.Path));
     }
@@ -71,11 +71,11 @@ public sealed class PdfOrganizeWriterTests
         else
             File.AppendAllText(fixture.Path, "\n% changed after capture\n");
 
-        Assert.ThrowsAny<Exception>(() => new PdfOrganizeWriter().SaveAsCopy(
+        Assert.ThrowsAny<Exception>((Action)(() => new PdfOrganizeWriter().SaveAsCopy(
             plan,
             fixture.Path,
             destination,
-            warningsConfirmed: false));
+            warningsConfirmed: false)));
 
         Assert.Equal("KEEP", File.ReadAllText(destination));
         AssertNoTempResidue(destination);
@@ -94,11 +94,11 @@ public sealed class PdfOrganizeWriterTests
             validateOutputOverride: null,
             preflightOverride: null);
 
-        Assert.Throws<InvalidOperationException>(() => writer.SaveAsCopy(
+        Assert.Throws<InvalidOperationException>((Action)(() => writer.SaveAsCopy(
             plan,
             fixture.Path,
             destination,
-            warningsConfirmed: false));
+            warningsConfirmed: false)));
 
         Assert.Equal("KEEP", File.ReadAllText(destination));
         AssertNoTempResidue(destination);
@@ -117,11 +117,11 @@ public sealed class PdfOrganizeWriterTests
             validateOutputOverride: static (_, _, _) => throw new InvalidDataException("forced validation failure"),
             preflightOverride: null);
 
-        Assert.Throws<InvalidDataException>(() => writer.SaveAsCopy(
+        Assert.Throws<InvalidDataException>((Action)(() => writer.SaveAsCopy(
             plan,
             fixture.Path,
             destination,
-            warningsConfirmed: false));
+            warningsConfirmed: false)));
 
         Assert.Equal("KEEP", File.ReadAllText(destination));
         AssertNoTempResidue(destination);
@@ -148,11 +148,11 @@ public sealed class PdfOrganizeWriterTests
             validateOutputOverride: null,
             preflightOverride: (_, _) => block);
 
-        Assert.Throws<InvalidOperationException>(() => writer.SaveAsCopy(
+        Assert.Throws<InvalidOperationException>((Action)(() => writer.SaveAsCopy(
             plan,
             fixture.Path,
             destination,
-            warningsConfirmed: true));
+            warningsConfirmed: true)));
 
         Assert.Equal("KEEP", File.ReadAllText(destination));
         AssertNoTempResidue(destination);
@@ -167,11 +167,11 @@ public sealed class PdfOrganizeWriterTests
         var destination = Path.Combine(fixture.DirectoryPath, "existing-protected.pdf");
         File.WriteAllText(destination, "KEEP");
 
-        Assert.Throws<InvalidOperationException>(() => new PdfOrganizeWriter().SaveAsCopy(
+        Assert.Throws<InvalidOperationException>((Action)(() => new PdfOrganizeWriter().SaveAsCopy(
             plan,
             fixture.Path,
             destination,
-            warningsConfirmed: true));
+            warningsConfirmed: true)));
 
         Assert.Equal("KEEP", File.ReadAllText(destination));
         AssertNoTempResidue(destination);
@@ -187,11 +187,11 @@ public sealed class PdfOrganizeWriterTests
         var allowed = Path.Combine(fixture.DirectoryPath, "warning-allowed.pdf");
         var writer = new PdfOrganizeWriter();
 
-        Assert.Throws<InvalidOperationException>(() => writer.SaveAsCopy(
+        Assert.Throws<InvalidOperationException>((Action)(() => writer.SaveAsCopy(
             plan,
             fixture.Path,
             denied,
-            warningsConfirmed: false));
+            warningsConfirmed: false)));
         Assert.False(File.Exists(denied));
         AssertNoTempResidue(denied);
 
