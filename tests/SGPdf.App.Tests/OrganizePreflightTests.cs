@@ -59,7 +59,7 @@ public sealed class OrganizePreflightTests
         var result = Inspect(session, signatureReader);
 
         Assert.False(ReadBool(result, "CanProceed"));
-        AssertFinding(result, "CryptographicSignature", "Block", expectedPreservation: null);
+        AssertFinding(result, "CryptographicSignature", "Block", "Unknown");
     }
 
     [Fact]
@@ -71,11 +71,11 @@ public sealed class OrganizePreflightTests
         var result = Inspect(session);
 
         Assert.False(ReadBool(result, "CanProceed"));
-        AssertFinding(result, "PasswordProtectedSource", "Block", expectedPreservation: null);
+        AssertFinding(result, "PasswordProtectedSource", "Block", "Unknown");
     }
 
     [Fact]
-    public void BookmarksAndInternalLinks_AreWarningsWithUnknownPreservation()
+    public void BookmarksAndInternalLinks_AreWarningsWithProvenLossEvidence()
     {
         using var fixture = OrganizePdfFixtureFactory.CreateNavigation();
         using var session = PdfDocumentSession.Open(fixture.Path);
@@ -84,12 +84,12 @@ public sealed class OrganizePreflightTests
 
         Assert.True(ReadBool(result, "CanProceed"));
         Assert.True(ReadBool(result, "RequiresWarningConfirmation"));
-        AssertFinding(result, "Bookmark", "Warning", "Unknown");
-        AssertFinding(result, "InternalLink", "Warning", "Unknown");
+        AssertFinding(result, "Bookmark", "Warning", "ProvenChangedOrLost");
+        AssertFinding(result, "InternalLink", "Warning", "ProvenChangedOrLost");
     }
 
     [Fact]
-    public void Form_IsWarningUnknown_WhenDetected()
+    public void Form_IsWarningChangedOrLost_WhenDetected()
     {
         using var fixture = OrganizePdfFixtureFactory.CreateAcroForm();
         using var session = PdfDocumentSession.Open(fixture.Path);
@@ -98,11 +98,11 @@ public sealed class OrganizePreflightTests
 
         Assert.True(ReadBool(result, "CanProceed"));
         Assert.True(ReadBool(result, "RequiresWarningConfirmation"));
-        AssertFinding(result, "Form", "Warning", "Unknown");
+        AssertFinding(result, "Form", "Warning", "ProvenChangedOrLost");
     }
 
     [Fact]
-    public void Metadata_IsWarningUnknown_WhenDetected()
+    public void Metadata_IsWarningChangedOrLost_WhenDetected()
     {
         using var fixture = OrganizePdfFixtureFactory.CreateMetadata();
         using var session = PdfDocumentSession.Open(fixture.Path);
@@ -111,7 +111,7 @@ public sealed class OrganizePreflightTests
 
         Assert.True(ReadBool(result, "CanProceed"));
         Assert.True(ReadBool(result, "RequiresWarningConfirmation"));
-        AssertFinding(result, "Metadata", "Warning", "Unknown");
+        AssertFinding(result, "Metadata", "Warning", "ProvenChangedOrLost");
     }
 
     [Fact]
