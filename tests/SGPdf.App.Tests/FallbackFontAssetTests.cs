@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using System.Windows.Media;
@@ -43,19 +44,44 @@ public sealed class FallbackFontAssetTests
     [Fact]
     public void FallbackFontAsset_ProductionTypeAndMemoryGuardExist()
     {
-        var assembly = typeof(SGPdf.App.Pdf.PdfDocumentSession).Assembly;
-        var type = assembly.GetType("SGPdf.App.Features.Edit.Text.FallbackFontAsset");
-        Assert.NotNull(type);
+        var type = ResolveAssetType();
 
-        Assert.NotNull(type!.GetMethod(
-            "LoadBytes",
-            System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic));
-        Assert.NotNull(type.GetMethod(
-            "SupportsRune",
-            System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic));
-        Assert.NotNull(type.GetMethod(
-            "GetGlyphId",
-            System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic));
+        Assert.NotNull(type.GetMethod("LoadBytes", BindingFlags.Static | BindingFlags.NonPublic));
+        Assert.NotNull(type.GetMethod("SupportsRune", BindingFlags.Static | BindingFlags.NonPublic));
+        Assert.NotNull(type.GetMethod("GetGlyphId", BindingFlags.Static | BindingFlags.NonPublic));
+        Assert.NotNull(type.GetMethod("ReadValidatedBytes", BindingFlags.Static | BindingFlags.NonPublic));
+    }
+
+    [Fact]
+    public void FallbackFontAsset_RejectsFileAboveTwoMiBBeforeRead()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), $"sgpdf-f7-font-guard-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(directory);
+        var path = Path.Combine(directory, "oversized.ttf");
+        try
+        {
+            using (var stream = new FileStream(path, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+                stream.SetLength((2L * 1024L * 1024L) + 1L);
+
+            var method = ResolveAssetType().GetMethod(
+                "ReadValidatedBytes",
+                BindingFlags.Static | BindingFlags.NonPublic);
+            Assert.NotNull(method);
+
+            var error = Assert.Throws<TargetInvocationException>(() => method!.Invoke(null, new object[] { path }));
+            Assert.IsType<NotSupportedException>(error.InnerException);
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    private static Type ResolveAssetType()
+    {
+        var assembly = typeof(SGPdf.App.Pdf.PdfDocumentSession).Assembly;
+        return assembly.GetType("SGPdf.App.Features.Edit.Text.FallbackFontAsset")
+            ?? throw new Xunit.Sdk.XunitException("FallbackFontAsset production type is missing.");
     }
 
     private static string ResolveOutputFontPath() =>
