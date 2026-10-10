@@ -6,9 +6,6 @@ namespace SGPdf.App;
 
 public partial class MainWindow
 {
-    private static readonly bool ImageEditHardeningLoadedHookRegistered = RegisterImageEditHardeningLoadedHook();
-
-    private bool _imageEditHardeningUiInitialized;
     private Func<bool> _confirmDiscardImageEditChanges = static () =>
         MessageBox.Show(
             "Hay cambios de imagen sin guardar.\n\n¿Deseas descartarlos y continuar?",
@@ -16,31 +13,8 @@ public partial class MainWindow
             MessageBoxButton.YesNo,
             MessageBoxImage.Warning) == MessageBoxResult.Yes;
 
-    private static bool RegisterImageEditHardeningLoadedHook()
+    private void WireImageEditGuards()
     {
-        EventManager.RegisterClassHandler(
-            typeof(MainWindow),
-            FrameworkElement.LoadedEvent,
-            new RoutedEventHandler(ImageEditHardeningHost_Loaded),
-            handledEventsToo: true);
-        return true;
-    }
-
-    private static void ImageEditHardeningHost_Loaded(object sender, RoutedEventArgs e)
-    {
-        if (sender is MainWindow window)
-            window.InitializeImageEditHardeningUi();
-    }
-
-    private void InitializeImageEditHardeningUi()
-    {
-        if (_imageEditHardeningUiInitialized)
-            return;
-
-        _imageEditHardeningUiInitialized = true;
-        _ = ImageEditHardeningLoadedHookRegistered;
-        InitializeImageEditUi();
-
         if (_readModeButton is not null)
             _readModeButton.PreviewMouseLeftButtonDown += GuardedImageEditModeButton_PreviewMouseLeftButtonDown;
         if (_signModeButton is not null)

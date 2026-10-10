@@ -101,6 +101,7 @@ public partial class MainWindow
             _organizeModeButton.Click += ExistingModeAfterImageEdit_Click;
 
         PreviewKeyDown += ImageEditHost_PreviewKeyDown;
+        WireImageEditGuards();
     }
 
     private async void ImageEditMode_Click(object sender, RoutedEventArgs e)
