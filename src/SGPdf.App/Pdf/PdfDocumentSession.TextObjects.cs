@@ -153,20 +153,34 @@ public sealed partial class PdfDocumentSession
 
     private static string ReadTextObjectText(IntPtr textObject, IntPtr textPage)
     {
-        var required = PdfiumNative.FPDFTextObj_GetText(textObject, textPage, IntPtr.Zero, 0);
-        if (required == 0 || required > int.MaxValue)
+        var requiredBytes = PdfiumNative.FPDFTextObj_GetText(textObject, textPage, IntPtr.Zero, 0);
+        if (requiredBytes == 0 ||
+            requiredBytes > int.MaxValue ||
+            requiredBytes % sizeof(ushort) != 0)
+        {
             return string.Empty;
+        }
 
-        var charCapacity = checked((int)required);
-        var buffer = Marshal.AllocHGlobal(checked(charCapacity * sizeof(ushort)));
+        var buffer = Marshal.AllocHGlobal(checked((int)requiredBytes));
         try
         {
-            var copied = PdfiumNative.FPDFTextObj_GetText(textObject, textPage, buffer, required);
-            if (copied == 0 || copied > required)
+            var copiedBytes = PdfiumNative.FPDFTextObj_GetText(
+                textObject,
+                textPage,
+                buffer,
+                requiredBytes);
+            if (copiedBytes == 0 ||
+                copiedBytes > requiredBytes ||
+                copiedBytes > int.MaxValue ||
+                copiedBytes % sizeof(ushort) != 0)
+            {
                 return string.Empty;
+            }
 
-            var raw = new short[checked((int)copied)];
+            var charCount = checked((int)copiedBytes / sizeof(ushort));
+            var raw = new short[charCount];
             Marshal.Copy(buffer, raw, 0, raw.Length);
+
             var length = raw.Length;
             while (length > 0 && raw[length - 1] == 0)
                 length--;
