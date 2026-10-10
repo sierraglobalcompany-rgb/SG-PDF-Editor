@@ -9,6 +9,7 @@ internal static class PdfiumNative
     internal const int FPDFBitmap_BGR = 2;
     internal const int FPDFBitmap_BGRx = 3;
     internal const int FPDFBitmap_BGRA = 4;
+    internal const int FPDF_PAGEOBJ_TEXT = 1;
     internal const int FPDF_PAGEOBJ_IMAGE = 3;
     internal const uint PDFACTION_UNSUPPORTED = 0;
     internal const uint PDFACTION_GOTO = 1;
@@ -154,6 +155,14 @@ internal static class PdfiumNative
         out QuadPointsF quadPoints);
 
     [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern int FPDFPageObj_GetFillColor(
+        IntPtr pageObject,
+        out uint red,
+        out uint green,
+        out uint blue,
+        out uint alpha);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
     internal static extern int FPDFPageObj_SetFillColor(
         IntPtr pageObject,
         uint red,
@@ -187,6 +196,25 @@ internal static class PdfiumNative
         IntPtr page,
         IntPtr pageObject,
         nuint index);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern uint FPDFTextObj_GetText(
+        IntPtr textObject,
+        IntPtr textPage,
+        IntPtr buffer,
+        uint length);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern int FPDFTextObj_GetFontSize(IntPtr textObject, out float size);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern IntPtr FPDFTextObj_GetFont(IntPtr textObject);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern nuint FPDFFont_GetBaseFontName(IntPtr font, IntPtr buffer, nuint length);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern int FPDFTextObj_GetTextRenderMode(IntPtr textObject);
 
     [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
     internal static extern IntPtr FPDFText_LoadPage(IntPtr page);
