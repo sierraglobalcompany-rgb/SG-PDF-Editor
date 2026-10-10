@@ -10,7 +10,7 @@ namespace SGPdf.App.Tests;
 public sealed class ImageEditOutputValidatorTests
 {
     [Fact]
-    public void Validate_CopyOfSource_RendersEveryPageSequentiallyAt36Dpi()
+    public void Validate_CopyOfSourceWithNoEdits_DoesNotRenderUneditedPages()
     {
         using var directory = Task5ImageTestFixture.CreateDirectory();
         var sourcePath = Path.Combine(directory.Path, "source.pdf");
@@ -23,9 +23,7 @@ public sealed class ImageEditOutputValidatorTests
 
         Validate(validator, outputPath, workspace);
 
-        Assert.Equal(3, rendered.Count);
-        Assert.Equal(new[] { 0, 1, 2 }, rendered.Select(item => item.PageIndex).ToArray());
-        Assert.All(rendered, item => Assert.Equal(36d, item.Dpi));
+        Assert.Empty(rendered);
     }
 
     [Fact]
