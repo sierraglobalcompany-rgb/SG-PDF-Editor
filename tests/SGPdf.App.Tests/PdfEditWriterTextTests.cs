@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Runtime.ExceptionServices;
+using System.Runtime.InteropServices;
 using SGPdf.App.Features.Edit.Images;
 using SGPdf.App.Features.Edit.Text;
 using SGPdf.App.Pdf;
@@ -30,6 +31,104 @@ public sealed class PdfEditWriterTextTests
         Assert.Equal(before.Alpha, after.Alpha);
         AssertMatrix(before.Matrix, after.Matrix);
         Assert.Equal(before.RenderMode, after.RenderMode);
+    }
+
+    [Fact]
+    public void SaveAs_FallbackTtf_ReopensExactUnicodeAtSameIndexAndPreservesGeometryStyle()
+    {
+        using var fixture = TextEditNativeCharacterizationHarness.CreateSimpleTextPdf();
+        var before = TextEditNativeCharacterizationHarness.InspectFirstText(fixture.Path);
+        var imageWorkspace = ImageEditWorkspace.Create(fixture.Path, sourceOpenedWithPassword: false);
+        var textWorkspace = CreateDirtyFallbackWorkspace(fixture.Path, "NIÑO áé");
+        var destination = fixture.NewOutputPath("fallback-cid-type2.pdf");
+
+        SaveCombined(CreateWriter(), imageWorkspace, textWorkspace, destination);
+
+        var after = TextEditNativeCharacterizationHarness.InspectFirstText(destination);
+        Assert.Equal("NIÑO áé", after.Text);
+        Assert.Equal(before.Index, after.Index);
+        Assert.Equal(before.FontSize, after.FontSize, precision: 3);
+        Assert.Equal(before.Red, after.Red);
+        Assert.Equal(before.Green, after.Green);
+        Assert.Equal(before.Blue, after.Blue);
+        Assert.Equal(before.Alpha, after.Alpha);
+        AssertMatrix(before.Matrix, after.Matrix);
+        Assert.Equal(before.RenderMode, after.RenderMode);
+
+        using var saved = PdfDocumentSession.Open(destination);
+        var rendered = saved.RenderPage(0, 36d);
+        Assert.True(rendered.PixelWidth > 0);
+        Assert.True(rendered.PixelHeight > 0);
+        Assert.NotEmpty(rendered.Pixels);
+    }
+
+    [Fact]
+    public void SaveAs_TwoFallbackEdits_LoadsOneCidType2FontAndReopensBothExactly()
+    {
+        using var fixture = PdfEditWriterTextFixtureFactory.CreateTwoTextObjects();
+        using var source = PdfDocumentSession.Open(fixture.Path);
+        var originals = source.GetTextObjects(0);
+        Assert.Equal(2, originals.Count);
+
+        var imageWorkspace = ImageEditWorkspace.Create(fixture.Path, sourceOpenedWithPassword: false);
+        var textWorkspace = TextEditWorkspace.Create(fixture.Path, sourceOpenedWithPassword: false);
+        foreach (var text in originals)
+            textWorkspace.EnsureObject(text);
+        CommitFallback(textWorkspace, originals[0], "NIÑO");
+        CommitFallback(textWorkspace, originals[1], "áé CASA");
+
+        var loadCalls = 0;
+        Func<IntPtr, IntPtr, uint, string, IntPtr, uint, IntPtr> loadFont =
+            (document, fontData, fontSize, cmap, cidToGid, cidToGidSize) =>
+            {
+                loadCalls++;
+                return FPDFText_LoadCidType2Font(
+                    document,
+                    fontData,
+                    fontSize,
+                    cmap,
+                    cidToGid,
+                    cidToGidSize);
+            };
+        var writer = CreateFallbackWriter(loadCidType2FontOverride: loadFont);
+        var destination = Path.Combine(fixture.DirectoryPath, "two-fallback.pdf");
+
+        SaveCombined(writer, imageWorkspace, textWorkspace, destination);
+
+        Assert.Equal(1, loadCalls);
+        using var saved = PdfDocumentSession.Open(destination);
+        var after = saved.GetTextObjects(0);
+        Assert.Equal(2, after.Count);
+        Assert.Equal("NIÑO", after[0].Text);
+        Assert.Equal("áé CASA", after[1].Text);
+    }
+
+    [Fact]
+    public void SaveAs_FallbackCancellationAfterRemove_DoesNotPublishAndCleansTemporaryFile()
+    {
+        using var fixture = TextEditNativeCharacterizationHarness.CreateSimpleTextPdf();
+        var imageWorkspace = ImageEditWorkspace.Create(fixture.Path, sourceOpenedWithPassword: false);
+        var textWorkspace = CreateDirtyFallbackWorkspace(fixture.Path, "NIÑO áé");
+        var destination = fixture.NewOutputPath("cancelled-fallback.pdf");
+        using var cts = new CancellationTokenSource();
+
+        Func<IntPtr, IntPtr, int> removeObject = (page, pageObject) =>
+        {
+            var isText = PdfiumNative.FPDFPageObj_GetType(pageObject) == PdfiumNative.FPDF_PAGEOBJ_TEXT;
+            var result = PdfiumNative.FPDFPage_RemoveObject(page, pageObject);
+            if (isText && result != 0)
+                cts.Cancel();
+            return result;
+        };
+        var writer = CreateFallbackWriter(removeObjectOverride: removeObject);
+
+        Assert.Throws<OperationCanceledException>(() =>
+            SaveCombined(writer, imageWorkspace, textWorkspace, destination, cts.Token));
+
+        Assert.False(File.Exists(destination));
+        Assert.DoesNotContain(
+            Directory.EnumerateFiles(fixture.DirectoryPath),
+            path => Path.GetFileName(path).Contains(".sgpdf.tmp", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -98,6 +197,16 @@ public sealed class PdfEditWriterTextTests
         return workspace;
     }
 
+    private static TextEditWorkspace CreateDirtyFallbackWorkspace(string sourcePath, string replacementText)
+    {
+        using var source = PdfDocumentSession.Open(sourcePath);
+        var text = Assert.Single(source.GetTextObjects(0));
+        var workspace = TextEditWorkspace.Create(sourcePath, sourceOpenedWithPassword: false);
+        workspace.EnsureObject(text);
+        CommitFallback(workspace, text, replacementText);
+        return workspace;
+    }
+
     private static void CommitOriginalFont(
         TextEditWorkspace workspace,
         PdfTextObjectInfo source,
@@ -111,6 +220,23 @@ public sealed class PdfEditWriterTextTests
         Assert.True(candidate.IsValid);
         Assert.NotNull(candidate.Candidate);
         Assert.Equal(TextFontStrategy.OriginalFont, candidate.Candidate!.FontStrategy);
+        workspace.CommitCandidate(candidate.Candidate);
+        Assert.True(workspace.IsDirty);
+    }
+
+    private static void CommitFallback(
+        TextEditWorkspace workspace,
+        PdfTextObjectInfo source,
+        string replacementText)
+    {
+        var candidate = workspace.PrepareCandidate(
+            source.Key,
+            replacementText,
+            source.FontSize,
+            source.FillColor);
+        Assert.True(candidate.IsValid);
+        Assert.NotNull(candidate.Candidate);
+        Assert.Equal(TextFontStrategy.FallbackTtf, candidate.Candidate!.FontStrategy);
         workspace.CommitCandidate(candidate.Candidate);
         Assert.True(workspace.IsDirty);
     }
@@ -149,11 +275,34 @@ public sealed class PdfEditWriterTextTests
         });
     }
 
+    private static object CreateFallbackWriter(
+        Func<IntPtr, IntPtr, uint, string, IntPtr, uint, IntPtr>? loadCidType2FontOverride = null,
+        Func<IntPtr, IntPtr, int>? removeObjectOverride = null)
+    {
+        var type = typeof(PdfDocumentSession).Assembly.GetType(
+            "SGPdf.App.Pdf.PdfEditWriter",
+            throwOnError: true)!;
+        var constructor = type.GetConstructors(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+            .SingleOrDefault(info => info.GetParameters().Length == 7);
+        Assert.NotNull(constructor);
+        return constructor!.Invoke(new object?[]
+        {
+            null,
+            null,
+            null,
+            null,
+            null,
+            loadCidType2FontOverride,
+            removeObjectOverride
+        });
+    }
+
     private static void SaveCombined(
         object writer,
         ImageEditWorkspace imageWorkspace,
         TextEditWorkspace textWorkspace,
-        string destinationPath)
+        string destinationPath,
+        CancellationToken cancellationToken = default)
     {
         var method = writer.GetType().GetMethod(
             "SaveAsCopy",
@@ -178,7 +327,7 @@ public sealed class PdfEditWriterTextTests
                 textWorkspace,
                 destinationPath,
                 false,
-                CancellationToken.None
+                cancellationToken
             });
         }
         catch (TargetInvocationException ex) when (ex.InnerException is not null)
@@ -197,4 +346,13 @@ public sealed class PdfEditWriterTextTests
         Assert.Equal(expected.E, actual.E, precision: 2);
         Assert.Equal(expected.F, actual.F, precision: 2);
     }
+
+    [DllImport("pdfium", CallingConvention = CallingConvention.StdCall)]
+    private static extern IntPtr FPDFText_LoadCidType2Font(
+        IntPtr document,
+        IntPtr fontData,
+        uint fontDataSize,
+        [MarshalAs(UnmanagedType.LPStr)] string toUnicodeCMap,
+        IntPtr cidToGidMapData,
+        uint cidToGidMapDataSize);
 }
