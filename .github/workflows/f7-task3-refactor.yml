@@ -10,7 +10,6 @@ permissions:
 
 jobs:
   refactor:
-    if: github.event.head_commit.message == 'chore(f7): bootstrap task3 refactor'
     runs-on: windows-2025
     steps:
       - uses: actions/checkout@v4
