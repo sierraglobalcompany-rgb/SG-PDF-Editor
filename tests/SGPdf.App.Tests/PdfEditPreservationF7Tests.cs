@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.RegularExpressions;
 using SGPdf.App.Features.Edit;
 using SGPdf.App.Features.Edit.Images;
 using SGPdf.App.Features.Edit.Text;
@@ -19,7 +20,7 @@ public sealed class PdfEditPreservationF7Tests
         var raw = Encoding.Latin1.GetString(File.ReadAllBytes(destination));
 
         Assert.NotEqual(0, output.GetOrganizeFormType());
-        Assert.Contains("/V (Filled Value)", raw, StringComparison.Ordinal);
+        Assert.Matches(new Regex(@"/V\s*\(Filled Value\)", RegexOptions.CultureInvariant), raw);
 
         var bookmark = Assert.Single(output.GetBookmarks());
         Assert.Equal("Root", bookmark.Title);
@@ -45,7 +46,9 @@ public sealed class PdfEditPreservationF7Tests
 
         Assert.Equal("SG PDF F7 preservation fixture", output.GetOrganizeMetadataText("Title"));
         Assert.Equal("SG PDF Task 11", output.GetOrganizeMetadataText("Author"));
-        Assert.Contains("/CustomMarker (F7 Task11 custom metadata)", raw, StringComparison.Ordinal);
+        Assert.Matches(
+            new Regex(@"/CustomMarker\s*\(F7 Task11 custom metadata\)", RegexOptions.CultureInvariant),
+            raw);
 
         Assert.Equal(1, output.GetPageRotation(1));
     }
