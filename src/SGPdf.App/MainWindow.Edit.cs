@@ -7,6 +7,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using SGPdf.App.Features.Edit.Images;
+using SGPdf.App.Features.Edit.Text;
 using SGPdf.App.Pdf;
 
 namespace SGPdf.App;
@@ -22,6 +23,7 @@ public partial class MainWindow
     private Button? _editSaveAsButton;
     private Canvas? _editOverlayCanvas;
     private ImageEditWorkspace? _imageEditWorkspace;
+    private TextEditWorkspace? _textEditWorkspace;
     private IReadOnlyList<PdfImageObjectInfo> _activeImageObjects = Array.Empty<PdfImageObjectInfo>();
     private ImageObjectKey? _selectedImageKey;
 
@@ -56,6 +58,10 @@ public partial class MainWindow
     private Action<ImageEditWorkspace, string, bool, CancellationToken> _saveImageEditCopy =
         static (workspace, destination, warningsConfirmed, token) =>
             new PdfEditWriter().SaveAsCopy(workspace, destination, warningsConfirmed, token);
+
+    private Action<ImageEditWorkspace, TextEditWorkspace, string, bool, CancellationToken> _saveCombinedEditCopy =
+        static (images, text, destination, warningsConfirmed, token) =>
+            new PdfEditWriter().SaveAsCopy(images, text, destination, warningsConfirmed, token);
 
     private static bool RegisterEditLoadedHook()
     {
@@ -175,6 +181,7 @@ public partial class MainWindow
             return false;
 
         var workspace = _imageEditWorkspace;
+        var textWorkspace = _textEditWorkspace;
         var session = _session;
         _editMaterializing = true;
         UpdateEditSaveCommandAvailability();
@@ -202,8 +209,18 @@ public partial class MainWindow
                 warningsConfirmed = true;
             }
 
-            _saveImageEditCopy(workspace, destination, warningsConfirmed, CancellationToken.None);
-            workspace.MarkSavedBaseline();
+            if (textWorkspace is null)
+            {
+                _saveImageEditCopy(workspace, destination, warningsConfirmed, CancellationToken.None);
+                workspace.MarkSavedBaseline();
+            }
+            else
+            {
+                _saveCombinedEditCopy(workspace, textWorkspace, destination, warningsConfirmed, CancellationToken.None);
+                workspace.MarkSavedBaseline();
+                textWorkspace.MarkSavedBaseline();
+            }
+
             StatusText.Text = $"PDF editado guardado como {System.IO.Path.GetFileName(destination)}.";
             return true;
         }
@@ -295,6 +312,7 @@ public partial class MainWindow
                 workspace.EnsureObject(image);
 
             _imageEditWorkspace = workspace;
+            _textEditWorkspace = null;
             _activeImageObjects = images.ToArray();
             _selectedImageKey = null;
             _editModeActive = true;
@@ -614,6 +632,7 @@ public partial class MainWindow
         CancelImageEditGesture();
         _editModeActive = false;
         _imageEditWorkspace = null;
+        _textEditWorkspace = null;
         _activeImageObjects = Array.Empty<PdfImageObjectInfo>();
         _selectedImageKey = null;
         UpdateEditSaveCommandAvailability();
