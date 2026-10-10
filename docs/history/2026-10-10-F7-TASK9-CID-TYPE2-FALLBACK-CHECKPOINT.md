@@ -3,7 +3,7 @@
 **Fecha:** 2026-10-10  
 **Fase:** F7 — Texto V1  
 **Task:** 9 — writer combinado, ruta `FallbackTtf` CID Type2  
-**Estado:** **FUNCTIONAL_GREEN / FINAL_CI_PENDING**  
+**Estado:** **CLOSED / AUTOMATED PASS**  
 **Rama:** `feat/f7-text-v1`  
 **Base Task 9:** `3b4592a78495e832264732aba63529398195e5c4`  
 **Head funcional GREEN:** `034553cedc772cdcdf63edd54d36593e2f1d52d1`
@@ -174,6 +174,18 @@ No hubo cambios de:
 
 ## Gate final
 
-CI exacto sobre el commit de este checkpoint: **PENDING**.
+Checkpoint commit: `1d821000f82039eb0170bd3b95becfaf27d6c51e`  
+Workflow exacto: `38082326517`  
+Job: `114301621424`
 
-No iniciar Task 10 hasta verificar este checkpoint y sellarlo `CLOSED`.
+Resultado:
+
+- hygiene: PASS;
+- Labelize staging: PASS;
+- locked restore: PASS;
+- Release build: **0 warnings / 0 errors**;
+- tests: **733 PASS / 0 FAIL / 0 skipped**;
+- workflow: **SUCCESS**.
+
+Task 9 queda **CLOSED / AUTOMATED PASS**.  
+No iniciar Task 10 hasta una nueva autorización del usuario.
