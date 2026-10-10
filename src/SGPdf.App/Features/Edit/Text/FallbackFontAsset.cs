@@ -10,7 +10,7 @@ internal static class FallbackFontAsset
     internal const long MaxFontBytes = 2L * 1024L * 1024L;
 
     private static readonly Lazy<GlyphTypeface> Typeface = new(
-        static () => new GlyphTypeface(new Uri(ResolveFontPath(), UriKind.Absolute)),
+        static () => CreateValidatedTypeface(ResolveFontPath()),
         LazyThreadSafetyMode.ExecutionAndPublication);
 
     internal static byte[] LoadBytes() => ReadValidatedBytes(ResolveFontPath());
@@ -28,6 +28,18 @@ internal static class FallbackFontAsset
 
     internal static byte[] ReadValidatedBytes(string path)
     {
+        ValidateFontFile(path);
+        return File.ReadAllBytes(path);
+    }
+
+    private static GlyphTypeface CreateValidatedTypeface(string path)
+    {
+        ValidateFontFile(path);
+        return new GlyphTypeface(new Uri(path, UriKind.Absolute));
+    }
+
+    private static void ValidateFontFile(string path)
+    {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
 
         var info = new FileInfo(path);
@@ -36,8 +48,6 @@ internal static class FallbackFontAsset
         if (info.Length <= 0 || info.Length > MaxFontBytes)
             throw new NotSupportedException(
                 $"Fallback font size must be between 1 and {MaxFontBytes} bytes; actual: {info.Length}.");
-
-        return File.ReadAllBytes(path);
     }
 
     private static string ResolveFontPath() =>
