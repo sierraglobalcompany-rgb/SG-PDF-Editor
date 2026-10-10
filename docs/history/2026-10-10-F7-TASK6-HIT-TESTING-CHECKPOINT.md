@@ -3,11 +3,12 @@
 **Fecha:** 2026-10-10  
 **Fase:** F7 — Texto V1  
 **Task:** 6 — hit-testing texto + arbitraje imagen/texto  
-**Estado:** **FUNCTIONAL_GREEN / FINAL_CI_PENDING**  
+**Estado:** **CLOSED / AUTOMATED PASS**  
 **Rama:** `feat/f7-text-v1`  
 **Base Task 6:** `6d6800fe15fa2435c54275a7180992fb119e0c34`  
 **RED:** `d8cfcc215e4caeb63684349ff358876ec816de95`  
-**Head funcional:** `3cea025d1e3ca200a740700a53d99525e662136e`
+**Head funcional:** `3cea025d1e3ca200a740700a53d99525e662136e`  
+**Checkpoint pre-seal:** `fe5653dd8bfaee9e392349862f10d346b267d638`
 
 ## Alcance entregado
 
@@ -109,12 +110,26 @@ No se implementó en Task 6:
 - `PageObjectIndex` sigue siendo la única regla de z-order para objetos top-level de la página activa.
 - El arbitraje mixto no reenumera objetos ni consulta PDFium; opera sobre candidatos managed.
 
+## Gate del checkpoint
+
+Checkpoint pre-seal: `fe5653dd8bfaee9e392349862f10d346b267d638`  
+Workflow: `38075499138`
+
+Resultado:
+
+- hygiene: PASS;
+- Labelize staging: PASS;
+- locked restore: PASS;
+- Release build: **0 warnings / 0 errors**;
+- tests: **705 PASS / 0 FAIL / 0 skipped**;
+- workflow: **SUCCESS**.
+
 ## QA manual
 
 **NOT RUN.** Task 6 no añade UI; su alcance es geometría/arbitraje managed. El PASS automatizado no se presenta como validación manual Windows.
 
-## Gate final
+## Cierre
 
-CI exacto sobre el commit de este checkpoint: **PENDING**.
+Task 6 queda cerrada con RED real, GREEN exacto, auditoría de scope y CI limpio sobre el checkpoint pre-seal.
 
-No iniciar Task 7 hasta que el checkpoint tenga CI final PASS.
+El commit de sellado es documentación únicamente y se verifica de forma independiente antes de autorizar Task 7.
