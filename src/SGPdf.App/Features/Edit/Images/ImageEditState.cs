@@ -13,9 +13,6 @@ internal enum ImageEditOperationKind
     ChangeZOrder
 }
 
-// Forward contract only. Task 5 adds the immutable replacement payload and loader.
-internal sealed record ImageReplacementAsset;
-
 internal sealed record ImageEditState(
     ImageObjectRef ObjectRef,
     PdfObjectMatrix CurrentMatrix,

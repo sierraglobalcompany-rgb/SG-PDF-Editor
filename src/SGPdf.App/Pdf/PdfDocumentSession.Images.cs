@@ -1,4 +1,7 @@
+using System.IO;
 using System.Runtime.InteropServices;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 namespace SGPdf.App.Pdf;
 
@@ -155,10 +158,12 @@ public sealed partial class PdfDocumentSession
                 if (pageObject == IntPtr.Zero || PdfiumNative.FPDFPageObj_GetType(pageObject) != PdfiumNative.FPDF_PAGEOBJ_IMAGE)
                     throw new InvalidOperationException("El objeto solicitado no es una imagen PDF editable.");
 
-                _ = preferRendered; // Task 1 characterizes the optional rendered-object route separately.
-                bitmap = PdfiumNative.FPDFImageObj_GetBitmap(pageObject);
+                if (preferRendered)
+                    bitmap = PdfiumNative.FPDFImageObj_GetRenderedBitmap(_document, page, pageObject);
                 if (bitmap == IntPtr.Zero)
-                    throw new InvalidOperationException("PDFium no pudo obtener el bitmap de la imagen.");
+                    bitmap = PdfiumNative.FPDFImageObj_GetBitmap(pageObject);
+                if (bitmap == IntPtr.Zero)
+                    throw new NotSupportedException("PDFium no pudo obtener una representación visual fiel de esta imagen.");
 
                 return CopyBitmapAsBgra(bitmap, cancellationToken);
             }
@@ -173,6 +178,37 @@ public sealed partial class PdfDocumentSession
         {
             PdfiumRuntime.NativeGate.Release();
         }
+    }
+
+    internal byte[] GetImagePng(
+        int pageIndex,
+        int pageObjectIndex,
+        CancellationToken cancellationToken = default)
+    {
+        var image = GetImageBitmap(
+            pageIndex,
+            pageObjectIndex,
+            preferRendered: true,
+            cancellationToken);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var source = BitmapSource.Create(
+            image.PixelWidth,
+            image.PixelHeight,
+            96d,
+            96d,
+            PixelFormats.Bgra32,
+            null,
+            image.BgraPixels.ToArray(),
+            image.Stride);
+        source.Freeze();
+
+        var encoder = new PngBitmapEncoder();
+        encoder.Frames.Add(BitmapFrame.Create(source));
+        using var stream = new MemoryStream();
+        encoder.Save(stream);
+        cancellationToken.ThrowIfCancellationRequested();
+        return stream.ToArray();
     }
 
     private static PdfImageBitmap CopyBitmapAsBgra(IntPtr bitmap, CancellationToken cancellationToken)

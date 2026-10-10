@@ -319,6 +319,8 @@ public partial class MainWindow
 
         var minX = devicePoints.Min(point => point.X);
         var minY = devicePoints.Min(point => point.Y);
+        var toolbarY = Math.Max(0d, minY - 30d);
+
         var rotate = new Button
         {
             Content = "↻",
@@ -328,7 +330,7 @@ public partial class MainWindow
         };
         rotate.Click += (_, _) => RotateSelectedImage(90d);
         Canvas.SetLeft(rotate, minX);
-        Canvas.SetTop(rotate, Math.Max(0d, minY - 30d));
+        Canvas.SetTop(rotate, toolbarY);
         _imageEditOverlayCanvas.Children.Add(rotate);
 
         var delete = new Button
@@ -340,8 +342,32 @@ public partial class MainWindow
         };
         delete.Click += (_, _) => DeleteSelectedImage();
         Canvas.SetLeft(delete, minX + 34d);
-        Canvas.SetTop(delete, Math.Max(0d, minY - 30d));
+        Canvas.SetTop(delete, toolbarY);
         _imageEditOverlayCanvas.Children.Add(delete);
+
+        var replace = new Button
+        {
+            Content = "Reemplazar...",
+            ToolTip = "Reemplazar contenido de imagen",
+            Padding = new Thickness(6, 2, 6, 2),
+            Tag = "ImageReplaceButton"
+        };
+        replace.Click += (_, _) => TryReplaceSelectedImageFromDialog();
+        Canvas.SetLeft(replace, minX + 100d);
+        Canvas.SetTop(replace, toolbarY);
+        _imageEditOverlayCanvas.Children.Add(replace);
+
+        var extract = new Button
+        {
+            Content = "Extraer PNG",
+            ToolTip = "Extraer imagen como PNG",
+            Padding = new Thickness(6, 2, 6, 2),
+            Tag = "ImageExtractButton"
+        };
+        extract.Click += (_, _) => TryExtractSelectedImageFromDialog();
+        Canvas.SetLeft(extract, minX + 196d);
+        Canvas.SetTop(extract, toolbarY);
+        _imageEditOverlayCanvas.Children.Add(extract);
     }
 
     private void ImageEditOverlay_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -371,8 +397,13 @@ public partial class MainWindow
             return;
         }
 
-        if (Equals(tag, "ImageRotateButton") || Equals(tag, "ImageDeleteButton"))
+        if (Equals(tag, "ImageRotateButton") ||
+            Equals(tag, "ImageDeleteButton") ||
+            Equals(tag, "ImageReplaceButton") ||
+            Equals(tag, "ImageExtractButton"))
+        {
             return;
+        }
 
         SelectImageAtDevicePoint(point.X, point.Y);
         e.Handled = true;
