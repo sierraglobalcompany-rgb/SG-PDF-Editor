@@ -222,6 +222,24 @@ internal static class PdfiumNative
         [MarshalAs(UnmanagedType.LPWStr)] string text);
 
     [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern IntPtr FPDFText_LoadCidType2Font(
+        IntPtr document,
+        IntPtr fontData,
+        uint fontDataSize,
+        [MarshalAs(UnmanagedType.LPStr)] string toUnicodeCMap,
+        IntPtr cidToGidMapData,
+        uint cidToGidMapDataSize);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern IntPtr FPDFPageObj_CreateTextObj(
+        IntPtr document,
+        IntPtr font,
+        float fontSize);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern void FPDFFont_Close(IntPtr font);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
     internal static extern IntPtr FPDFText_LoadPage(IntPtr page);
 
     [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
