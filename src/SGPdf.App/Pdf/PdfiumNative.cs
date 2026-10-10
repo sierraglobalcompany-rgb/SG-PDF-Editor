@@ -217,6 +217,11 @@ internal static class PdfiumNative
     internal static extern int FPDFTextObj_GetTextRenderMode(IntPtr textObject);
 
     [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern int FPDFText_SetText(
+        IntPtr textObject,
+        [MarshalAs(UnmanagedType.LPWStr)] string text);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
     internal static extern IntPtr FPDFText_LoadPage(IntPtr page);
 
     [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
