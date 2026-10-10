@@ -18,6 +18,8 @@ internal sealed class PdfEditWriter
     private readonly Func<string, int> _signatureCount;
     private readonly Func<IntPtr, PdfObjectMatrix, int> _setMatrix;
     private readonly Func<IntPtr, int> _generateContent;
+    private readonly Func<IntPtr, IntPtr, uint, string, IntPtr, uint, IntPtr> _loadCidType2Font;
+    private readonly Func<IntPtr, IntPtr, int> _removeObject;
 
     internal PdfEditWriter(
         Func<IntPtr, IntPtr, uint, int>? saveAsCopyOverride = null,
@@ -30,6 +32,8 @@ internal sealed class PdfEditWriter
         _signatureCount = signatureCountOverride ?? GetSignatureCount;
         _setMatrix = setMatrixOverride ?? SetMatrix;
         _generateContent = PdfiumNative.FPDFPage_GenerateContent;
+        _loadCidType2Font = PdfiumNative.FPDFText_LoadCidType2Font;
+        _removeObject = PdfiumNative.FPDFPage_RemoveObject;
     }
 
     internal PdfEditWriter(
@@ -41,6 +45,25 @@ internal sealed class PdfEditWriter
         : this(saveAsCopyOverride, validateOutputOverride, signatureCountOverride, setMatrixOverride)
     {
         _generateContent = generateContentOverride ?? PdfiumNative.FPDFPage_GenerateContent;
+    }
+
+    internal PdfEditWriter(
+        Func<IntPtr, IntPtr, uint, int>? saveAsCopyOverride,
+        Action<string, ImageEditWorkspace, CancellationToken>? validateOutputOverride,
+        Func<string, int>? signatureCountOverride,
+        Func<IntPtr, PdfObjectMatrix, int>? setMatrixOverride,
+        Func<IntPtr, int>? generateContentOverride,
+        Func<IntPtr, IntPtr, uint, string, IntPtr, uint, IntPtr>? loadCidType2FontOverride,
+        Func<IntPtr, IntPtr, int>? removeObjectOverride)
+        : this(
+            saveAsCopyOverride,
+            validateOutputOverride,
+            signatureCountOverride,
+            setMatrixOverride,
+            generateContentOverride)
+    {
+        _loadCidType2Font = loadCidType2FontOverride ?? PdfiumNative.FPDFText_LoadCidType2Font;
+        _removeObject = removeObjectOverride ?? PdfiumNative.FPDFPage_RemoveObject;
     }
 
     internal void SaveAsCopy(
@@ -60,13 +83,6 @@ internal sealed class PdfEditWriter
         ArgumentNullException.ThrowIfNull(imageWorkspace);
         ArgumentNullException.ThrowIfNull(textWorkspace);
         EnsureCombinedWorkspaceIdentity(imageWorkspace, textWorkspace);
-
-        if (textWorkspace.EditedStates.Any(state => state.FontStrategy != TextFontStrategy.OriginalFont))
-        {
-            throw new InvalidOperationException(
-                "Esta ruta de guardado solo admite texto con la fuente original; la fuente fallback se materializa en una tarea posterior.");
-        }
-
         SaveAsCopyCore(imageWorkspace, textWorkspace, destinationPath, warningsConfirmed, cancellationToken);
     }
 
@@ -168,10 +184,25 @@ internal sealed class PdfEditWriter
         string temporaryPath,
         CancellationToken cancellationToken)
     {
+        var allTextStates = textWorkspace?.EditedStates ?? Array.Empty<TextEditState>();
+        var fallbackStates = allTextStates
+            .Where(state => state.FontStrategy == TextFontStrategy.FallbackTtf)
+            .ToArray();
+        CidType2FontMapPlan? fallbackPlan = null;
+        byte[]? fallbackFontBytes = null;
+        if (fallbackStates.Length > 0)
+        {
+            fallbackPlan = CidType2FontMapBuilder.Build(fallbackStates.Select(state => state.Text));
+            fallbackFontBytes = FallbackFontAsset.LoadBytes();
+        }
+
         PdfiumRuntime.EnsureInitialized();
         PdfiumRuntime.NativeGate.Wait(cancellationToken);
 
         IntPtr document = IntPtr.Zero;
+        IntPtr fallbackFont = IntPtr.Zero;
+        IntPtr fallbackFontBuffer = IntPtr.Zero;
+        IntPtr cidToGidBuffer = IntPtr.Zero;
         try
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -182,6 +213,30 @@ internal sealed class PdfEditWriter
                 throw new InvalidOperationException($"PDFium no pudo reabrir el PDF fuente. Error: {error}.");
             }
 
+            if (fallbackPlan is not null && fallbackFontBytes is not null)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                fallbackFontBuffer = Marshal.AllocHGlobal(fallbackFontBytes.Length);
+                Marshal.Copy(fallbackFontBytes, 0, fallbackFontBuffer, fallbackFontBytes.Length);
+
+                cidToGidBuffer = Marshal.AllocHGlobal(fallbackPlan.CidToGidMap.Length);
+                Marshal.Copy(
+                    fallbackPlan.CidToGidMap,
+                    0,
+                    cidToGidBuffer,
+                    fallbackPlan.CidToGidMap.Length);
+
+                fallbackFont = _loadCidType2Font(
+                    document,
+                    fallbackFontBuffer,
+                    checked((uint)fallbackFontBytes.Length),
+                    fallbackPlan.ToUnicodeCMap,
+                    cidToGidBuffer,
+                    checked((uint)fallbackPlan.CidToGidMap.Length));
+                if (fallbackFont == IntPtr.Zero)
+                    throw new InvalidOperationException("PDFium no pudo cargar la fuente fallback CID Type2.");
+            }
+
             var pageCount = PdfiumNative.FPDF_GetPageCount(document);
             if (pageCount <= 0)
                 throw new InvalidOperationException("PDFium devolvió una cantidad de páginas inválida.");
@@ -189,7 +244,7 @@ internal sealed class PdfEditWriter
             var imageGroups = imageWorkspace.EditedStates
                 .GroupBy(state => state.ObjectRef.Key.PageIndex)
                 .ToDictionary(group => group.Key, group => group.ToArray());
-            var textGroups = (textWorkspace?.EditedStates ?? Array.Empty<TextEditState>())
+            var textGroups = allTextStates
                 .GroupBy(state => state.Key.PageIndex)
                 .ToDictionary(group => group.Key, group => group.ToArray());
             var editedPages = imageGroups.Keys
@@ -229,6 +284,12 @@ internal sealed class PdfEditWriter
 
                     ApplyImageChanges(page, resolvedImages, cancellationToken);
                     ApplyOriginalFontTextChanges(resolvedText, cancellationToken);
+                    ApplyFallbackTextChanges(
+                        document,
+                        page,
+                        resolvedText,
+                        fallbackFont,
+                        cancellationToken);
                     ApplyImageDeletesAndReordering(page, resolvedImages, cancellationToken);
 
                     cancellationToken.ThrowIfCancellationRequested();
@@ -248,6 +309,12 @@ internal sealed class PdfEditWriter
         }
         finally
         {
+            if (fallbackFont != IntPtr.Zero)
+                PdfiumNative.FPDFFont_Close(fallbackFont);
+            if (cidToGidBuffer != IntPtr.Zero)
+                Marshal.FreeHGlobal(cidToGidBuffer);
+            if (fallbackFontBuffer != IntPtr.Zero)
+                Marshal.FreeHGlobal(fallbackFontBuffer);
             if (document != IntPtr.Zero)
                 PdfiumNative.FPDF_CloseDocument(document);
             PdfiumRuntime.NativeGate.Release();
@@ -291,14 +358,12 @@ internal sealed class PdfEditWriter
         IReadOnlyList<ResolvedText> resolved,
         CancellationToken cancellationToken)
     {
-        foreach (var item in resolved)
+        foreach (var item in resolved.Where(item => item.State.FontStrategy == TextFontStrategy.OriginalFont))
         {
             cancellationToken.ThrowIfCancellationRequested();
             var state = item.State;
             var original = state.Original;
 
-            if (state.FontStrategy != TextFontStrategy.OriginalFont)
-                throw new InvalidOperationException("La ruta OriginalFont recibió un estado de texto fallback.");
             if (!NearlyEqual(state.FontSize, original.FontSize, FontSizeTolerance))
                 throw new InvalidOperationException("La ruta OriginalFont no puede cambiar el tamaño de fuente en Texto V1.");
 
@@ -317,6 +382,82 @@ internal sealed class PdfEditWriter
                     state.FillColor.Alpha) == 0)
             {
                 throw new InvalidOperationException("PDFium no pudo aplicar el color editado al texto.");
+            }
+        }
+    }
+
+    private void ApplyFallbackTextChanges(
+        IntPtr document,
+        IntPtr page,
+        IReadOnlyList<ResolvedText> resolved,
+        IntPtr fallbackFont,
+        CancellationToken cancellationToken)
+    {
+        var fallbackItems = resolved
+            .Where(item => item.State.FontStrategy == TextFontStrategy.FallbackTtf)
+            .OrderBy(item => item.State.Key.PageObjectIndex)
+            .ToArray();
+        if (fallbackItems.Length == 0)
+            return;
+        if (fallbackFont == IntPtr.Zero)
+            throw new InvalidOperationException("La fuente fallback CID Type2 no está disponible.");
+
+        foreach (var item in fallbackItems)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var state = item.State;
+            var replacement = PdfiumNative.FPDFPageObj_CreateTextObj(
+                document,
+                fallbackFont,
+                checked((float)state.FontSize));
+            if (replacement == IntPtr.Zero)
+                throw new InvalidOperationException("PDFium no pudo crear el objeto de texto fallback.");
+
+            var originalRemoved = false;
+            var replacementInserted = false;
+            try
+            {
+                if (PdfiumNative.FPDFText_SetText(replacement, state.Text) == 0)
+                    throw new InvalidOperationException("PDFium no pudo asignar Unicode al objeto de texto fallback.");
+
+                if (PdfiumNative.FPDFPageObj_SetFillColor(
+                        replacement,
+                        state.FillColor.Red,
+                        state.FillColor.Green,
+                        state.FillColor.Blue,
+                        state.FillColor.Alpha) == 0)
+                {
+                    throw new InvalidOperationException("PDFium no pudo copiar el color al texto fallback.");
+                }
+
+                if (_setMatrix(replacement, state.Original.Matrix) == 0)
+                    throw new InvalidOperationException("PDFium no pudo copiar la matriz al texto fallback.");
+
+                if (_removeObject(page, item.Handle) == 0)
+                    throw new InvalidOperationException("PDFium no pudo retirar el texto original para reemplazarlo.");
+                originalRemoved = true;
+
+                // Gate explícito para abortar de forma segura entre remove e insert.
+                cancellationToken.ThrowIfCancellationRequested();
+
+                var targetIndex = state.Key.PageObjectIndex;
+                var remainingCount = PdfiumNative.FPDFPage_CountObjects(page);
+                if (remainingCount < 0 || targetIndex < 0 || targetIndex > remainingCount)
+                    throw new InvalidOperationException("El índice original del texto ya no es válido para el reemplazo.");
+
+                if (PdfiumNative.FPDFPage_InsertObjectAtIndex(page, replacement, (nuint)targetIndex) == 0)
+                    throw new InvalidOperationException("PDFium no pudo insertar el texto fallback en su ordinal original.");
+                replacementInserted = true;
+
+                PdfiumNative.FPDFPageObj_Destroy(item.Handle);
+                originalRemoved = false;
+            }
+            finally
+            {
+                if (originalRemoved)
+                    PdfiumNative.FPDFPageObj_Destroy(item.Handle);
+                if (!replacementInserted && replacement != IntPtr.Zero)
+                    PdfiumNative.FPDFPageObj_Destroy(replacement);
             }
         }
     }
