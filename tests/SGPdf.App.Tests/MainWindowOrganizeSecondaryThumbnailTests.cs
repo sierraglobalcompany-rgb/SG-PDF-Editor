@@ -1,5 +1,6 @@
 using System.Threading;
 using System.Windows.Media.Imaging;
+using System.Windows.Threading;
 using SGPdf.App.Features.Organize;
 using SGPdf.App.Pdf;
 using Xunit;
@@ -46,6 +47,12 @@ public sealed class MainWindowOrganizeSecondaryThumbnailTests
                     secondary.Path,
                     null,
                     1)!);
+
+                // Enter/insert queue low-priority thumbnail refreshes. Drain them before
+                // forcing the deterministic refresh below so they cannot cancel its request.
+                await Dispatcher.CurrentDispatcher.InvokeAsync(
+                    static () => { },
+                    DispatcherPriority.ApplicationIdle);
 
                 foreach (var item in OrganizeWindowTestHost.GetOrganizeItems(window))
                     OrganizeWindowTestHost.InvokeOn(item, "ReleaseBitmap");

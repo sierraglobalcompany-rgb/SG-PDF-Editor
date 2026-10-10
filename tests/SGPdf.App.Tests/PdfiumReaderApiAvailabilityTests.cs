@@ -37,7 +37,7 @@ public sealed class PdfiumReaderApiAvailabilityTests
     [Fact]
     public void PinnedPdfium_ExportsAllF4RequiredStableFunctions()
     {
-        Assert.True(NativeLibrary.TryLoad("pdfium", out var library), "No se pudo cargar el pdfium.dll pinneado por el proyecto.");
+        var library = PdfiumImageEditApiAvailabilityTests.LoadPinnedPdfium();
 
         try
         {

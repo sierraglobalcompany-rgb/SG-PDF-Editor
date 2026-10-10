@@ -62,6 +62,8 @@ public partial class MainWindow
         {
             if (_isBusy)
                 return true;
+            if (_imageEditModeActive && !TryLeaveImageEditModeWithGuard())
+                return true;
             if (_signatureEditState?.IsDirty == true &&
                 !TryResolvePendingSignatureEdits(SignatureGuardReason.OpenPdf))
             {

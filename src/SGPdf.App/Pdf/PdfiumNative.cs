@@ -5,7 +5,11 @@ namespace SGPdf.App.Pdf;
 internal static class PdfiumNative
 {
     private const string Library = "pdfium";
+    internal const int FPDFBitmap_Gray = 1;
+    internal const int FPDFBitmap_BGR = 2;
+    internal const int FPDFBitmap_BGRx = 3;
     internal const int FPDFBitmap_BGRA = 4;
+    internal const int FPDF_PAGEOBJ_IMAGE = 3;
     internal const uint PDFACTION_UNSUPPORTED = 0;
     internal const uint PDFACTION_GOTO = 1;
     internal const uint PDFACTION_REMOTEGOTO = 2;
@@ -37,6 +41,42 @@ internal static class PdfiumNative
         internal float Top;
         internal float Right;
         internal float Bottom;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct Matrix
+    {
+        internal float A;
+        internal float B;
+        internal float C;
+        internal float D;
+        internal float E;
+        internal float F;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct QuadPointsF
+    {
+        internal float X1;
+        internal float Y1;
+        internal float X2;
+        internal float Y2;
+        internal float X3;
+        internal float Y3;
+        internal float X4;
+        internal float Y4;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct ImageMetadata
+    {
+        internal uint Width;
+        internal uint Height;
+        internal float HorizontalDpi;
+        internal float VerticalDpi;
+        internal uint BitsPerPixel;
+        internal int ColorSpace;
+        internal int MarkedContentId;
     }
 
     [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
@@ -87,6 +127,66 @@ internal static class PdfiumNative
 
     [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
     internal static extern float FPDF_GetPageHeightF(IntPtr page);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern int FPDFPage_CountObjects(IntPtr page);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern IntPtr FPDFPage_GetObject(IntPtr page, int index);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern int FPDFPageObj_GetType(IntPtr pageObject);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern int FPDFPageObj_GetBounds(
+        IntPtr pageObject,
+        out float left,
+        out float bottom,
+        out float right,
+        out float top);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern int FPDFPageObj_GetMatrix(IntPtr pageObject, out Matrix matrix);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern int FPDFPageObj_GetRotatedBounds(
+        IntPtr pageObject,
+        out QuadPointsF quadPoints);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern int FPDFPageObj_SetFillColor(
+        IntPtr pageObject,
+        uint red,
+        uint green,
+        uint blue,
+        uint alpha);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern int FPDFImageObj_GetImageMetadata(
+        IntPtr imageObject,
+        IntPtr page,
+        out ImageMetadata metadata);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern IntPtr FPDFImageObj_GetBitmap(IntPtr imageObject);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern IntPtr FPDFImageObj_GetRenderedBitmap(
+        IntPtr document,
+        IntPtr page,
+        IntPtr imageObject);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern int FPDFPageObj_SetMatrix(IntPtr pageObject, ref Matrix matrix);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern int FPDFPage_RemoveObject(IntPtr page, IntPtr pageObject);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern int FPDFPage_InsertObjectAtIndex(
+        IntPtr page,
+        IntPtr pageObject,
+        nuint index);
 
     [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
     internal static extern IntPtr FPDFText_LoadPage(IntPtr page);
@@ -233,6 +333,15 @@ internal static class PdfiumNative
 
     [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
     internal static extern IntPtr FPDFBitmap_GetBuffer(IntPtr bitmap);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern int FPDFBitmap_GetWidth(IntPtr bitmap);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern int FPDFBitmap_GetHeight(IntPtr bitmap);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern int FPDFBitmap_GetFormat(IntPtr bitmap);
 
     [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
     internal static extern int FPDFBitmap_GetStride(IntPtr bitmap);

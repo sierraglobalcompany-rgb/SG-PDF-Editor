@@ -70,25 +70,29 @@ F4 closure `1d620f1b2b9717aab35671e18a9dc78f28a8afdd`; draft PR #23 open/unmerge
 
 ## F5 — Organize — AUTOMATED CLOSURE PASS
 
-Automated closure is valid when the exact Task-10 checkpoint head has both push and PR Windows CI green. Pre-checkpoint evidence: functional CI `37990505245` attempt 2, docs push CI `37991289080` and PR CI `37991479820` all PASS with Release build 0 warnings/errors and 550/550 tests. Final exact-head run IDs are recorded in PR #24 conversation after they complete.
-
 - [x] **ORG-01 — AUTO PASS** Move/reorder/rotate/delete/duplicate pages through immutable `OrganizePlan`; multi-selection preserves visual order; delete-all is blocked; output is materialized only through Save As and reopened/validated.
 - [x] **ORG-02 — AUTO PASS** Insert selected ranges, merge/append, extract selection and split by every-N/explicit ranges reuse the same page-reference plan/materializer; split collisions are checked before first write and batch stops on first failure.
 - [x] **ORG-03 — AUTO PASS** Structural preflight covers cryptographic signatures, password-opened sources, forms, bookmarks, named destinations, internal links, tagged structure, page labels, attachments and representative metadata. Signatures/password-opened sources are hard-blocked. Evidence-backed changed/lost non-crypto structures require explicit warning confirmation.
 - [x] **ORG-04 — AUTO PASS** Required APIs are verified against pinned PDFium; no second PDF engine or new runtime dependency was introduced.
 
-Preservation evidence: `docs/history/2026-10-09-F5-preservation-matrix.md`. Representative identity-import fixtures prove the current writer changes/loses forms, bookmarks, internal links, named destinations, tagged structure, page labels, attachments and original metadata values. F5 never presents those structures as preserved.
+Preservation evidence: `docs/history/2026-10-09-F5-preservation-matrix.md`. Real Windows organize QA: **NOT RUN**.
 
-Task-10 hardening adds dirty-plan protection when opening another PDF or leaving ORGANIZAR; successful Save As clears dirty state. Existing stale-source, temp cleanup, cancellation, bounded-thumbnail and offline-runtime tests remain part of the full 550-test suite.
+## F6 — Images — AUTOMATED FUNCTIONAL CLOSURE PASS
 
-Real Windows organize drag/drop/large-document UX, Save As, insert/merge/extract/split, warning/block dialogs and offline smoke: **NOT RUN**.
+Fresh Task-10 verification: functional head `7f70a68b2148504888040483a4d9a9e9dd6b4a03`, workflow `38057258528` attempt 2, Release build 0 warnings/errors, **680/680 tests PASS**.
 
-## F6 — Images
+- [x] **IMG-01 — AUTO PASS** Detect/select only real PDF image page objects on the active page; deterministic hit-testing covers rotated/overlapping geometry; contextual actions are scoped to `EDITAR`.
+- [x] **IMG-02 — AUTO PASS** Visually faithful PNG extraction plus candidate-first PNG/JPEG replacement; current geometry is preserved; replacement bytes are captured into managed memory so later save does not depend on the external file still existing.
+- [x] **IMG-03 — AUTO PASS** Move, resize, rotate, delete, opacity and z-order all have logical + writer/save/reopen evidence. Exact-runtime opacity and exact-index reordering gates both passed on pinned PDFium; no raster overlay or second-engine fallback is used.
+- [x] **IMG-04 — AUTO PASS** Undo/redo covers enabled mutations; new edits after undo clear redo; successful Save As establishes a clean logical baseline; dirty guards protect open/mode-switch/close flows.
 
-- [ ] **IMG-01** Detect/select images and contextual actions.
-- [ ] **IMG-02** Extract/save and replace while preserving geometry where viable.
-- [ ] **IMG-03** Move/resize/rotate/opacity/z-order/delete.
-- [ ] **IMG-04** Undo/redo.
+Independent F6 preservation evidence: `docs/history/2026-10-09-F6-preservation-matrix.md`.
+
+Representative real-writer fixtures classify forms, bookmarks, named destinations, internal links, tagged structure, page labels, attachments and representative metadata values as `ProvenPreserved` for the tested F6 writer route. Cryptographic signatures and password-opened sources remain `Block / Unknown` and are never presented as preserved.
+
+Task-9 hardening additionally proves active-page-only image discovery, no durable native handles in F6 state, transactional cleanup at cancellation/publication failure, and a 256 MiB combined managed bitmap-copy budget enforced before allocation.
+
+Real Windows image-edit UX/performance/dialog/offline QA: **NOT RUN**.
 
 ## F7 — Text V1
 
@@ -111,8 +115,8 @@ Real Windows organize drag/drop/large-document UX, Save As, insert/merge/extract
 - [x] **LICENSE** Current runtime dependencies audited for current development scope; Labelize font provenance re-audit before public installer.
 - [x] **PRIVACY** Private fixtures ignored and CI hygiene rejects tracked `tests/PrivateFixtures/**`.
 - [x] **ORIGINAL** Edit/sign/organize flows protect source and use Save As behavior.
-- [x] **CI** Completed automated slices through F5 have exact-head Windows CI evidence; final F5 exact-head evidence is linked from PR #24 conversation.
-- [x] **KISS** No preventive enterprise architecture, generic PDF object graph, second PDF engine or dependency expansion through F5 closure audit.
+- [x] **CI** Completed automated slices through F6 have exact-head Windows CI evidence; final F6 docs/PR exact-head checks are part of Task 10 closure.
+- [x] **KISS** No preventive enterprise architecture, generic PDF object graph, second PDF engine or dependency expansion through the F6 closure audit.
 - [x] **NO-AUTOMERGE** Main remains untouched; merges require explicit user approval.
 
 ## Traceability
