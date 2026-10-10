@@ -1,0 +1,96 @@
+name: f7-task3-refactor
+
+on:
+  push:
+    branches:
+      - feat/f7-text-v1
+
+permissions:
+  contents: write
+
+jobs:
+  refactor:
+    if: github.event.head_commit.message == 'chore(f7): bootstrap task3 refactor'
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Promote shared EDITAR infrastructure
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git mv "src/SGPdf.App/Features/Edit/Images/ImageEditSourceFingerprint.cs" "src/SGPdf.App/Features/Edit/PdfEditSourceFingerprint.cs"
+          git mv "src/SGPdf.App/Features/Edit/Images/ImageEditPreflight.cs" "src/SGPdf.App/Features/Edit/PdfEditPreflight.cs"
+          git mv "src/SGPdf.App/Pdf/PdfImageEditWriter.cs" "src/SGPdf.App/Pdf/PdfEditWriter.cs"
+          git mv "src/SGPdf.App/Pdf/ImageEditOutputValidator.cs" "src/SGPdf.App/Pdf/PdfEditOutputValidator.cs"
+
+          $replacements = [ordered]@{
+            '\bImageEditSourceFingerprint\b' = 'PdfEditSourceFingerprint'
+            '\bImageEditPreflightInspector\b' = 'PdfEditPreflightInspector'
+            '\bImageEditPreflightResult\b' = 'PdfEditPreflightResult'
+            '\bImageEditFindingSeverity\b' = 'PdfEditFindingSeverity'
+            '\bImageEditPreservationStatus\b' = 'PdfEditPreservationStatus'
+            '\bImageEditFindingKind\b' = 'PdfEditFindingKind'
+            '\bImageEditFinding\b' = 'PdfEditFinding'
+            '\bPdfImageEditWriter\b' = 'PdfEditWriter'
+            '\bImageEditOutputValidator\b' = 'PdfEditOutputValidator'
+          }
+
+          $files = Get-ChildItem src,tests -Recurse -File -Filter *.cs
+          foreach ($file in $files) {
+            $content = [System.IO.File]::ReadAllText($file.FullName)
+            $updated = $content
+            foreach ($entry in $replacements.GetEnumerator()) {
+              $updated = [regex]::Replace($updated, $entry.Key, $entry.Value)
+            }
+            $updated = $updated.Replace('SGPdf.App.Features.Edit.Images.PdfEdit', 'SGPdf.App.Features.Edit.PdfEdit')
+            if ($updated -ne $content) {
+              [System.IO.File]::WriteAllText($file.FullName, $updated, [System.Text.UTF8Encoding]::new($false))
+            }
+          }
+
+          $sharedFiles = @(
+            'src/SGPdf.App/Features/Edit/Images/ImageEditWorkspace.cs',
+            'src/SGPdf.App/MainWindow.EditImages.cs',
+            'src/SGPdf.App/Pdf/PdfEditWriter.cs',
+            'tests/SGPdf.App.Tests/MainWindowEditImageSaveAsTests.cs'
+          )
+          foreach ($path in $sharedFiles) {
+            $content = [System.IO.File]::ReadAllText($path)
+            if (-not $content.Contains('using SGPdf.App.Features.Edit;')) {
+              $content = "using SGPdf.App.Features.Edit;`r`n" + $content
+              [System.IO.File]::WriteAllText($path, $content, [System.Text.UTF8Encoding]::new($false))
+            }
+          }
+
+          $fingerprint = 'src/SGPdf.App/Features/Edit/PdfEditSourceFingerprint.cs'
+          $content = [System.IO.File]::ReadAllText($fingerprint).Replace(
+            'namespace SGPdf.App.Features.Edit.Images;',
+            'namespace SGPdf.App.Features.Edit;')
+          [System.IO.File]::WriteAllText($fingerprint, $content, [System.Text.UTF8Encoding]::new($false))
+
+          $preflight = 'src/SGPdf.App/Features/Edit/PdfEditPreflight.cs'
+          $content = [System.IO.File]::ReadAllText($preflight).Replace(
+            'namespace SGPdf.App.Features.Edit.Images;',
+            'namespace SGPdf.App.Features.Edit;')
+          [System.IO.File]::WriteAllText($preflight, $content, [System.Text.UTF8Encoding]::new($false))
+
+          $legacy = git grep -n -E '\b(ImageEditSourceFingerprint|ImageEditPreflightInspector|ImageEditPreflightResult|ImageEditFindingSeverity|ImageEditPreservationStatus|ImageEditFindingKind|ImageEditFinding|PdfImageEditWriter|ImageEditOutputValidator)\b' -- 'src/**/*.cs' 'tests/**/*.cs'
+          if ($LASTEXITCODE -eq 0) {
+            throw "Legacy shared EDITAR type names remain:`n$legacy"
+          }
+          if ($LASTEXITCODE -ne 1) {
+            throw "git grep failed with exit code $LASTEXITCODE"
+          }
+
+          Remove-Item '.github/workflows/f7-task3-refactor.yml'
+          git add -A
+          git status --short
+          git commit -m "refactor(edit): promote shared pdf edit infrastructure"
+          git push origin HEAD:feat/f7-text-v1
