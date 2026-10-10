@@ -77,7 +77,7 @@ public sealed class ImageEditOutputValidatorTests
     private static object CreateValidator(Action<int, double>? renderObserver = null)
     {
         var type = typeof(PdfDocumentSession).Assembly.GetType(
-            "SGPdf.App.Pdf.ImageEditOutputValidator",
+            "SGPdf.App.Pdf.PdfEditOutputValidator",
             throwOnError: true)!;
         var constructor = type.GetConstructors(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
             .Single(info => info.GetParameters().Length == 1);

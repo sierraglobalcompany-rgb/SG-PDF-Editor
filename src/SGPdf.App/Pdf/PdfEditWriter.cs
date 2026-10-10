@@ -1,10 +1,11 @@
+using SGPdf.App.Features.Edit;
 using System.IO;
 using System.Runtime.InteropServices;
 using SGPdf.App.Features.Edit.Images;
 
 namespace SGPdf.App.Pdf;
 
-internal sealed class PdfImageEditWriter
+internal sealed class PdfEditWriter
 {
     private const double MatrixTolerance = 0.05d;
     private const double BoundsTolerance = 0.10d;
@@ -14,7 +15,7 @@ internal sealed class PdfImageEditWriter
     private readonly Func<string, int> _signatureCount;
     private readonly Func<IntPtr, PdfObjectMatrix, int> _setMatrix;
 
-    internal PdfImageEditWriter(
+    internal PdfEditWriter(
         Func<IntPtr, IntPtr, uint, int>? saveAsCopyOverride = null,
         Action<string, ImageEditWorkspace, CancellationToken>? validateOutputOverride = null,
         Func<string, int>? signatureCountOverride = null,
@@ -71,7 +72,7 @@ internal sealed class PdfImageEditWriter
         cancellationToken.ThrowIfCancellationRequested();
         using (var preflightSession = PdfDocumentSession.Open(sourcePath))
         {
-            var preflight = new ImageEditPreflightInspector((_, _) => 0)
+            var preflight = new PdfEditPreflightInspector((_, _) => 0)
                 .Inspect(preflightSession, cancellationToken);
             if (!preflight.CanProceed)
                 throw new InvalidOperationException("El PDF no superó el preflight de preservación para EDITAR.");
@@ -415,7 +416,7 @@ internal sealed class PdfImageEditWriter
     }
 
     private static void ValidateOutput(string path, ImageEditWorkspace workspace, CancellationToken cancellationToken)
-        => new ImageEditOutputValidator().Validate(path, workspace, cancellationToken);
+        => new PdfEditOutputValidator().Validate(path, workspace, cancellationToken);
 
     private static bool NearlyEqual(PdfObjectMatrix left, PdfObjectMatrix right)
         => NearlyEqual(left.A, right.A, MatrixTolerance) &&

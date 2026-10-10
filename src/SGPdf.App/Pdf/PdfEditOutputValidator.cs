@@ -3,14 +3,14 @@ using SGPdf.App.Features.Edit.Images;
 
 namespace SGPdf.App.Pdf;
 
-internal sealed class ImageEditOutputValidator
+internal sealed class PdfEditOutputValidator
 {
     private const double PageSizeTolerancePoints = 0.05d;
     private const double MatrixTolerance = 0.05d;
     private const double ValidationDpi = 36d;
     private readonly Action<int, double>? _renderObserver;
 
-    internal ImageEditOutputValidator(Action<int, double>? renderObserver = null)
+    internal PdfEditOutputValidator(Action<int, double>? renderObserver = null)
     {
         _renderObserver = renderObserver;
     }

@@ -16,7 +16,7 @@ public sealed class PdfImageEditWriterHardeningTests
         using var cancellation = new CancellationTokenSource();
 
         var workspace = CreateWorkspace(fixture.Path);
-        var writer = new PdfImageEditWriter(
+        var writer = new PdfEditWriter(
             validateOutputOverride: (_, _, _) => cancellation.Cancel(),
             signatureCountOverride: _ => 0);
 
@@ -35,7 +35,7 @@ public sealed class PdfImageEditWriterHardeningTests
         Directory.CreateDirectory(destination);
 
         var workspace = CreateWorkspace(fixture.Path);
-        var writer = new PdfImageEditWriter(signatureCountOverride: _ => 0);
+        var writer = new PdfEditWriter(signatureCountOverride: _ => 0);
 
         Assert.ThrowsAny<IOException>(() =>
             writer.SaveAsCopy(workspace, destination, warningsConfirmed: false));

@@ -15,11 +15,11 @@ public sealed class PdfEditSharedInfrastructureNamingTests
         Assert.NotNull(assembly.GetType("SGPdf.App.Pdf.PdfEditWriter"));
         Assert.NotNull(assembly.GetType("SGPdf.App.Pdf.PdfEditOutputValidator"));
 
-        Assert.Null(assembly.GetType("SGPdf.App.Features.Edit.Images.ImageEditSourceFingerprint"));
-        Assert.Null(assembly.GetType("SGPdf.App.Features.Edit.Images.ImageEditPreflightInspector"));
-        Assert.Null(assembly.GetType("SGPdf.App.Features.Edit.Images.ImageEditPreflightResult"));
-        Assert.Null(assembly.GetType("SGPdf.App.Pdf.PdfImageEditWriter"));
-        Assert.Null(assembly.GetType("SGPdf.App.Pdf.ImageEditOutputValidator"));
+        Assert.Null(assembly.GetType("SGPdf.App.Features.Edit.PdfEditSourceFingerprint"));
+        Assert.Null(assembly.GetType("SGPdf.App.Features.Edit.PdfEditPreflightInspector"));
+        Assert.Null(assembly.GetType("SGPdf.App.Features.Edit.PdfEditPreflightResult"));
+        Assert.Null(assembly.GetType("SGPdf.App.Pdf.PdfEditWriter"));
+        Assert.Null(assembly.GetType("SGPdf.App.Pdf.PdfEditOutputValidator"));
 
         Assert.Null(assembly.GetType("SGPdf.App.Pdf.IPdfWriter"));
     }

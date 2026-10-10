@@ -1,3 +1,4 @@
+using SGPdf.App.Features.Edit;
 using Microsoft.Win32;
 using System.Windows;
 using System.Windows.Controls;
@@ -39,13 +40,13 @@ public partial class MainWindow
         return dialog.ShowDialog() == true ? dialog.FileName : null;
     };
 
-    private Func<PdfDocumentSession, CancellationToken, ImageEditPreflightResult> _inspectImageEditPreflight =
-        static (session, token) => new ImageEditPreflightInspector().Inspect(session, token);
+    private Func<PdfDocumentSession, CancellationToken, PdfEditPreflightResult> _inspectImageEditPreflight =
+        static (session, token) => new PdfEditPreflightInspector().Inspect(session, token);
 
-    private Func<ImageEditPreflightResult, bool> _confirmImageEditWarnings = static result =>
+    private Func<PdfEditPreflightResult, bool> _confirmImageEditWarnings = static result =>
         MessageBox.Show(
             string.Join(Environment.NewLine, result.Findings
-                .Where(finding => finding.Severity == ImageEditFindingSeverity.Warning)
+                .Where(finding => finding.Severity == PdfEditFindingSeverity.Warning)
                 .Select(finding => $"• {finding.Message}")) +
             "\n\n¿Deseas continuar con Guardar como...?",
             "SG PDF Editor",
@@ -54,7 +55,7 @@ public partial class MainWindow
 
     private Action<ImageEditWorkspace, string, bool, CancellationToken> _saveImageEditCopy =
         static (workspace, destination, warningsConfirmed, token) =>
-            new PdfImageEditWriter().SaveAsCopy(workspace, destination, warningsConfirmed, token);
+            new PdfEditWriter().SaveAsCopy(workspace, destination, warningsConfirmed, token);
 
     private static bool RegisterImageEditLoadedHook()
     {
@@ -184,7 +185,7 @@ public partial class MainWindow
             if (!preflight.CanProceed)
             {
                 StatusText.Text = preflight.Findings
-                    .FirstOrDefault(finding => finding.Severity == ImageEditFindingSeverity.Block)?.Message
+                    .FirstOrDefault(finding => finding.Severity == PdfEditFindingSeverity.Block)?.Message
                     ?? "El PDF no se puede guardar de forma segura desde EDITAR.";
                 return false;
             }
