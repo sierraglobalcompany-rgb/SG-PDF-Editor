@@ -21,39 +21,45 @@
 **Estado:** automated closure PASS; real Windows/manual QA **NOT RUN**. Closure `327d7064c14131e603e3bce6947b593a10f46363`; draft PR #24 open/unmerged.
 
 ## Phase 7 — F6 Imágenes
-**Goal:** edit real PDF image page objects locally/offline without raster-overlay fallbacks or a second PDF engine.
+**Estado:** **AUTOMATED CLOSURE PASS**; real Windows/manual QA **NOT RUN**. Closure `c6d762efca01d50bfe3932d1f05617190a464fc6`; stacked draft PR #25 open/unmerged.
 
-**Estado:** **AUTOMATED FUNCTIONAL CLOSURE PASS; Task 10 docs/PR finalization in progress.** Real Windows/manual QA **NOT RUN**.
+`IMG-01..04`: **AUTO PASS**.
 
-Fresh Task-10 functional evidence:
+## Phase 8 — F7 Texto V1
+**Goal:** editar conservadoramente objetos de texto PDF reales dentro del único modo EDITAR, manteniendo PDFium como único motor y usando fallback TTF offline solo cuando la fuente original no es segura.
 
-- functional head `7f70a68b2148504888040483a4d9a9e9dd6b4a03`;
-- Windows workflow `38057258528`, attempt 2: PASS;
+**Estado:** **AUTOMATED FUNCTIONAL CLOSURE PASS; Task 14 docs/PR finalization in progress.** Real Windows/manual QA **NOT RUN**.
+
+Evidence before final Task-14 docs gate:
+
+- Task-13 checkpoint `b31a75cf99207e2e6ac9072b50c5a1ac5fa32d05`;
+- Windows workflow `38089770428`: PASS;
 - Release build: 0 warnings / 0 errors;
-- tests: 680/680 PASS;
-- F5→F6 pre-docs compare: 64 commits ahead / 0 behind;
-- no project/lock dependency changes, second PDF engine, runtime network layer or generic object graph.
+- tests: 766/766 PASS;
+- F6→F7 pre-docs compare: 100 commits ahead / 0 behind;
+- no new NuGet/package-lock changes;
+- `.csproj` change is asset copy only;
+- PDFium remains the only editor engine;
+- no runtime network/cloud/service/account/API-key layer;
+- DejaVu Sans 2.37 is the only new runtime asset and is pinned with provenance/license/hash.
 
 Delivered:
 
-- real-image detection/selection and contextual actions;
-- PNG extraction and PNG/JPEG replacement with geometry preservation;
-- move, resize, rotate, delete, opacity and z-order;
-- undo/redo and dirty guards;
-- transactional Save As with source fingerprint, temp/reopen/render validation and atomic publication;
-- independent preservation matrix: representative forms, bookmarks, named destinations, internal links, tagged structure, page labels, attachments and metadata are `ProvenPreserved` for the tested F6 writer route;
-- cryptographic signatures and password-opened sources remain hard Blocks;
-- bitmap allocation bounds and active-page-only discovery.
+- active-page top-level text discovery with exact Unicode and managed snapshots;
+- mixed image/text topmost hit-testing;
+- conservative read-only/edit policy and text workspace;
+- OriginalFont route plus DejaVu Sans CID Type2 fallback with explicit Unicode maps;
+- combined image+text materialization and validation before atomic publication;
+- independent F7 preservation matrix including page rotation;
+- Texto V1 UI inside the existing EDITAR shell with shared dirty guards and Save As;
+- lifecycle/performance hardening without durable native handles.
 
-`IMG-01..04`: **AUTO PASS**. Opacity and z-order exact-runtime gates both passed.
+`TEXT-01..04`: **AUTO PASS**.
 
-Real Windows image-edit UX/performance/dialog/offline QA: **NOT RUN**.
-
-## Phase 8 — F7 Texto V1
-**Estado:** pending. Next permitted work after F6 closure is design/spec only.
+Real Windows text-edit UX/offline/manual QA: **NOT RUN**.
 
 ## Phase 9 — F8 Comentarios
-**Estado:** pending.
+**Estado:** pending. Do not start inside F7 closure.
 
 ## Phase 10 — F9 Utilidades
 **Estado:** pending.
@@ -77,8 +83,9 @@ F2                            automated PASS / private + physical QA pending
 F3                            automated PASS / manual QA pending
 F4                            automated closure PASS / manual QA pending
 F5                            automated closure PASS / manual QA pending
-F6                            automated functional closure PASS / Task 10 finalization / manual QA pending
-F7–F12                        pending
+F6                            automated closure PASS / manual QA pending / PR #25 draft
+F7                            automated functional closure PASS / Task 14 finalization / manual QA pending
+F8–F12                        pending
 ```
 
 No merge to `main` without explicit user approval.
