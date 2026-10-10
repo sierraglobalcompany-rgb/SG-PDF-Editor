@@ -65,10 +65,10 @@ public sealed class TextEditWorkspaceTests
     public void Policy_UnsupportedFallbackRune_IsRejected()
     {
         var original = Info("CASA");
-        var result = Evaluate(original, "CASA 😀", 18d, original.FillColor);
+        var result = Evaluate(original, "CASA 一", 18d, original.FillColor);
 
         Assert.False(Bool(result, "IsValid"));
-        Assert.Contains("U+1F600", String(result, "Error"), StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("U+4E00", String(result, "Error"), StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
