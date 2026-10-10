@@ -54,8 +54,13 @@ public sealed class MainWindowOrganizeSecondaryThumbnailTests
 
                 var items = OrganizeWindowTestHost.GetOrganizeItems(window);
                 Assert.Equal(2, items.Count);
-                Assert.False(OrganizeWindowTestHost.GetProperty<bool>(items[1], "HasError"));
-                Assert.NotNull(OrganizeWindowTestHost.GetProperty<BitmapSource?>(items[1], "Bitmap"));
+                var secondaryItem = items[1];
+                OrganizeWindowTestHost.PumpUntil(() =>
+                    OrganizeWindowTestHost.GetProperty<BitmapSource?>(secondaryItem, "Bitmap") is not null ||
+                    OrganizeWindowTestHost.GetProperty<bool>(secondaryItem, "HasError"));
+
+                Assert.False(OrganizeWindowTestHost.GetProperty<bool>(secondaryItem, "HasError"));
+                Assert.NotNull(OrganizeWindowTestHost.GetProperty<BitmapSource?>(secondaryItem, "Bitmap"));
                 Assert.Contains(renderedPaths, path =>
                     string.Equals(path, secondary.Path, StringComparison.OrdinalIgnoreCase));
             }
