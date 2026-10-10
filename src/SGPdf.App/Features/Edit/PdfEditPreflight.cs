@@ -26,6 +26,7 @@ internal enum PdfEditFindingKind
     InternalLink,
     TaggedStructure,
     PageLabel,
+    PageRotation,
     Attachment,
     Metadata
 }
@@ -85,7 +86,7 @@ internal sealed class PdfEditPreflightInspector
                 PdfEditFindingSeverity.Block,
                 signatureCount < 0
                     ? "No se pudo comprobar con seguridad si el PDF contiene firmas criptográficas."
-                    : "El PDF contiene una firma criptográfica y está bloqueado para edición de imágenes.",
+                    : "El PDF contiene una firma criptográfica y está bloqueado para edición en EDITAR.",
                 PdfEditPreservationStatus.Unknown));
         }
 
@@ -112,6 +113,10 @@ internal sealed class PdfEditPreflightInspector
         cancellationToken.ThrowIfCancellationRequested();
         if (session.HasOrganizePageLabels(cancellationToken))
             findings.Add(CreatePreservedInfo(PdfEditFindingKind.PageLabel, "etiquetas de página"));
+
+        cancellationToken.ThrowIfCancellationRequested();
+        if (ContainsPageRotation(session, cancellationToken))
+            findings.Add(CreatePreservedInfo(PdfEditFindingKind.PageRotation, "rotación de página"));
 
         cancellationToken.ThrowIfCancellationRequested();
         if (session.HasOrganizeAttachments(cancellationToken))
@@ -152,12 +157,26 @@ internal sealed class PdfEditPreflightInspector
         return false;
     }
 
+    private static bool ContainsPageRotation(
+        PdfDocumentSession session,
+        CancellationToken cancellationToken)
+    {
+        for (var pageIndex = 0; pageIndex < session.PageCount; pageIndex++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (session.GetPageRotation(pageIndex, cancellationToken) != 0)
+                return true;
+        }
+
+        return false;
+    }
+
     private static PdfEditFinding CreatePreservedInfo(
         PdfEditFindingKind kind,
         string structureName)
         => new(
             kind,
             PdfEditFindingSeverity.Info,
-            $"El PDF contiene {structureName}; el writer F6 los preservó en el corpus representativo automatizado.",
+            $"El PDF contiene {structureName}; el writer combinado de EDITAR los preservó en el corpus representativo automatizado de F7.",
             PdfEditPreservationStatus.ProvenPreserved);
 }
