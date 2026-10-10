@@ -61,7 +61,7 @@ internal sealed class PdfEditOutputValidator
             ValidateDocumentStructure(source, output, cancellationToken);
             ValidateEditedImages(source, output, imageWorkspace, cancellationToken);
             if (textWorkspace is not null)
-                ValidateEditedText(output, textWorkspace, cancellationToken);
+                ValidateEditedText(output, imageWorkspace, textWorkspace, cancellationToken);
 
             var editedPages = imageWorkspace.EditedStates
                 .Select(state => state.ObjectRef.Key.PageIndex)
@@ -185,50 +185,90 @@ internal sealed class PdfEditOutputValidator
 
     private static void ValidateEditedText(
         PdfDocumentSession output,
-        TextEditWorkspace workspace,
+        ImageEditWorkspace imageWorkspace,
+        TextEditWorkspace textWorkspace,
         CancellationToken cancellationToken)
     {
-        foreach (var pageGroup in workspace.EditedStates.GroupBy(state => state.Key.PageIndex))
+        foreach (var pageGroup in textWorkspace.EditedStates.GroupBy(state => state.Key.PageIndex))
         {
             cancellationToken.ThrowIfCancellationRequested();
             var outputText = output.GetTextObjects(pageGroup.Key, cancellationToken);
+            var ordinalsMayShift = imageWorkspace.EditedStates.Any(state =>
+                state.ObjectRef.Key.PageIndex == pageGroup.Key &&
+                (state.Deleted || state.TargetObjectIndex is not null));
 
             foreach (var state in pageGroup)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                var actual = outputText.SingleOrDefault(text => text.Key.PageObjectIndex == state.Key.PageObjectIndex);
-                if (actual is null)
+                PdfTextObjectInfo? actual = outputText.SingleOrDefault(
+                    text => text.Key.PageObjectIndex == state.Key.PageObjectIndex);
+
+                if (!ordinalsMayShift)
                 {
-                    throw new InvalidDataException(
-                        $"No se encontró el objeto TEXT esperado en el ordinal {state.Key.PageObjectIndex} de la página {state.Key.PageIndex + 1}.");
+                    if (actual is null)
+                    {
+                        throw new InvalidDataException(
+                            $"No se encontró el objeto TEXT esperado en el ordinal {state.Key.PageObjectIndex} de la página {state.Key.PageIndex + 1}.");
+                    }
+                }
+                else if (actual is null || !MatchesExpectedTextState(actual, state))
+                {
+                    var matches = outputText
+                        .Where(text => MatchesExpectedTextState(text, state))
+                        .Take(2)
+                        .ToArray();
+                    if (matches.Length != 1)
+                    {
+                        throw new InvalidDataException(
+                            "No se pudo resolver de forma única un texto editado después de un cambio estructural de imágenes.");
+                    }
+
+                    actual = matches[0];
                 }
 
-                if (!string.Equals(actual.Text, state.Text, StringComparison.Ordinal))
-                    throw new InvalidDataException("El Unicode de un texto editado no coincide exactamente con el estado lógico guardado.");
-                if (!NearlyEqual(actual.Matrix, state.Original.Matrix))
-                    throw new InvalidDataException("La matriz de un texto editado no coincide con el estado lógico guardado.");
-                if (!NearlyEqual(actual.FontSize, state.FontSize, FontSizeTolerance))
-                    throw new InvalidDataException("El tamaño de un texto editado no coincide con el estado lógico guardado.");
-                if (actual.FillColor != state.FillColor)
-                    throw new InvalidDataException("El color de un texto editado no coincide con el estado lógico guardado.");
-
-                ValidateFontRoute(actual.FontName, state);
+                ValidateExpectedTextState(actual!, state);
             }
         }
     }
 
+    private static bool MatchesExpectedTextState(PdfTextObjectInfo actual, TextEditState state)
+        => string.Equals(actual.Text, state.Text, StringComparison.Ordinal) &&
+           NearlyEqual(actual.Matrix, state.Original.Matrix) &&
+           NearlyEqual(actual.FontSize, state.FontSize, FontSizeTolerance) &&
+           actual.FillColor == state.FillColor &&
+           FontRouteMatches(actual.FontName, state);
+
+    private static void ValidateExpectedTextState(PdfTextObjectInfo actual, TextEditState state)
+    {
+        if (!string.Equals(actual.Text, state.Text, StringComparison.Ordinal))
+            throw new InvalidDataException("El Unicode de un texto editado no coincide exactamente con el estado lógico guardado.");
+        if (!NearlyEqual(actual.Matrix, state.Original.Matrix))
+            throw new InvalidDataException("La matriz de un texto editado no coincide con el estado lógico guardado.");
+        if (!NearlyEqual(actual.FontSize, state.FontSize, FontSizeTolerance))
+            throw new InvalidDataException("El tamaño de un texto editado no coincide con el estado lógico guardado.");
+        if (actual.FillColor != state.FillColor)
+            throw new InvalidDataException("El color de un texto editado no coincide con el estado lógico guardado.");
+
+        ValidateFontRoute(actual.FontName, state);
+    }
+
     private static void ValidateFontRoute(string actualFontName, TextEditState state)
     {
-        if (state.FontStrategy == TextFontStrategy.OriginalFont)
+        if (!FontRouteMatches(actualFontName, state))
         {
-            if (!FontNamesMatch(actualFontName, state.Original.FontName))
-                throw new InvalidDataException("El texto editado no conservó la ruta de fuente original esperada.");
-            return;
+            var message = state.FontStrategy == TextFontStrategy.OriginalFont
+                ? "El texto editado no conservó la ruta de fuente original esperada."
+                : "El texto editado no usa la fuente fallback pinneada esperada.";
+            throw new InvalidDataException(message);
         }
+    }
 
-        var expectedFallback = Path.GetFileNameWithoutExtension(FallbackFontAsset.FontFileName);
-        if (!FontNamesMatch(actualFontName, expectedFallback))
-            throw new InvalidDataException("El texto editado no usa la fuente fallback pinneada esperada.");
+    private static bool FontRouteMatches(string actualFontName, TextEditState state)
+    {
+        var expected = state.FontStrategy == TextFontStrategy.OriginalFont
+            ? state.Original.FontName
+            : Path.GetFileNameWithoutExtension(FallbackFontAsset.FontFileName);
+        return FontNamesMatch(actualFontName, expected);
     }
 
     private static bool FontNamesMatch(string actual, string expected)
