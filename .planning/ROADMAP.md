@@ -12,42 +12,45 @@
 **Estado:** F2.1–F2.6 automated PASS; private corpus + thermal/ruler/scanner QA **NOT RUN**.
 
 ## Phase 4 — F3 Firma Visual
-**Estado:** F3.1–F3.4 automated PASS; corresponding real QA **NOT RUN**.
-
-F3.4 closure `1bef751962e0b4aaf35fbda9b8a1a9a2ee2ba36b`; draft PR #22 open/unmerged.
+**Estado:** F3.1–F3.4 automated PASS; corresponding real QA **NOT RUN**. Draft PR #22 open/unmerged.
 
 ## Phase 5 — F4 Lector Completo
-**Estado:** **AUTOMATED CLOSURE PASS**; manual Windows QA **NOT RUN**.
-
-Closure `1d620f1b2b9717aab35671e18a9dc78f28a8afdd`; draft PR #23 open/unmerged.
+**Estado:** automated closure PASS; manual Windows QA **NOT RUN**. Draft PR #23 open/unmerged.
 
 ## Phase 6 — F5 Organizar
-**Goal:** reorder/rotate/delete/duplicate/insert/extract/merge/split with preservation preflight and transactional Save As.
-
-**Estado:** **AUTOMATED CLOSURE PASS**, provided the exact Task-10 checkpoint head has both push and PR Windows CI green. Real Windows/manual QA **NOT RUN**.
-
-Closure evidence before the final checkpoint commit:
-
-- stacked base F4: `1d620f1b2b9717aab35671e18a9dc78f28a8afdd`;
-- functional head `d92cd0cc60fb7de9a3d9d595bdfd0468ee38ff8a` → CI `37990505245` attempt 2 PASS, 550/550, build 0/0;
-- reconciled-docs head `e9f96566c1d31a442da6373e1a648cc61a9e5bfc` → push CI `37991289080` PASS, 550/550, build 0/0;
-- draft PR #24 base `feat/f4-full-reader`, head `feat/f5-organize`, open/unmerged;
-- PR CI `37991479820` PASS, 550/550, build 0/0;
-- no project/lock dependency changes, second PDF engine or runtime network layer;
-- preservation matrix: `docs/history/2026-10-09-F5-preservation-matrix.md`;
-- signed/password-opened PDFs hard-block structural output;
-- representative fixtures prove current writer changes/loses forms, bookmarks, internal links, named destinations, tagged structure, page labels, attachments and original metadata, therefore explicit warning confirmation is required;
-- Task 10 adds dirty-plan protection for opening another PDF and switching away from ORGANIZAR; successful Save As clears dirty state.
-
-Tasks 0–10: **AUTO PASS** when the exact checkpoint head's push + PR CI are green. `ORG-01..04`: **AUTO PASS**.
-
-Real Windows organize UX/performance/dialog/offline QA: **NOT RUN**.
+**Estado:** automated closure PASS; real Windows/manual QA **NOT RUN**. Closure `327d7064c14131e603e3bce6947b593a10f46363`; draft PR #24 open/unmerged.
 
 ## Phase 7 — F6 Imágenes
-**Estado:** pending. **Next allowed gate after F5 closure: design/spec only.**
+**Goal:** edit real PDF image page objects locally/offline without raster-overlay fallbacks or a second PDF engine.
+
+**Estado:** **AUTOMATED FUNCTIONAL CLOSURE PASS; Task 10 docs/PR finalization in progress.** Real Windows/manual QA **NOT RUN**.
+
+Fresh Task-10 functional evidence:
+
+- functional head `7f70a68b2148504888040483a4d9a9e9dd6b4a03`;
+- Windows workflow `38057258528`, attempt 2: PASS;
+- Release build: 0 warnings / 0 errors;
+- tests: 680/680 PASS;
+- F5→F6 pre-docs compare: 64 commits ahead / 0 behind;
+- no project/lock dependency changes, second PDF engine, runtime network layer or generic object graph.
+
+Delivered:
+
+- real-image detection/selection and contextual actions;
+- PNG extraction and PNG/JPEG replacement with geometry preservation;
+- move, resize, rotate, delete, opacity and z-order;
+- undo/redo and dirty guards;
+- transactional Save As with source fingerprint, temp/reopen/render validation and atomic publication;
+- independent preservation matrix: representative forms, bookmarks, named destinations, internal links, tagged structure, page labels, attachments and metadata are `ProvenPreserved` for the tested F6 writer route;
+- cryptographic signatures and password-opened sources remain hard Blocks;
+- bitmap allocation bounds and active-page-only discovery.
+
+`IMG-01..04`: **AUTO PASS**. Opacity and z-order exact-runtime gates both passed.
+
+Real Windows image-edit UX/performance/dialog/offline QA: **NOT RUN**.
 
 ## Phase 8 — F7 Texto V1
-**Estado:** pending.
+**Estado:** pending. Next permitted work after F6 closure is design/spec only.
 
 ## Phase 9 — F8 Comentarios
 **Estado:** pending.
@@ -74,9 +77,8 @@ F2                            automated PASS / private + physical QA pending
 F3                            automated PASS / manual QA pending
 F4                            automated closure PASS / manual QA pending
 F5                            automated closure PASS / manual QA pending
-F6–F12                        pending
+F6                            automated functional closure PASS / Task 10 finalization / manual QA pending
+F7–F12                        pending
 ```
-
-Final F5 exact-head CI evidence is recorded in PR #24 conversation to avoid changing the tested git head solely to cite its own CI.
 
 No merge to `main` without explicit user approval.
