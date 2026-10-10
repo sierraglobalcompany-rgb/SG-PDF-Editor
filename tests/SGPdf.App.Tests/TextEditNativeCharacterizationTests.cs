@@ -42,14 +42,32 @@ public sealed class TextEditNativeCharacterizationTests
     }
 
     [Fact]
-    public void PinnedPdfium_CanLoadTtfCreateTextObject_InsertSameIndex_SaveReopen()
+    public void PinnedPdfium_CidTrue_NormalizesAsciiSpaceToNbsp()
+    {
+        using var fixture = TextEditNativeCharacterizationHarness.CreateSimpleTextPdf();
+        var fixtureFont = TextEditNativeCharacterizationHarness.ResolveWindowsFixtureTtf();
+        var output = fixture.NewOutputPath("cid-characterization.pdf");
+
+        TextEditNativeCharacterizationHarness.ReplaceFirstTextWithTtfAndSave(
+            fixture.Path,
+            output,
+            fixtureFont,
+            "NIÑO 1");
+
+        var after = TextEditNativeCharacterizationHarness.InspectFirstText(output);
+        Assert.Equal("NIÑO\u00A01", after.Text);
+        Assert.NotEqual("NIÑO 1", after.Text);
+    }
+
+    [Fact]
+    public void PinnedPdfium_CanLoadSimpleTtfCreateTextObject_InsertSameIndex_SaveReopen()
     {
         using var fixture = TextEditNativeCharacterizationHarness.CreateSimpleTextPdf();
         var before = TextEditNativeCharacterizationHarness.InspectFirstText(fixture.Path);
         var fixtureFont = TextEditNativeCharacterizationHarness.ResolveWindowsFixtureTtf();
         var output = fixture.NewOutputPath("fallback.pdf");
 
-        TextEditNativeCharacterizationHarness.ReplaceFirstTextWithTtfAndSave(
+        TextEditSimpleTtfCharacterization.ReplaceFirstTextAndSave(
             fixture.Path,
             output,
             fixtureFont,
@@ -83,7 +101,7 @@ public sealed class TextEditNativeCharacterizationTests
         for (var iteration = 0; iteration < 5; iteration++)
         {
             var output = fixture.NewOutputPath($"repeat-{iteration}.pdf");
-            TextEditNativeCharacterizationHarness.ReplaceFirstTextWithTtfAndSave(
+            TextEditSimpleTtfCharacterization.ReplaceFirstTextAndSave(
                 fixture.Path,
                 output,
                 fixtureFont,
