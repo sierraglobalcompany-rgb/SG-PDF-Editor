@@ -1,3 +1,4 @@
+using Microsoft.Win32;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -15,7 +16,9 @@ public partial class MainWindow
 
     private bool _imageEditUiInitialized;
     private bool _imageEditModeActive;
+    private bool _imageEditMaterializing;
     private Button? _imageEditModeButton;
+    private Button? _imageEditSaveAsButton;
     private Canvas? _imageEditOverlayCanvas;
     private ImageEditWorkspace? _imageEditWorkspace;
     private IReadOnlyList<PdfImageObjectInfo> _activeImageObjects = Array.Empty<PdfImageObjectInfo>();
@@ -23,6 +26,35 @@ public partial class MainWindow
 
     private Func<PdfDocumentSession, int, CancellationToken, IReadOnlyList<PdfImageObjectInfo>> _getImageObjects =
         static (session, pageIndex, token) => session.GetImageObjects(pageIndex, token);
+
+    private Func<string?> _selectImageEditPdfDestination = static () =>
+    {
+        var dialog = new SaveFileDialog
+        {
+            Filter = "PDF (*.pdf)|*.pdf",
+            DefaultExt = ".pdf",
+            AddExtension = true,
+            FileName = "editado.pdf"
+        };
+        return dialog.ShowDialog() == true ? dialog.FileName : null;
+    };
+
+    private Func<PdfDocumentSession, CancellationToken, ImageEditPreflightResult> _inspectImageEditPreflight =
+        static (session, token) => new ImageEditPreflightInspector().Inspect(session, token);
+
+    private Func<ImageEditPreflightResult, bool> _confirmImageEditWarnings = static result =>
+        MessageBox.Show(
+            string.Join(Environment.NewLine, result.Findings
+                .Where(finding => finding.Severity == ImageEditFindingSeverity.Warning)
+                .Select(finding => $"• {finding.Message}")) +
+            "\n\n¿Deseas continuar con Guardar como...?",
+            "SG PDF Editor",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning) == MessageBoxResult.Yes;
+
+    private Action<ImageEditWorkspace, string, bool, CancellationToken> _saveImageEditCopy =
+        static (workspace, destination, warningsConfirmed, token) =>
+            new PdfImageEditWriter().SaveAsCopy(workspace, destination, warningsConfirmed, token);
 
     private static bool RegisterImageEditLoadedHook()
     {
@@ -74,6 +106,23 @@ public partial class MainWindow
         RegisterName(editModeButton.Name, editModeButton);
         _imageEditModeButton = editModeButton;
 
+        var saveAsButton = new Button
+        {
+            Name = "ImageEditSaveAsButton",
+            Content = "Guardar como...",
+            Padding = new Thickness(10, 4, 10, 4),
+            Margin = new Thickness(4, 0, 0, 0),
+            Visibility = Visibility.Collapsed,
+            IsEnabled = false
+        };
+        saveAsButton.Click += ImageEditSaveAs_Click;
+        if (organizeIndex >= 0)
+            modePanel.Children.Insert(organizeIndex + 1, saveAsButton);
+        else
+            modePanel.Children.Add(saveAsButton);
+        RegisterName(saveAsButton.Name, saveAsButton);
+        _imageEditSaveAsButton = saveAsButton;
+
         var pageGrid = PdfImage.Parent as Grid
             ?? throw new InvalidOperationException("No se encontró el contenedor de página para EDITAR.");
         var overlay = new Canvas
@@ -106,6 +155,80 @@ public partial class MainWindow
 
     private async void ImageEditMode_Click(object sender, RoutedEventArgs e)
         => await TryEnterImageEditModeAsync();
+
+    private void ImageEditSaveAs_Click(object sender, RoutedEventArgs e)
+        => TrySaveImageEditWorkspace();
+
+    private bool TrySaveImageEditWorkspace()
+    {
+        if (!_imageEditModeActive ||
+            _imageEditMaterializing ||
+            _imageEditWorkspace is null ||
+            _session is null)
+        {
+            return false;
+        }
+
+        var destination = _selectImageEditPdfDestination();
+        if (string.IsNullOrWhiteSpace(destination))
+            return false;
+
+        var workspace = _imageEditWorkspace;
+        var session = _session;
+        _imageEditMaterializing = true;
+        UpdateImageEditSaveCommandAvailability();
+
+        try
+        {
+            var preflight = _inspectImageEditPreflight(session, CancellationToken.None);
+            if (!preflight.CanProceed)
+            {
+                StatusText.Text = preflight.Findings
+                    .FirstOrDefault(finding => finding.Severity == ImageEditFindingSeverity.Block)?.Message
+                    ?? "El PDF no se puede guardar de forma segura desde EDITAR.";
+                return false;
+            }
+
+            var warningsConfirmed = false;
+            if (preflight.RequiresWarningConfirmation)
+            {
+                if (!_confirmImageEditWarnings(preflight))
+                {
+                    StatusText.Text = "Guardado cancelado. No se modificó el PDF fuente.";
+                    return false;
+                }
+
+                warningsConfirmed = true;
+            }
+
+            _saveImageEditCopy(workspace, destination, warningsConfirmed, CancellationToken.None);
+            workspace.MarkSavedBaseline();
+            StatusText.Text = $"PDF editado guardado como {System.IO.Path.GetFileName(destination)}.";
+            return true;
+        }
+        catch (Exception ex)
+        {
+            StatusText.Text = $"No se pudo guardar el PDF editado: {ex.Message}";
+            return false;
+        }
+        finally
+        {
+            _imageEditMaterializing = false;
+            UpdateImageEditSaveCommandAvailability();
+        }
+    }
+
+    private void UpdateImageEditSaveCommandAvailability()
+    {
+        if (_imageEditSaveAsButton is null)
+            return;
+
+        _imageEditSaveAsButton.Visibility = _imageEditModeActive
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+        _imageEditSaveAsButton.IsEnabled =
+            _imageEditModeActive && _imageEditWorkspace is not null && !_imageEditMaterializing;
+    }
 
     private async Task<bool> TryEnterImageEditModeAsync()
     {
@@ -175,6 +298,7 @@ public partial class MainWindow
             _selectedImageKey = null;
             _imageEditModeActive = true;
             _signatureModeActive = false;
+            UpdateImageEditSaveCommandAvailability();
 
             if (_signatureOverlayCanvas is not null)
                 _signatureOverlayCanvas.Visibility = Visibility.Collapsed;
@@ -491,6 +615,7 @@ public partial class MainWindow
         _imageEditWorkspace = null;
         _activeImageObjects = Array.Empty<PdfImageObjectInfo>();
         _selectedImageKey = null;
+        UpdateImageEditSaveCommandAvailability();
 
         if (_imageEditOverlayCanvas is null)
             return;

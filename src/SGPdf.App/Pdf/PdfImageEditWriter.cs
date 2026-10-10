@@ -34,7 +34,6 @@ internal sealed class PdfImageEditWriter
     {
         ArgumentNullException.ThrowIfNull(workspace);
         ArgumentException.ThrowIfNullOrWhiteSpace(destinationPath);
-        _ = warningsConfirmed; // Task 8 owns non-blocking preservation warnings.
 
         cancellationToken.ThrowIfCancellationRequested();
         var sourcePath = Path.GetFullPath(workspace.SourcePath);
@@ -68,6 +67,17 @@ internal sealed class PdfImageEditWriter
             throw new InvalidOperationException("No se pudo comprobar si el PDF contiene firmas criptográficas.");
         if (signatureCount > 0)
             throw new InvalidOperationException("Los PDF con firma criptográfica están bloqueados para edición de imágenes.");
+
+        cancellationToken.ThrowIfCancellationRequested();
+        using (var preflightSession = PdfDocumentSession.Open(sourcePath))
+        {
+            var preflight = new ImageEditPreflightInspector((_, _) => 0)
+                .Inspect(preflightSession, cancellationToken);
+            if (!preflight.CanProceed)
+                throw new InvalidOperationException("El PDF no superó el preflight de preservación para EDITAR.");
+            if (preflight.RequiresWarningConfirmation && !warningsConfirmed)
+                throw new InvalidOperationException("El PDF requiere confirmación explícita de las advertencias de preservación.");
+        }
 
         cancellationToken.ThrowIfCancellationRequested();
         var destinationFileName = Path.GetFileName(destinationFullPath);
