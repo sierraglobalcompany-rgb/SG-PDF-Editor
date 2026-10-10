@@ -3,12 +3,13 @@
 **Fecha:** 2026-10-10  
 **Fase:** F7 — Texto V1  
 **Task:** 8 — writer combinado, ruta `OriginalFont`  
-**Estado:** **FUNCTIONAL_GREEN / FINAL_CI_PENDING**  
+**Estado:** **CLOSED / AUTOMATED PASS**  
 **Rama:** `feat/f7-text-v1`  
 **Base Task 8:** `6b41e387ce719b11e06060e519f2c4432d816ef4`  
 **RED funcional:** `fa3374af8d51f5e68f5c9b0158b359937ff38882`  
 **RED adicional color:** `f6820df7cfdf3ae1ce5d2cc5dc7f8559425ddecb`  
-**Head funcional GREEN:** `8909272ff987e3e2ae3d471602c0d2897934a7f4`
+**Head funcional GREEN:** `8909272ff987e3e2ae3d471602c0d2897934a7f4`  
+**Checkpoint verificado:** `d849bee00c2d110cd7db9f4b7da90e5085cf5364`
 
 ## Alcance entregado
 
@@ -150,8 +151,17 @@ No hubo cambios de `.csproj`, lockfiles ni dependencias.
 
 **NOT RUN.** Este gate valida materialización automatizada; no se presenta como QA visual/manual de Windows.
 
-## Gate final
+## Gate de checkpoint
 
-CI exacto sobre el commit de este checkpoint: **PENDING**.
+CI exacto sobre `d849bee00c2d110cd7db9f4b7da90e5085cf5364`:
 
-No iniciar Task 9 hasta que este checkpoint quede verificado y sellado `CLOSED`.
+- workflow `38079239509`;
+- job `114292554626`;
+- hygiene: PASS;
+- Labelize staging: PASS;
+- locked restore: PASS;
+- build: PASS;
+- tests: PASS;
+- workflow: **SUCCESS**.
+
+Task 8 queda **CLOSED / AUTOMATED PASS**. El commit de sello documental debe conservar el mismo árbol funcional y recibir su propia verificación exact-head antes de iniciar Task 9.
