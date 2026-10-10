@@ -69,7 +69,7 @@ public sealed class PdfCommentWriterTextMarkupTests
         Assert.Equal(7, original.Count);
         Assert.Equal(6, output.Count);
         Assert.DoesNotContain(output, item => item.Subtype == PdfiumNative.FPDF_ANNOT_UNDERLINE);
-        var highlightOutput = Assert.Single(output.Where(item => item.Subtype == PdfiumNative.FPDF_ANNOT_HIGHLIGHT));
+        var highlightOutput = Assert.Single(output, item => item.Subtype == PdfiumNative.FPDF_ANNOT_HIGHLIGHT);
         Assert.Equal(new NativeColor(12, 34, 56, 178), highlightOutput.Color);
 
         foreach (var preservedSubtype in new[]
@@ -81,7 +81,7 @@ public sealed class PdfCommentWriterTextMarkupTests
             PdfiumNative.FPDF_ANNOT_CIRCLE
         })
         {
-            Assert.Single(output.Where(item => item.Subtype == preservedSubtype));
+            Assert.Single(output, item => item.Subtype == preservedSubtype);
         }
     }
 
