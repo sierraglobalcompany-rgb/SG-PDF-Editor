@@ -1,7 +1,9 @@
 using SGPdf.App.Features.Edit;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Text;
 using SGPdf.App.Features.Edit.Images;
+using SGPdf.App.Features.Edit.Text;
 
 namespace SGPdf.App.Pdf;
 
@@ -9,11 +11,13 @@ internal sealed class PdfEditWriter
 {
     private const double MatrixTolerance = 0.05d;
     private const double BoundsTolerance = 0.10d;
+    private const double FontSizeTolerance = 0.01d;
 
     private readonly Func<IntPtr, IntPtr, uint, int> _saveAsCopy;
     private readonly Action<string, ImageEditWorkspace, CancellationToken> _validateOutput;
     private readonly Func<string, int> _signatureCount;
     private readonly Func<IntPtr, PdfObjectMatrix, int> _setMatrix;
+    private readonly Func<IntPtr, int> _generateContent;
 
     internal PdfEditWriter(
         Func<IntPtr, IntPtr, uint, int>? saveAsCopyOverride = null,
@@ -25,6 +29,18 @@ internal sealed class PdfEditWriter
         _validateOutput = validateOutputOverride ?? ValidateOutput;
         _signatureCount = signatureCountOverride ?? GetSignatureCount;
         _setMatrix = setMatrixOverride ?? SetMatrix;
+        _generateContent = PdfiumNative.FPDFPage_GenerateContent;
+    }
+
+    internal PdfEditWriter(
+        Func<IntPtr, IntPtr, uint, int>? saveAsCopyOverride,
+        Action<string, ImageEditWorkspace, CancellationToken>? validateOutputOverride,
+        Func<string, int>? signatureCountOverride,
+        Func<IntPtr, PdfObjectMatrix, int>? setMatrixOverride,
+        Func<IntPtr, int>? generateContentOverride)
+        : this(saveAsCopyOverride, validateOutputOverride, signatureCountOverride, setMatrixOverride)
+    {
+        _generateContent = generateContentOverride ?? PdfiumNative.FPDFPage_GenerateContent;
     }
 
     internal void SaveAsCopy(
@@ -32,12 +48,40 @@ internal sealed class PdfEditWriter
         string destinationPath,
         bool warningsConfirmed,
         CancellationToken cancellationToken = default)
+        => SaveAsCopyCore(workspace, null, destinationPath, warningsConfirmed, cancellationToken);
+
+    internal void SaveAsCopy(
+        ImageEditWorkspace imageWorkspace,
+        TextEditWorkspace textWorkspace,
+        string destinationPath,
+        bool warningsConfirmed,
+        CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(workspace);
+        ArgumentNullException.ThrowIfNull(imageWorkspace);
+        ArgumentNullException.ThrowIfNull(textWorkspace);
+        EnsureCombinedWorkspaceIdentity(imageWorkspace, textWorkspace);
+
+        if (textWorkspace.EditedStates.Any(state => state.FontStrategy != TextFontStrategy.OriginalFont))
+        {
+            throw new InvalidOperationException(
+                "Esta ruta de guardado solo admite texto con la fuente original; la fuente fallback se materializa en una tarea posterior.");
+        }
+
+        SaveAsCopyCore(imageWorkspace, textWorkspace, destinationPath, warningsConfirmed, cancellationToken);
+    }
+
+    private void SaveAsCopyCore(
+        ImageEditWorkspace imageWorkspace,
+        TextEditWorkspace? textWorkspace,
+        string destinationPath,
+        bool warningsConfirmed,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(imageWorkspace);
         ArgumentException.ThrowIfNullOrWhiteSpace(destinationPath);
 
         cancellationToken.ThrowIfCancellationRequested();
-        var sourcePath = Path.GetFullPath(workspace.SourcePath);
+        var sourcePath = Path.GetFullPath(imageWorkspace.SourcePath);
         var destinationFullPath = Path.GetFullPath(destinationPath);
         if (string.Equals(sourcePath, destinationFullPath, StringComparison.OrdinalIgnoreCase))
             throw new ArgumentException("Guardar como requiere una ruta diferente al PDF fuente.", nameof(destinationPath));
@@ -47,10 +91,10 @@ internal sealed class PdfEditWriter
         if (!Directory.Exists(destinationDirectory))
             throw new DirectoryNotFoundException(destinationDirectory);
 
-        if (workspace.SourceOpenedWithPassword)
+        if (imageWorkspace.SourceOpenedWithPassword || textWorkspace?.SourceOpenedWithPassword == true)
             throw new InvalidOperationException("Los PDF abiertos con contraseña no se pueden materializar en EDITAR.");
 
-        if (!workspace.SourceFingerprint.MatchesCurrentFile(sourcePath))
+        if (!imageWorkspace.SourceFingerprint.MatchesCurrentFile(sourcePath))
             throw new IOException("El PDF fuente cambió o ya no está disponible.");
 
         cancellationToken.ThrowIfCancellationRequested();
@@ -67,7 +111,7 @@ internal sealed class PdfEditWriter
         if (signatureCount < 0)
             throw new InvalidOperationException("No se pudo comprobar si el PDF contiene firmas criptográficas.");
         if (signatureCount > 0)
-            throw new InvalidOperationException("Los PDF con firma criptográfica están bloqueados para edición de imágenes.");
+            throw new InvalidOperationException("Los PDF con firma criptográfica están bloqueados para edición.");
 
         cancellationToken.ThrowIfCancellationRequested();
         using (var preflightSession = PdfDocumentSession.Open(sourcePath))
@@ -88,9 +132,9 @@ internal sealed class PdfEditWriter
 
         try
         {
-            WriteTemporaryCopy(workspace, temporaryPath, cancellationToken);
+            WriteTemporaryCopy(imageWorkspace, textWorkspace, temporaryPath, cancellationToken);
             cancellationToken.ThrowIfCancellationRequested();
-            _validateOutput(temporaryPath, workspace, cancellationToken);
+            _validateOutput(temporaryPath, imageWorkspace, cancellationToken);
             cancellationToken.ThrowIfCancellationRequested();
 
             if (File.Exists(destinationFullPath))
@@ -104,8 +148,23 @@ internal sealed class PdfEditWriter
         }
     }
 
+    private static void EnsureCombinedWorkspaceIdentity(
+        ImageEditWorkspace imageWorkspace,
+        TextEditWorkspace textWorkspace)
+    {
+        var imagePath = Path.GetFullPath(imageWorkspace.SourcePath);
+        var textPath = Path.GetFullPath(textWorkspace.SourcePath);
+        if (!string.Equals(imagePath, textPath, StringComparison.OrdinalIgnoreCase) ||
+            imageWorkspace.SourceFingerprint != textWorkspace.SourceFingerprint)
+        {
+            throw new InvalidOperationException(
+                "Los workspaces de imagen y texto deben pertenecer al mismo PDF fuente y al mismo fingerprint.");
+        }
+    }
+
     private void WriteTemporaryCopy(
-        ImageEditWorkspace workspace,
+        ImageEditWorkspace imageWorkspace,
+        TextEditWorkspace? textWorkspace,
         string temporaryPath,
         CancellationToken cancellationToken)
     {
@@ -116,7 +175,7 @@ internal sealed class PdfEditWriter
         try
         {
             cancellationToken.ThrowIfCancellationRequested();
-            document = PdfiumNative.FPDF_LoadDocument(workspace.SourcePath, null);
+            document = PdfiumNative.FPDF_LoadDocument(imageWorkspace.SourcePath, null);
             if (document == IntPtr.Zero)
             {
                 var error = PdfiumNative.FPDF_GetLastError();
@@ -127,86 +186,59 @@ internal sealed class PdfEditWriter
             if (pageCount <= 0)
                 throw new InvalidOperationException("PDFium devolvió una cantidad de páginas inválida.");
 
-            foreach (var pageGroup in workspace.EditedStates.GroupBy(state => state.ObjectRef.Key.PageIndex))
+            var imageGroups = imageWorkspace.EditedStates
+                .GroupBy(state => state.ObjectRef.Key.PageIndex)
+                .ToDictionary(group => group.Key, group => group.ToArray());
+            var textGroups = (textWorkspace?.EditedStates ?? Array.Empty<TextEditState>())
+                .GroupBy(state => state.Key.PageIndex)
+                .ToDictionary(group => group.Key, group => group.ToArray());
+            var editedPages = imageGroups.Keys
+                .Concat(textGroups.Keys)
+                .Distinct()
+                .OrderBy(index => index)
+                .ToArray();
+
+            foreach (var pageIndex in editedPages)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                if (pageGroup.Key < 0 || pageGroup.Key >= pageCount)
+                if (pageIndex < 0 || pageIndex >= pageCount)
                     throw new InvalidOperationException("El plan de edición referencia una página inválida.");
 
-                var page = PdfiumNative.FPDF_LoadPage(document, pageGroup.Key);
+                var page = PdfiumNative.FPDF_LoadPage(document, pageIndex);
                 if (page == IntPtr.Zero)
-                    throw new InvalidOperationException($"PDFium no pudo cargar la página {pageGroup.Key + 1} para materializar imágenes.");
+                    throw new InvalidOperationException($"PDFium no pudo cargar la página {pageIndex + 1} para materializar cambios.");
 
+                IntPtr textPage = IntPtr.Zero;
                 try
                 {
-                    var resolved = ResolveAllBeforeMutation(page, pageGroup.ToArray(), cancellationToken);
+                    imageGroups.TryGetValue(pageIndex, out var imageStates);
+                    textGroups.TryGetValue(pageIndex, out var textStates);
+                    imageStates ??= Array.Empty<ImageEditState>();
+                    textStates ??= Array.Empty<TextEditState>();
 
-                    foreach (var item in resolved)
+                    if (textStates.Length > 0)
                     {
-                        cancellationToken.ThrowIfCancellationRequested();
-                        if (item.State.Deleted)
-                            continue;
-
-                        if (item.State.ReplacementAsset is not null)
-                            SetReplacementBitmap(page, item.Handle, item.State.ReplacementAsset, cancellationToken);
-
-                        if (!NearlyEqual(item.State.CurrentMatrix, item.State.ObjectRef.Original.Matrix) &&
-                            _setMatrix(item.Handle, item.State.CurrentMatrix) == 0)
-                        {
-                            throw new InvalidOperationException("PDFium no pudo aplicar la matriz editada a una imagen.");
-                        }
-
-                        if (item.State.Opacity is byte alpha &&
-                            PdfiumNative.FPDFPageObj_SetFillColor(
-                                item.Handle,
-                                255u,
-                                255u,
-                                255u,
-                                alpha) == 0)
-                        {
-                            throw new InvalidOperationException("PDFium no pudo aplicar la opacidad editada a una imagen.");
-                        }
+                        textPage = PdfiumNative.FPDFText_LoadPage(page);
+                        if (textPage == IntPtr.Zero)
+                            throw new InvalidOperationException($"PDFium no pudo cargar la capa de texto de la página {pageIndex + 1}.");
                     }
 
-                    foreach (var item in resolved.Where(item => item.State.Deleted))
-                    {
-                        cancellationToken.ThrowIfCancellationRequested();
-                        if (PdfiumNative.FPDFPage_RemoveObject(page, item.Handle) == 0)
-                            throw new InvalidOperationException("PDFium no pudo eliminar una imagen de la página.");
-                        PdfiumNative.FPDFPageObj_Destroy(item.Handle);
-                    }
+                    // Todos los handles de ambos tipos se resuelven antes de la primera mutación.
+                    var resolvedImages = ResolveImagesBeforeMutation(page, imageStates, cancellationToken);
+                    var resolvedText = ResolveTextBeforeMutation(page, textPage, textStates, cancellationToken);
 
-                    foreach (var item in resolved.Where(item => !item.State.Deleted && item.State.TargetObjectIndex is not null))
-                    {
-                        cancellationToken.ThrowIfCancellationRequested();
-                        var target = item.State.TargetObjectIndex!.Value;
-                        if (PdfiumNative.FPDFPage_RemoveObject(page, item.Handle) == 0)
-                            throw new InvalidOperationException("PDFium no pudo retirar una imagen para reordenarla.");
-
-                        var reinserted = false;
-                        try
-                        {
-                            var remainingCount = PdfiumNative.FPDFPage_CountObjects(page);
-                            if (remainingCount < 0 || target < 0 || target > remainingCount)
-                                throw new InvalidOperationException("El índice de orden solicitado ya no es válido.");
-
-                            if (PdfiumNative.FPDFPage_InsertObjectAtIndex(page, item.Handle, (nuint)target) == 0)
-                                throw new InvalidOperationException("PDFium no pudo reinsertar la imagen en el orden solicitado.");
-                            reinserted = true;
-                        }
-                        finally
-                        {
-                            if (!reinserted)
-                                PdfiumNative.FPDFPageObj_Destroy(item.Handle);
-                        }
-                    }
+                    ApplyImageChanges(page, resolvedImages, cancellationToken);
+                    ApplyOriginalFontTextChanges(resolvedText, cancellationToken);
+                    ApplyImageDeletesAndReordering(page, resolvedImages, cancellationToken);
 
                     cancellationToken.ThrowIfCancellationRequested();
-                    if (PdfiumNative.FPDFPage_GenerateContent(page) == 0)
+                    if (_generateContent(page) == 0)
                         throw new InvalidOperationException("PDFium no pudo regenerar el contenido de una página editada.");
                 }
                 finally
                 {
+                    if (textPage != IntPtr.Zero)
+                        PdfiumNative.FPDFText_ClosePage(textPage);
                     PdfiumNative.FPDF_ClosePage(page);
                 }
             }
@@ -222,7 +254,113 @@ internal sealed class PdfEditWriter
         }
     }
 
-    private static IReadOnlyList<ResolvedImage> ResolveAllBeforeMutation(
+    private void ApplyImageChanges(
+        IntPtr page,
+        IReadOnlyList<ResolvedImage> resolved,
+        CancellationToken cancellationToken)
+    {
+        foreach (var item in resolved)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (item.State.Deleted)
+                continue;
+
+            if (item.State.ReplacementAsset is not null)
+                SetReplacementBitmap(page, item.Handle, item.State.ReplacementAsset, cancellationToken);
+
+            if (!NearlyEqual(item.State.CurrentMatrix, item.State.ObjectRef.Original.Matrix) &&
+                _setMatrix(item.Handle, item.State.CurrentMatrix) == 0)
+            {
+                throw new InvalidOperationException("PDFium no pudo aplicar la matriz editada a una imagen.");
+            }
+
+            if (item.State.Opacity is byte alpha &&
+                PdfiumNative.FPDFPageObj_SetFillColor(
+                    item.Handle,
+                    255u,
+                    255u,
+                    255u,
+                    alpha) == 0)
+            {
+                throw new InvalidOperationException("PDFium no pudo aplicar la opacidad editada a una imagen.");
+            }
+        }
+    }
+
+    private static void ApplyOriginalFontTextChanges(
+        IReadOnlyList<ResolvedText> resolved,
+        CancellationToken cancellationToken)
+    {
+        foreach (var item in resolved)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var state = item.State;
+            var original = state.Original;
+
+            if (state.FontStrategy != TextFontStrategy.OriginalFont)
+                throw new InvalidOperationException("La ruta OriginalFont recibió un estado de texto fallback.");
+            if (!NearlyEqual(state.FontSize, original.FontSize, FontSizeTolerance))
+                throw new InvalidOperationException("La ruta OriginalFont no puede cambiar el tamaño de fuente en Texto V1.");
+
+            if (!string.Equals(state.Text, original.Text, StringComparison.Ordinal) &&
+                PdfiumNative.FPDFText_SetText(item.Handle, state.Text) == 0)
+            {
+                throw new InvalidOperationException("PDFium no pudo aplicar el texto editado usando la fuente original.");
+            }
+
+            if (state.FillColor != original.FillColor &&
+                PdfiumNative.FPDFPageObj_SetFillColor(
+                    item.Handle,
+                    state.FillColor.Red,
+                    state.FillColor.Green,
+                    state.FillColor.Blue,
+                    state.FillColor.Alpha) == 0)
+            {
+                throw new InvalidOperationException("PDFium no pudo aplicar el color editado al texto.");
+            }
+        }
+    }
+
+    private static void ApplyImageDeletesAndReordering(
+        IntPtr page,
+        IReadOnlyList<ResolvedImage> resolved,
+        CancellationToken cancellationToken)
+    {
+        foreach (var item in resolved.Where(item => item.State.Deleted))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (PdfiumNative.FPDFPage_RemoveObject(page, item.Handle) == 0)
+                throw new InvalidOperationException("PDFium no pudo eliminar una imagen de la página.");
+            PdfiumNative.FPDFPageObj_Destroy(item.Handle);
+        }
+
+        foreach (var item in resolved.Where(item => !item.State.Deleted && item.State.TargetObjectIndex is not null))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var target = item.State.TargetObjectIndex!.Value;
+            if (PdfiumNative.FPDFPage_RemoveObject(page, item.Handle) == 0)
+                throw new InvalidOperationException("PDFium no pudo retirar una imagen para reordenarla.");
+
+            var reinserted = false;
+            try
+            {
+                var remainingCount = PdfiumNative.FPDFPage_CountObjects(page);
+                if (remainingCount < 0 || target < 0 || target > remainingCount)
+                    throw new InvalidOperationException("El índice de orden solicitado ya no es válido.");
+
+                if (PdfiumNative.FPDFPage_InsertObjectAtIndex(page, item.Handle, (nuint)target) == 0)
+                    throw new InvalidOperationException("PDFium no pudo reinsertar la imagen en el orden solicitado.");
+                reinserted = true;
+            }
+            finally
+            {
+                if (!reinserted)
+                    PdfiumNative.FPDFPageObj_Destroy(item.Handle);
+            }
+        }
+    }
+
+    private static IReadOnlyList<ResolvedImage> ResolveImagesBeforeMutation(
         IntPtr page,
         IReadOnlyList<ImageEditState> states,
         CancellationToken cancellationToken)
@@ -244,14 +382,48 @@ internal sealed class PdfEditWriter
             if (handle == IntPtr.Zero || PdfiumNative.FPDFPageObj_GetType(handle) != PdfiumNative.FPDF_PAGEOBJ_IMAGE)
                 throw new InvalidOperationException("El objeto original ya no corresponde a una imagen editable.");
 
-            ValidateOriginalObject(page, handle, original);
+            ValidateOriginalImageObject(page, handle, original);
             result.Add(new ResolvedImage(state, handle));
         }
 
         return result;
     }
 
-    private static void ValidateOriginalObject(IntPtr page, IntPtr handle, PdfImageObjectInfo original)
+    private static IReadOnlyList<ResolvedText> ResolveTextBeforeMutation(
+        IntPtr page,
+        IntPtr textPage,
+        IReadOnlyList<TextEditState> states,
+        CancellationToken cancellationToken)
+    {
+        if (states.Count == 0)
+            return Array.Empty<ResolvedText>();
+        if (textPage == IntPtr.Zero)
+            throw new InvalidOperationException("La capa de texto no está disponible para resolver objetos editados.");
+
+        var objectCount = PdfiumNative.FPDFPage_CountObjects(page);
+        if (objectCount < 0)
+            throw new InvalidOperationException("PDFium devolvió una cantidad inválida de objetos de página.");
+
+        var result = new List<ResolvedText>(states.Count);
+        foreach (var state in states.OrderBy(state => state.Key.PageObjectIndex))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var index = state.Key.PageObjectIndex;
+            if (index < 0 || index >= objectCount)
+                throw new InvalidOperationException("No se pudo resolver el texto original por su ordinal.");
+
+            var handle = PdfiumNative.FPDFPage_GetObject(page, index);
+            if (handle == IntPtr.Zero || PdfiumNative.FPDFPageObj_GetType(handle) != PdfiumNative.FPDF_PAGEOBJ_TEXT)
+                throw new InvalidOperationException("El objeto original ya no corresponde a texto editable.");
+
+            ValidateOriginalTextObject(handle, textPage, state.Original);
+            result.Add(new ResolvedText(state, handle));
+        }
+
+        return result;
+    }
+
+    private static void ValidateOriginalImageObject(IntPtr page, IntPtr handle, PdfImageObjectInfo original)
     {
         if (PdfiumNative.FPDFPageObj_GetMatrix(handle, out var matrix) == 0)
             throw new InvalidOperationException("PDFium no pudo validar la matriz original de una imagen.");
@@ -273,6 +445,105 @@ internal sealed class PdfEditWriter
             throw new InvalidOperationException("PDFium no pudo validar los metadatos originales de una imagen.");
         if (metadata.Width != original.Metadata.PixelWidth || metadata.Height != original.Metadata.PixelHeight)
             throw new InvalidOperationException("Las dimensiones de la imagen fuente ya no coinciden con el plan de edición.");
+    }
+
+    private static void ValidateOriginalTextObject(
+        IntPtr handle,
+        IntPtr textPage,
+        PdfTextObjectInfo original)
+    {
+        var actualText = ReadTextObjectText(handle, textPage);
+        if (!string.Equals(actualText, original.Text, StringComparison.Ordinal))
+            throw new InvalidOperationException("El texto fuente ya no coincide con el snapshot del plan de edición.");
+
+        if (PdfiumNative.FPDFPageObj_GetMatrix(handle, out var matrix) == 0)
+            throw new InvalidOperationException("PDFium no pudo validar la matriz original del texto.");
+        var actualMatrix = new PdfObjectMatrix(matrix.A, matrix.B, matrix.C, matrix.D, matrix.E, matrix.F);
+        if (!NearlyEqual(actualMatrix, original.Matrix))
+            throw new InvalidOperationException("La matriz del texto fuente ya no coincide con el plan de edición.");
+
+        if (PdfiumNative.FPDFPageObj_GetBounds(handle, out var left, out var bottom, out var right, out var top) == 0)
+            throw new InvalidOperationException("PDFium no pudo validar los límites originales del texto.");
+        if (!NearlyEqual(left, original.Bounds.Left, BoundsTolerance) ||
+            !NearlyEqual(bottom, original.Bounds.Bottom, BoundsTolerance) ||
+            !NearlyEqual(right, original.Bounds.Right, BoundsTolerance) ||
+            !NearlyEqual(top, original.Bounds.Top, BoundsTolerance))
+        {
+            throw new InvalidOperationException("Los límites del texto fuente ya no coinciden con el plan de edición.");
+        }
+
+        if (PdfiumNative.FPDFTextObj_GetFontSize(handle, out var fontSize) == 0 ||
+            !NearlyEqual(fontSize, original.FontSize, FontSizeTolerance))
+        {
+            throw new InvalidOperationException("El tamaño de fuente del texto ya no coincide con el plan de edición.");
+        }
+
+        var font = PdfiumNative.FPDFTextObj_GetFont(handle);
+        if (font == IntPtr.Zero)
+            throw new InvalidOperationException("PDFium no pudo resolver la fuente original del texto.");
+        var fontName = ReadBaseFontName(font);
+        if (!string.Equals(fontName, original.FontName, StringComparison.Ordinal))
+            throw new InvalidOperationException("La fuente del texto ya no coincide con el plan de edición.");
+
+        if (PdfiumNative.FPDFPageObj_GetFillColor(handle, out var red, out var green, out var blue, out var alpha) == 0 ||
+            new PdfTextFillColor(red, green, blue, alpha) != original.FillColor)
+        {
+            throw new InvalidOperationException("El color original del texto ya no coincide con el plan de edición.");
+        }
+
+        var renderMode = PdfiumNative.FPDFTextObj_GetTextRenderMode(handle);
+        if (renderMode != original.TextRenderMode)
+            throw new InvalidOperationException("El modo de render del texto ya no coincide con el plan de edición.");
+    }
+
+    private static string ReadTextObjectText(IntPtr textObject, IntPtr textPage)
+    {
+        var required = PdfiumNative.FPDFTextObj_GetText(textObject, textPage, IntPtr.Zero, 0);
+        if (required == 0)
+            throw new InvalidOperationException("PDFium no pudo leer el texto original del objeto.");
+
+        var buffer = Marshal.AllocHGlobal(checked((int)required * sizeof(ushort)));
+        try
+        {
+            var copied = PdfiumNative.FPDFTextObj_GetText(textObject, textPage, buffer, required);
+            if (copied == 0 || copied > required)
+                throw new InvalidOperationException("PDFium devolvió una longitud inválida al leer el texto original.");
+
+            var raw = new short[copied];
+            Marshal.Copy(buffer, raw, 0, checked((int)copied));
+            return new string(raw
+                .TakeWhile(value => value != 0)
+                .Select(value => (char)(ushort)value)
+                .ToArray());
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(buffer);
+        }
+    }
+
+    private static string ReadBaseFontName(IntPtr font)
+    {
+        var required = PdfiumNative.FPDFFont_GetBaseFontName(font, IntPtr.Zero, 0);
+        if (required == 0 || required > int.MaxValue)
+            throw new InvalidOperationException("PDFium devolvió una longitud inválida para el nombre de fuente.");
+
+        var buffer = Marshal.AllocHGlobal(checked((int)required));
+        try
+        {
+            var copied = PdfiumNative.FPDFFont_GetBaseFontName(font, buffer, required);
+            if (copied == 0 || copied > required)
+                throw new InvalidOperationException("PDFium no pudo leer el nombre de la fuente original.");
+
+            var bytes = new byte[checked((int)copied)];
+            Marshal.Copy(buffer, bytes, 0, bytes.Length);
+            var contentLength = bytes.Length > 0 && bytes[^1] == 0 ? bytes.Length - 1 : bytes.Length;
+            return Encoding.UTF8.GetString(bytes, 0, contentLength);
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(buffer);
+        }
     }
 
     private static void SetReplacementBitmap(
@@ -442,6 +713,7 @@ internal sealed class PdfEditWriter
     }
 
     private sealed record ResolvedImage(ImageEditState State, IntPtr Handle);
+    private sealed record ResolvedText(TextEditState State, IntPtr Handle);
 
     private sealed class FileWriteContext
     {
