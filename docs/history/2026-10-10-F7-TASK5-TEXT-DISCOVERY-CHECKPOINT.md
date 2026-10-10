@@ -3,11 +3,12 @@
 **Fecha:** 2026-10-10  
 **Fase:** F7 — Texto V1  
 **Task:** 5 — modelo managed + discovery de objetos de texto reales  
-**Estado:** **FUNCTIONAL_GREEN / FINAL_CI_PENDING**  
+**Estado:** **CLOSED / AUTOMATED PASS**  
 **Rama:** `feat/f7-text-v1`  
 **Base Task 5:** `62163067e5c2d744e76067dc196e38bec5b03414`  
 **RED:** `3f8ad0c33a220a24145fb2afeccbce1ed81cf04d`  
-**Head funcional:** `f7dba51b6db1dc448efc4633c99d2be327f19141`
+**Head funcional:** `f7dba51b6db1dc448efc4633c99d2be327f19141`  
+**Checkpoint pre-seal:** `dacbd51bb4a68a459cc199f2aae4b06b336c45c9`
 
 ## Alcance entregado
 
@@ -140,12 +141,37 @@ Se intentaron dos workflows temporales exclusivamente para aplicar un patch medi
 
 La vía auxiliar se abandonó inmediatamente y ambos workflows se eliminaron. La auditoría del diff neto confirma que no dejaron archivos ni arquitectura residual.
 
+## Gate del checkpoint
+
+Checkpoint pre-seal: `dacbd51bb4a68a459cc199f2aae4b06b336c45c9`  
+Workflow: `38074633394`
+
+Attempt 1:
+
+- build: **0 warnings / 0 errors**;
+- tests: **697 PASS / 2 FAIL / 699 total**;
+- los únicos fallos fueron dos probes heredados `PdfiumOrganizeApiAvailabilityTests` por no poder cargar `pdfium.dll`;
+- ningún test Task 5 falló.
+
+Se repitió el **mismo SHA sin cambiar código**.
+
+Attempt 2:
+
+- hygiene: PASS;
+- Labelize staging: PASS;
+- locked restore: PASS;
+- Release build: **0 warnings / 0 errors**;
+- tests: **699 PASS / 0 FAIL / 0 skipped**;
+- workflow: **SUCCESS**.
+
+La diferencia entre attempts confirma el flake heredado de carga del DLL; no se modificó código de producto para ocultarlo.
+
 ## QA manual
 
 **NOT RUN.** Task 5 es infraestructura de discovery sin UI nueva. El PASS automatizado no se presenta como validación manual Windows.
 
-## Gate final
+## Cierre
 
-CI exacto sobre el commit de este checkpoint: **PENDING**.
+Task 5 queda cerrada con RED real, diagnóstico del fallo funcional, GREEN exacto, auditoría de scope y CI limpio sobre el checkpoint.
 
-No iniciar Task 6 hasta que el checkpoint tenga CI final PASS.
+No se inició Task 6.
