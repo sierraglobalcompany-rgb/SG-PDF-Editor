@@ -11,7 +11,7 @@ public partial class MainWindow
 
     private Func<bool> _confirmDiscardImageEditChanges = static () =>
         MessageBox.Show(
-            "Hay cambios de imagen sin guardar.\n\n¿Deseas descartarlos y continuar?",
+            "Hay cambios de edición sin guardar.\n\n¿Deseas descartarlos y continuar?",
             "SG PDF Editor",
             MessageBoxButton.YesNo,
             MessageBoxImage.Warning) == MessageBoxResult.Yes;
@@ -68,7 +68,7 @@ public partial class MainWindow
         if (!_editModeActive)
             return true;
 
-        if (_imageEditWorkspace?.IsDirty == true && !_confirmDiscardImageEditChanges())
+        if (HasUnsavedEditChanges() && !_confirmDiscardImageEditChanges())
             return false;
 
         ResetEditState();
