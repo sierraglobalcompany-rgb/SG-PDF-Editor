@@ -3,11 +3,12 @@
 **Fecha:** 2026-10-10  
 **Fase:** F7 — Texto V1  
 **Task:** 7 — política conservadora + `TextEditWorkspace`  
-**Estado:** **FUNCTIONAL_GREEN / FINAL_CI_PENDING**  
+**Estado:** **CLOSED / AUTOMATED PASS**  
 **Rama:** `feat/f7-text-v1`  
 **Base Task 7:** `91108bd8f39a498f6f2db384bd1c533ba583d4b0`  
 **RED:** `5d6f44a1717488f8faf34b044cd7ad466a249c1d`  
-**Head funcional:** `36db4d74da675cad3c5269157ae2dfa76e5a9a1e`
+**Head funcional:** `36db4d74da675cad3c5269157ae2dfa76e5a9a1e`  
+**Checkpoint pre-seal:** `f07afef096a687fb2f01f49eabd115162bbbbb3e`
 
 ## Alcance entregado
 
@@ -103,12 +104,26 @@ No se implementó en Task 7:
 - reflow/OCR;
 - Task 8+.
 
+## Gate del checkpoint
+
+Checkpoint pre-seal: `f07afef096a687fb2f01f49eabd115162bbbbb3e`  
+Workflow: `38077515577`
+
+Resultado:
+
+- hygiene: PASS;
+- Labelize staging: PASS;
+- locked restore: PASS;
+- Release build: **0 warnings / 0 errors**;
+- tests: **721 PASS / 0 FAIL / 0 skipped**;
+- workflow: **SUCCESS**.
+
 ## QA manual
 
 **NOT RUN.** Task 7 es estado/política managed sin UI nueva. El PASS automatizado no se presenta como validación manual Windows.
 
-## Gate final
+## Cierre
 
-CI exacto sobre el commit de este checkpoint: **PENDING**.
+Task 7 queda cerrada con RED real, GREEN managed, correcciones exclusivamente de harness/fixture, auditoría de scope y CI limpio sobre el checkpoint.
 
-No iniciar Task 8 hasta que el checkpoint tenga CI exacto PASS y quede sellado CLOSED.
+No se inició Task 8.
