@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using SGPdf.App.Features.Edit;
@@ -41,8 +42,9 @@ public sealed class PdfEditPreservationF7Tests
         Assert.Contains("(A-)", raw, StringComparison.Ordinal);
 
         Assert.True(output.HasOrganizeAttachments());
-        Assert.Contains("(note.txt)", raw, StringComparison.Ordinal);
-        Assert.Contains("hello-f7", raw, StringComparison.Ordinal);
+        var attachment = NativeAttachmentReader.ReadSingle(destination);
+        Assert.Equal("note.txt", attachment.Name);
+        Assert.Equal("hello-f7", Encoding.UTF8.GetString(attachment.Payload));
 
         Assert.Equal("SG PDF F7 preservation fixture", output.GetOrganizeMetadataText("Title"));
         Assert.Equal("SG PDF Task 11", output.GetOrganizeMetadataText("Author"));
@@ -116,6 +118,84 @@ public sealed class PdfEditPreservationF7Tests
         Assert.Equal(imageState.CurrentMatrix.E + 1d, Assert.Single(saved.GetImageObjects(0)).Matrix.E, precision: 2);
         return destination;
     }
+}
+
+internal static class NativeAttachmentReader
+{
+    private const string Library = "pdfium";
+
+    internal static (string Name, byte[] Payload) ReadSingle(string path)
+    {
+        PdfiumRuntime.EnsureInitialized();
+        PdfiumRuntime.NativeGate.Wait();
+        IntPtr document = IntPtr.Zero;
+        try
+        {
+            document = PdfiumNative.FPDF_LoadDocument(path, null);
+            if (document == IntPtr.Zero)
+                throw new InvalidOperationException("PDFium could not open the F7 preservation output.");
+            Assert.Equal(1, PdfiumNative.FPDFDoc_GetAttachmentCount(document));
+
+            var attachment = FPDFDoc_GetAttachment(document, 0);
+            Assert.NotEqual(IntPtr.Zero, attachment);
+            return (ReadName(attachment), ReadPayload(attachment));
+        }
+        finally
+        {
+            if (document != IntPtr.Zero)
+                PdfiumNative.FPDF_CloseDocument(document);
+            PdfiumRuntime.NativeGate.Release();
+        }
+    }
+
+    private static string ReadName(IntPtr attachment)
+    {
+        var required = FPDFAttachment_GetName(attachment, IntPtr.Zero, 0);
+        Assert.True(required >= 2u);
+        var buffer = Marshal.AllocHGlobal(checked((int)required));
+        try
+        {
+            var copied = FPDFAttachment_GetName(attachment, buffer, required);
+            Assert.Equal(required, copied);
+            return Marshal.PtrToStringUni(buffer) ?? string.Empty;
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(buffer);
+        }
+    }
+
+    private static byte[] ReadPayload(IntPtr attachment)
+    {
+        Assert.NotEqual(0, FPDFAttachment_GetFile(attachment, IntPtr.Zero, 0, out var required));
+        Assert.True(required > 0u);
+        var buffer = Marshal.AllocHGlobal(checked((int)required));
+        try
+        {
+            Assert.NotEqual(0, FPDFAttachment_GetFile(attachment, buffer, required, out var copied));
+            Assert.Equal(required, copied);
+            var bytes = new byte[checked((int)copied)];
+            Marshal.Copy(buffer, bytes, 0, bytes.Length);
+            return bytes;
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(buffer);
+        }
+    }
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    private static extern IntPtr FPDFDoc_GetAttachment(IntPtr document, int index);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    private static extern uint FPDFAttachment_GetName(IntPtr attachment, IntPtr buffer, uint buflen);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    private static extern int FPDFAttachment_GetFile(
+        IntPtr attachment,
+        IntPtr buffer,
+        uint buflen,
+        out uint outBuflen);
 }
 
 internal sealed class F7PreservationFixture : IDisposable
