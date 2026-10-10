@@ -46,7 +46,7 @@ public sealed class PdfEditWriterTextTests
 
         var after = TextEditNativeCharacterizationHarness.InspectFirstText(destination);
         Assert.Equal("NIÑO áé", after.Text);
-        Assert.Equal(before.Index, after.Index);
+        Assert.Equal(before.PageObjectIndex, after.PageObjectIndex);
         Assert.Equal(before.FontSize, after.FontSize, precision: 3);
         Assert.Equal(before.Red, after.Red);
         Assert.Equal(before.Green, after.Green);
