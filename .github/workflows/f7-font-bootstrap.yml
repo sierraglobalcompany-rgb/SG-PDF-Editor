@@ -1,0 +1,68 @@
+name: f7-font-bootstrap
+
+on:
+  push:
+    branches: [ feat/f7-text-v1 ]
+    paths:
+      - '.github/workflows/f7-font-bootstrap.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  pin-font:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download and pin official DejaVu Sans 2.37
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $target = 'third_party/fonts/dejavu/DejaVuSans.ttf'
+          if (Test-Path $target) {
+            Write-Host 'Pinned font already exists; nothing to do.'
+            exit 0
+          }
+
+          $archiveUrl = 'https://github.com/dejavu-fonts/dejavu-fonts/releases/download/version_2_37/dejavu-sans-ttf-2.37.zip'
+          $expectedArchive = '5c6e497a2f36552cb5ffb112c413a6af39c0f3c47653662b90b4fa6499822fd7'
+          $expectedTtf = '7da195a74c55bef988d0d48f9508bd5d849425c1770dba5d7bfc6ce9ed848954'
+          $expectedSize = 757076
+
+          $work = Join-Path $env:RUNNER_TEMP 'sgpdf-f7-font'
+          New-Item -ItemType Directory -Force -Path $work | Out-Null
+          $zip = Join-Path $work 'dejavu-sans-ttf-2.37.zip'
+          Invoke-WebRequest -Uri $archiveUrl -OutFile $zip
+
+          $archiveHash = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($archiveHash -ne $expectedArchive) {
+            throw "Official DejaVu archive SHA-256 mismatch: $archiveHash"
+          }
+
+          $extract = Join-Path $work 'extract'
+          Expand-Archive -Path $zip -DestinationPath $extract
+          $font = Get-ChildItem -Path $extract -Filter 'DejaVuSans.ttf' -Recurse | Select-Object -First 1
+          if ($null -eq $font) {
+            throw 'DejaVuSans.ttf was not found in the official release archive.'
+          }
+
+          if ($font.Length -ne $expectedSize) {
+            throw "Unexpected DejaVuSans.ttf size: $($font.Length)"
+          }
+          $ttfHash = (Get-FileHash $font.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($ttfHash -ne $expectedTtf) {
+            throw "DejaVuSans.ttf SHA-256 mismatch: $ttfHash"
+          }
+
+          New-Item -ItemType Directory -Force -Path (Split-Path $target) | Out-Null
+          Copy-Item $font.FullName $target
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- $target
+          git commit -m 'chore(f7): pin official DejaVu Sans 2.37 asset'
+          git push origin HEAD:feat/f7-text-v1
