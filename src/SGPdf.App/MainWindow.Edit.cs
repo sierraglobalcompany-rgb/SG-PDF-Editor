@@ -148,6 +148,7 @@ public partial class MainWindow
         pageGrid.Children.Add(overlay);
         RegisterName(overlay.Name, overlay);
         _editOverlayCanvas = overlay;
+        InitializeEditTextUi();
 
         if (_readModeButton is not null)
             _readModeButton.Click += ExistingModeAfterEdit_Click;
@@ -302,6 +303,8 @@ public partial class MainWindow
 
             var images = await Task.Run(() =>
                 _getImageObjects(sourceSession, pageIndex, CancellationToken.None));
+            var texts = await Task.Run(() =>
+                _getTextObjects(sourceSession, pageIndex, CancellationToken.None));
             if (!ReferenceEquals(_session, sourceSession) || _navigation?.CurrentPageIndex != pageIndex)
                 return false;
 
@@ -311,10 +314,22 @@ public partial class MainWindow
             foreach (var image in images)
                 workspace.EnsureObject(image);
 
+            TextEditWorkspace? textWorkspace = null;
+            if (texts.Count > 0)
+            {
+                textWorkspace = TextEditWorkspace.Create(
+                    sourceSession.FilePath,
+                    sourceSession.OpenedWithPassword);
+                foreach (var text in texts)
+                    textWorkspace.EnsureObject(text);
+            }
+
             _imageEditWorkspace = workspace;
-            _textEditWorkspace = null;
+            _textEditWorkspace = textWorkspace;
             _activeImageObjects = images.ToArray();
+            _activeTextObjects = texts.ToArray();
             _selectedImageKey = null;
+            _selectedTextKey = null;
             _editModeActive = true;
             _signatureModeActive = false;
             UpdateEditSaveCommandAvailability();
@@ -326,15 +341,13 @@ public partial class MainWindow
             if (_organizeSurface is not null)
                 _organizeSurface.Visibility = Visibility.Collapsed;
             LabelPropertiesPanel.Visibility = Visibility.Collapsed;
-            PropertiesPlaceholderText.Visibility = Visibility.Visible;
+            HideEditTextProperties(showPlaceholder: true);
             LabelSheetCanvas.Visibility = Visibility.Collapsed;
             LabelNavigationBar.Visibility = Visibility.Collapsed;
 
             _editOverlayCanvas!.Visibility = Visibility.Visible;
             RefreshImageEditOverlay();
-            StatusText.Text = images.Count == 0
-                ? "EDITAR activo. No se encontraron imágenes editables en esta página."
-                : $"EDITAR activo. {images.Count} imagen(es) editable(s) en esta página.";
+            StatusText.Text = $"EDITAR activo. {images.Count} imagen(es) y {texts.Count} objeto(s) de texto en esta página.";
             return true;
         }
         catch (Exception ex)
@@ -362,18 +375,8 @@ public partial class MainWindow
 
     private bool SelectImageAtDevicePoint(double deviceX, double deviceY)
     {
-        if (!_editModeActive || _currentPdfDeviceTransform is not PdfPageDeviceTransform transform)
-        {
-            _selectedImageKey = null;
-            RefreshImageEditOverlay();
-            return false;
-        }
-
-        var pdfPoint = ImageHitTester.DeviceToPdf(deviceX, deviceY, transform);
-        _selectedImageKey = ImageHitTester.HitTest(CurrentSelectableImageObjects(), pdfPoint);
-        CancelImageEditGesture();
-        RefreshImageEditOverlay();
-        return _selectedImageKey is not null;
+        var selected = SelectEditObjectAtDevicePoint(deviceX, deviceY);
+        return selected && _selectedImageKey is not null;
     }
 
     private void HandleImageEditEscape()
@@ -381,9 +384,7 @@ public partial class MainWindow
         if (!_editModeActive)
             return;
 
-        CancelImageEditGesture();
-        _selectedImageKey = null;
-        RefreshImageEditOverlay();
+        ClearEditSelection();
     }
 
     private void RefreshImageEditOverlay()
@@ -402,7 +403,11 @@ public partial class MainWindow
         _editOverlayCanvas.Width = transform.DeviceWidth;
         _editOverlayCanvas.Height = transform.DeviceHeight;
         if (_selectedImageKey is not ImageObjectKey selectedKey)
+        {
+            if (_selectedTextKey is not null)
+                RenderSelectedTextOutline(transform);
             return;
+        }
 
         ImageEditState state;
         try
@@ -549,7 +554,7 @@ public partial class MainWindow
             return;
         }
 
-        SelectImageAtDevicePoint(point.X, point.Y);
+        SelectEditObjectAtDevicePoint(point.X, point.Y);
         e.Handled = true;
     }
 
@@ -635,6 +640,7 @@ public partial class MainWindow
         _textEditWorkspace = null;
         _activeImageObjects = Array.Empty<PdfImageObjectInfo>();
         _selectedImageKey = null;
+        ResetTextEditState();
         UpdateEditSaveCommandAvailability();
 
         if (_editOverlayCanvas is null)
