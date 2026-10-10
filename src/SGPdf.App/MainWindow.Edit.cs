@@ -1,3 +1,4 @@
+using SGPdf.App.Features.Edit;
 using Microsoft.Win32;
 using System.Windows;
 using System.Windows.Controls;
@@ -6,28 +7,30 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using SGPdf.App.Features.Edit.Images;
+using SGPdf.App.Features.Edit.Text;
 using SGPdf.App.Pdf;
 
 namespace SGPdf.App;
 
 public partial class MainWindow
 {
-    private static readonly bool ImageEditLoadedHookRegistered = RegisterImageEditLoadedHook();
+    private static readonly bool EditLoadedHookRegistered = RegisterEditLoadedHook();
 
-    private bool _imageEditUiInitialized;
-    private bool _imageEditModeActive;
-    private bool _imageEditMaterializing;
-    private Button? _imageEditModeButton;
-    private Button? _imageEditSaveAsButton;
-    private Canvas? _imageEditOverlayCanvas;
+    private bool _editUiInitialized;
+    private bool _editModeActive;
+    private bool _editMaterializing;
+    private Button? _editModeButton;
+    private Button? _editSaveAsButton;
+    private Canvas? _editOverlayCanvas;
     private ImageEditWorkspace? _imageEditWorkspace;
+    private TextEditWorkspace? _textEditWorkspace;
     private IReadOnlyList<PdfImageObjectInfo> _activeImageObjects = Array.Empty<PdfImageObjectInfo>();
     private ImageObjectKey? _selectedImageKey;
 
     private Func<PdfDocumentSession, int, CancellationToken, IReadOnlyList<PdfImageObjectInfo>> _getImageObjects =
         static (session, pageIndex, token) => session.GetImageObjects(pageIndex, token);
 
-    private Func<string?> _selectImageEditPdfDestination = static () =>
+    private Func<string?> _selectEditPdfDestination = static () =>
     {
         var dialog = new SaveFileDialog
         {
@@ -39,13 +42,13 @@ public partial class MainWindow
         return dialog.ShowDialog() == true ? dialog.FileName : null;
     };
 
-    private Func<PdfDocumentSession, CancellationToken, ImageEditPreflightResult> _inspectImageEditPreflight =
-        static (session, token) => new ImageEditPreflightInspector().Inspect(session, token);
+    private Func<PdfDocumentSession, CancellationToken, PdfEditPreflightResult> _inspectEditPreflight =
+        static (session, token) => new PdfEditPreflightInspector().Inspect(session, token);
 
-    private Func<ImageEditPreflightResult, bool> _confirmImageEditWarnings = static result =>
+    private Func<PdfEditPreflightResult, bool> _confirmEditWarnings = static result =>
         MessageBox.Show(
             string.Join(Environment.NewLine, result.Findings
-                .Where(finding => finding.Severity == ImageEditFindingSeverity.Warning)
+                .Where(finding => finding.Severity == PdfEditFindingSeverity.Warning)
                 .Select(finding => $"• {finding.Message}")) +
             "\n\n¿Deseas continuar con Guardar como...?",
             "SG PDF Editor",
@@ -54,31 +57,35 @@ public partial class MainWindow
 
     private Action<ImageEditWorkspace, string, bool, CancellationToken> _saveImageEditCopy =
         static (workspace, destination, warningsConfirmed, token) =>
-            new PdfImageEditWriter().SaveAsCopy(workspace, destination, warningsConfirmed, token);
+            new PdfEditWriter().SaveAsCopy(workspace, destination, warningsConfirmed, token);
 
-    private static bool RegisterImageEditLoadedHook()
+    private Action<ImageEditWorkspace, TextEditWorkspace, string, bool, CancellationToken> _saveCombinedEditCopy =
+        static (images, text, destination, warningsConfirmed, token) =>
+            new PdfEditWriter().SaveAsCopy(images, text, destination, warningsConfirmed, token);
+
+    private static bool RegisterEditLoadedHook()
     {
         EventManager.RegisterClassHandler(
             typeof(MainWindow),
             FrameworkElement.LoadedEvent,
-            new RoutedEventHandler(ImageEditHost_Loaded),
+            new RoutedEventHandler(EditHost_Loaded),
             handledEventsToo: true);
         return true;
     }
 
-    private static void ImageEditHost_Loaded(object sender, RoutedEventArgs e)
+    private static void EditHost_Loaded(object sender, RoutedEventArgs e)
     {
         if (sender is MainWindow window)
-            window.InitializeImageEditUi();
+            window.InitializeEditUi();
     }
 
-    private void InitializeImageEditUi()
+    private void InitializeEditUi()
     {
-        if (_imageEditUiInitialized)
+        if (_editUiInitialized)
             return;
 
-        _imageEditUiInitialized = true;
-        _ = ImageEditLoadedHookRegistered;
+        _editUiInitialized = true;
+        _ = EditLoadedHookRegistered;
 
         InitializeOrganizeUi();
         var modePanel = FindModePanel();
@@ -93,7 +100,7 @@ public partial class MainWindow
         editModeButton.SetBinding(
             IsEnabledProperty,
             new Binding(nameof(IsEnabled)) { Source = PrintPdfMenuItem });
-        editModeButton.Click += ImageEditMode_Click;
+        editModeButton.Click += EditMode_Click;
 
         var organizeIndex = _organizeModeButton is null
             ? -1
@@ -104,30 +111,30 @@ public partial class MainWindow
             modePanel.Children.Add(editModeButton);
 
         RegisterName(editModeButton.Name, editModeButton);
-        _imageEditModeButton = editModeButton;
+        _editModeButton = editModeButton;
 
         var saveAsButton = new Button
         {
-            Name = "ImageEditSaveAsButton",
+            Name = "EditSaveAsButton",
             Content = "Guardar como...",
             Padding = new Thickness(10, 4, 10, 4),
             Margin = new Thickness(4, 0, 0, 0),
             Visibility = Visibility.Collapsed,
             IsEnabled = false
         };
-        saveAsButton.Click += ImageEditSaveAs_Click;
+        saveAsButton.Click += EditSaveAs_Click;
         if (organizeIndex >= 0)
             modePanel.Children.Insert(organizeIndex + 1, saveAsButton);
         else
             modePanel.Children.Add(saveAsButton);
         RegisterName(saveAsButton.Name, saveAsButton);
-        _imageEditSaveAsButton = saveAsButton;
+        _editSaveAsButton = saveAsButton;
 
         var pageGrid = PdfImage.Parent as Grid
             ?? throw new InvalidOperationException("No se encontró el contenedor de página para EDITAR.");
         var overlay = new Canvas
         {
-            Name = "ImageEditOverlayCanvas",
+            Name = "EditOverlayCanvas",
             Margin = PdfImage.Margin,
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Top,
@@ -140,51 +147,53 @@ public partial class MainWindow
         Panel.SetZIndex(overlay, 40);
         pageGrid.Children.Add(overlay);
         RegisterName(overlay.Name, overlay);
-        _imageEditOverlayCanvas = overlay;
+        _editOverlayCanvas = overlay;
+        InitializeEditTextUi();
 
         if (_readModeButton is not null)
-            _readModeButton.Click += ExistingModeAfterImageEdit_Click;
+            _readModeButton.Click += ExistingModeAfterEdit_Click;
         if (_signModeButton is not null)
-            _signModeButton.Click += ExistingModeAfterImageEdit_Click;
+            _signModeButton.Click += ExistingModeAfterEdit_Click;
         if (_organizeModeButton is not null)
-            _organizeModeButton.Click += ExistingModeAfterImageEdit_Click;
+            _organizeModeButton.Click += ExistingModeAfterEdit_Click;
 
-        PreviewKeyDown += ImageEditHost_PreviewKeyDown;
-        WireImageEditGuards();
+        PreviewKeyDown += EditHost_PreviewKeyDown;
+        WireEditGuards();
     }
 
-    private async void ImageEditMode_Click(object sender, RoutedEventArgs e)
-        => await TryEnterImageEditModeAsync();
+    private async void EditMode_Click(object sender, RoutedEventArgs e)
+        => await TryEnterEditModeAsync();
 
-    private void ImageEditSaveAs_Click(object sender, RoutedEventArgs e)
-        => TrySaveImageEditWorkspace();
+    private void EditSaveAs_Click(object sender, RoutedEventArgs e)
+        => TrySaveEditWorkspace();
 
-    private bool TrySaveImageEditWorkspace()
+    private bool TrySaveEditWorkspace()
     {
-        if (!_imageEditModeActive ||
-            _imageEditMaterializing ||
+        if (!_editModeActive ||
+            _editMaterializing ||
             _imageEditWorkspace is null ||
             _session is null)
         {
             return false;
         }
 
-        var destination = _selectImageEditPdfDestination();
+        var destination = _selectEditPdfDestination();
         if (string.IsNullOrWhiteSpace(destination))
             return false;
 
         var workspace = _imageEditWorkspace;
+        var textWorkspace = _textEditWorkspace;
         var session = _session;
-        _imageEditMaterializing = true;
-        UpdateImageEditSaveCommandAvailability();
+        _editMaterializing = true;
+        UpdateEditSaveCommandAvailability();
 
         try
         {
-            var preflight = _inspectImageEditPreflight(session, CancellationToken.None);
+            var preflight = _inspectEditPreflight(session, CancellationToken.None);
             if (!preflight.CanProceed)
             {
                 StatusText.Text = preflight.Findings
-                    .FirstOrDefault(finding => finding.Severity == ImageEditFindingSeverity.Block)?.Message
+                    .FirstOrDefault(finding => finding.Severity == PdfEditFindingSeverity.Block)?.Message
                     ?? "El PDF no se puede guardar de forma segura desde EDITAR.";
                 return false;
             }
@@ -192,7 +201,7 @@ public partial class MainWindow
             var warningsConfirmed = false;
             if (preflight.RequiresWarningConfirmation)
             {
-                if (!_confirmImageEditWarnings(preflight))
+                if (!_confirmEditWarnings(preflight))
                 {
                     StatusText.Text = "Guardado cancelado. No se modificó el PDF fuente.";
                     return false;
@@ -201,8 +210,18 @@ public partial class MainWindow
                 warningsConfirmed = true;
             }
 
-            _saveImageEditCopy(workspace, destination, warningsConfirmed, CancellationToken.None);
-            workspace.MarkSavedBaseline();
+            if (textWorkspace is null)
+            {
+                _saveImageEditCopy(workspace, destination, warningsConfirmed, CancellationToken.None);
+                workspace.MarkSavedBaseline();
+            }
+            else
+            {
+                _saveCombinedEditCopy(workspace, textWorkspace, destination, warningsConfirmed, CancellationToken.None);
+                workspace.MarkSavedBaseline();
+                textWorkspace.MarkSavedBaseline();
+            }
+
             StatusText.Text = $"PDF editado guardado como {System.IO.Path.GetFileName(destination)}.";
             return true;
         }
@@ -213,29 +232,29 @@ public partial class MainWindow
         }
         finally
         {
-            _imageEditMaterializing = false;
-            UpdateImageEditSaveCommandAvailability();
+            _editMaterializing = false;
+            UpdateEditSaveCommandAvailability();
         }
     }
 
-    private void UpdateImageEditSaveCommandAvailability()
+    private void UpdateEditSaveCommandAvailability()
     {
-        if (_imageEditSaveAsButton is null)
+        if (_editSaveAsButton is null)
             return;
 
-        _imageEditSaveAsButton.Visibility = _imageEditModeActive
+        _editSaveAsButton.Visibility = _editModeActive
             ? Visibility.Visible
             : Visibility.Collapsed;
-        _imageEditSaveAsButton.IsEnabled =
-            _imageEditModeActive && _imageEditWorkspace is not null && !_imageEditMaterializing;
+        _editSaveAsButton.IsEnabled =
+            _editModeActive && _imageEditWorkspace is not null && !_editMaterializing;
     }
 
-    private async Task<bool> TryEnterImageEditModeAsync()
+    private async Task<bool> TryEnterEditModeAsync()
     {
-        InitializeImageEditUi();
+        InitializeEditUi();
         if (_session is null || _navigation is null || _isBusy)
             return false;
-        if (_imageEditModeActive)
+        if (_editModeActive)
             return true;
 
         if (_organizeModeActive && !TryLeaveOrganizeModeWithGuard())
@@ -250,7 +269,7 @@ public partial class MainWindow
         var sourceSession = _session;
         if (sourceSession.OpenedWithPassword)
         {
-            ShowImageEditBlock("Este PDF se abrió con contraseña y no se puede editar de forma segura en esta versión.");
+            ShowEditBlock("Este PDF se abrió con contraseña y no se puede editar de forma segura en esta versión.");
             return false;
         }
 
@@ -267,7 +286,7 @@ public partial class MainWindow
 
         if (signatureCount > 0)
         {
-            ShowImageEditBlock("Este PDF contiene una firma criptográfica y no se puede editar de forma segura en esta versión.");
+            ShowEditBlock("Este PDF contiene una firma criptográfica y no se puede editar de forma segura en esta versión.");
             return false;
         }
 
@@ -284,6 +303,8 @@ public partial class MainWindow
 
             var images = await Task.Run(() =>
                 _getImageObjects(sourceSession, pageIndex, CancellationToken.None));
+            var texts = await Task.Run(() =>
+                _getTextObjects(sourceSession, pageIndex, CancellationToken.None));
             if (!ReferenceEquals(_session, sourceSession) || _navigation?.CurrentPageIndex != pageIndex)
                 return false;
 
@@ -293,12 +314,25 @@ public partial class MainWindow
             foreach (var image in images)
                 workspace.EnsureObject(image);
 
+            TextEditWorkspace? textWorkspace = null;
+            if (texts.Count > 0)
+            {
+                textWorkspace = TextEditWorkspace.Create(
+                    sourceSession.FilePath,
+                    sourceSession.OpenedWithPassword);
+                foreach (var text in texts)
+                    textWorkspace.EnsureObject(text);
+            }
+
             _imageEditWorkspace = workspace;
+            _textEditWorkspace = textWorkspace;
             _activeImageObjects = images.ToArray();
+            _activeTextObjects = texts.ToArray();
             _selectedImageKey = null;
-            _imageEditModeActive = true;
+            _selectedTextKey = null;
+            _editModeActive = true;
             _signatureModeActive = false;
-            UpdateImageEditSaveCommandAvailability();
+            UpdateEditSaveCommandAvailability();
 
             if (_signatureOverlayCanvas is not null)
                 _signatureOverlayCanvas.Visibility = Visibility.Collapsed;
@@ -307,27 +341,25 @@ public partial class MainWindow
             if (_organizeSurface is not null)
                 _organizeSurface.Visibility = Visibility.Collapsed;
             LabelPropertiesPanel.Visibility = Visibility.Collapsed;
-            PropertiesPlaceholderText.Visibility = Visibility.Visible;
+            HideEditTextProperties(showPlaceholder: true);
             LabelSheetCanvas.Visibility = Visibility.Collapsed;
             LabelNavigationBar.Visibility = Visibility.Collapsed;
 
-            _imageEditOverlayCanvas!.Visibility = Visibility.Visible;
+            _editOverlayCanvas!.Visibility = Visibility.Visible;
             RefreshImageEditOverlay();
-            StatusText.Text = images.Count == 0
-                ? "EDITAR activo. No se encontraron imágenes editables en esta página."
-                : $"EDITAR activo. {images.Count} imagen(es) editable(s) en esta página.";
+            StatusText.Text = $"EDITAR activo. {images.Count} imagen(es) y {texts.Count} objeto(s) de texto en esta página.";
             return true;
         }
         catch (Exception ex)
         {
-            ResetImageEditState();
+            ResetEditState();
             StatusText.Text = $"No se pudo iniciar EDITAR: {ex.Message}";
             ShowContinuousReaderSurface();
             return false;
         }
     }
 
-    private void ShowImageEditBlock(string message)
+    private void ShowEditBlock(string message)
     {
         StatusText.Text = message;
         if (IsVisible)
@@ -343,47 +375,39 @@ public partial class MainWindow
 
     private bool SelectImageAtDevicePoint(double deviceX, double deviceY)
     {
-        if (!_imageEditModeActive || _currentPdfDeviceTransform is not PdfPageDeviceTransform transform)
-        {
-            _selectedImageKey = null;
-            RefreshImageEditOverlay();
-            return false;
-        }
-
-        var pdfPoint = ImageHitTester.DeviceToPdf(deviceX, deviceY, transform);
-        _selectedImageKey = ImageHitTester.HitTest(CurrentSelectableImageObjects(), pdfPoint);
-        CancelImageEditGesture();
-        RefreshImageEditOverlay();
-        return _selectedImageKey is not null;
+        var selected = SelectEditObjectAtDevicePoint(deviceX, deviceY);
+        return selected && _selectedImageKey is not null;
     }
 
     private void HandleImageEditEscape()
     {
-        if (!_imageEditModeActive)
+        if (!_editModeActive)
             return;
 
-        CancelImageEditGesture();
-        _selectedImageKey = null;
-        RefreshImageEditOverlay();
+        ClearEditSelection();
     }
 
     private void RefreshImageEditOverlay()
     {
-        if (_imageEditOverlayCanvas is null)
+        if (_editOverlayCanvas is null)
             return;
 
-        _imageEditOverlayCanvas.Children.Clear();
-        if (!_imageEditModeActive ||
+        _editOverlayCanvas.Children.Clear();
+        if (!_editModeActive ||
             _imageEditWorkspace is null ||
             _currentPdfDeviceTransform is not PdfPageDeviceTransform transform)
         {
             return;
         }
 
-        _imageEditOverlayCanvas.Width = transform.DeviceWidth;
-        _imageEditOverlayCanvas.Height = transform.DeviceHeight;
+        _editOverlayCanvas.Width = transform.DeviceWidth;
+        _editOverlayCanvas.Height = transform.DeviceHeight;
         if (_selectedImageKey is not ImageObjectKey selectedKey)
+        {
+            if (_selectedTextKey is not null)
+                RenderSelectedTextOutline(transform);
             return;
+        }
 
         ImageEditState state;
         try
@@ -414,7 +438,7 @@ public partial class MainWindow
             Tag = "ImageMoveBody",
             IsHitTestVisible = true
         };
-        _imageEditOverlayCanvas.Children.Add(outline);
+        _editOverlayCanvas.Children.Add(outline);
 
         var corners = new[]
         {
@@ -439,7 +463,7 @@ public partial class MainWindow
             };
             Canvas.SetLeft(handle, point.X - 5d);
             Canvas.SetTop(handle, point.Y - 5d);
-            _imageEditOverlayCanvas.Children.Add(handle);
+            _editOverlayCanvas.Children.Add(handle);
         }
 
         var minX = devicePoints.Min(point => point.X);
@@ -456,7 +480,7 @@ public partial class MainWindow
         rotate.Click += (_, _) => RotateSelectedImage(90d);
         Canvas.SetLeft(rotate, minX);
         Canvas.SetTop(rotate, toolbarY);
-        _imageEditOverlayCanvas.Children.Add(rotate);
+        _editOverlayCanvas.Children.Add(rotate);
 
         var delete = new Button
         {
@@ -468,7 +492,7 @@ public partial class MainWindow
         delete.Click += (_, _) => DeleteSelectedImage();
         Canvas.SetLeft(delete, minX + 34d);
         Canvas.SetTop(delete, toolbarY);
-        _imageEditOverlayCanvas.Children.Add(delete);
+        _editOverlayCanvas.Children.Add(delete);
 
         var replace = new Button
         {
@@ -480,7 +504,7 @@ public partial class MainWindow
         replace.Click += (_, _) => TryReplaceSelectedImageFromDialog();
         Canvas.SetLeft(replace, minX + 100d);
         Canvas.SetTop(replace, toolbarY);
-        _imageEditOverlayCanvas.Children.Add(replace);
+        _editOverlayCanvas.Children.Add(replace);
 
         var extract = new Button
         {
@@ -492,21 +516,21 @@ public partial class MainWindow
         extract.Click += (_, _) => TryExtractSelectedImageFromDialog();
         Canvas.SetLeft(extract, minX + 196d);
         Canvas.SetTop(extract, toolbarY);
-        _imageEditOverlayCanvas.Children.Add(extract);
+        _editOverlayCanvas.Children.Add(extract);
     }
 
     private void ImageEditOverlay_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
-        if (_imageEditOverlayCanvas is null)
+        if (_editOverlayCanvas is null)
             return;
 
-        var point = e.GetPosition(_imageEditOverlayCanvas);
+        var point = e.GetPosition(_editOverlayCanvas);
         var tag = FindImageEditInteractionTag(e.OriginalSource as DependencyObject);
         if (tag is ImageResizeCorner corner)
         {
             if (BeginImageResize(corner, point.X, point.Y))
             {
-                _imageEditOverlayCanvas.CaptureMouse();
+                _editOverlayCanvas.CaptureMouse();
                 e.Handled = true;
             }
             return;
@@ -516,7 +540,7 @@ public partial class MainWindow
         {
             if (BeginImageMoveAtDevicePoint(point.X, point.Y))
             {
-                _imageEditOverlayCanvas.CaptureMouse();
+                _editOverlayCanvas.CaptureMouse();
                 e.Handled = true;
             }
             return;
@@ -530,20 +554,20 @@ public partial class MainWindow
             return;
         }
 
-        SelectImageAtDevicePoint(point.X, point.Y);
+        SelectEditObjectAtDevicePoint(point.X, point.Y);
         e.Handled = true;
     }
 
     private void ImageEditOverlay_MouseMove(object sender, MouseEventArgs e)
     {
-        if (_imageEditOverlayCanvas is null ||
-            !_imageEditOverlayCanvas.IsMouseCaptured ||
+        if (_editOverlayCanvas is null ||
+            !_editOverlayCanvas.IsMouseCaptured ||
             e.LeftButton != MouseButtonState.Pressed)
         {
             return;
         }
 
-        var point = e.GetPosition(_imageEditOverlayCanvas);
+        var point = e.GetPosition(_editOverlayCanvas);
         if (UpdateActiveImageGestureAtDevicePoint(
                 point.X,
                 point.Y,
@@ -555,17 +579,17 @@ public partial class MainWindow
 
     private void ImageEditOverlay_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
-        if (_imageEditOverlayCanvas?.IsMouseCaptured != true)
+        if (_editOverlayCanvas?.IsMouseCaptured != true)
             return;
 
         var changed = CompleteActiveImageGesture();
-        _imageEditOverlayCanvas.ReleaseMouseCapture();
+        _editOverlayCanvas.ReleaseMouseCapture();
         e.Handled = changed;
     }
 
     private object? FindImageEditInteractionTag(DependencyObject? source)
     {
-        for (var current = source; current is not null && !ReferenceEquals(current, _imageEditOverlayCanvas);)
+        for (var current = source; current is not null && !ReferenceEquals(current, _editOverlayCanvas);)
         {
             if (current is FrameworkElement { Tag: not null } element)
                 return element.Tag;
@@ -586,9 +610,9 @@ public partial class MainWindow
         return null;
     }
 
-    private void ImageEditHost_PreviewKeyDown(object sender, KeyEventArgs e)
+    private void EditHost_PreviewKeyDown(object sender, KeyEventArgs e)
     {
-        if (!_imageEditModeActive || IsReaderShortcutEditableSource(e.OriginalSource as DependencyObject))
+        if (!_editModeActive || IsReaderShortcutEditableSource(e.OriginalSource as DependencyObject))
             return;
 
         if (e.Key == Key.Escape)
@@ -602,25 +626,27 @@ public partial class MainWindow
             e.Handled = true;
     }
 
-    private void ExistingModeAfterImageEdit_Click(object sender, RoutedEventArgs e)
+    private void ExistingModeAfterEdit_Click(object sender, RoutedEventArgs e)
     {
-        if (_imageEditModeActive)
-            ResetImageEditState();
+        if (_editModeActive)
+            ResetEditState();
     }
 
-    private void ResetImageEditState()
+    private void ResetEditState()
     {
         CancelImageEditGesture();
-        _imageEditModeActive = false;
+        _editModeActive = false;
         _imageEditWorkspace = null;
+        _textEditWorkspace = null;
         _activeImageObjects = Array.Empty<PdfImageObjectInfo>();
         _selectedImageKey = null;
-        UpdateImageEditSaveCommandAvailability();
+        ResetTextEditState();
+        UpdateEditSaveCommandAvailability();
 
-        if (_imageEditOverlayCanvas is null)
+        if (_editOverlayCanvas is null)
             return;
 
-        _imageEditOverlayCanvas.Children.Clear();
-        _imageEditOverlayCanvas.Visibility = Visibility.Collapsed;
+        _editOverlayCanvas.Children.Clear();
+        _editOverlayCanvas.Visibility = Visibility.Collapsed;
     }
 }

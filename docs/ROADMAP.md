@@ -3,129 +3,65 @@
 > El detalle y criterios de aceptación viven en `MASTER_PLAN.md`. El estado operativo diario vive en `.planning/STATE.md`.
 
 ## A0 — Higiene y reproducibilidad ✅
-- contexto/plan maestro;
-- documentos alineados;
-- manifest de terceros;
-- licenses/notices;
-- datos privados ignorados;
-- lock NuGet;
-- CI Windows verificable.
-
-**Salida:** repo reproducible y arquitectura KISS/offline trazable.
+Repo reproducible, manifest/licencias, lock NuGet, privacidad de fixtures y CI Windows verificable.
 
 ## A1 — Development Intelligence ✅
+GSD + Graphify project-scoped, regenerables y fuera del runtime del producto.
 
-Objetivo cumplido: reducir pérdida de contexto y lecturas repetidas sin contaminar el runtime del producto.
+## F0 — PDF base — automated PASS / physical QA pending
+Abrir/render/navegar/zoom/fit/imprimir con PDFium. Real Windows UI/print/offline smoke: **NOT RUN**.
 
-- GSD Core `1.15.0` project-scoped validado;
-- Graphify `0.9.77` project-scoped validado;
-- `.planning/PROJECT.md`, `REQUIREMENTS.md`, `ROADMAP.md`, `STATE.md` y config versionados;
-- `.graphifyignore` limita el corpus a `src/` + `tests/`;
-- `.codex/`, `.devtools/` y `graphify-out/` son regenerables y se ignoran;
-- setup reproducible en `tools/setup-dev.ps1`;
-- GSD health = healthy;
-- Graphify query sobre `PdfDocumentSession` = PASS;
-- fixtures privados fuera del grafo;
-- tooling no forma parte del build/runtime.
+## F1 — Gate ZPL-A — synthetic PASS / private corpus pending
+Labelize 1.7.0 seleccionado. Corpus privado Mercado Libre: **NOT RUN**.
 
-**Salida:** una sesión nueva se orienta con `STATE` + plan activo + consultas Graphify sin releer todo el proyecto.
+## F2 — Etiquetas ZPL offline — automated PASS / private+physical QA pending
+Abrir ZPL, preview, cantidades, layouts, PDF e impresión. Thermal/ruler/scanner/private corpus: **NOT RUN**.
 
-## F0 — PDF base ▶ SIGUIENTE
-- abrir PDF;
-- render real;
-- scheduler PDFium global;
-- cancelación/progressive render;
-- zoom;
-- navegación mínima;
-- fit page/width;
-- impresión.
+## F3 — Firma visual — automated PASS / manual QA pending
+PNG, drag/resize/duplicate/delete, photo prep, InkCanvas, biblioteca local y Save As. Draft PR #22 open/unmerged.
 
-**Salida:** lector PDF básico usable.
+## F4 — Lector completo — automated closure PASS / manual QA pending
+Scroll virtualizado, thumbnails, búsqueda/copia, bookmarks/links, password, shortcuts/recientes. Draft PR #23 open/unmerged.
 
-## F1 — Gate ZPL-A
-- BinaryKits.Zpl vs Labelize;
-- corpus real privado + sintético;
-- `^CI28`, `^FH`, `^FB`, `^FR`, `^GFA`, `^BC`, `^BQ`, `^PQ`, `^DF`, `^XF`;
-- benchmark 10/100/500 diseños;
-- fidelidad, barcode, RAM/CPU/I/O, packaging y licencias.
+## F5 — Organizar — automated closure PASS / manual QA pending
+Mover/reordenar/rotar/eliminar/duplicar, insertar/extract/merge/split y preflight estructural. Draft PR #24 open/unmerged.
 
-**Salida:** un único motor ZPL elegido por evidencia. BinaryKits es candidato preferente.
+## F6 — Imágenes — automated closure PASS / manual QA pending
+Objetos imagen reales, extract/replace, move/resize/rotate/delete, opacity/z-order, undo/redo y Save As transaccional. Closure `c6d762efca01d50bfe3932d1f05617190a464fc6`; draft PR #25 open/unmerged.
 
-## F2 — Etiquetas ZPL offline
-- abrir `.zpl/.txt/.prn`;
-- diseños + cantidades `^PQ`;
-- preview;
-- cantidades archivo/una/custom;
-- tamaños térmicos/A4/Carta/custom;
-- layout 1/2/3/4/6/8/10/12/custom;
-- PDF;
-- impresión Windows;
-- validación ZXing + prueba física.
+## F7 — Texto V1 — automated functional closure PASS / Task 14 finalization
 
-**Salida:** reemplazar el flujo manual de Labelary.
+Entregado:
 
-## F3 — Firma visual
-- PNG transparente;
-- drag/resize/move;
-- eliminar/duplicar;
-- insertar en PDF;
-- `Guardar como`;
-- reabrir y verificar.
+- discovery de objetos TEXT top-level de página activa;
+- selección mixta imagen/texto determinista;
+- edición conservadora con read-only explícito;
+- `OriginalFont` cuando es segura;
+- fallback DejaVu Sans 2.37 offline mediante CID Type2 + `ToUnicode` + `CIDToGIDMap` explícitos;
+- propiedades básicas Texto V1;
+- writer/validator combinados imagen+texto;
+- preservación estructural medida de nuevo con writer F7 real;
+- hardening de lifecycle/memoria/handles/temp/baselines.
 
-## F4 — Lector completo
-- scroll continuo;
-- miniaturas;
-- búsqueda/copiar;
-- bookmarks/links;
-- password;
-- shortcuts/recientes;
-- tabs solo si no complica estabilidad.
+`TEXT-01..04`: **AUTO PASS**.  
+Task-13 checkpoint: `b31a75cf99207e2e6ac9072b50c5a1ac5fa32d05`; CI `38089770428`; build 0/0; tests 766/766.
 
-## F5 — Organizar
-- mover/reordenar/rotar/eliminar/duplicar;
-- insertar/extract/merge/split;
-- PDFium primero;
-- preflight de firmas, formularios, bookmarks y otras estructuras.
+Manual Windows text-edit/offline QA: **NOT RUN**.
 
-## F6 — Imágenes
-- clic derecho contextual;
-- extraer/guardar;
-- reemplazar;
-- mover/resize/rotar/opacidad/orden;
-- undo/redo.
+## F8 — Comentarios — pending
+Highlight, underline/strikeout, notas, dibujo/formas. Próxima fase solo después del cierre F7; no iniciar dentro de Task 14.
 
-## F7 — Texto V1
-- detectar/seleccionar objeto;
-- edición conservadora;
-- fallback con TTF redistribuible si aparecen nuevos code points/subset dudoso;
-- propiedades básicas;
-- save/reopen validation.
+## F9 — Utilidades — pending
+Solo las justificadas y offline.
 
-## F8 — Comentarios
-- highlight;
-- underline/strikeout;
-- notas;
-- dibujo/formas.
-
-## F9 — Utilidades
-Solo las justificadas y offline: watermark, numeración, protección autorizada, optimización/reparación. qpdf/pdfcpu solo si PDFium demuestra una carencia concreta.
-
-## F10 — OCR
+## F10 — OCR — pending
 Tesseract local, documento escaneado → texto buscable.
 
-## F11 — Texto V2
-- líneas/párrafos;
-- reading order;
-- reflow limitado;
-- PdfPig solo si reduce complejidad.
+## F11 — Texto V2 — pending
+Líneas/párrafos, reading order y reflow limitado.
 
-## F12 — Profesional
-- redacción real;
-- formularios;
-- firma criptográfica;
-- compare;
-- batch;
-- conversiones auditadas.
+## F12 — Profesional — pending
+Redacción real, formularios, firma criptográfica, compare, batch y conversiones auditadas.
 
 ## Regla de avance
-Cada fase debe quedar usable y probada. Ninguna función principal puede requerir Internet. No añadir infraestructura preventiva.
+Cada fase debe quedar usable y probada. Ninguna función principal puede requerir Internet. No añadir infraestructura preventiva. No mergear a `main` sin aprobación explícita.

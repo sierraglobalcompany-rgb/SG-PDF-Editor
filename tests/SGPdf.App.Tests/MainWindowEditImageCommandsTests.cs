@@ -153,7 +153,7 @@ internal static class ImageEditCommandTestHost
     {
         Assert.True(await OrganizeWindowTestHost.OpenReaderAsync(window, path));
         OrganizeWindowTestHost.SetField(window, "_getCryptographicSignatureCount", (Func<PdfDocumentSession, int>)(_ => 0));
-        Assert.True(await OrganizeWindowTestHost.InvokeTask<bool>(window, "TryEnterImageEditModeAsync"));
+        Assert.True(await OrganizeWindowTestHost.InvokeTask<bool>(window, "TryEnterEditModeAsync"));
 
         var info = Assert.IsType<PdfImageObjectInfo>(
             ((IEnumerable)OrganizeWindowTestHost.GetField(window, "_activeImageObjects")!).Cast<object>().Single());
@@ -189,7 +189,7 @@ internal static class ImageEditCommandTestHost
     {
         try
         {
-            OrganizeWindowTestHost.Invoke(window, "ResetImageEditState");
+            OrganizeWindowTestHost.Invoke(window, "ResetEditState");
         }
         catch
         {

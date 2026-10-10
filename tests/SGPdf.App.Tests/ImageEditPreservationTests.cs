@@ -74,7 +74,7 @@ public sealed class ImageEditPreservationTests
         });
 
         var destination = Path.Combine(fixture.DirectoryPath, $"edited-{Guid.NewGuid():N}.pdf");
-        new PdfImageEditWriter().SaveAsCopy(
+        new PdfEditWriter().SaveAsCopy(
             workspace,
             destination,
             warningsConfirmed: true,
@@ -98,7 +98,7 @@ public sealed class ImageEditPreservationTests
     private static object InspectImageEditPreflight(PdfDocumentSession session)
     {
         var inspectorType = AppAssembly.GetType(
-            "SGPdf.App.Features.Edit.Images.ImageEditPreflightInspector",
+            "SGPdf.App.Features.Edit.PdfEditPreflightInspector",
             throwOnError: false);
         Assert.NotNull(inspectorType);
 

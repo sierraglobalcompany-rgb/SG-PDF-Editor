@@ -43,7 +43,7 @@ public sealed class ImageEditPerformanceOwnershipTests
                         return Array.Empty<PdfImageObjectInfo>();
                     }));
 
-                Assert.True(await OrganizeWindowTestHost.InvokeTask<bool>(window, "TryEnterImageEditModeAsync"));
+                Assert.True(await OrganizeWindowTestHost.InvokeTask<bool>(window, "TryEnterEditModeAsync"));
 
                 Assert.Equal(new[] { 0 }, queriedPages);
             }

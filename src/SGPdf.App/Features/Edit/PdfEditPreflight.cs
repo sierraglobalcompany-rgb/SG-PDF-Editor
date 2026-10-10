@@ -1,22 +1,22 @@
 using SGPdf.App.Pdf;
 
-namespace SGPdf.App.Features.Edit.Images;
+namespace SGPdf.App.Features.Edit;
 
-internal enum ImageEditFindingSeverity
+internal enum PdfEditFindingSeverity
 {
     Info,
     Warning,
     Block
 }
 
-internal enum ImageEditPreservationStatus
+internal enum PdfEditPreservationStatus
 {
     ProvenPreserved,
     ProvenChangedOrLost,
     Unknown
 }
 
-internal enum ImageEditFindingKind
+internal enum PdfEditFindingKind
 {
     CryptographicSignature,
     PasswordProtectedSource,
@@ -26,103 +26,108 @@ internal enum ImageEditFindingKind
     InternalLink,
     TaggedStructure,
     PageLabel,
+    PageRotation,
     Attachment,
     Metadata
 }
 
-internal sealed record ImageEditFinding(
-    ImageEditFindingKind Kind,
-    ImageEditFindingSeverity Severity,
+internal sealed record PdfEditFinding(
+    PdfEditFindingKind Kind,
+    PdfEditFindingSeverity Severity,
     string Message,
-    ImageEditPreservationStatus PreservationStatus);
+    PdfEditPreservationStatus PreservationStatus);
 
-internal sealed record ImageEditPreflightResult(IReadOnlyList<ImageEditFinding> Findings)
+internal sealed record PdfEditPreflightResult(IReadOnlyList<PdfEditFinding> Findings)
 {
-    internal bool CanProceed => Findings.All(finding => finding.Severity != ImageEditFindingSeverity.Block);
+    internal bool CanProceed => Findings.All(finding => finding.Severity != PdfEditFindingSeverity.Block);
 
     internal bool RequiresWarningConfirmation =>
-        CanProceed && Findings.Any(finding => finding.Severity == ImageEditFindingSeverity.Warning);
+        CanProceed && Findings.Any(finding => finding.Severity == PdfEditFindingSeverity.Warning);
 }
 
-internal sealed class ImageEditPreflightInspector
+internal sealed class PdfEditPreflightInspector
 {
     private readonly Func<PdfDocumentSession, CancellationToken, int> _signatureCountReader;
 
-    internal ImageEditPreflightInspector()
+    internal PdfEditPreflightInspector()
         : this(ReadSignatureCount)
     {
     }
 
-    internal ImageEditPreflightInspector(Func<PdfDocumentSession, CancellationToken, int> signatureCountReader)
+    internal PdfEditPreflightInspector(Func<PdfDocumentSession, CancellationToken, int> signatureCountReader)
     {
         _signatureCountReader = signatureCountReader ?? throw new ArgumentNullException(nameof(signatureCountReader));
     }
 
-    internal ImageEditPreflightResult Inspect(
+    internal PdfEditPreflightResult Inspect(
         PdfDocumentSession session,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(session);
         cancellationToken.ThrowIfCancellationRequested();
 
-        var findings = new List<ImageEditFinding>();
+        var findings = new List<PdfEditFinding>();
 
         if (session.OpenedWithPassword)
         {
-            findings.Add(new ImageEditFinding(
-                ImageEditFindingKind.PasswordProtectedSource,
-                ImageEditFindingSeverity.Block,
+            findings.Add(new PdfEditFinding(
+                PdfEditFindingKind.PasswordProtectedSource,
+                PdfEditFindingSeverity.Block,
                 "Los PDF abiertos con contraseña no se pueden materializar en EDITAR.",
-                ImageEditPreservationStatus.Unknown));
+                PdfEditPreservationStatus.Unknown));
         }
 
         cancellationToken.ThrowIfCancellationRequested();
         var signatureCount = _signatureCountReader(session, cancellationToken);
         if (signatureCount != 0)
         {
-            findings.Add(new ImageEditFinding(
-                ImageEditFindingKind.CryptographicSignature,
-                ImageEditFindingSeverity.Block,
+            findings.Add(new PdfEditFinding(
+                PdfEditFindingKind.CryptographicSignature,
+                PdfEditFindingSeverity.Block,
                 signatureCount < 0
                     ? "No se pudo comprobar con seguridad si el PDF contiene firmas criptográficas."
-                    : "El PDF contiene una firma criptográfica y está bloqueado para edición de imágenes.",
-                ImageEditPreservationStatus.Unknown));
+                    : "El PDF contiene una firma criptográfica y está bloqueado para edición en EDITAR.",
+                PdfEditPreservationStatus.Unknown));
         }
 
         cancellationToken.ThrowIfCancellationRequested();
         if (session.GetOrganizeFormType(cancellationToken) != 0)
-            findings.Add(CreatePreservedInfo(ImageEditFindingKind.Form, "formularios"));
+            findings.Add(CreatePreservedInfo(PdfEditFindingKind.Form, "formularios"));
 
         cancellationToken.ThrowIfCancellationRequested();
         if (session.GetBookmarks(cancellationToken).Count > 0)
-            findings.Add(CreatePreservedInfo(ImageEditFindingKind.Bookmark, "marcadores"));
+            findings.Add(CreatePreservedInfo(PdfEditFindingKind.Bookmark, "marcadores"));
 
         cancellationToken.ThrowIfCancellationRequested();
         if (session.HasOrganizeNamedDestinations(cancellationToken))
-            findings.Add(CreatePreservedInfo(ImageEditFindingKind.NamedDestination, "destinos nombrados"));
+            findings.Add(CreatePreservedInfo(PdfEditFindingKind.NamedDestination, "destinos nombrados"));
 
         cancellationToken.ThrowIfCancellationRequested();
         if (ContainsInternalLink(session, cancellationToken))
-            findings.Add(CreatePreservedInfo(ImageEditFindingKind.InternalLink, "enlaces internos"));
+            findings.Add(CreatePreservedInfo(PdfEditFindingKind.InternalLink, "enlaces internos"));
 
         cancellationToken.ThrowIfCancellationRequested();
         if (session.IsOrganizeTagged(cancellationToken))
-            findings.Add(CreatePreservedInfo(ImageEditFindingKind.TaggedStructure, "estructura etiquetada"));
+            findings.Add(CreatePreservedInfo(PdfEditFindingKind.TaggedStructure, "estructura etiquetada"));
 
         cancellationToken.ThrowIfCancellationRequested();
         if (session.HasOrganizePageLabels(cancellationToken))
-            findings.Add(CreatePreservedInfo(ImageEditFindingKind.PageLabel, "etiquetas de página"));
+            findings.Add(CreatePreservedInfo(PdfEditFindingKind.PageLabel, "etiquetas de página"));
+
+        cancellationToken.ThrowIfCancellationRequested();
+        if (ContainsPageRotation(session, cancellationToken))
+            findings.Add(CreatePreservedInfo(PdfEditFindingKind.PageRotation, "rotación de página"));
 
         cancellationToken.ThrowIfCancellationRequested();
         if (session.HasOrganizeAttachments(cancellationToken))
-            findings.Add(CreatePreservedInfo(ImageEditFindingKind.Attachment, "archivos adjuntos"));
+            findings.Add(CreatePreservedInfo(PdfEditFindingKind.Attachment, "archivos adjuntos"));
 
         cancellationToken.ThrowIfCancellationRequested();
         if (session.HasOrganizeMetadata(cancellationToken))
-            findings.Add(CreatePreservedInfo(ImageEditFindingKind.Metadata, "metadatos"));
+            findings.Add(CreatePreservedInfo(PdfEditFindingKind.Metadata, "metadatos"));
 
         cancellationToken.ThrowIfCancellationRequested();
-        return new ImageEditPreflightResult(findings.AsReadOnly());
+        return new PdfEditPreflightResult(findings.AsReadOnly());
     }
 
     private static int ReadSignatureCount(
@@ -152,12 +157,26 @@ internal sealed class ImageEditPreflightInspector
         return false;
     }
 
-    private static ImageEditFinding CreatePreservedInfo(
-        ImageEditFindingKind kind,
+    private static bool ContainsPageRotation(
+        PdfDocumentSession session,
+        CancellationToken cancellationToken)
+    {
+        for (var pageIndex = 0; pageIndex < session.PageCount; pageIndex++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (session.GetPageRotation(pageIndex, cancellationToken) != 0)
+                return true;
+        }
+
+        return false;
+    }
+
+    private static PdfEditFinding CreatePreservedInfo(
+        PdfEditFindingKind kind,
         string structureName)
         => new(
             kind,
-            ImageEditFindingSeverity.Info,
-            $"El PDF contiene {structureName}; el writer F6 los preservó en el corpus representativo automatizado.",
-            ImageEditPreservationStatus.ProvenPreserved);
+            PdfEditFindingSeverity.Info,
+            $"El PDF contiene {structureName}; el writer combinado de EDITAR los preservó en el corpus representativo automatizado de F7.",
+            PdfEditPreservationStatus.ProvenPreserved);
 }

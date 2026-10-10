@@ -54,7 +54,7 @@ public sealed class ImageEditOptionalCapabilitiesTests
             try
             {
                 await ImageEditCommandTestHost.PrepareAsync(window, fixture.Path);
-                var canvas = Assert.IsType<Canvas>(OrganizeWindowTestHost.GetField(window, "_imageEditOverlayCanvas"));
+                var canvas = Assert.IsType<Canvas>(OrganizeWindowTestHost.GetField(window, "_editOverlayCanvas"));
 
                 var opacity = canvas.Children
                     .OfType<Button>()
@@ -215,7 +215,7 @@ public sealed class ImageEditOptionalCapabilitiesTests
     {
         Assert.True(await OrganizeWindowTestHost.OpenReaderAsync(window, path));
         OrganizeWindowTestHost.SetField(window, "_getCryptographicSignatureCount", (Func<PdfDocumentSession, int>)(_ => 0));
-        Assert.True(await OrganizeWindowTestHost.InvokeTask<bool>(window, "TryEnterImageEditModeAsync"));
+        Assert.True(await OrganizeWindowTestHost.InvokeTask<bool>(window, "TryEnterEditModeAsync"));
 
         var infos = ((IEnumerable)OrganizeWindowTestHost.GetField(window, "_activeImageObjects")!)
             .Cast<PdfImageObjectInfo>()
@@ -229,7 +229,7 @@ public sealed class ImageEditOptionalCapabilitiesTests
     private static object CreateWriter()
     {
         var type = typeof(PdfDocumentSession).Assembly.GetType(
-            "SGPdf.App.Pdf.PdfImageEditWriter",
+            "SGPdf.App.Pdf.PdfEditWriter",
             throwOnError: true)!;
         var constructor = type.GetConstructors(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
             .Single(info => info.GetParameters().Length == 4);

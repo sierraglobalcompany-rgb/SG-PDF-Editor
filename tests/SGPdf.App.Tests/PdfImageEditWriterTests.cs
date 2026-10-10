@@ -367,7 +367,7 @@ public sealed class PdfImageEditWriterTests
         Func<IntPtr, PdfObjectMatrix, int>? setMatrixOverride = null)
     {
         var type = typeof(PdfDocumentSession).Assembly.GetType(
-            "SGPdf.App.Pdf.PdfImageEditWriter",
+            "SGPdf.App.Pdf.PdfEditWriter",
             throwOnError: true)!;
         var constructor = type.GetConstructors(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
             .Single(info => info.GetParameters().Length == 4);

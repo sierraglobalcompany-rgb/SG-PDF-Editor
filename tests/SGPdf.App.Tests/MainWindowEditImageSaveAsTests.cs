@@ -1,3 +1,4 @@
+using SGPdf.App.Features.Edit;
 using System.Windows;
 using SGPdf.App.Features.Edit.Images;
 using SGPdf.App.Pdf;
@@ -19,7 +20,7 @@ public sealed class MainWindowEditImageSaveAsTests
                 await ImageEditCommandTestHost.PrepareAsync(window, fixture.Path);
                 OrganizeWindowTestHost.Invoke(window, "HandleImageEditEscape");
 
-                var button = Assert.IsType<System.Windows.Controls.Button>(window.FindName("ImageEditSaveAsButton"));
+                var button = Assert.IsType<System.Windows.Controls.Button>(window.FindName("EditSaveAsButton"));
                 Assert.Equal("Guardar como...", button.Content);
                 Assert.Equal(Visibility.Visible, button.Visibility);
                 Assert.True(button.IsEnabled);
@@ -43,9 +44,9 @@ public sealed class MainWindowEditImageSaveAsTests
                 var dirtyDuringWriter = false;
                 var destination = Path.Combine(fixture.DirectoryPath, "saved.pdf");
 
-                OrganizeWindowTestHost.SetField(window, "_selectImageEditPdfDestination", (Func<string?>)(() => destination));
-                OrganizeWindowTestHost.SetField(window, "_inspectImageEditPreflight", (Func<PdfDocumentSession, CancellationToken, ImageEditPreflightResult>)((_, _) => EmptyResult()));
-                OrganizeWindowTestHost.SetField(window, "_confirmImageEditWarnings", (Func<ImageEditPreflightResult, bool>)(_ => { confirmCalls++; return true; }));
+                OrganizeWindowTestHost.SetField(window, "_selectEditPdfDestination", (Func<string?>)(() => destination));
+                OrganizeWindowTestHost.SetField(window, "_inspectEditPreflight", (Func<PdfDocumentSession, CancellationToken, PdfEditPreflightResult>)((_, _) => EmptyResult()));
+                OrganizeWindowTestHost.SetField(window, "_confirmEditWarnings", (Func<PdfEditPreflightResult, bool>)(_ => { confirmCalls++; return true; }));
                 OrganizeWindowTestHost.SetField(window, "_saveImageEditCopy", (Action<ImageEditWorkspace, string, bool, CancellationToken>)((workspace, path, confirmed, _) =>
                 {
                     writerCalls++;
@@ -54,7 +55,7 @@ public sealed class MainWindowEditImageSaveAsTests
                     Assert.False(confirmed);
                 }));
 
-                Assert.True((bool)OrganizeWindowTestHost.Invoke(window, "TrySaveImageEditWorkspace")!);
+                Assert.True((bool)OrganizeWindowTestHost.Invoke(window, "TrySaveEditWorkspace")!);
 
                 Assert.Equal(0, confirmCalls);
                 Assert.Equal(1, writerCalls);
@@ -83,14 +84,14 @@ public sealed class MainWindowEditImageSaveAsTests
 
                 SetDestination(window, fixture.DirectoryPath);
                 SetPreflight(window, WarningResult());
-                OrganizeWindowTestHost.SetField(window, "_confirmImageEditWarnings", (Func<ImageEditPreflightResult, bool>)(_ => { confirmCalls++; return true; }));
+                OrganizeWindowTestHost.SetField(window, "_confirmEditWarnings", (Func<PdfEditPreflightResult, bool>)(_ => { confirmCalls++; return true; }));
                 OrganizeWindowTestHost.SetField(window, "_saveImageEditCopy", (Action<ImageEditWorkspace, string, bool, CancellationToken>)((_, _, confirmed, _) =>
                 {
                     writerCalls++;
                     confirmedAtWriter = confirmed;
                 }));
 
-                Assert.True((bool)OrganizeWindowTestHost.Invoke(window, "TrySaveImageEditWorkspace")!);
+                Assert.True((bool)OrganizeWindowTestHost.Invoke(window, "TrySaveEditWorkspace")!);
 
                 Assert.Equal(1, confirmCalls);
                 Assert.Equal(1, writerCalls);
@@ -116,10 +117,10 @@ public sealed class MainWindowEditImageSaveAsTests
 
                 SetDestination(window, fixture.DirectoryPath);
                 SetPreflight(window, WarningResult());
-                OrganizeWindowTestHost.SetField(window, "_confirmImageEditWarnings", (Func<ImageEditPreflightResult, bool>)(_ => { confirmCalls++; return false; }));
+                OrganizeWindowTestHost.SetField(window, "_confirmEditWarnings", (Func<PdfEditPreflightResult, bool>)(_ => { confirmCalls++; return false; }));
                 OrganizeWindowTestHost.SetField(window, "_saveImageEditCopy", (Action<ImageEditWorkspace, string, bool, CancellationToken>)((_, _, _, _) => writerCalls++));
 
-                Assert.False((bool)OrganizeWindowTestHost.Invoke(window, "TrySaveImageEditWorkspace")!);
+                Assert.False((bool)OrganizeWindowTestHost.Invoke(window, "TrySaveEditWorkspace")!);
 
                 Assert.Equal(1, confirmCalls);
                 Assert.Equal(0, writerCalls);
@@ -145,10 +146,10 @@ public sealed class MainWindowEditImageSaveAsTests
 
                 SetDestination(window, fixture.DirectoryPath);
                 SetPreflight(window, BlockResult());
-                OrganizeWindowTestHost.SetField(window, "_confirmImageEditWarnings", (Func<ImageEditPreflightResult, bool>)(_ => { confirmCalls++; return true; }));
+                OrganizeWindowTestHost.SetField(window, "_confirmEditWarnings", (Func<PdfEditPreflightResult, bool>)(_ => { confirmCalls++; return true; }));
                 OrganizeWindowTestHost.SetField(window, "_saveImageEditCopy", (Action<ImageEditWorkspace, string, bool, CancellationToken>)((_, _, _, _) => writerCalls++));
 
-                Assert.False((bool)OrganizeWindowTestHost.Invoke(window, "TrySaveImageEditWorkspace")!);
+                Assert.False((bool)OrganizeWindowTestHost.Invoke(window, "TrySaveEditWorkspace")!);
 
                 Assert.Equal(0, confirmCalls);
                 Assert.Equal(0, writerCalls);
@@ -172,11 +173,11 @@ public sealed class MainWindowEditImageSaveAsTests
                 var preflightCalls = 0;
                 var writerCalls = 0;
 
-                OrganizeWindowTestHost.SetField(window, "_selectImageEditPdfDestination", (Func<string?>)(() => null));
-                OrganizeWindowTestHost.SetField(window, "_inspectImageEditPreflight", (Func<PdfDocumentSession, CancellationToken, ImageEditPreflightResult>)((_, _) => { preflightCalls++; return EmptyResult(); }));
+                OrganizeWindowTestHost.SetField(window, "_selectEditPdfDestination", (Func<string?>)(() => null));
+                OrganizeWindowTestHost.SetField(window, "_inspectEditPreflight", (Func<PdfDocumentSession, CancellationToken, PdfEditPreflightResult>)((_, _) => { preflightCalls++; return EmptyResult(); }));
                 OrganizeWindowTestHost.SetField(window, "_saveImageEditCopy", (Action<ImageEditWorkspace, string, bool, CancellationToken>)((_, _, _, _) => writerCalls++));
 
-                Assert.False((bool)OrganizeWindowTestHost.Invoke(window, "TrySaveImageEditWorkspace")!);
+                Assert.False((bool)OrganizeWindowTestHost.Invoke(window, "TrySaveEditWorkspace")!);
 
                 Assert.Equal(0, preflightCalls);
                 Assert.Equal(0, writerCalls);
@@ -201,11 +202,11 @@ public sealed class MainWindowEditImageSaveAsTests
                 SetPreflight(window, EmptyResult());
                 OrganizeWindowTestHost.SetField(window, "_saveImageEditCopy", (Action<ImageEditWorkspace, string, bool, CancellationToken>)((_, _, _, _) => throw new IOException("forced save failure")));
 
-                Assert.False((bool)OrganizeWindowTestHost.Invoke(window, "TrySaveImageEditWorkspace")!);
+                Assert.False((bool)OrganizeWindowTestHost.Invoke(window, "TrySaveEditWorkspace")!);
 
                 Assert.True(prepared.Workspace.IsDirty);
                 Assert.True(prepared.Workspace.CanUndo);
-                Assert.False((bool)OrganizeWindowTestHost.GetField(window, "_imageEditMaterializing")!);
+                Assert.False((bool)OrganizeWindowTestHost.GetField(window, "_editMaterializing")!);
             }
             finally { ImageEditCommandTestHost.CloseClean(window); }
         });
@@ -222,15 +223,15 @@ public sealed class MainWindowEditImageSaveAsTests
             {
                 await DirtyWorkspaceAsync(window, fixture.Path);
                 var destinationCalls = 0;
-                OrganizeWindowTestHost.SetField(window, "_selectImageEditPdfDestination", (Func<string?>)(() => { destinationCalls++; return "unused.pdf"; }));
-                OrganizeWindowTestHost.SetField(window, "_imageEditMaterializing", true);
+                OrganizeWindowTestHost.SetField(window, "_selectEditPdfDestination", (Func<string?>)(() => { destinationCalls++; return "unused.pdf"; }));
+                OrganizeWindowTestHost.SetField(window, "_editMaterializing", true);
 
-                Assert.False((bool)OrganizeWindowTestHost.Invoke(window, "TrySaveImageEditWorkspace")!);
+                Assert.False((bool)OrganizeWindowTestHost.Invoke(window, "TrySaveEditWorkspace")!);
                 Assert.Equal(0, destinationCalls);
             }
             finally
             {
-                OrganizeWindowTestHost.SetField(window, "_imageEditMaterializing", false);
+                OrganizeWindowTestHost.SetField(window, "_editMaterializing", false);
                 ImageEditCommandTestHost.CloseClean(window);
             }
         });
@@ -250,35 +251,35 @@ public sealed class MainWindowEditImageSaveAsTests
     private static void SetDestination(MainWindow window, string directory)
         => OrganizeWindowTestHost.SetField(
             window,
-            "_selectImageEditPdfDestination",
+            "_selectEditPdfDestination",
             (Func<string?>)(() => Path.Combine(directory, "saved.pdf")));
 
-    private static void SetPreflight(MainWindow window, ImageEditPreflightResult result)
+    private static void SetPreflight(MainWindow window, PdfEditPreflightResult result)
         => OrganizeWindowTestHost.SetField(
             window,
-            "_inspectImageEditPreflight",
-            (Func<PdfDocumentSession, CancellationToken, ImageEditPreflightResult>)((_, _) => result));
+            "_inspectEditPreflight",
+            (Func<PdfDocumentSession, CancellationToken, PdfEditPreflightResult>)((_, _) => result));
 
-    private static ImageEditPreflightResult EmptyResult()
-        => new(Array.Empty<ImageEditFinding>());
+    private static PdfEditPreflightResult EmptyResult()
+        => new(Array.Empty<PdfEditFinding>());
 
-    private static ImageEditPreflightResult WarningResult()
+    private static PdfEditPreflightResult WarningResult()
         => new(new[]
         {
-            new ImageEditFinding(
-                ImageEditFindingKind.Metadata,
-                ImageEditFindingSeverity.Warning,
+            new PdfEditFinding(
+                PdfEditFindingKind.Metadata,
+                PdfEditFindingSeverity.Warning,
                 "synthetic warning",
-                ImageEditPreservationStatus.Unknown)
+                PdfEditPreservationStatus.Unknown)
         });
 
-    private static ImageEditPreflightResult BlockResult()
+    private static PdfEditPreflightResult BlockResult()
         => new(new[]
         {
-            new ImageEditFinding(
-                ImageEditFindingKind.CryptographicSignature,
-                ImageEditFindingSeverity.Block,
+            new PdfEditFinding(
+                PdfEditFindingKind.CryptographicSignature,
+                PdfEditFindingSeverity.Block,
                 "synthetic block",
-                ImageEditPreservationStatus.Unknown)
+                PdfEditPreservationStatus.Unknown)
         });
 }

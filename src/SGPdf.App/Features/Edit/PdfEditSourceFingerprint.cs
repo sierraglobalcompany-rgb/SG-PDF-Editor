@@ -1,12 +1,12 @@
 using System.IO;
 
-namespace SGPdf.App.Features.Edit.Images;
+namespace SGPdf.App.Features.Edit;
 
-internal readonly record struct ImageEditSourceFingerprint(
+internal readonly record struct PdfEditSourceFingerprint(
     long FileLength,
     long LastWriteTimeUtcTicks)
 {
-    internal static ImageEditSourceFingerprint Capture(string path)
+    internal static PdfEditSourceFingerprint Capture(string path)
     {
         if (string.IsNullOrWhiteSpace(path))
             throw new ArgumentException("La ruta fuente es obligatoria.", nameof(path));
@@ -16,7 +16,7 @@ internal readonly record struct ImageEditSourceFingerprint(
         if (!info.Exists)
             throw new FileNotFoundException("No existe el PDF fuente para edición de imágenes.", fullPath);
 
-        return new ImageEditSourceFingerprint(info.Length, info.LastWriteTimeUtc.Ticks);
+        return new PdfEditSourceFingerprint(info.Length, info.LastWriteTimeUtc.Ticks);
     }
 
     internal bool MatchesCurrentFile(string path)

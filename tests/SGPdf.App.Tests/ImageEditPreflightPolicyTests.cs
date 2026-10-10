@@ -78,7 +78,7 @@ public sealed class ImageEditPreflightPolicyTests
         PdfDocumentSession session,
         Func<PdfDocumentSession, CancellationToken, int>? signatureReader = null)
     {
-        var type = RequiredType("SGPdf.App.Features.Edit.Images.ImageEditPreflightInspector");
+        var type = RequiredType("SGPdf.App.Features.Edit.PdfEditPreflightInspector");
         object inspector;
         if (signatureReader is null)
         {
@@ -98,10 +98,10 @@ public sealed class ImageEditPreflightPolicyTests
 
     private static object CreateFinding(string kind, string severity, string preservationStatus)
     {
-        var findingType = RequiredType("SGPdf.App.Features.Edit.Images.ImageEditFinding");
-        var kindType = RequiredType("SGPdf.App.Features.Edit.Images.ImageEditFindingKind");
-        var severityType = RequiredType("SGPdf.App.Features.Edit.Images.ImageEditFindingSeverity");
-        var preservationType = RequiredType("SGPdf.App.Features.Edit.Images.ImageEditPreservationStatus");
+        var findingType = RequiredType("SGPdf.App.Features.Edit.PdfEditFinding");
+        var kindType = RequiredType("SGPdf.App.Features.Edit.PdfEditFindingKind");
+        var severityType = RequiredType("SGPdf.App.Features.Edit.PdfEditFindingSeverity");
+        var preservationType = RequiredType("SGPdf.App.Features.Edit.PdfEditPreservationStatus");
 
         return Create(findingType, new[]
         {
@@ -114,7 +114,7 @@ public sealed class ImageEditPreflightPolicyTests
 
     private static object CreateResult(object finding)
     {
-        var resultType = RequiredType("SGPdf.App.Features.Edit.Images.ImageEditPreflightResult");
+        var resultType = RequiredType("SGPdf.App.Features.Edit.PdfEditPreflightResult");
         var findingType = finding.GetType();
         var array = Array.CreateInstance(findingType, 1);
         array.SetValue(finding, 0);

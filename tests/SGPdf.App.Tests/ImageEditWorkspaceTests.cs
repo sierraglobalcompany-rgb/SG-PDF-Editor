@@ -220,7 +220,7 @@ internal static class ImageEditContractApi
     private static readonly Assembly AppAssembly = typeof(PdfDocumentSession).Assembly;
 
     private static Type WorkspaceType => RequiredType("SGPdf.App.Features.Edit.Images.ImageEditWorkspace");
-    private static Type FingerprintType => RequiredType("SGPdf.App.Features.Edit.Images.ImageEditSourceFingerprint");
+    private static Type FingerprintType => RequiredType("SGPdf.App.Features.Edit.PdfEditSourceFingerprint");
     private static Type ObjectKeyType => RequiredType("SGPdf.App.Features.Edit.Images.ImageObjectKey");
     private static Type ObjectRefType => RequiredType("SGPdf.App.Features.Edit.Images.ImageObjectRef");
     private static Type StateType => RequiredType("SGPdf.App.Features.Edit.Images.ImageEditState");

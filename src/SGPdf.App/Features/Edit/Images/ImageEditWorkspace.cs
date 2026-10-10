@@ -1,3 +1,4 @@
+using SGPdf.App.Features.Edit;
 using System.IO;
 using SGPdf.App.Pdf;
 
@@ -13,7 +14,7 @@ internal sealed class ImageEditWorkspace
 
     private ImageEditWorkspace(
         string sourcePath,
-        ImageEditSourceFingerprint sourceFingerprint,
+        PdfEditSourceFingerprint sourceFingerprint,
         bool sourceOpenedWithPassword)
     {
         SourcePath = sourcePath;
@@ -22,7 +23,7 @@ internal sealed class ImageEditWorkspace
     }
 
     internal string SourcePath { get; }
-    internal ImageEditSourceFingerprint SourceFingerprint { get; }
+    internal PdfEditSourceFingerprint SourceFingerprint { get; }
     internal bool SourceOpenedWithPassword { get; }
 
     internal bool IsDirty => _states.Any(pair =>
@@ -47,7 +48,7 @@ internal sealed class ImageEditWorkspace
             throw new ArgumentException("La ruta fuente es obligatoria.", nameof(sourcePath));
 
         var normalizedPath = Path.GetFullPath(sourcePath);
-        var fingerprint = ImageEditSourceFingerprint.Capture(normalizedPath);
+        var fingerprint = PdfEditSourceFingerprint.Capture(normalizedPath);
         return new ImageEditWorkspace(normalizedPath, fingerprint, sourceOpenedWithPassword);
     }
 

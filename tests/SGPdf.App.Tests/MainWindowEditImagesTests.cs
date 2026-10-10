@@ -44,13 +44,13 @@ public sealed class MainWindowEditImagesTests
                 Assert.True(await OrganizeWindowTestHost.OpenReaderAsync(window, fixture.Path));
                 OrganizeWindowTestHost.SetField(window, "_getCryptographicSignatureCount", (Func<PdfDocumentSession, int>)(_ => 0));
 
-                Assert.True(await OrganizeWindowTestHost.InvokeTask<bool>(window, "TryEnterImageEditModeAsync"));
-                Assert.True((bool)OrganizeWindowTestHost.GetField(window, "_imageEditModeActive")!);
+                Assert.True(await OrganizeWindowTestHost.InvokeTask<bool>(window, "TryEnterEditModeAsync"));
+                Assert.True((bool)OrganizeWindowTestHost.GetField(window, "_editModeActive")!);
                 Assert.NotNull(OrganizeWindowTestHost.GetField(window, "_imageEditWorkspace"));
                 Assert.Single(((IEnumerable)OrganizeWindowTestHost.GetField(window, "_activeImageObjects")!).Cast<object>());
                 Assert.Equal(Visibility.Collapsed, OrganizeWindowTestHost.Element<Grid>(window, "ReaderContinuousSurface").Visibility);
                 Assert.Equal(Visibility.Visible, OrganizeWindowTestHost.Element<ScrollViewer>(window, "PdfScrollViewer").Visibility);
-                Assert.Equal(Visibility.Visible, OrganizeWindowTestHost.Element<Canvas>(window, "ImageEditOverlayCanvas").Visibility);
+                Assert.Equal(Visibility.Visible, OrganizeWindowTestHost.Element<Canvas>(window, "EditOverlayCanvas").Visibility);
             }
             finally { OrganizeWindowTestHost.CloseClean(window); }
         });
@@ -68,9 +68,9 @@ public sealed class MainWindowEditImagesTests
                 Assert.True(await OrganizeWindowTestHost.OpenReaderAsync(window, fixture.Path));
                 OrganizeWindowTestHost.SetField(window, "_getCryptographicSignatureCount", (Func<PdfDocumentSession, int>)(_ => 1));
 
-                Assert.False(await OrganizeWindowTestHost.InvokeTask<bool>(window, "TryEnterImageEditModeAsync"));
+                Assert.False(await OrganizeWindowTestHost.InvokeTask<bool>(window, "TryEnterEditModeAsync"));
                 Assert.Null(OrganizeWindowTestHost.GetField(window, "_imageEditWorkspace"));
-                Assert.False((bool)OrganizeWindowTestHost.GetField(window, "_imageEditModeActive")!);
+                Assert.False((bool)OrganizeWindowTestHost.GetField(window, "_editModeActive")!);
                 Assert.Contains("editar", OrganizeWindowTestHost.Element<TextBlock>(window, "StatusText").Text, StringComparison.OrdinalIgnoreCase);
             }
             finally { OrganizeWindowTestHost.CloseClean(window); }
@@ -87,9 +87,9 @@ public sealed class MainWindowEditImagesTests
             try
             {
                 Assert.True(await OrganizeWindowTestHost.OpenReaderAsync(window, fixture.Path, "secret"));
-                Assert.False(await OrganizeWindowTestHost.InvokeTask<bool>(window, "TryEnterImageEditModeAsync"));
+                Assert.False(await OrganizeWindowTestHost.InvokeTask<bool>(window, "TryEnterEditModeAsync"));
                 Assert.Null(OrganizeWindowTestHost.GetField(window, "_imageEditWorkspace"));
-                Assert.False((bool)OrganizeWindowTestHost.GetField(window, "_imageEditModeActive")!);
+                Assert.False((bool)OrganizeWindowTestHost.GetField(window, "_editModeActive")!);
             }
             finally { OrganizeWindowTestHost.CloseClean(window); }
         });
@@ -112,7 +112,7 @@ public sealed class MainWindowEditImagesTests
                 OrganizeWindowTestHost.SetField(window, "_resolvePendingSignatureDecision",
                     (Func<SignatureGuardReason, PendingSignatureDecision>)(_ => PendingSignatureDecision.Cancel));
 
-                Assert.False(await OrganizeWindowTestHost.InvokeTask<bool>(window, "TryEnterImageEditModeAsync"));
+                Assert.False(await OrganizeWindowTestHost.InvokeTask<bool>(window, "TryEnterEditModeAsync"));
                 Assert.True((bool)OrganizeWindowTestHost.GetField(window, "_signatureModeActive")!);
                 Assert.Null(OrganizeWindowTestHost.GetField(window, "_imageEditWorkspace"));
             }
@@ -131,7 +131,7 @@ public sealed class MainWindowEditImagesTests
             {
                 Assert.True(await OrganizeWindowTestHost.OpenReaderAsync(window, fixture.Path));
                 OrganizeWindowTestHost.SetField(window, "_getCryptographicSignatureCount", (Func<PdfDocumentSession, int>)(_ => 0));
-                Assert.True(await OrganizeWindowTestHost.InvokeTask<bool>(window, "TryEnterImageEditModeAsync"));
+                Assert.True(await OrganizeWindowTestHost.InvokeTask<bool>(window, "TryEnterEditModeAsync"));
 
                 var info = Assert.IsType<PdfImageObjectInfo>(((IEnumerable)OrganizeWindowTestHost.GetField(window, "_activeImageObjects")!).Cast<object>().Single());
                 var centerX = info.Matrix.E + ((info.Matrix.A + info.Matrix.C) / 2d);
@@ -141,7 +141,7 @@ public sealed class MainWindowEditImagesTests
 
                 Assert.True((bool)OrganizeWindowTestHost.Invoke(window, "SelectImageAtDevicePoint", centerX, 400d - centerY)!);
                 Assert.NotNull(OrganizeWindowTestHost.GetField(window, "_selectedImageKey"));
-                Assert.NotEmpty(OrganizeWindowTestHost.Element<Canvas>(window, "ImageEditOverlayCanvas").Children.Cast<UIElement>());
+                Assert.NotEmpty(OrganizeWindowTestHost.Element<Canvas>(window, "EditOverlayCanvas").Children.Cast<UIElement>());
 
                 Assert.False((bool)OrganizeWindowTestHost.Invoke(window, "SelectImageAtDevicePoint", 1d, 1d)!);
                 Assert.Null(OrganizeWindowTestHost.GetField(window, "_selectedImageKey"));
