@@ -12,6 +12,12 @@
     <PackageReference Include="bblanchon.PDFium.Win32" Version="156.0.8076" />
     <PackageReference Include="PDFsharp" Version="6.2.4" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="$(MSBuildThisFileDirectory)..\..\third_party\fonts\dejavu\DejaVuSans.ttf"
+             Link="fonts\DejaVuSans.ttf"
+             CopyToOutputDirectory="PreserveNewest"
+             CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
   <ItemGroup Condition="Exists('$(MSBuildThisFileDirectory)..\..\third_party\runtime\labelize\labelize.exe')">
     <Content Include="$(MSBuildThisFileDirectory)..\..\third_party\runtime\labelize\labelize.exe"
              Link="labelize\labelize.exe"
