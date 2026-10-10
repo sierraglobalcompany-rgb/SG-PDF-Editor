@@ -32,6 +32,30 @@ internal static class PdfEditWriterTextFixtureFactory
         return new TextEditPdfFixture(directory, path);
     }
 
+    internal static TextEditPdfFixture CreateTwoTextObjects()
+    {
+        const string pageContent =
+            "BT\n/F1 18 Tf\n0 0 0 rg\n1 0 0 1 72 300 Tm\n(CASA) Tj\nET\n" +
+            "BT\n/F1 16 Tf\n0 0 0 rg\n1 0 0 1 72 240 Tm\n(UNO) Tj\nET\n";
+
+        var objects = new[]
+        {
+            "<< /Type /Catalog /Pages 2 0 R >>",
+            "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+            "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 400] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>",
+            "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>",
+            Stream(pageContent)
+        };
+
+        var directory = Path.Combine(
+            Path.GetTempPath(),
+            $"sgpdf-f7-writer-two-text-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(directory);
+        var path = Path.Combine(directory, "source.pdf");
+        Write(path, objects);
+        return new TextEditPdfFixture(directory, path);
+    }
+
     private static string Stream(string content, string dictionaryPrefix = "")
     {
         var prefix = string.IsNullOrWhiteSpace(dictionaryPrefix) ? string.Empty : dictionaryPrefix + " ";
