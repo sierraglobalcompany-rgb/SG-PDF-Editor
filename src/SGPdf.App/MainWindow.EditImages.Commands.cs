@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using SGPdf.App.Features.Edit.Images;
 using SGPdf.App.Pdf;
@@ -21,6 +22,14 @@ public partial class MainWindow
         None,
         Move,
         Resize
+    }
+
+    private enum ImageZOrderAction
+    {
+        Back,
+        Backward,
+        Forward,
+        Front
     }
 
     private bool BeginImageMoveAtDevicePoint(double deviceX, double deviceY)
@@ -215,6 +224,86 @@ public partial class MainWindow
         return true;
     }
 
+    private bool SetSelectedImageOpacityPercent(int percent)
+    {
+        if (percent is < 0 or > 100)
+            throw new ArgumentOutOfRangeException(nameof(percent), "La opacidad debe estar entre 0 y 100.");
+        if (_imageEditWorkspace is null || !TryGetSelectedImageState(out var state))
+            return false;
+
+        byte? opacity = percent == 100
+            ? null
+            : checked((byte)Math.Round(percent * 255d / 100d, MidpointRounding.AwayFromZero));
+        if (state.Opacity == opacity)
+            return false;
+
+        CancelImageEditGesture();
+        _imageEditWorkspace.Commit(
+            ImageEditOperationKind.SetOpacity,
+            state with { Opacity = opacity });
+        RefreshImageEditOverlay();
+        return true;
+    }
+
+    private bool MoveSelectedImageForward()
+        => ChangeSelectedImageZOrder(ImageZOrderAction.Forward);
+
+    private bool MoveSelectedImageBackward()
+        => ChangeSelectedImageZOrder(ImageZOrderAction.Backward);
+
+    private bool BringSelectedImageToFront()
+        => ChangeSelectedImageZOrder(ImageZOrderAction.Front);
+
+    private bool SendSelectedImageToBack()
+        => ChangeSelectedImageZOrder(ImageZOrderAction.Back);
+
+    private bool ChangeSelectedImageZOrder(ImageZOrderAction action)
+    {
+        if (_imageEditWorkspace is null || _session is null || !TryGetSelectedImageState(out var state))
+            return false;
+
+        int objectCount;
+        try
+        {
+            objectCount = _session.GetPageObjectCount(state.ObjectRef.Key.PageIndex);
+        }
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or ObjectDisposedException)
+        {
+            StatusText.Text = $"No se pudo cambiar el orden de la imagen: {ex.Message}";
+            return false;
+        }
+
+        if (objectCount <= 0)
+            return false;
+
+        var originalIndex = state.ObjectRef.Key.PageObjectIndex;
+        var currentIndex = state.TargetObjectIndex ?? originalIndex;
+        var lastIndex = objectCount - 1;
+        var targetIndex = action switch
+        {
+            ImageZOrderAction.Back => 0,
+            ImageZOrderAction.Backward => Math.Max(0, currentIndex - 1),
+            ImageZOrderAction.Forward => Math.Min(lastIndex, currentIndex + 1),
+            ImageZOrderAction.Front => lastIndex,
+            _ => currentIndex
+        };
+
+        if (targetIndex == currentIndex)
+            return false;
+
+        CancelImageEditGesture();
+        _imageEditWorkspace.Commit(
+            ImageEditOperationKind.ChangeZOrder,
+            state with
+            {
+                TargetObjectIndex = targetIndex == originalIndex
+                    ? null
+                    : targetIndex
+            });
+        RefreshImageEditOverlay();
+        return true;
+    }
+
     private bool UndoImageEdit()
     {
         if (!_imageEditModeActive || _imageEditWorkspace?.Undo() != true)
@@ -307,10 +396,114 @@ public partial class MainWindow
     }
 
     private PdfObjectMatrix CurrentDisplayMatrix(ImageEditState state)
-        => _imageEditGestureKey == state.ObjectRef.Key &&
-           _imageEditPreviewMatrix is PdfObjectMatrix preview
+    {
+        EnsureOptionalCapabilityControls(state);
+        return _imageEditGestureKey == state.ObjectRef.Key &&
+               _imageEditPreviewMatrix is PdfObjectMatrix preview
             ? preview
             : state.CurrentMatrix;
+    }
+
+    private void EnsureOptionalCapabilityControls(ImageEditState state)
+    {
+        if (_imageEditOverlayCanvas is null ||
+            _selectedImageKey != state.ObjectRef.Key ||
+            _imageEditOverlayCanvas.Children.OfType<Button>().Any(button => Equals(button.Tag, "ImageOpacityButton")))
+        {
+            return;
+        }
+
+        var opacitySlider = new Slider
+        {
+            Tag = "ImageOpacitySlider",
+            Minimum = 0d,
+            Maximum = 100d,
+            Value = state.Opacity is byte alpha
+                ? Math.Round(alpha * 100d / 255d)
+                : 100d,
+            TickFrequency = 1d,
+            IsSnapToTickEnabled = true,
+            Width = 140d,
+            Margin = new Thickness(8d)
+        };
+        opacitySlider.PreviewMouseLeftButtonUp += (_, e) =>
+        {
+            SetSelectedImageOpacityPercent((int)Math.Round(opacitySlider.Value));
+            e.Handled = true;
+        };
+        opacitySlider.KeyUp += (_, e) =>
+        {
+            if (e.Key is Key.Left or Key.Right or Key.Up or Key.Down or Key.Home or Key.End)
+                SetSelectedImageOpacityPercent((int)Math.Round(opacitySlider.Value));
+        };
+
+        var opacityMenu = new ContextMenu();
+        opacityMenu.Items.Add(opacitySlider);
+        var opacityButton = new Button
+        {
+            Content = "Opacidad",
+            ToolTip = "Cambiar opacidad de imagen",
+            Padding = new Thickness(6, 2, 6, 2),
+            Tag = "ImageOpacityButton",
+            ContextMenu = opacityMenu
+        };
+        opacityButton.PreviewMouseLeftButtonDown += (_, e) =>
+        {
+            opacityMenu.PlacementTarget = opacityButton;
+            opacityMenu.IsOpen = true;
+            e.Handled = true;
+        };
+
+        var orderMenu = new ContextMenu();
+        AddOrderMenuItem(orderMenu, "Enviar al fondo", "ImageOrderBack", SendSelectedImageToBack);
+        AddOrderMenuItem(orderMenu, "Retroceder", "ImageOrderBackward", MoveSelectedImageBackward);
+        AddOrderMenuItem(orderMenu, "Adelantar", "ImageOrderForward", MoveSelectedImageForward);
+        AddOrderMenuItem(orderMenu, "Traer al frente", "ImageOrderFront", BringSelectedImageToFront);
+        var orderButton = new Button
+        {
+            Content = "Orden",
+            ToolTip = "Cambiar orden de apilado",
+            Padding = new Thickness(6, 2, 6, 2),
+            Tag = "ImageOrderButton",
+            ContextMenu = orderMenu
+        };
+        orderButton.PreviewMouseLeftButtonDown += (_, e) =>
+        {
+            orderMenu.PlacementTarget = orderButton;
+            orderMenu.IsOpen = true;
+            e.Handled = true;
+        };
+
+        var quad = ImageHitTester.GetQuad(state.CurrentMatrix);
+        if (_currentPdfDeviceTransform is not PdfPageDeviceTransform transform)
+            return;
+        var devicePoints = quad.Select(point => ImageHitTester.PdfToDevice(point, transform)).ToArray();
+        var minX = devicePoints.Min(point => point.X);
+        var minY = devicePoints.Min(point => point.Y);
+        var rowY = Math.Max(0d, minY - 60d);
+
+        Canvas.SetLeft(opacityButton, minX);
+        Canvas.SetTop(opacityButton, rowY);
+        _imageEditOverlayCanvas.Children.Add(opacityButton);
+        Canvas.SetLeft(orderButton, minX + 76d);
+        Canvas.SetTop(orderButton, rowY);
+        _imageEditOverlayCanvas.Children.Add(orderButton);
+    }
+
+    private static void AddOrderMenuItem(
+        ContextMenu menu,
+        string header,
+        string tag,
+        Func<bool> action)
+    {
+        var item = new MenuItem
+        {
+            Header = header,
+            Tag = tag
+        };
+        item.Click += (_, _) => action();
+        menu.Items.Add(item);
+    }
 
     private IReadOnlyList<PdfImageObjectInfo> CurrentSelectableImageObjects()
     {

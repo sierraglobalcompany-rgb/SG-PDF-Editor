@@ -144,6 +144,17 @@ internal sealed class PdfImageEditWriter
                         {
                             throw new InvalidOperationException("PDFium no pudo aplicar la matriz editada a una imagen.");
                         }
+
+                        if (item.State.Opacity is byte alpha &&
+                            PdfiumNative.FPDFPageObj_SetFillColor(
+                                item.Handle,
+                                255u,
+                                255u,
+                                255u,
+                                alpha) == 0)
+                        {
+                            throw new InvalidOperationException("PDFium no pudo aplicar la opacidad editada a una imagen.");
+                        }
                     }
 
                     foreach (var item in resolved.Where(item => item.State.Deleted))
