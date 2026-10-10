@@ -306,7 +306,7 @@ public partial class MainWindow
 
     private bool UndoImageEdit()
     {
-        if (!_imageEditModeActive || _imageEditWorkspace?.Undo() != true)
+        if (!_editModeActive || _imageEditWorkspace?.Undo() != true)
             return false;
 
         CancelImageEditGesture();
@@ -317,7 +317,7 @@ public partial class MainWindow
 
     private bool RedoImageEdit()
     {
-        if (!_imageEditModeActive || _imageEditWorkspace?.Redo() != true)
+        if (!_editModeActive || _imageEditWorkspace?.Redo() != true)
             return false;
 
         CancelImageEditGesture();
@@ -331,7 +331,7 @@ public partial class MainWindow
         ModifierKeys modifiers,
         DependencyObject? source)
     {
-        if (!_imageEditModeActive || IsReaderShortcutEditableSource(source))
+        if (!_editModeActive || IsReaderShortcutEditableSource(source))
             return false;
 
         if (modifiers == ModifierKeys.None && key == Key.Delete)
@@ -349,7 +349,7 @@ public partial class MainWindow
     private bool TryGetSelectedImageState(out ImageEditState state)
     {
         state = null!;
-        if (!_imageEditModeActive ||
+        if (!_editModeActive ||
             _imageEditWorkspace is null ||
             _selectedImageKey is not ImageObjectKey key)
         {
@@ -391,8 +391,8 @@ public partial class MainWindow
         _imageEditGestureStartPdfPoint = null;
         _imageEditResizeCorner = null;
         _imageEditPreviewMatrix = null;
-        if (_imageEditOverlayCanvas?.IsMouseCaptured == true)
-            _imageEditOverlayCanvas.ReleaseMouseCapture();
+        if (_editOverlayCanvas?.IsMouseCaptured == true)
+            _editOverlayCanvas.ReleaseMouseCapture();
     }
 
     private PdfObjectMatrix CurrentDisplayMatrix(ImageEditState state)
@@ -406,9 +406,9 @@ public partial class MainWindow
 
     private void EnsureOptionalCapabilityControls(ImageEditState state)
     {
-        if (_imageEditOverlayCanvas is null ||
+        if (_editOverlayCanvas is null ||
             _selectedImageKey != state.ObjectRef.Key ||
-            _imageEditOverlayCanvas.Children.OfType<Button>().Any(button => Equals(button.Tag, "ImageOpacityButton")))
+            _editOverlayCanvas.Children.OfType<Button>().Any(button => Equals(button.Tag, "ImageOpacityButton")))
         {
             return;
         }
@@ -484,10 +484,10 @@ public partial class MainWindow
 
         Canvas.SetLeft(opacityButton, minX);
         Canvas.SetTop(opacityButton, rowY);
-        _imageEditOverlayCanvas.Children.Add(opacityButton);
+        _editOverlayCanvas.Children.Add(opacityButton);
         Canvas.SetLeft(orderButton, minX + 76d);
         Canvas.SetTop(orderButton, rowY);
-        _imageEditOverlayCanvas.Children.Add(orderButton);
+        _editOverlayCanvas.Children.Add(orderButton);
     }
 
     private static void AddOrderMenuItem(

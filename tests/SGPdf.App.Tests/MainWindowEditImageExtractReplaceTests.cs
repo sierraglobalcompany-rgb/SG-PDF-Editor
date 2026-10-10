@@ -19,7 +19,7 @@ public sealed class MainWindowEditImageExtractReplaceTests
             try
             {
                 await ImageEditCommandTestHost.PrepareAsync(window, fixture.Path);
-                var canvas = OrganizeWindowTestHost.Element<Canvas>(window, "ImageEditOverlayCanvas");
+                var canvas = OrganizeWindowTestHost.Element<Canvas>(window, "EditOverlayCanvas");
                 var tags = canvas.Children
                     .OfType<Button>()
                     .Select(button => button.Tag?.ToString())

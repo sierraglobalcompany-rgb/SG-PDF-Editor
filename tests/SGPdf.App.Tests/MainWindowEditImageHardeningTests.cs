@@ -31,7 +31,7 @@ public sealed class MainWindowEditImageHardeningTests
 
                 Assert.Same(originalSession, OrganizeWindowTestHost.GetField(window, "_session"));
                 Assert.Same(originalWorkspace, OrganizeWindowTestHost.GetField(window, "_imageEditWorkspace"));
-                Assert.True((bool)OrganizeWindowTestHost.GetField(window, "_imageEditModeActive")!);
+                Assert.True((bool)OrganizeWindowTestHost.GetField(window, "_editModeActive")!);
                 Assert.True(prepared.Workspace.IsDirty);
             }
             finally { ImageEditCommandTestHost.CloseClean(window); }
@@ -62,7 +62,7 @@ public sealed class MainWindowEditImageHardeningTests
 
                 Assert.True(handled);
                 Assert.Equal(0, openCalls);
-                Assert.True((bool)OrganizeWindowTestHost.GetField(window, "_imageEditModeActive")!);
+                Assert.True((bool)OrganizeWindowTestHost.GetField(window, "_editModeActive")!);
                 Assert.Same(prepared.Workspace, OrganizeWindowTestHost.GetField(window, "_imageEditWorkspace"));
                 Assert.True(prepared.Workspace.IsDirty);
             }
@@ -86,7 +86,7 @@ public sealed class MainWindowEditImageHardeningTests
                 var openZpl = Assert.IsType<MenuItem>(window.FindName("OpenZplMenuItem"));
                 openZpl.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
 
-                Assert.True((bool)OrganizeWindowTestHost.GetField(window, "_imageEditModeActive")!);
+                Assert.True((bool)OrganizeWindowTestHost.GetField(window, "_editModeActive")!);
                 Assert.Same(prepared.Workspace, OrganizeWindowTestHost.GetField(window, "_imageEditWorkspace"));
                 Assert.True(prepared.Workspace.IsDirty);
             }
@@ -108,10 +108,10 @@ public sealed class MainWindowEditImageHardeningTests
                 var workspace = OrganizeWindowTestHost.GetField(window, "_imageEditWorkspace");
                 OrganizeWindowTestHost.SetField(window, "_confirmDiscardImageEditChanges", (Func<bool>)(() => false));
 
-                Assert.False((bool)OrganizeWindowTestHost.Invoke(window, "TryLeaveImageEditModeWithGuard")!);
+                Assert.False((bool)OrganizeWindowTestHost.Invoke(window, "TryLeaveEditModeWithGuard")!);
 
                 Assert.Same(workspace, OrganizeWindowTestHost.GetField(window, "_imageEditWorkspace"));
-                Assert.True((bool)OrganizeWindowTestHost.GetField(window, "_imageEditModeActive")!);
+                Assert.True((bool)OrganizeWindowTestHost.GetField(window, "_editModeActive")!);
                 Assert.True(prepared.Workspace.IsDirty);
             }
             finally { ImageEditCommandTestHost.CloseClean(window); }
@@ -132,10 +132,10 @@ public sealed class MainWindowEditImageHardeningTests
                 Assert.True((bool)OrganizeWindowTestHost.Invoke(window, "RotateSelectedImage", 5d)!);
                 OrganizeWindowTestHost.SetField(window, "_confirmDiscardImageEditChanges", (Func<bool>)(() => true));
 
-                Assert.True((bool)OrganizeWindowTestHost.Invoke(window, "TryLeaveImageEditModeWithGuard")!);
+                Assert.True((bool)OrganizeWindowTestHost.Invoke(window, "TryLeaveEditModeWithGuard")!);
 
                 Assert.Null(OrganizeWindowTestHost.GetField(window, "_imageEditWorkspace"));
-                Assert.False((bool)OrganizeWindowTestHost.GetField(window, "_imageEditModeActive")!);
+                Assert.False((bool)OrganizeWindowTestHost.GetField(window, "_editModeActive")!);
                 Assert.Single(session.GetImageObjects(0));
                 Assert.False(prepared.Workspace.SourceOpenedWithPassword);
             }
@@ -160,10 +160,10 @@ public sealed class MainWindowEditImageHardeningTests
                     return false;
                 }));
 
-                Assert.True((bool)OrganizeWindowTestHost.Invoke(window, "TryLeaveImageEditModeWithGuard")!);
+                Assert.True((bool)OrganizeWindowTestHost.Invoke(window, "TryLeaveEditModeWithGuard")!);
                 Assert.Equal(0, prompts);
                 Assert.Null(OrganizeWindowTestHost.GetField(window, "_imageEditWorkspace"));
-                Assert.False((bool)OrganizeWindowTestHost.GetField(window, "_imageEditModeActive")!);
+                Assert.False((bool)OrganizeWindowTestHost.GetField(window, "_editModeActive")!);
             }
             finally { ImageEditCommandTestHost.CloseClean(window); }
         });
@@ -183,10 +183,10 @@ public sealed class MainWindowEditImageHardeningTests
                 OrganizeWindowTestHost.SetField(window, "_confirmDiscardImageEditChanges", (Func<bool>)(() => false));
                 var args = new CancelEventArgs();
 
-                OrganizeWindowTestHost.Invoke(window, "ImageEditWindow_Closing", null, args);
+                OrganizeWindowTestHost.Invoke(window, "EditWindow_Closing", null, args);
 
                 Assert.True(args.Cancel);
-                Assert.True((bool)OrganizeWindowTestHost.GetField(window, "_imageEditModeActive")!);
+                Assert.True((bool)OrganizeWindowTestHost.GetField(window, "_editModeActive")!);
                 Assert.True(prepared.Workspace.IsDirty);
             }
             finally { ImageEditCommandTestHost.CloseClean(window); }

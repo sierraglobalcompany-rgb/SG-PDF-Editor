@@ -7,7 +7,7 @@ namespace SGPdf.App;
 
 public partial class MainWindow
 {
-    private static readonly bool ImageEditOpenMenuGuardRegistered = RegisterImageEditOpenMenuGuard();
+    private static readonly bool EditOpenMenuGuardRegistered = RegisterEditOpenMenuGuard();
 
     private Func<bool> _confirmDiscardImageEditChanges = static () =>
         MessageBox.Show(
@@ -16,17 +16,17 @@ public partial class MainWindow
             MessageBoxButton.YesNo,
             MessageBoxImage.Warning) == MessageBoxResult.Yes;
 
-    private static bool RegisterImageEditOpenMenuGuard()
+    private static bool RegisterEditOpenMenuGuard()
     {
         EventManager.RegisterClassHandler(
             typeof(MenuItem),
             MenuItem.ClickEvent,
-            new RoutedEventHandler(ImageEditOpenMenuItem_Click),
+            new RoutedEventHandler(EditOpenMenuItem_Click),
             handledEventsToo: false);
         return true;
     }
 
-    private static void ImageEditOpenMenuItem_Click(object sender, RoutedEventArgs e)
+    private static void EditOpenMenuItem_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not MenuItem menuItem || Window.GetWindow(menuItem) is not MainWindow window)
             return;
@@ -37,47 +37,47 @@ public partial class MainWindow
             return;
         }
 
-        if (window._imageEditModeActive && !window.TryLeaveImageEditModeWithGuard())
+        if (window._editModeActive && !window.TryLeaveEditModeWithGuard())
             e.Handled = true;
     }
 
-    private void WireImageEditGuards()
+    private void WireEditGuards()
     {
-        _ = ImageEditOpenMenuGuardRegistered;
+        _ = EditOpenMenuGuardRegistered;
 
         if (_readModeButton is not null)
-            _readModeButton.PreviewMouseLeftButtonDown += GuardedImageEditModeButton_PreviewMouseLeftButtonDown;
+            _readModeButton.PreviewMouseLeftButtonDown += GuardedEditModeButton_PreviewMouseLeftButtonDown;
         if (_signModeButton is not null)
-            _signModeButton.PreviewMouseLeftButtonDown += GuardedImageEditModeButton_PreviewMouseLeftButtonDown;
+            _signModeButton.PreviewMouseLeftButtonDown += GuardedEditModeButton_PreviewMouseLeftButtonDown;
         if (_organizeModeButton is not null)
-            _organizeModeButton.PreviewMouseLeftButtonDown += GuardedImageEditModeButton_PreviewMouseLeftButtonDown;
+            _organizeModeButton.PreviewMouseLeftButtonDown += GuardedEditModeButton_PreviewMouseLeftButtonDown;
 
-        Closing += ImageEditWindow_Closing;
+        Closing += EditWindow_Closing;
     }
 
-    private void GuardedImageEditModeButton_PreviewMouseLeftButtonDown(
+    private void GuardedEditModeButton_PreviewMouseLeftButtonDown(
         object sender,
         MouseButtonEventArgs e)
     {
-        if (_imageEditModeActive && !TryLeaveImageEditModeWithGuard())
+        if (_editModeActive && !TryLeaveEditModeWithGuard())
             e.Handled = true;
     }
 
-    private bool TryLeaveImageEditModeWithGuard()
+    private bool TryLeaveEditModeWithGuard()
     {
-        if (!_imageEditModeActive)
+        if (!_editModeActive)
             return true;
 
         if (_imageEditWorkspace?.IsDirty == true && !_confirmDiscardImageEditChanges())
             return false;
 
-        ResetImageEditState();
+        ResetEditState();
         return true;
     }
 
-    private void ImageEditWindow_Closing(object? sender, CancelEventArgs e)
+    private void EditWindow_Closing(object? sender, CancelEventArgs e)
     {
-        if (!TryLeaveImageEditModeWithGuard())
+        if (!TryLeaveEditModeWithGuard())
             e.Cancel = true;
     }
 }
