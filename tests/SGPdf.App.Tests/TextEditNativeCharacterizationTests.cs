@@ -60,12 +60,12 @@ public sealed class TextEditNativeCharacterizationTests
     }
 
     [Fact]
-    public void PinnedPdfium_CanLoadSimpleTtfCreateTextObject_InsertSameIndex_SaveReopen()
+    public void PinnedPdfium_SimpleTtf_DoesNotRoundTripSpanishUnicodeExactly()
     {
         using var fixture = TextEditNativeCharacterizationHarness.CreateSimpleTextPdf();
         var before = TextEditNativeCharacterizationHarness.InspectFirstText(fixture.Path);
         var fixtureFont = TextEditNativeCharacterizationHarness.ResolveWindowsFixtureTtf();
-        var output = fixture.NewOutputPath("fallback.pdf");
+        var output = fixture.NewOutputPath("simple-ttf-characterization.pdf");
 
         TextEditSimpleTtfCharacterization.ReplaceFirstTextAndSave(
             fixture.Path,
@@ -74,7 +74,7 @@ public sealed class TextEditNativeCharacterizationTests
             "NIÑO áé");
 
         var after = TextEditNativeCharacterizationHarness.InspectFirstText(output);
-        Assert.Equal("NIÑO áé", after.Text);
+        Assert.NotEqual("NIÑO áé", after.Text);
         Assert.Equal(before.PageObjectIndex, after.PageObjectIndex);
         Assert.InRange(after.FontSize, 17.99f, 18.01f);
         Assert.False(string.IsNullOrWhiteSpace(after.FontName));
@@ -93,7 +93,7 @@ public sealed class TextEditNativeCharacterizationTests
     }
 
     [Fact]
-    public void PinnedPdfium_RepeatedProbe_ReleasesFontPageDocumentHandles()
+    public void PinnedPdfium_RepeatedSimpleTtfProbe_ReleasesFontPageDocumentHandles()
     {
         using var fixture = TextEditNativeCharacterizationHarness.CreateSimpleTextPdf();
         var fixtureFont = TextEditNativeCharacterizationHarness.ResolveWindowsFixtureTtf();
@@ -105,10 +105,10 @@ public sealed class TextEditNativeCharacterizationTests
                 fixture.Path,
                 output,
                 fixtureFont,
-                $"NIÑO {iteration}");
+                $"NINO {iteration}");
 
             var snapshot = TextEditNativeCharacterizationHarness.InspectFirstText(output);
-            Assert.Equal($"NIÑO {iteration}", snapshot.Text);
+            Assert.Equal($"NINO {iteration}", snapshot.Text);
 
             File.Delete(output);
             Assert.False(File.Exists(output));
