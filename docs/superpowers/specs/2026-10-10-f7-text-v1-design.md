@@ -1,34 +1,33 @@
-# F7 — Texto V1 — Diseño
+# F7 — Texto V1 — Diseño canónico
 
 **Fecha:** 2026-10-10  
-**Estado:** diseño escrito para revisión; **NO IMPLEMENTAR hasta aprobación explícita de esta spec**.  
-**Base:** `feat/f6-images` @ `c6d762efca01d50bfe3932d1f05617190a464fc6`  
-**Rama de diseño:** `design/f7-text-v1`  
+**Estado:** **DISEÑO ENMENDADO tras Gate F7.1 + spike Unicode exitoso; requiere revisión del usuario antes de reanudar implementación.**  
+**Base F6:** `feat/f6-images` @ `c6d762efca01d50bfe3932d1f05617190a464fc6`  
+**Rama F7:** `feat/f7-text-v1`  
+**Checkpoint de evidencia:** `docs/history/2026-10-10-F7-UNICODE-FALLBACK-SPIKE-CHECKPOINT.md`  
 **Producto:** SG PDF Editor — Windows x64 / C# / .NET 10 / WPF / offline-first.
 
 ---
 
 ## 1. Objetivo
 
-Añadir **edición conservadora de objetos de texto PDF reales** dentro del modo `EDITAR`, sin convertir el PDF en un documento tipo Word y sin introducir un segundo motor PDF.
+Añadir edición conservadora de **objetos de texto PDF reales** dentro del único modo `EDITAR`, sin convertir el PDF en Word, sin overlays que oculten texto viejo y sin introducir un segundo motor PDF.
 
 F7 debe permitir:
 
-1. detectar y seleccionar objetos de texto editables en la página activa;
-2. editar el contenido completo de un objeto de texto cuando sea seguro;
-3. conservar posición, matriz/rotación, tamaño y color cuando sea viable;
-4. usar una única TTF fallback redistribuible cuando la fuente original/subset no pueda representar de forma segura el nuevo contenido;
-5. guardar imágenes + texto en **una sola materialización transaccional**;
-6. reabrir y verificar texto, geometría y render del resultado;
-7. mantener intactas las garantías F6: offline, Save As, fingerprint, Block para firma/contraseña, temporales, validación y ausencia de handles nativos persistentes.
+1. detectar/seleccionar objetos `FPDF_PAGEOBJ_TEXT` top-level de la página activa;
+2. editar el contenido completo de un objeto cuando sea seguro;
+3. conservar matriz/rotación, origen, tamaño y color cuando sea viable;
+4. usar una única TTF fallback redistribuible cuando la fuente original no sea segura;
+5. materializar imágenes + texto en una sola apertura/escritura transaccional;
+6. reabrir y validar Unicode exacto, geometría y render;
+7. conservar las garantías F6: offline, Save As, fingerprint, preflight, temp/cleanup y cero handles nativos persistentes.
 
-No se busca reflow de párrafos ni comportamiento Word-like.
+No hay reflow de párrafos en F7 V1.
 
 ---
 
-## 2. Requisitos trazables
-
-La fase satisface únicamente los requisitos ya aprobados:
+## 2. Requisitos
 
 - `TEXT-01` — detectar/seleccionar objetos de texto.
 - `TEXT-02` — edición in-place conservadora donde sea segura.
@@ -41,968 +40,245 @@ Nada de F8–F12 entra preventivamente.
 
 ## 3. Principios KISS/YAGNI
 
-1. **PDFium sigue siendo el único motor de edición PDF.**
-2. No añadir PdfPig, qpdf, pdfcpu, MuPDF, iText, Ghostscript ni otro motor para F7.
-3. No crear `Domain/Application/Infrastructure`, command bus, plugin framework, generic PDF object graph ni nueva DI.
-4. No reconstruir párrafos, líneas ni reading order en V1.
-5. No OCR en F7.
-6. No white rectangles, raster flatten ni overlay que deje el texto original oculto debajo.
-7. No depender de fuentes instaladas en Windows para garantizar resultados reproducibles.
-8. No descargar fuentes ni componentes en runtime.
-9. Trabajar solo con la página activa; no escanear todo el documento al entrar en `EDITAR`.
-10. No mantener `IntPtr` o handles PDFium en estado persistente.
-11. Candidate-first: los cambios son lógicos hasta `Guardar como...`.
-12. `Guardar como...` protege siempre el original.
+- PDFium sigue siendo el **único motor de edición PDF**.
+- No añadir PdfPig, qpdf, pdfcpu, MuPDF, iText, Ghostscript ni motor equivalente.
+- No `Domain/Application/Infrastructure`, DI nueva, command bus, plugin framework ni object graph PDF genérico.
+- No OCR, reading order, columnas, párrafos, Form XObject text, creación libre de cajas, auto-fit o síntesis bold/italic.
+- No depender de fuentes instaladas en Windows para producto.
+- No descargar fuentes/componentes en runtime.
+- Trabajar solo sobre la página activa para discovery/UI.
+- Estado persistente managed; ningún `IntPtr`/handle sobrevive a una operación nativa.
+- Candidate-first: el fuente no se muta hasta `Guardar como...`.
+- Source != destination; temp sibling; reopen/validate antes de publicación atómica.
 
 ---
 
-## 4. Referente UX
+## 4. UX congelada
 
-El patrón de referencia es el de editores PDF comerciales maduros:
-
-- el usuario entra en `EDITAR`;
-- hace clic sobre contenido real;
-- el objeto queda seleccionado con un contorno;
-- aparecen propiedades básicas;
-- la edición se aplica al objeto, no a un documento reconstruido como Word;
-- si la fuente original no permite una edición segura, el producto debe advertir o usar una alternativa controlada, no fingir compatibilidad.
-
-F7 adopta ese patrón, pero reduce alcance para conservar simplicidad y seguridad.
-
----
-
-## 5. Alcance UX exacto
-
-### 5.1 Un solo modo `EDITAR`
-
-No se crea un modo `EDITAR TEXTO` aparte.
-
-`EDITAR` contendrá:
-
-- imágenes F6;
-- texto F7.
-
-La superficie central y el mismo transform dispositivo↔PDF continúan siendo autoridad.
-
-### 5.2 Selección
+Existe un solo modo `EDITAR` para imágenes F6 + texto F7.
 
 Al hacer clic:
 
-1. convertir punto dispositivo → PDF;
-2. evaluar objetos editables de la página activa;
-3. considerar imágenes F6 y textos F7;
-4. si hay solapamiento, seleccionar el objeto editable con mayor `PageObjectIndex` que contenga el punto;
-5. no mantener selección si el objeto ya no existe o quedó invalidado.
+1. device → PDF;
+2. evaluar imágenes + textos editables de la página activa;
+3. si hay solapamiento, gana el mayor `PageObjectIndex`;
+4. existe una sola selección autoritativa del modo EDITAR.
 
-Esto evita dos sistemas de selección independientes peleando por el mismo clic.
+Para texto seleccionado se muestran:
 
-### 5.3 Texto seleccionado
-
-Un texto seleccionado muestra:
-
-- contorno sobre su quad/bounds;
-- panel de propiedades `Texto`;
-- contenido completo del objeto;
+- contorno quad/bounds;
+- contenido completo;
 - tamaño en puntos;
 - color de relleno;
-- nombre de fuente como información;
-- indicador de ruta prevista:
-  - `Fuente original`, o
-  - `Fuente compatible`.
+- nombre de fuente informativo;
+- estrategia prevista: `Fuente original` o `Fuente compatible`.
 
-### 5.4 Edición
+Controles V1:
 
-V1 edita el **contenido completo de un objeto PDF**, no caracteres arbitrarios dentro de una reconstrucción de párrafo.
-
-Controles mínimos:
-
-- `Texto` — `TextBox` multilínea;
-- `Tamaño` — valor numérico validado;
-- `Color` — paleta WPF simple de colores básicos + valor actual;
+- `Texto`;
+- `Tamaño`;
+- color básico;
 - `Aplicar`.
 
-No se añade una dependencia de color picker.
-
-`F2`/`Enter` pueden enfocar el campo de texto después de seleccionar un objeto, pero los atajos no son requisito para cerrar F7.
-
-### 5.5 Estado lógico
-
-`Aplicar` modifica solo el workspace lógico.
-
-El PDF fuente no se toca hasta `Guardar como...`.
-
-Si el usuario deja una edición inválida:
-
-- no se sustituye el último estado válido;
-- se muestra error local;
-- no se ensucia el workspace con un estado imposible.
+`Aplicar` solo modifica workspace lógico. Texto vacío/solo whitespace es inválido porque V1 no ofrece delete.
 
 ---
 
-## 6. Limitaciones deliberadas de Texto V1
+## 5. Objeto editable V1
 
-F7 **NO** hace:
+Solo texto top-level de página.
 
-- reflow de párrafos;
-- ajuste automático entre objetos vecinos;
-- detección de columnas;
-- reading order;
-- edición de una palabra reconstruida desde varios objetos;
-- edición de texto dentro de imagen/escaneo;
-- OCR;
-- modificación de contenido dentro de Form XObjects anidados;
-- kerning/tracking manual;
-- tipografía avanzada;
-- fuentes arbitrarias elegidas por el usuario;
-- bold/italic synthesis;
-- edición de text render modes exóticos;
-- texto sobre trayectorias;
-- auto-fit horizontal que deforme glifos;
-- creación libre de cajas de texto nuevas.
+Un objeto es candidato cuando:
 
-Esos problemas se difieren a F10/F11 o a slices posteriores justificadas.
+- type `TEXT`;
+- Unicode legible/no vacío;
+- matriz legible;
+- bounds/rotated bounds legibles;
+- font size legible;
+- fill color legible;
+- render mode dentro del subconjunto permitido.
+
+Texto dentro de `FPDF_PAGEOBJ_FORM` queda fuera de alcance. Render modes no probados pueden descubrirse/seleccionarse como read-only, pero no materializarse.
 
 ---
 
-## 7. Qué objeto de texto es editable en V1
+## 6. Gate F7.1 — resultado real del runtime pinneado
 
-F7 enumera únicamente `FPDF_PAGEOBJ_TEXT` **top-level** de la página activa.
+Runtime probado: `bblanchon.PDFium.Win32 156.0.8076`.
 
-Un objeto es candidato editable cuando:
+### 6.1 Exports/capacidades confirmadas
 
-1. es `FPDF_PAGEOBJ_TEXT`;
-2. `FPDFTextObj_GetText` devuelve Unicode no vacío de forma válida;
-3. se puede leer su matriz;
-4. se pueden leer bounds/rotated bounds;
-5. se puede leer tamaño de fuente;
-6. se puede leer color de relleno;
-7. su text render mode está dentro del subconjunto soportado por el Gate F7.1.
+Se confirmó la ruta necesaria para:
 
-Texto dentro de `FPDF_PAGEOBJ_FORM` queda fuera de V1 y debe tratarse como no editable, no como error global.
+- enumerar page objects;
+- leer type/bounds/rotated bounds/matrix;
+- extraer texto;
+- leer font size/font handle/base font name;
+- leer render mode y fill color;
+- `FPDFText_SetText`;
+- `FPDFPageObj_CreateTextObj`;
+- remove/insert-at-index;
+- `FPDFPage_GenerateContent`;
+- `FPDF_SaveAsCopy`;
+- `FPDFFont_Close`;
+- **`FPDFText_LoadCidType2Font`**.
 
----
+La ruta para nombre de fuente es:
 
-## 8. Gate F7.1 — capacidad real del PDFium pinneado
+`FPDFTextObj_GetFont` → `FPDFFont_GetBaseFontName`.
 
-Antes de implementar UI o writer se debe probar contra **el `pdfium.dll` exacto distribuido por `bblanchon.PDFium.Win32 156.0.8076`**.
+### 6.2 Fuente original — PASS
 
-La documentación upstream solo orienta; la decisión de producto depende del binario pinneado.
+Caso probado:
 
-### 8.1 Exports a comprobar
+`CASA 123` → `CASA 321`
 
-Mínimo:
+Con `FPDFText_SetText`:
 
-- `FPDFTextObj_GetText`
-- `FPDFTextObj_GetFontSize`
-- `FPDFTextObj_GetFontName` o equivalente disponible en el binario
-- `FPDFTextObj_GetTextRenderMode`
-- `FPDFPageObj_GetFillColor`
-- `FPDFPageObj_GetMatrix`
-- `FPDFPageObj_GetRotatedBounds`
-- `FPDFText_SetText`
-- `FPDFText_LoadFont`
-- `FPDFFont_Close`
-- `FPDFPageObj_CreateTextObj`
-- `FPDFPageObj_SetMatrix`
-- `FPDFPageObj_SetFillColor`
-- `FPDFPage_RemoveObject`
-- `FPDFPage_InsertObjectAtIndex`
-- `FPDFPage_GenerateContent`
-- `FPDF_SaveAsCopy`
+- texto exacto tras save/reopen: PASS;
+- mismo índice: PASS;
+- tamaño: PASS;
+- nombre de fuente: PASS;
+- color: PASS;
+- matriz: PASS;
+- render reabierto: PASS.
 
-### 8.2 Probe funcional, no solo export table
+### 6.3 Rutas `FPDFText_LoadFont` — RECHAZADAS
 
-El Gate debe crear/usar un fixture sintético y demostrar:
+`cid=1`:
 
-1. descubrir texto real como page object;
-2. leer Unicode exacto;
-3. leer fuente/tamaño/color/matriz;
-4. `FPDFText_SetText` → `GenerateContent` → save → reopen → texto exacto;
-5. cargar una TTF desde bytes locales;
-6. crear un nuevo text object;
-7. aplicar texto, matriz, tamaño/color necesarios;
-8. insertarlo en índice controlado;
-9. save → reopen → texto exacto + render válido;
-10. cerrar correctamente font/page/document handles.
+- entrada `NIÑO 1`;
+- reapertura `NIÑO\u00A01`;
+- U+0020 se convierte en NBSP.
 
-### 8.3 Regla de decisión
+`cid=0`:
 
-Si falta una API crítica o falla el probe real:
+- entrada `NIÑO áé`;
+- reapertura `NIÿO ÿÿ`.
 
-- **STOP F7**;
-- actualizar la spec antes de diseñar un fallback;
-- no introducir automáticamente un segundo motor.
+Por tanto **`FPDFText_LoadFont` NO es la ruta de fallback de producto F7**.
 
----
+### 6.4 CID Type2 con mapas explícitos — PASS
 
-## 9. Modelo de datos F7
+El spike separado probó:
 
-Se añade estado específico de texto, sin crear un object graph PDF genérico.
+`FPDFText_LoadCidType2Font(document, fontBytes, ..., toUnicodeCMap, cidToGidMap, ...)`
 
-### 9.1 `PdfTextObjectInfo`
+con:
 
-Snapshot managed e inmutable del objeto descubierto:
+- `ToUnicode` generado explícitamente;
+- `CIDToGIDMap` generado desde los glyph IDs de la TTF;
+- objeto recreado en el mismo índice;
+- matriz/color/tamaño conservados;
+- texto `NIÑO áé` exacto tras save/reopen;
+- render válido.
 
-- `PageIndex`
-- `PageObjectIndex`
-- `Text`
-- `Matrix`
-- `Bounds`
-- `RotatedBounds/Quad`
-- `FontName`
-- `FontSize`
-- `FillColor`
-- `TextRenderMode`
+CI funcional del spike: **687/687**, build 0 warnings / 0 errors.
 
-No contiene handles nativos.
-
-### 9.2 `TextObjectKey`
-
-Identidad lógica mínima:
-
-```text
-(PageIndex, PageObjectIndex)
-```
-
-### 9.3 `TextEditState`
-
-Contiene:
-
-- referencia/snapshot original;
-- texto actual;
-- tamaño actual;
-- color actual;
-- estrategia de fuente;
-- `Deleted` no entra en F7 V1 salvo que evidencia concreta lo justifique durante diseño posterior; por defecto no se ofrece eliminar texto en esta fase.
-
-### 9.4 `TextEditWorkspace`
-
-Responsabilidades:
-
-- estado actual por `TextObjectKey`;
-- baseline guardado;
-- `IsDirty`;
-- candidate-first mutation;
-- `MarkSavedBaseline()`.
-
-No duplica fingerprint ni preflight general.
-
-### 9.5 Undo/redo
-
-F7 no introduce un historial global nuevo.
-
-- el `TextBox` conserva su undo local antes de `Aplicar`;
-- una vez aplicado al workspace, el cambio de texto V1 no entra aún al undo/redo global de imágenes;
-- Ctrl+Z de F6 no debe modificar imágenes mientras el foco está dentro del editor de texto.
-
-Un historial unificado solo se añade cuando haya evidencia de que el comportamiento actual es insuficiente; no forma parte de `TEXT-01..04`.
+Conclusión: **F7 ya no está bloqueada técnicamente** y sigue siendo PDFium-only.
 
 ---
 
-## 10. Promoción de piezas F6 que ahora son generales
+## 7. Estrategia de fuente
 
-Para evitar parche sobre parche, F7 **no** crea clones `TextEditSourceFingerprint`, `TextEditPreflight` y `PdfTextEditWriter` paralelos.
+### 7.1 `OriginalFont`
 
-Se promocionan únicamente las piezas que ya son realmente transversales a `EDITAR`.
-
-### 10.1 Fingerprint
-
-`ImageEditSourceFingerprint` → `PdfEditSourceFingerprint`.
-
-Imagen y texto comparten el mismo origen y la misma comprobación stale-source.
-
-### 10.2 Preflight
-
-`ImageEditPreflight` → `PdfEditPreflight`.
-
-La política sigue siendo:
-
-- firma criptográfica → `Block / Unknown`;
-- PDF abierto con contraseña → `Block / Unknown`;
-- estructuras no criptográficas → clasificación únicamente según evidencia del writer combinado.
-
-No se crean dos matrices de warning simultáneas para el mismo `Guardar como...`.
-
-### 10.3 Writer
-
-`PdfImageEditWriter` evoluciona a `PdfEditWriter`.
-
-Debe contener rutas explícitas:
-
-```text
-ApplyImageEdits(...)
-ApplyTextEdits(...)
-```
-
-No se crea:
-
-- `IPdfWriter`;
-- base class;
-- strategy framework;
-- registry de objetos;
-- universal object pipeline.
-
-### 10.4 MainWindow
-
-El partial que hoy inicializa el modo general:
-
-- `MainWindow.EditImages.cs`
-
-se convierte en:
-
-- `MainWindow.Edit.cs`
-
-porque ya no será correcto que el modo `EDITAR` esté nombrado por una sola subfeature.
-
-Los archivos puramente de imágenes pueden conservar nombres específicos:
-
-- `MainWindow.EditImages.Commands.cs`
-- `MainWindow.EditImages.ExtractReplace.cs`
-
-El hardening general de salida/dirty-state debe quedar en un único lugar del modo `EDITAR`.
-
----
-
-## 11. Descubrimiento de texto
-
-Se añade una extensión/partial de `PdfDocumentSession` de lectura de objetos de texto de **una página**.
-
-Flujo:
-
-```text
-GetTextObjects(pageIndex)
-→ NativeGate
-→ LoadPage
-→ FPDFText_LoadPage
-→ CountObjects
-→ por ordinal: GetObject
-→ type == TEXT
-→ leer snapshot managed
-→ CloseTextPage
-→ ClosePage
-→ Release NativeGate
-```
-
-No se devuelve ningún handle.
-
-Cancelación se observa entre objetos.
-
----
-
-## 12. Hit-testing texto + imágenes
-
-No se construye un motor geométrico nuevo completo.
-
-### 12.1 Texto
-
-Preferencia:
-
-- usar `FPDFPageObj_GetRotatedBounds` para obtener quad;
-- punto dentro de quad convexo → candidato.
-
-Si rotated bounds no está disponible en el runtime exacto, F7.1 debe decidir si bounds axis-aligned son aceptables para V1 o si la feature se limita; no se improvisa un cálculo alternativo sin evidencia.
-
-### 12.2 Arbitraje
-
-Crear un helper pequeño del modo EDITAR que reciba candidatos ya descubiertos de imágenes/texto y elija el `PageObjectIndex` superior.
-
-No generalizarlo a todos los tipos PDF.
-
----
-
-## 13. Estrategia de fuente
-
-El problema central de F7 no es cambiar una cadena: es evitar texto corrupto por subsets/fuentes incompletas.
-
-### 13.1 Estrategia A — fuente original
-
-`OriginalFont` solo se usa cuando la edición es conservadoramente demostrable.
-
-Regla inicial KISS:
+Regla conservadora inicial:
 
 - whitespace nuevo puede aceptarse;
-- todo code point no-whitespace del texto nuevo debe haber aparecido ya en el texto original del mismo objeto.
+- cada rune no-whitespace nuevo debe haber aparecido ya en el texto original del mismo objeto;
+- si hay duda, fallback.
 
 Ejemplo:
 
-- `CASA 123` → `CASA 321`: potencial `OriginalFont`;
-- `CASA` → `NIÑO`: contiene code points nuevos para ese objeto → fallback.
+- `CASA 123` → `CASA 321` = potencial `OriginalFont`;
+- `CASA` → `NIÑO` = fallback.
 
-La regla es intencionalmente conservadora. No intenta adivinar el contenido real del subset.
+No se adivina cobertura real de subsets.
 
-Si el Gate descubre una API fiable para probar cobertura Unicode del font object, la spec se puede ampliar antes de implementación; no se añade un parser TTF/PDF preventivo.
+### 7.2 `FallbackTtf`
 
-### 13.2 Estrategia B — TTF fallback
+Cuando aparezcan runes nuevos/dudosos:
 
-Si aparecen code points nuevos o hay duda:
+1. usar una TTF local pinneada y redistribuible;
+2. reunir **la unión de runes** de todos los edits fallback de esa materialización;
+3. verificar cobertura de cada rune;
+4. obtener glyph IDs desde la TTF;
+5. construir una sola vez `ToUnicode` y `CIDToGIDMap` explícitos;
+6. cargar **un solo font handle CID Type2 por documento/materialización**;
+7. recrear cada text object con `FPDFPageObj_CreateTextObj` + `FPDFText_SetText`;
+8. copiar color/matriz/tamaño;
+9. remove + insert en el mismo `PageObjectIndex`;
+10. cerrar font handle al final de la materialización.
 
-- reemplazar el objeto por un text object nuevo;
-- usar una TTF local, redistribuible y pinneada;
-- preservar origen, matriz/rotación, tamaño y color;
-- insertar en el mismo `PageObjectIndex` cuando PDFium lo permita;
-- no deformar horizontalmente para forzar el texto dentro de los bounds originales.
+No se normaliza NBSP↔SPACE ni se aceptan glifos corruptos silenciosamente.
 
-El nuevo texto puede ocupar más/menos ancho. Eso es comportamiento explícito de V1, no un bug de reflow.
+### 7.3 Fuente candidata
 
-### 13.3 Fuente fallback candidata
+Candidata inicial: **DejaVu Sans 2.37**, solo después de Gate de procedencia/licencia/hash/cobertura.
 
-**DejaVu Sans** es el candidato inicial porque ya existe como fuente permisiva documentada en el contexto arquitectónico del proyecto.
-
-Pero F7 no la incorpora hasta completar un Gate de procedencia/licencia:
-
-- upstream verificable;
-- licencia redistribuible guardada en `third_party/licenses`;
-- versión/fuente/hash registrado;
-- cobertura mínima de español/Latin-1 demostrada;
-- sin descarga runtime.
-
-Si ese Gate falla, escoger otra fuente permisiva antes de escribir código de producto dependiente de ella.
-
-### 13.4 No usar fuentes del sistema como fallback principal
-
-La presencia de Arial/Calibri/etc. puede variar por máquina y no da un output reproducible.
+La presencia de Arial/Segoe/Tahoma en Windows solo fue fixture efímero del spike; no crea dependencia de producto.
 
 ---
 
-## 14. Text render mode
+## 8. Font asset / glyph mapping
 
-F7 V1 empieza conservador.
-
-Solo se habilita edición para los render modes que el Gate pruebe con preservación suficiente.
-
-Default recomendado:
-
-- permitir `FILL`;
-- seleccionar pero mostrar read-only para stroke/clip/exóticos hasta tener una prueba específica.
-
-No se cambia silenciosamente un render mode complejo a fill simple.
-
----
-
-## 15. Materialización unificada
-
-`Guardar como...` debe abrir el fuente **una sola vez** y aplicar todas las ediciones pendientes.
-
-Flujo:
-
-```text
-source fingerprint
-→ signature/password/preflight
-→ reopen original
-→ por página editada
-    resolve all referenced objects before destructive mutation
-    apply image edits
-    apply text edits
-    GenerateContent once for that page
-→ save temp
-→ reopen + validate
-→ atomic publish
-→ cleanup
-→ MarkSavedBaseline() de ambos workspaces
-```
-
-No ejecutar primero `PdfImageEditWriter` y después otro writer sobre su output.
-
-Eso evita pérdida acumulativa, resolución por índices obsoletos y dos ciclos de reescritura.
-
----
-
-## 16. Resolución segura de objetos antes de mutar
-
-Como F6, F7 no confía ciegamente en el ordinal después de modificar la página.
-
-Por página:
-
-1. tomar todos los estados editados de imagen y texto;
-2. resolver cada objeto original antes de remover/reinsertar cualquiera;
-3. validar tipo + snapshot mínimo esperado;
-4. conservar handles solo dentro de la sección nativa;
-5. aplicar mutaciones;
-6. destruir únicamente handles cuya ownership haya pasado a la app tras removerlos;
-7. `GenerateContent` una vez.
-
-La resolución debe detectar stale/objeto distinto y abortar transaccionalmente.
-
----
-
-## 17. Materialización de texto — ruta A
-
-Para `OriginalFont`:
-
-1. resolver text object original;
-2. validar tipo/texto/matriz dentro de tolerancias definidas;
-3. `FPDFText_SetText`;
-4. aplicar tamaño/color solo si fueron modificados y el runtime exacto ofrece setter fiable;
-5. mantener matriz original salvo cambio soportado explícitamente;
-6. `GenerateContent` al final de la página.
-
-### Setter de tamaño
-
-No se asume una API upstream moderna.
-
-El Gate F7.1 debe comprobar el setter exacto disponible en `156.0.8076`.
-
-Si no existe setter seguro:
-
-- cambiar tamaño fuerza ruta de recreación con TTF fallback;
-- no hackear matriz para simular `font size` si eso cambia semántica de forma difícil de validar.
-
----
-
-## 18. Materialización de texto — ruta B
-
-Para `FallbackTtf`:
-
-1. resolver objeto original;
-2. cargar bytes de la TTF pinneada en memoria managed;
-3. `FPDFText_LoadFont(document, ...)`;
-4. `FPDFPageObj_CreateTextObj(document, font, fontSize)`;
-5. `FPDFText_SetText(newObject, ...)`;
-6. copiar fill color;
-7. copiar matrix/origen/rotación;
-8. retirar objeto original;
-9. insertar objeto nuevo en el mismo índice;
-10. destruir original según reglas de ownership PDFium;
-11. cerrar font handle cuando corresponda;
-12. `GenerateContent` al final de la página.
-
-Si cualquier paso falla, el destino final no se publica.
-
----
-
-## 19. Tamaño, posición y ancho
-
-F7 conserva:
-
-- punto/origen;
-- matriz;
-- rotación;
-- tamaño de fuente solicitado;
-- color.
-
-No promete conservar ancho exacto cuando cambia el texto o la fuente.
-
-No se aplica:
-
-- horizontal squeeze;
-- auto-fit;
-- reflow;
-- reducción silenciosa de tamaño.
-
-La selección/overlay se refresca usando bounds reales del estado materializado solo después de reabrir; durante edición lógica puede usar estimación basada en el snapshot actual.
-
----
-
-## 20. Propiedades básicas
-
-`TEXT-04` incluye únicamente:
-
-- contenido;
-- font size;
-- fill color;
-- información de font name/estrategia;
-- matriz/posición preservada, no editable manualmente en V1.
-
-No se incluye selector completo de familias tipográficas.
-
----
-
-## 21. Dirty-state y salida
-
-`EDITAR` está dirty cuando:
-
-```text
-imageWorkspace.IsDirty || textWorkspace.IsDirty
-```
-
-Los mismos guards cubren:
-
-- LEER;
-- FIRMAR;
-- ORGANIZAR;
-- abrir PDF;
-- abrir ZPL;
-- Ctrl+O;
-- cerrar ventana.
-
-No se añaden handlers paralelos de `Loaded` o una segunda cadena de guards.
-
-KISS-A de F6 debe permanecer intacto.
-
----
-
-## 22. Save As UI
-
-Se conserva **un solo** `Guardar como...` del modo `EDITAR`.
-
-No aparece `Guardar imágenes` / `Guardar texto` por separado.
-
-Disponibilidad:
-
-- visible mientras `EDITAR` está activo;
-- deshabilitado mientras materializa;
-- no requiere selección activa;
-- cancelación de diálogo no modifica baseline;
-- Block/decline no invocan writer;
-- éxito marca baseline de imágenes y texto;
-- fallo conserva dirty-state e historial existente.
-
----
-
-## 23. Preflight y preservación F7
-
-Aunque F6 probó preservación, F7 modifica page content de forma distinta.
-
-Por tanto se crea una **matriz F7 independiente usando el writer combinado real**.
-
-Fixture representativo debe medir:
-
-- forms;
-- bookmarks;
-- named destinations;
-- internal links;
-- tagged structure;
-- page labels;
-- attachments;
-- representative metadata values.
-
-Clasificación exacta:
-
-- `ProvenPreserved`
-- `ProvenChangedOrLost`
-- `Unknown`
-
-Política:
-
-- firma criptográfica → Block / Unknown;
-- password-opened → Block / Unknown;
-- preserved no-crypto → Info;
-- changed/lost → Warning + confirmación;
-- unknown → Warning + confirmación.
-
-No copiar ciegamente la matriz F6.
-
----
-
-## 24. Validación de salida
-
-La validación F7 no se limita a “el PDF abre”.
-
-Para cada text edit materializado:
-
-1. abrir output;
-2. cargar página;
-3. resolver objeto esperado;
-4. confirmar type `TEXT`;
-5. extraer Unicode y comparar exactamente con texto solicitado;
-6. comparar matriz dentro de tolerancia;
-7. comparar tamaño esperado dentro de tolerancia;
-8. comparar color;
-9. verificar estrategia/font name cuando aplique fallback;
-10. renderizar la página editada y verificar bitmap válido/no vacío.
-
-Para imágenes continúan las validaciones F6.
-
-Solo después se publica atómicamente el destino.
-
----
-
-## 25. Unicode
-
-Internamente el modelo usa `.NET string` y enumeración por `Rune` para la decisión de code points.
-
-No iterar cobertura mediante `char` individual para decisiones de fuente.
-
-Primer alcance de fallback:
-
-- ASCII;
-- español;
-- Latin-1/Latin Extended cubierto por la fuente elegida.
-
-Emoji/CJK/RTL quedan fuera de la promesa F7 salvo que el Gate de fuente los demuestre y la implementación siga siendo KISS.
-
-Si el usuario introduce contenido fuera de cobertura demostrada:
-
-- impedir `Aplicar` con mensaje claro;
-- no generar glifos faltantes silenciosos.
-
----
-
-## 26. PDFs complejos
-
-### 26.1 Firma criptográfica
-
-Block, igual que F6.
-
-### 26.2 PDF abierto con contraseña
-
-Block para materialización, igual que F6.
-
-### 26.3 Texto dentro de Form XObject
-
-No editable en V1.
-
-### 26.4 Texto con render mode complejo
-
-Read-only si no está probado.
-
-### 26.5 Fuente no identificable
-
-Fallback TTF si el objeto y texto sí pueden resolverse de forma segura; si no, read-only.
-
-### 26.6 Texto vacío/artefacto
-
-No presentar como objeto editable útil.
-
----
-
-## 27. Rendimiento
-
-Al entrar en `EDITAR`:
-
-- render de página activa ya existente;
-- enumerar imágenes de página activa;
-- enumerar texto de página activa;
-- crear snapshots managed;
-- ningún scan de páginas no visibles.
-
-Objetivo: complejidad O(objetos de página activa), no O(documento completo).
-
-No cachear bitmaps/text handles nativos fuera de la operación.
-
----
-
-## 28. Threading PDFium
-
-Toda llamada PDFium sigue usando:
-
-```csharp
-PdfiumRuntime.NativeGate.Wait(...);
-try
-{
-    // native calls
-}
-finally
-{
-    PdfiumRuntime.NativeGate.Release();
-}
-```
-
-No `lock(NativeGate)`.
-
-No reacquirir el mismo semaphore dentro de una sección nativa.
-
----
-
-## 29. Font asset y memoria
-
-La TTF fallback se carga desde un recurso local pinneado.
+La implementación de producto puede usar APIs managed ya disponibles en .NET/WPF para comprobar cobertura/glyph ID del archivo TTF pinneado; no se añade parser de fuentes externo ni NuGet nuevo salvo evidencia futura que obligue a revisar esta spec.
 
 Reglas:
 
-- archivo con límite de tamaño explícito antes de `ReadAllBytes`;
+- tamaño máximo explícito antes de leer la TTF;
 - bytes managed;
-- PDFium copia los datos según su contrato de `FPDFText_LoadFont`;
-- no mantener pointer a bytes managed después de la llamada;
-- font handle no sobrevive al writer;
-- no recargar la TTF una vez por objeto si varios edits del mismo documento pueden reutilizar el mismo font handle durante una materialización.
+- buffers nativos solo durante la carga del font;
+- `ToUnicode` generado desde `Rune`, no `char` individual;
+- soportar inicialmente ASCII + español + cobertura Latin demostrada por la fuente;
+- rune fuera de cobertura → `Aplicar` inválido, sin dirty-state.
 
-KISS: un handle de fallback por documento/materialización cuando se necesite.
-
----
-
-## 30. Licencia/provenance Gate de fuente
-
-Antes de añadir el archivo TTF al repo/runtime:
-
-1. identificar upstream oficial;
-2. registrar versión/commit/release;
-3. calcular SHA-256;
-4. guardar licencia/notices;
-5. actualizar `third_party/manifest.json`;
-6. verificar que redistribución binaria está permitida;
-7. verificar que el instalador futuro pueda incluirla;
-8. comprobar cobertura de glifos mínima con test automatizado.
-
-Ninguna fuente se incorpora solo porque “está instalada” en la máquina del desarrollador.
+Emoji/CJK/RTL no forman parte de la promesa F7.
 
 ---
 
-## 31. Seguridad y archivos
+## 9. Modelo managed
 
-Se conservan las reglas F6:
+### `PdfTextObjectInfo`
 
-- destination != source;
-- destino en directorio existente;
-- source fingerprint obligatorio;
-- temp sibling del destino;
-- reopen/validate antes de publish;
-- replace/move atómico según existencia;
-- cleanup en `finally`;
-- cancelación antes/después de etapas costosas;
-- fallo nunca marca baseline;
-- source nunca se modifica.
+Snapshot inmutable:
 
----
+- `PageIndex`;
+- `PageObjectIndex`;
+- `Text`;
+- `Matrix`;
+- `Bounds`/quad;
+- `FontName`;
+- `FontSize`;
+- `FillColor`;
+- `TextRenderMode`.
 
-## 32. Fixtures F7
+### `TextObjectKey`
 
-Corpus sintético mínimo versionable:
+`(PageIndex, PageObjectIndex)`.
 
-1. texto Helvetica/standard simple;
-2. texto con rotación;
-3. texto solapado con imagen para hit-test/z-order;
-4. dos text objects visualmente contiguos para demostrar que V1 no los fusiona;
-5. texto con caracteres españoles;
-6. subset/edición con code point nuevo que fuerza fallback;
-7. texto con render mode no soportado → read-only;
-8. página con form XObject conteniendo texto → fuera de alcance;
-9. documento con estructuras de preservación;
-10. documento con firma/password para Blocks mediante fixtures ya disponibles cuando sea viable.
+### `TextEditState`
 
-No introducir PDFs privados.
+Original + candidato actual + tamaño + color + `TextFontStrategy`.
 
----
+### `TextEditWorkspace`
 
-## 33. QA automatizada mínima
+- baseline;
+- `IsDirty`;
+- candidate-first commit;
+- `EditedStates`;
+- `MarkSavedBaseline()`.
 
-### Gate/API
-
-- exports exactos;
-- probe in-place;
-- probe fallback TTF;
-- ownership/cleanup.
-
-### Discovery
-
-- top-level text only;
-- Unicode;
-- matrix/bounds/quad;
-- size/color/font;
-- cancelación;
-- active-page-only.
-
-### Hit testing
-
-- normal;
-- rotado;
-- overlap texto/texto;
-- overlap texto/imagen;
-- topmost por `PageObjectIndex`.
-
-### Workspace
-
-- candidate-first;
-- dirty baseline;
-- code-point strategy;
-- tamaño/color validation;
-- no native handles.
-
-### Writer
-
-- original-font route;
-- fallback route;
-- same-index replacement;
-- image+text in same page/save;
-- multi-page edits;
-- stale source;
-- Block signature/password;
-- cancel/temp cleanup;
-- publication failure;
-- output validation.
-
-### Preservation
-
-- matriz F7 independiente.
-
-### UI
-
-- selección text/image;
-- properties panel;
-- Apply valid/invalid;
-- dirty guards;
-- Save As one writer call;
-- baseline only after success;
-- no duplicate Loaded hooks.
-
-### Regression
-
-- LEER;
-- FIRMAR;
-- ORGANIZAR;
-- ZPL;
-- F6 imágenes;
-- offline guard.
+No historial global nuevo de texto en F7.
 
 ---
 
-## 34. QA manual Windows requerida pero separada
+## 10. Promoción KISS de piezas F6 compartidas
 
-Debe quedar `NOT RUN` hasta ejecutarla realmente.
+No crear clones `TextEditSourceFingerprint`, `TextEditPreflight` o `PdfTextEditWriter`.
 
-Checklist final F7 manual:
-
-- selección de textos a varios zooms;
-- texto rotado;
-- texto encima/debajo de imágenes;
-- editar nombres/direcciones/números;
-- ñ/á/é/í/ó/ú/ü;
-- cambio tamaño/color;
-- fallback visible y advertencia clara;
-- Save As/cancel/failure dialogs;
-- output abierto en SG PDF Editor y lector externo;
-- documento pesado;
-- cambios mixtos imagen + texto;
-- salir a LEER/FIRMAR/ORGANIZAR/ZPL con dirty state;
-- red físicamente deshabilitada.
-
-Automated PASS no implica este PASS.
-
----
-
-## 35. Dependencias
-
-Esperado para F7:
-
-- **ningún paquete NuGet nuevo**;
-- mismo PDFium pinneado;
-- un único asset TTF redistribuible solo después del Gate legal/provenance.
-
-Si aparece necesidad de un paquete para parsear fuentes, primero se debe demostrar que el enfoque conservador actual no basta y actualizar la spec.
-
----
-
-## 36. Estructura de código prevista
-
-Sin fijar todos los nombres del plan, la estructura objetivo es pequeña:
-
-```text
-Features/Edit/Text/
-  PdfTextObjectInfo.cs
-  TextEditState.cs
-  TextEditWorkspace.cs
-  TextEditPolicy.cs
-
-Pdf/
-  PdfDocumentSession.TextObjects.cs
-  PdfEditPreflight.cs
-  PdfEditWriter.cs
-  PdfEditOutputValidator.cs
-
-MainWindow.Edit.cs
-MainWindow.Edit.Text.cs
-MainWindow.Edit.Hardening.cs
-```
-
-Archivos F6 puramente de imágenes siguen separados.
-
-No crear `Features/Edit/Common/` salvo que durante implementación exista al menos una pieza realmente compartida que no tenga ya hogar claro.
-
----
-
-## 37. Migraciones/renombres permitidos
-
-Para evitar deuda nominal y duplicación, F7 puede hacer refactor behavior-preserving de:
+Promociones permitidas behavior-preserving:
 
 - `ImageEditSourceFingerprint` → `PdfEditSourceFingerprint`;
 - `ImageEditPreflight` → `PdfEditPreflight`;
@@ -1011,127 +287,302 @@ Para evitar deuda nominal y duplicación, F7 puede hacer refactor behavior-prese
 - `MainWindow.EditImages.cs` → `MainWindow.Edit.cs`;
 - `MainWindow.EditImages.Hardening.cs` → `MainWindow.Edit.Hardening.cs`.
 
-Cada rename debe tener tests verdes antes/después y no debe introducir abstracciones nuevas.
+Workspaces y comandos específicos de imagen/texto permanecen específicos.
+
+No `IPdfWriter`, base writer, factory/strategy framework ni registry genérico.
 
 ---
 
-## 38. Qué NO se debe mergear accidentalmente
+## 11. Discovery / hit-test
+
+`PdfDocumentSession.GetTextObjects(pageIndex)`:
+
+- `NativeGate`;
+- LoadPage + text page;
+- enumerar solo page objects top-level;
+- snapshots managed;
+- cerrar handles antes de retornar;
+- cancelación entre objetos.
+
+Hit-test texto usa rotated quad cuando esté disponible. Arbitraje imagen/texto = mayor `PageObjectIndex`.
+
+Complejidad objetivo: O(objetos de página activa), no O(documento).
+
+---
+
+## 12. Writer combinado
+
+`Guardar como...` abre el PDF fuente una sola vez.
+
+Flujo:
+
+```text
+fingerprint + preflight
+→ reopen original
+→ por página editada
+    resolver TODOS los objetos referenciados antes de mutar
+    aplicar image edits
+    aplicar text edits OriginalFont
+    aplicar text edits FallbackTtf/CID Type2
+    GenerateContent una sola vez
+→ save temp
+→ reopen + validate
+→ atomic publish
+→ cleanup
+→ marcar baseline de ambos workspaces
+```
+
+No ejecutar writer de imagen y luego writer de texto en cadena.
+
+---
+
+## 13. Materialización `OriginalFont`
+
+1. resolver text object;
+2. validar tipo/snapshot;
+3. `FPDFText_SetText`;
+4. aplicar tamaño/color solo con setter fiable confirmado;
+5. mantener matriz salvo cambio explícitamente soportado;
+6. `GenerateContent` al final de la página.
+
+Si no hay setter seguro de tamaño, un cambio de tamaño fuerza recreación/fallback; no simular font size mediante hacks de matriz.
+
+---
+
+## 14. Materialización `FallbackTtf`
+
+Por documento/materialización:
+
+1. cargar la TTF pinneada;
+2. calcular unión de runes requeridos;
+3. obtener glyph ID para cada rune;
+4. asignar CIDs deterministas;
+5. construir `ToUnicode` + `CIDToGIDMap`;
+6. `FPDFText_LoadCidType2Font` una sola vez;
+7. por objeto: crear text object, set text/color/matrix/tamaño, remove original, insert same index;
+8. destruir ownership correcto;
+9. cerrar font al final;
+10. `GenerateContent` una sola vez por página.
+
+Si cualquier paso falla, el destino final no se publica.
+
+---
+
+## 15. Geometría / métricas
+
+F7 conserva origen, matriz, rotación, tamaño y color.
+
+No promete ancho idéntico cuando cambia texto/fuente.
+
+No auto-fit, squeeze, reflow ni reducción silenciosa de tamaño.
+
+---
+
+## 16. Dirty-state / guards / UI Save As
+
+Dirty general:
+
+`imageWorkspace.IsDirty || textWorkspace.IsDirty`.
+
+Mismos guards para:
+
+- LEER;
+- FIRMAR;
+- ORGANIZAR;
+- abrir PDF/ZPL;
+- Ctrl+O;
+- cerrar ventana.
+
+Un solo `Guardar como...` del modo EDITAR.
+
+Cancel/Block/decline → writer 0 calls. Éxito marca ambos baselines. Fallo conserva dirty-state.
+
+No segundo `Loaded` hook ni segunda cadena de guards.
+
+---
+
+## 17. Preflight / preservación
+
+F7 vuelve a medir preservación con el writer combinado real:
+
+- forms;
+- bookmarks;
+- named destinations;
+- internal links;
+- tagged structure;
+- page labels;
+- attachments;
+- metadata.
+
+Estados:
+
+- `ProvenPreserved`;
+- `ProvenChangedOrLost`;
+- `Unknown`.
+
+Firma criptográfica/password-opened → `Block / Unknown`.
+
+No copiar resultados F6 sin evidencia.
+
+---
+
+## 18. Validación de salida
+
+Por text edit materializado:
+
+- output abre;
+- objeto esperado existe y type = TEXT;
+- Unicode exacto = solicitado;
+- matriz dentro de tolerancia;
+- tamaño esperado;
+- color esperado;
+- fallback usa font/ruta esperada;
+- render de página válido/no vacío.
+
+Solo después se publica el destino.
+
+---
+
+## 19. Seguridad / threading / memoria
+
+Toda llamada PDFium:
+
+```csharp
+PdfiumRuntime.NativeGate.Wait(...);
+try { /* native */ }
+finally { PdfiumRuntime.NativeGate.Release(); }
+```
+
+Nunca `lock(NativeGate)` ni reacquire dentro de la misma sección.
+
+Se conservan:
+
+- source fingerprint;
+- source != destination;
+- temp sibling;
+- cancelación antes/después de etapas costosas;
+- cleanup en `finally`;
+- fallo nunca marca baseline;
+- source nunca se modifica.
+
+---
+
+## 20. Fixtures / QA automatizada mínima
+
+Debe cubrir:
+
+- Gate exports + in-place + CID Type2 explicit Unicode;
+- discovery top-level, Unicode, rotated quad, cancelación, active-page-only;
+- objetos contiguos separados;
+- render mode no soportado read-only;
+- overlap texto/texto e imagen/texto;
+- workspace/policy por `Rune`;
+- original-font writer;
+- CID Type2 fallback exacto con `ñ/á/é`;
+- same-index replacement;
+- dos fallback edits compartiendo un solo font handle/map plan;
+- mixed image+text same page;
+- stale/cancel/temp/publication failure;
+- output validation;
+- matriz de preservación F7;
+- dirty guards;
+- LEER/FIRMAR/ORGANIZAR/ZPL/F6 images/offline regressions;
+- cero native handles en estado persistente.
+
+No introducir PDFs privados.
+
+---
+
+## 21. QA manual
+
+Permanece `NOT RUN` hasta ejecución física.
+
+Checklist final incluye selección/zoom/rotación, español, tamaño/color, mixed image+text, Save As/cancel/failure, lector externo, documento pesado, guards y red físicamente deshabilitada.
+
+Automated PASS no implica manual PASS.
+
+---
+
+## 22. Dependencias
+
+Esperado:
+
+- ningún NuGet nuevo;
+- mismo PDFium pinneado;
+- una TTF redistribuible pinneada después del Gate legal/provenance.
+
+El spike usa `SkiaSharp` solo porque ya existe como dependencia de **tests**; producto no debe adquirir esa dependencia por accidente. Para producto preferir capacidades WPF/.NET ya disponibles para cobertura/glyph IDs.
+
+---
+
+## 23. Gobernanza
 
 F7 no autoriza:
 
 - merge de PR #25/F6;
 - merge a `main`;
-- cierre de QA manual pendiente;
-- modificación de F5/F6 history para “hacerlo ver terminado”;
-- introducir fuentes sin licencia registrada;
+- cerrar QA manual sin ejecutarla;
+- introducir fuentes sin licencia/hash/provenance;
 - borrar checkpoints históricos;
 - reescribir commits previos.
 
-F7 se apila sobre el head F6 cerrado y mantiene gobernanza existente.
+`main` debe permanecer intacto hasta aprobación explícita.
 
 ---
 
-## 39. Criterio de cierre automatizado F7
+## 24. Criterio de cierre automatizado
 
-F7 puede declararse `AUTOMATED CLOSURE PASS` solo cuando:
+F7 solo puede declararse `AUTOMATED CLOSURE PASS` cuando:
 
-1. Gate F7.1 exact-runtime PASS;
-2. Gate de fuente/provenance PASS;
-3. `TEXT-01..04` tienen evidencia automatizada;
-4. writer combinado imagen+texto es transaccional;
-5. matriz de preservación F7 está medida, no asumida;
-6. Release build 0 warnings / 0 errors;
+1. Gate F7.1 + spike CID Type2 = PASS;
+2. Gate de fuente/provenance = PASS;
+3. `TEXT-01..04` tienen evidencia;
+4. writer combinado es transaccional;
+5. preservación F7 está medida;
+6. build 0 warnings / 0 errors;
 7. suite completa PASS;
 8. exact-head Windows CI PASS;
-9. PR apilado draft/open/unmerged;
+9. draft PR apilado abierto/unmerged;
 10. `main` intacto;
-11. QA manual está declarada honestamente como PASS o NOT RUN.
+11. QA manual declarada honestamente PASS o NOT RUN.
 
 ---
 
-## 40. Secuencia conceptual aprobable
+## 25. Decisiones congeladas de esta enmienda
 
-Si esta spec es aprobada, el plan TDD deberá seguir aproximadamente:
-
-```text
-Gate F7.1 exact PDFium
-→ Gate fuente/provenance
-→ discovery snapshots managed
-→ text hit-test + arbitraje con imágenes
-→ TextEditWorkspace/policy
-→ UI properties candidate-first
-→ promoción KISS de fingerprint/preflight/writer general
-→ writer ruta original-font
-→ writer fallback TTF
-→ Save As unificado image+text
-→ independent preservation matrix
-→ hardening/performance/regressions
-→ closure docs + exact-head CI + stacked draft PR
-```
-
-La implementación real debe descomponer esto en tareas pequeñas RED → GREEN; esta sección no sustituye el plan TDD escrito.
+1. Texto real, no overlay.
+2. Sin reflow.
+3. Top-level text only.
+4. Un solo modo EDITAR.
+5. Topmost por object index.
+6. Estado persistente managed.
+7. `OriginalFont` solo bajo política conservadora.
+8. Runes nuevos/duda → `FallbackTtf`.
+9. **Fallback usa `FPDFText_LoadCidType2Font` + `ToUnicode` + `CIDToGIDMap` explícitos.**
+10. **`FPDFText_LoadFont` queda prohibido como fallback F7 por evidencia de corrupción/normalización Unicode.**
+11. Una sola TTF fallback pinneada inicialmente.
+12. Una sola carga/map plan CID Type2 por documento/materialización, construida con la unión de runes requeridos.
+13. Writer combinado abre/materializa una sola vez.
+14. Preservación F7 se vuelve a medir.
+15. Firmas/password continúan Block.
+16. No nuevo NuGet esperado.
+17. No merge automático.
 
 ---
 
-## 41. Decisiones congeladas al aprobar esta spec
+## 26. Riesgos residuales
 
-1. F7 edita objetos de texto reales, no overlays.
-2. F7 no intenta reflow.
-3. Solo top-level text objects en V1.
-4. Imágenes y texto comparten un único modo `EDITAR`.
-5. Hit-test mixto resuelve topmost por object index.
-6. Estado persistente managed; cero handles nativos.
-7. Fuente original solo bajo política conservadora.
-8. Code point nuevo/duda → TTF fallback.
-9. Una sola fuente fallback pinneada inicialmente.
-10. No fuentes del sistema como garantía de salida.
-11. Writer combinado abre/materializa una sola vez.
-12. Preservación F7 se vuelve a medir.
-13. Firmas criptográficas/password continúan Block.
-14. No nuevo NuGet esperado.
-15. No merge automático.
+- PDFs pueden fragmentar texto en muchos objetos; V1 acepta granularidad.
+- Fallback puede cambiar métricas visuales; no se promete ancho idéntico.
+- Política de fuente original puede caer a fallback más veces de lo necesario.
+- Form XObject text queda fuera.
+- Mapping CID debe mantenerse determinista y validado por reopen Unicode exacto.
+- Preservación documental se prueba de nuevo con el writer combinado.
 
 ---
 
-## 42. Riesgos residuales explícitos
+## 27. Gate para reanudar implementación
 
-### R1 — PDFs fragmentan texto en muchos objetos
+Esta spec enmendada sustituye las secciones antiguas que usaban `FPDFText_LoadFont` como fallback.
 
-V1 puede sentirse granular. Se acepta para evitar reconstrucción de layout prematura.
-
-### R2 — fallback cambia métricas visuales
-
-Se conserva origen/tamaño/matriz, pero no se promete ancho idéntico.
-
-### R3 — subset font original
-
-La política deliberadamente conservadora puede usar fallback más veces de las estrictamente necesarias.
-
-### R4 — text dentro de Form XObjects
-
-No editable en V1.
-
-### R5 — APIs PDFium experimentales/versionadas
-
-El Gate exact-runtime es obligatorio antes de product code.
-
-### R6 — preserving document-level structures
-
-No se asume desde F6; se mide de nuevo con el writer combinado.
-
----
-
-## 43. Definition of Done de diseño
-
-Esta spec está lista para pasar a planificación solo si el usuario confirma explícitamente que acepta:
-
-- alcance conservador por objeto;
-- no reflow;
-- top-level text only;
-- fallback TTF controlado;
-- cambio potencial de métricas cuando entra fallback;
-- writer unificado para imágenes + texto;
-- refactor/rename KISS de piezas F6 que ahora son generales;
-- QA manual separada de CI.
-
-**Sin esa aprobación escrita/conversacional de la spec, no se escribe el plan TDD y no se implementa F7.**
+**No reanudar Task 2 hasta que el usuario revise esta spec enmendada y el plan TDD actualizado.**
