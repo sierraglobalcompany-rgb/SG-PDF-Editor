@@ -56,7 +56,12 @@ public partial class MainWindow
         {
             candidate = ImageReplacementAssetLoader.Load(path);
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
+        catch (Exception ex) when (
+            ex is InvalidDataException ||
+            ex is IOException ||
+            ex is UnauthorizedAccessException ||
+            ex is ArgumentException ||
+            ex is NotSupportedException)
         {
             StatusText.Text = "No se pudo cargar la imagen de reemplazo.";
             ShowImageEditTaskMessage(
@@ -104,7 +109,13 @@ public partial class MainWindow
             StatusText.Text = $"Imagen extraída: {Path.GetFileName(destinationPath)}";
             return true;
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or InvalidOperationException or NotSupportedException)
+        catch (Exception ex) when (
+            ex is InvalidDataException ||
+            ex is IOException ||
+            ex is UnauthorizedAccessException ||
+            ex is ArgumentException ||
+            ex is InvalidOperationException ||
+            ex is NotSupportedException)
         {
             StatusText.Text = "No se pudo extraer la imagen seleccionada.";
             ShowImageEditTaskMessage(
