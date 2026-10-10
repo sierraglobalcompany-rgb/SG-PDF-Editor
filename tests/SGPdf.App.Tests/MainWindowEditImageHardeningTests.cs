@@ -1,4 +1,8 @@
 using System.ComponentModel;
+using System.Reflection;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
 using SGPdf.App.Features.Edit.Images;
 using SGPdf.App.Pdf;
 using Xunit;
@@ -29,6 +33,74 @@ public sealed class MainWindowEditImageHardeningTests
                 Assert.Same(originalSession, OrganizeWindowTestHost.GetField(window, "_session"));
                 Assert.Same(originalWorkspace, OrganizeWindowTestHost.GetField(window, "_imageEditWorkspace"));
                 Assert.True((bool)OrganizeWindowTestHost.GetField(window, "_imageEditModeActive")!);
+                Assert.True(prepared.Workspace.IsDirty);
+            }
+            finally { ImageEditCommandTestHost.CloseClean(window); }
+        });
+    }
+
+    [Fact]
+    public void DirtyImageEdit_CtrlODeclined_DoesNotOpenPickerOrDropWorkspace()
+    {
+        OrganizeWindowTestHost.RunInSta(async () =>
+        {
+            using var fixture = ImageEditPdfFixtureFactory.CreateSingleImage();
+            var window = new MainWindow();
+            try
+            {
+                var prepared = await ImageEditCommandTestHost.PrepareAsync(window, fixture.Path);
+                Assert.True((bool)OrganizeWindowTestHost.Invoke(window, "RotateSelectedImage", 5d)!);
+                OrganizeWindowTestHost.SetField(window, "_confirmDiscardImageEditChanges", (Func<bool>)(() => false));
+                var openCalls = 0;
+                OrganizeWindowTestHost.SetField(window, "_openPdfShortcutAction", (Action)(() => openCalls++));
+
+                var handled = (bool)OrganizeWindowTestHost.Invoke(
+                    window,
+                    "TryHandleReaderShortcut",
+                    Key.O,
+                    ModifierKeys.Control,
+                    null)!;
+
+                Assert.True(handled);
+                Assert.Equal(0, openCalls);
+                Assert.True((bool)OrganizeWindowTestHost.GetField(window, "_imageEditModeActive")!);
+                Assert.Same(prepared.Workspace, OrganizeWindowTestHost.GetField(window, "_imageEditWorkspace"));
+                Assert.True(prepared.Workspace.IsDirty);
+            }
+            finally { ImageEditCommandTestHost.CloseClean(window); }
+        });
+    }
+
+    [Fact]
+    public void DirtyImageEdit_OpenZplDeclined_DoesNotOpenPickerOrDropWorkspace()
+    {
+        OrganizeWindowTestHost.RunInSta(async () =>
+        {
+            using var fixture = ImageEditPdfFixtureFactory.CreateSingleImage();
+            var window = new MainWindow();
+            try
+            {
+                var prepared = await ImageEditCommandTestHost.PrepareAsync(window, fixture.Path);
+                Assert.True((bool)OrganizeWindowTestHost.Invoke(window, "RotateSelectedImage", 5d)!);
+                OrganizeWindowTestHost.SetField(window, "_confirmDiscardImageEditChanges", (Func<bool>)(() => false));
+
+                var selectorField = typeof(MainWindow).GetField(
+                    "_selectZplSourcePath",
+                    BindingFlags.Instance | BindingFlags.NonPublic);
+                Assert.NotNull(selectorField);
+                var pickerCalls = 0;
+                selectorField.SetValue(window, (Func<string?>)(() =>
+                {
+                    pickerCalls++;
+                    return null;
+                }));
+
+                var openZpl = Assert.IsType<MenuItem>(window.FindName("OpenZplMenuItem"));
+                openZpl.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+
+                Assert.Equal(0, pickerCalls);
+                Assert.True((bool)OrganizeWindowTestHost.GetField(window, "_imageEditModeActive")!);
+                Assert.Same(prepared.Workspace, OrganizeWindowTestHost.GetField(window, "_imageEditWorkspace"));
                 Assert.True(prepared.Workspace.IsDirty);
             }
             finally { ImageEditCommandTestHost.CloseClean(window); }
