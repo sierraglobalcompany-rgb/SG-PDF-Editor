@@ -44,8 +44,8 @@ public sealed class PdfCommentDiscoveryTests
         AssertPoint(points[1], 105d, 205d);
         AssertPoint(points[2], 145d, 180d);
 
-        Assert.Equal(2.5d, CommentDiscoveryContractApi.Read<double?>(comments[5], "BorderWidth"), 3);
-        Assert.Equal(2.5d, CommentDiscoveryContractApi.Read<double?>(comments[6], "BorderWidth"), 3);
+        Assert.Equal(2.5d, CommentDiscoveryContractApi.Read<double?>(comments[5], "BorderWidth")!.Value, 3);
+        Assert.Equal(2.5d, CommentDiscoveryContractApi.Read<double?>(comments[6], "BorderWidth")!.Value, 3);
     }
 
     [Fact]
