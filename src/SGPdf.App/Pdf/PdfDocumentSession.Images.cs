@@ -40,6 +40,8 @@ internal sealed record PdfImageBitmap(
 
 public sealed partial class PdfDocumentSession
 {
+    private const long MaxManagedImageCopyBytes = 256L * 1024L * 1024L;
+
     internal IReadOnlyList<PdfImageObjectInfo> GetImageObjects(
         int pageIndex,
         CancellationToken cancellationToken = default)
@@ -222,17 +224,17 @@ public sealed partial class PdfDocumentSession
         if (width <= 0 || height <= 0 || sourceStride <= 0 || buffer == IntPtr.Zero)
             throw new InvalidOperationException("PDFium devolvió un bitmap de imagen inválido.");
 
-        var sourceBytes = new byte[checked(sourceStride * height)];
+        var bounds = ValidateImageBitmapCopyBounds(width, height, sourceStride, format);
+        var sourceBytes = new byte[bounds.SourceByteCount];
         Marshal.Copy(buffer, sourceBytes, 0, sourceBytes.Length);
         cancellationToken.ThrowIfCancellationRequested();
 
-        var outputStride = checked(width * 4);
-        var output = new byte[checked(outputStride * height)];
+        var output = new byte[bounds.OutputByteCount];
         for (var y = 0; y < height; y++)
         {
             cancellationToken.ThrowIfCancellationRequested();
             var sourceRow = y * sourceStride;
-            var outputRow = y * outputStride;
+            var outputRow = y * bounds.OutputStride;
 
             for (var x = 0; x < width; x++)
             {
@@ -269,13 +271,50 @@ public sealed partial class PdfDocumentSession
                             : (byte)255;
                         break;
                     }
-                    default:
-                        throw new NotSupportedException($"Formato de bitmap PDFium no soportado: {format}.");
                 }
             }
         }
 
-        return new PdfImageBitmap(width, height, outputStride, output);
+        return new PdfImageBitmap(width, height, bounds.OutputStride, output);
+    }
+
+    private static ImageBitmapCopyBounds ValidateImageBitmapCopyBounds(
+        int width,
+        int height,
+        int sourceStride,
+        int format)
+    {
+        if (width <= 0 || height <= 0 || sourceStride <= 0)
+            throw new InvalidOperationException("PDFium devolvió dimensiones de bitmap inválidas.");
+
+        var sourceBytesPerPixel = format switch
+        {
+            PdfiumNative.FPDFBitmap_Gray => 1,
+            PdfiumNative.FPDFBitmap_BGR => 3,
+            PdfiumNative.FPDFBitmap_BGRx or PdfiumNative.FPDFBitmap_BGRA => 4,
+            _ => throw new NotSupportedException($"Formato de bitmap PDFium no soportado: {format}.")
+        };
+
+        var minimumSourceStride = checked((long)width * sourceBytesPerPixel);
+        if (sourceStride < minimumSourceStride)
+            throw new InvalidOperationException("PDFium devolvió un stride insuficiente para el formato de imagen.");
+
+        var sourceByteCount = checked((long)sourceStride * height);
+        var outputStride = checked((long)width * 4L);
+        var outputByteCount = checked(outputStride * height);
+        var totalManagedBytes = checked(sourceByteCount + outputByteCount);
+
+        if (sourceByteCount > int.MaxValue || outputStride > int.MaxValue || outputByteCount > int.MaxValue ||
+            totalManagedBytes > MaxManagedImageCopyBytes)
+        {
+            throw new NotSupportedException(
+                "La imagen requiere demasiada memoria para extraerse de forma segura en esta versión.");
+        }
+
+        return new ImageBitmapCopyBounds(
+            (int)sourceByteCount,
+            (int)outputStride,
+            (int)outputByteCount);
     }
 
     private static void ValidateImageSnapshot(
@@ -300,4 +339,9 @@ public sealed partial class PdfDocumentSession
         if (metadata.PixelWidth == 0 || metadata.PixelHeight == 0)
             throw new InvalidOperationException("PDFium devolvió dimensiones de imagen inválidas.");
     }
+
+    private readonly record struct ImageBitmapCopyBounds(
+        int SourceByteCount,
+        int OutputStride,
+        int OutputByteCount);
 }

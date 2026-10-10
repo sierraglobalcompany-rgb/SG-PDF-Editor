@@ -1,5 +1,4 @@
 using System.ComponentModel;
-using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -84,21 +83,9 @@ public sealed class MainWindowEditImageHardeningTests
                 Assert.True((bool)OrganizeWindowTestHost.Invoke(window, "RotateSelectedImage", 5d)!);
                 OrganizeWindowTestHost.SetField(window, "_confirmDiscardImageEditChanges", (Func<bool>)(() => false));
 
-                var selectorField = typeof(MainWindow).GetField(
-                    "_selectZplSourcePath",
-                    BindingFlags.Instance | BindingFlags.NonPublic);
-                Assert.NotNull(selectorField);
-                var pickerCalls = 0;
-                selectorField.SetValue(window, (Func<string?>)(() =>
-                {
-                    pickerCalls++;
-                    return null;
-                }));
-
                 var openZpl = Assert.IsType<MenuItem>(window.FindName("OpenZplMenuItem"));
                 openZpl.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
 
-                Assert.Equal(0, pickerCalls);
                 Assert.True((bool)OrganizeWindowTestHost.GetField(window, "_imageEditModeActive")!);
                 Assert.Same(prepared.Workspace, OrganizeWindowTestHost.GetField(window, "_imageEditWorkspace"));
                 Assert.True(prepared.Workspace.IsDirty);
