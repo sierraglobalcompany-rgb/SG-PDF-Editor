@@ -14,7 +14,7 @@ internal sealed class PdfEditWriter
     private const double FontSizeTolerance = 0.01d;
 
     private readonly Func<IntPtr, IntPtr, uint, int> _saveAsCopy;
-    private readonly Action<string, ImageEditWorkspace, CancellationToken> _validateOutput;
+    private readonly Action<string, ImageEditWorkspace, TextEditWorkspace?, CancellationToken> _validateOutput;
     private readonly Func<string, int> _signatureCount;
     private readonly Func<IntPtr, PdfObjectMatrix, int> _setMatrix;
     private readonly Func<IntPtr, int> _generateContent;
@@ -28,7 +28,10 @@ internal sealed class PdfEditWriter
         Func<IntPtr, PdfObjectMatrix, int>? setMatrixOverride = null)
     {
         _saveAsCopy = saveAsCopyOverride ?? PdfiumNative.FPDF_SaveAsCopy;
-        _validateOutput = validateOutputOverride ?? ValidateOutput;
+        _validateOutput = validateOutputOverride is null
+            ? ValidateOutput
+            : (path, imageWorkspace, _, cancellationToken) =>
+                validateOutputOverride(path, imageWorkspace, cancellationToken);
         _signatureCount = signatureCountOverride ?? GetSignatureCount;
         _setMatrix = setMatrixOverride ?? SetMatrix;
         _generateContent = PdfiumNative.FPDFPage_GenerateContent;
@@ -150,7 +153,7 @@ internal sealed class PdfEditWriter
         {
             WriteTemporaryCopy(imageWorkspace, textWorkspace, temporaryPath, cancellationToken);
             cancellationToken.ThrowIfCancellationRequested();
-            _validateOutput(temporaryPath, imageWorkspace, cancellationToken);
+            _validateOutput(temporaryPath, imageWorkspace, textWorkspace, cancellationToken);
             cancellationToken.ThrowIfCancellationRequested();
 
             if (File.Exists(destinationFullPath))
@@ -827,8 +830,18 @@ internal sealed class PdfEditWriter
         return PdfiumNative.FPDFPageObj_SetMatrix(pageObject, ref native);
     }
 
-    private static void ValidateOutput(string path, ImageEditWorkspace workspace, CancellationToken cancellationToken)
-        => new PdfEditOutputValidator().Validate(path, workspace, cancellationToken);
+    private static void ValidateOutput(
+        string path,
+        ImageEditWorkspace imageWorkspace,
+        TextEditWorkspace? textWorkspace,
+        CancellationToken cancellationToken)
+    {
+        var validator = new PdfEditOutputValidator();
+        if (textWorkspace is null)
+            validator.Validate(path, imageWorkspace, cancellationToken);
+        else
+            validator.Validate(path, imageWorkspace, textWorkspace, cancellationToken);
+    }
 
     private static bool NearlyEqual(PdfObjectMatrix left, PdfObjectMatrix right)
         => NearlyEqual(left.A, right.A, MatrixTolerance) &&
@@ -859,7 +872,7 @@ internal sealed class PdfEditWriter
     private sealed class FileWriteContext
     {
         internal FileWriteContext(FileStream stream) => Stream = stream;
-        internal FileStream Stream { get; }
         internal Exception? Error { get; set; }
+        internal FileStream Stream { get; }
     }
 }
