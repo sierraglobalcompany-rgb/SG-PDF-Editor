@@ -115,6 +115,9 @@ public partial class MainWindow
 
     private async Task<bool> TryOpenPdfPathAsync(string path, string? password = null)
     {
+        if (_imageEditModeActive && !TryLeaveImageEditModeWithGuard())
+            return false;
+
         if (_organizeModeActive && !TryLeaveOrganizeModeWithGuard())
             return false;
 

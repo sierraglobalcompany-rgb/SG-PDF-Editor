@@ -48,8 +48,6 @@ public partial class MainWindow
         _imageEditUiInitialized = true;
         _ = ImageEditLoadedHookRegistered;
 
-        // ORGANIZAR owns the shared mode-panel discovery helper. Initializing it here
-        // also makes the EDITAR insertion point deterministic regardless of Loaded hook order.
         InitializeOrganizeUi();
         var modePanel = FindModePanel();
         var editModeButton = new Button
@@ -88,6 +86,8 @@ public partial class MainWindow
             Visibility = Visibility.Collapsed
         };
         overlay.MouseLeftButtonDown += ImageEditOverlay_MouseLeftButtonDown;
+        overlay.MouseMove += ImageEditOverlay_MouseMove;
+        overlay.MouseLeftButtonUp += ImageEditOverlay_MouseLeftButtonUp;
         Panel.SetZIndex(overlay, 40);
         pageGrid.Children.Add(overlay);
         RegisterName(overlay.Name, overlay);
@@ -226,7 +226,8 @@ public partial class MainWindow
         }
 
         var pdfPoint = ImageHitTester.DeviceToPdf(deviceX, deviceY, transform);
-        _selectedImageKey = ImageHitTester.HitTest(_activeImageObjects, pdfPoint);
+        _selectedImageKey = ImageHitTester.HitTest(CurrentSelectableImageObjects(), pdfPoint);
+        CancelImageEditGesture();
         RefreshImageEditOverlay();
         return _selectedImageKey is not null;
     }
@@ -236,6 +237,7 @@ public partial class MainWindow
         if (!_imageEditModeActive)
             return;
 
+        CancelImageEditGesture();
         _selectedImageKey = null;
         RefreshImageEditOverlay();
     }
@@ -246,24 +248,34 @@ public partial class MainWindow
             return;
 
         _imageEditOverlayCanvas.Children.Clear();
-        if (!_imageEditModeActive || _currentPdfDeviceTransform is not PdfPageDeviceTransform transform)
+        if (!_imageEditModeActive ||
+            _imageEditWorkspace is null ||
+            _currentPdfDeviceTransform is not PdfPageDeviceTransform transform)
+        {
             return;
+        }
 
         _imageEditOverlayCanvas.Width = transform.DeviceWidth;
         _imageEditOverlayCanvas.Height = transform.DeviceHeight;
         if (_selectedImageKey is not ImageObjectKey selectedKey)
             return;
 
-        var selected = _activeImageObjects.FirstOrDefault(image =>
-            image.PageIndex == selectedKey.PageIndex &&
-            image.PageObjectIndex == selectedKey.PageObjectIndex);
-        if (selected is null)
+        ImageEditState state;
+        try
+        {
+            state = _imageEditWorkspace.GetState(selectedKey);
+        }
+        catch (KeyNotFoundException)
         {
             _selectedImageKey = null;
             return;
         }
 
-        var devicePoints = ImageHitTester.GetQuad(selected.Matrix)
+        if (state.Deleted)
+            return;
+
+        var matrix = CurrentDisplayMatrix(state);
+        var devicePoints = ImageHitTester.GetQuad(matrix)
             .Select(point => ImageHitTester.PdfToDevice(point, transform))
             .ToArray();
 
@@ -273,25 +285,63 @@ public partial class MainWindow
             Fill = Brushes.Transparent,
             Stroke = Brushes.DodgerBlue,
             StrokeThickness = 1.5,
-            IsHitTestVisible = false
+            Cursor = Cursors.SizeAll,
+            Tag = "ImageMoveBody",
+            IsHitTestVisible = true
         };
         _imageEditOverlayCanvas.Children.Add(outline);
 
-        foreach (var point in devicePoints)
+        var corners = new[]
         {
+            ImageResizeCorner.BottomLeft,
+            ImageResizeCorner.BottomRight,
+            ImageResizeCorner.TopRight,
+            ImageResizeCorner.TopLeft
+        };
+        for (var index = 0; index < devicePoints.Length; index++)
+        {
+            var point = devicePoints[index];
             var handle = new Rectangle
             {
-                Width = 8,
-                Height = 8,
+                Width = 10,
+                Height = 10,
                 Fill = Brushes.White,
                 Stroke = Brushes.DodgerBlue,
                 StrokeThickness = 1.5,
-                IsHitTestVisible = false
+                Cursor = Cursors.SizeNWSE,
+                Tag = corners[index],
+                IsHitTestVisible = true
             };
-            Canvas.SetLeft(handle, point.X - 4d);
-            Canvas.SetTop(handle, point.Y - 4d);
+            Canvas.SetLeft(handle, point.X - 5d);
+            Canvas.SetTop(handle, point.Y - 5d);
             _imageEditOverlayCanvas.Children.Add(handle);
         }
+
+        var minX = devicePoints.Min(point => point.X);
+        var minY = devicePoints.Min(point => point.Y);
+        var rotate = new Button
+        {
+            Content = "↻",
+            ToolTip = "Rotar 90°",
+            Padding = new Thickness(6, 2, 6, 2),
+            Tag = "ImageRotateButton"
+        };
+        rotate.Click += (_, _) => RotateSelectedImage(90d);
+        Canvas.SetLeft(rotate, minX);
+        Canvas.SetTop(rotate, Math.Max(0d, minY - 30d));
+        _imageEditOverlayCanvas.Children.Add(rotate);
+
+        var delete = new Button
+        {
+            Content = "Eliminar",
+            ToolTip = "Eliminar imagen",
+            Padding = new Thickness(6, 2, 6, 2),
+            Tag = "ImageDeleteButton"
+        };
+        delete.Click += (_, _) => DeleteSelectedImage();
+        Canvas.SetLeft(delete, minX + 34d);
+        Canvas.SetTop(delete, Math.Max(0d, minY - 30d));
+        _imageEditOverlayCanvas.Children.Add(delete);
     }
 
     private void ImageEditOverlay_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -300,17 +350,100 @@ public partial class MainWindow
             return;
 
         var point = e.GetPosition(_imageEditOverlayCanvas);
+        var tag = FindImageEditInteractionTag(e.OriginalSource as DependencyObject);
+        if (tag is ImageResizeCorner corner)
+        {
+            if (BeginImageResize(corner, point.X, point.Y))
+            {
+                _imageEditOverlayCanvas.CaptureMouse();
+                e.Handled = true;
+            }
+            return;
+        }
+
+        if (Equals(tag, "ImageMoveBody"))
+        {
+            if (BeginImageMoveAtDevicePoint(point.X, point.Y))
+            {
+                _imageEditOverlayCanvas.CaptureMouse();
+                e.Handled = true;
+            }
+            return;
+        }
+
+        if (Equals(tag, "ImageRotateButton") || Equals(tag, "ImageDeleteButton"))
+            return;
+
         SelectImageAtDevicePoint(point.X, point.Y);
         e.Handled = true;
     }
 
-    private void ImageEditHost_PreviewKeyDown(object sender, KeyEventArgs e)
+    private void ImageEditOverlay_MouseMove(object sender, MouseEventArgs e)
     {
-        if (!_imageEditModeActive || e.Key != Key.Escape)
+        if (_imageEditOverlayCanvas is null ||
+            !_imageEditOverlayCanvas.IsMouseCaptured ||
+            e.LeftButton != MouseButtonState.Pressed)
+        {
+            return;
+        }
+
+        var point = e.GetPosition(_imageEditOverlayCanvas);
+        if (UpdateActiveImageGestureAtDevicePoint(
+                point.X,
+                point.Y,
+                (Keyboard.Modifiers & ModifierKeys.Shift) != 0))
+        {
+            e.Handled = true;
+        }
+    }
+
+    private void ImageEditOverlay_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        if (_imageEditOverlayCanvas?.IsMouseCaptured != true)
             return;
 
-        HandleImageEditEscape();
-        e.Handled = true;
+        var changed = CompleteActiveImageGesture();
+        _imageEditOverlayCanvas.ReleaseMouseCapture();
+        e.Handled = changed;
+    }
+
+    private object? FindImageEditInteractionTag(DependencyObject? source)
+    {
+        for (var current = source; current is not null && !ReferenceEquals(current, _imageEditOverlayCanvas);)
+        {
+            if (current is FrameworkElement { Tag: not null } element)
+                return element.Tag;
+
+            if (current is Visual visual)
+            {
+                var parent = VisualTreeHelper.GetParent(visual);
+                if (parent is not null)
+                {
+                    current = parent;
+                    continue;
+                }
+            }
+
+            current = LogicalTreeHelper.GetParent(current);
+        }
+
+        return null;
+    }
+
+    private void ImageEditHost_PreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (!_imageEditModeActive || IsReaderShortcutEditableSource(e.OriginalSource as DependencyObject))
+            return;
+
+        if (e.Key == Key.Escape)
+        {
+            HandleImageEditEscape();
+            e.Handled = true;
+            return;
+        }
+
+        if (TryHandleImageEditShortcut(e.Key, Keyboard.Modifiers, e.OriginalSource as DependencyObject))
+            e.Handled = true;
     }
 
     private void ExistingModeAfterImageEdit_Click(object sender, RoutedEventArgs e)
@@ -321,6 +454,7 @@ public partial class MainWindow
 
     private void ResetImageEditState()
     {
+        CancelImageEditGesture();
         _imageEditModeActive = false;
         _imageEditWorkspace = null;
         _activeImageObjects = Array.Empty<PdfImageObjectInfo>();
