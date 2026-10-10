@@ -38,7 +38,7 @@ public sealed class TextEditNativeCharacterizationTests
         var rendered = session.RenderPage(0, 36d);
         Assert.True(rendered.PixelWidth > 0);
         Assert.True(rendered.PixelHeight > 0);
-        Assert.NotEmpty(rendered.BgraPixels.Span);
+        Assert.NotEmpty(rendered.Pixels);
     }
 
     [Fact]
@@ -71,7 +71,7 @@ public sealed class TextEditNativeCharacterizationTests
         var rendered = session.RenderPage(0, 36d);
         Assert.True(rendered.PixelWidth > 0);
         Assert.True(rendered.PixelHeight > 0);
-        Assert.NotEmpty(rendered.BgraPixels.Span);
+        Assert.NotEmpty(rendered.Pixels);
     }
 
     [Fact]
