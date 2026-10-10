@@ -3,11 +3,12 @@
 **Fecha:** 2026-10-10  
 **Fase:** F7 — Texto V1  
 **Task:** 4 — promover shell general del modo EDITAR  
-**Estado:** **CI_PENDING**  
+**Estado:** **GREEN / PASS automatizado**  
 **Rama:** `feat/f7-text-v1`  
 **Base Task 4:** `0752efe2e84d6d79907878458e94726c58bbb727`  
 **RED:** `cdaa2235e69028bba10e568ff9c46810dc599092`  
-**Head funcional:** `b6818ec88a7da5d817c4f175e36ba45eda891212`
+**Head funcional:** `b6818ec88a7da5d817c4f175e36ba45eda891212`  
+**Head GREEN verificado:** `e664dd441448e2280be14b23400fa786cb83a6fa`
 
 ## RED
 
@@ -65,8 +66,26 @@ El diff desde RED hasta el head funcional contiene únicamente:
 
 El gate RED fue excluido del reemplazo mecánico y conserva sus assertions de nombres legacy ausentes.
 
-## Evidencia pendiente
+## GREEN exacto
 
-Windows CI exacto sobre este checkpoint: **PENDING**.
+CI: `38073275750`
 
-No iniciar Task 5 hasta cerrar este checkpoint con PASS.
+- repository hygiene: PASS;
+- Labelize staging: PASS;
+- locked restore: PASS;
+- Release build: **0 warnings / 0 errors**;
+- tests: **693 PASS / 0 FAIL / 0 skipped**;
+- workflow: **SUCCESS**.
+
+## Gobernanza
+
+- `main` no debe modificarse ni mergearse sin aprobación explícita.
+- F6 PR #25 continúa sin merge automático.
+- Manual Windows QA permanece `NOT RUN`.
+- Este checkpoint cierra únicamente Task 4.
+
+## Próximo paso permitido
+
+**Task 5 — modelo/discovery de objetos de texto**, siguiendo RED → GREEN.
+
+No iniciar Task 6+ antes de cerrar Task 5.
