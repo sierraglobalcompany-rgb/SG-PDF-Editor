@@ -204,7 +204,10 @@ public sealed class TextEditWorkspaceTests
 
     private static bool Bool(object target, string property) => (bool)Property(target, property)!;
     private static string String(object target, string property) => (string)Property(target, property)!;
-    private static object? Property(object target, string property) => target.GetType().GetProperty(property)!.GetValue(target);
+    private static object? Property(object target, string property) =>
+        target.GetType()
+            .GetProperty(property, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!
+            .GetValue(target);
     private static string StrategyName(object result) => Property(Property(result, "Candidate")!, "FontStrategy")!.ToString()!;
 
     private static Type RequireType(string fullName) => typeof(MainWindow).Assembly.GetType(fullName, throwOnError: true)!;
