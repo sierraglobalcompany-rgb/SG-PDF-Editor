@@ -8,6 +8,7 @@ internal sealed class CommentWorkspace
     private readonly Dictionary<CommentKey, CommentState> _states = new();
     private readonly Dictionary<CommentKey, CommentState> _originalBaseline = new();
     private readonly Dictionary<CommentKey, CommentState> _savedBaseline = new();
+    private readonly Dictionary<CommentKey, CommentIdentity> _sourceIdentities = new();
     private readonly Stack<CommentMutation> _undo = new();
     private readonly Stack<CommentMutation> _redo = new();
 
@@ -46,28 +47,31 @@ internal sealed class CommentWorkspace
     }
 
     internal CommentState EnsureBaseline(CommentState sourceState)
-    {
-        ArgumentNullException.ThrowIfNull(sourceState);
-        if (sourceState.IsNew)
-            throw new ArgumentException("Un snapshot baseline no puede marcarse como comentario nuevo.", nameof(sourceState));
-        if (sourceState.Deleted)
-            throw new ArgumentException("Un snapshot baseline no puede iniciar eliminado.", nameof(sourceState));
+        => EnsureBaselineCore(sourceState);
 
-        if (_states.TryGetValue(sourceState.Key, out var existing))
+    internal CommentState EnsureBaseline(CommentState sourceState, CommentIdentity sourceIdentity)
+    {
+        ArgumentNullException.ThrowIfNull(sourceIdentity);
+        if (sourceIdentity.PageIndex != sourceState.PageIndex)
+            throw new ArgumentException("La identidad fuente no corresponde a la página del comentario.", nameof(sourceIdentity));
+
+        var baseline = EnsureBaselineCore(sourceState);
+        if (_sourceIdentities.TryGetValue(sourceState.Key, out var existingIdentity))
         {
-            if (!existing.SemanticallyEquals(sourceState))
-                throw new InvalidOperationException("La identidad del comentario ya está asociada a otro snapshot.");
-            return existing;
+            if (existingIdentity != sourceIdentity)
+                throw new InvalidOperationException("La identidad fuente del comentario ya fue registrada con otro valor.");
+            return baseline;
         }
 
-        if (_originalBaseline.ContainsKey(sourceState.Key) || _savedBaseline.ContainsKey(sourceState.Key))
-            throw new InvalidOperationException("La identidad del comentario ya fue registrada en otro baseline.");
-
-        _states.Add(sourceState.Key, sourceState);
-        _originalBaseline.Add(sourceState.Key, sourceState);
-        _savedBaseline.Add(sourceState.Key, sourceState);
-        return sourceState;
+        _sourceIdentities.Add(sourceState.Key, sourceIdentity);
+        return baseline;
     }
+
+    internal bool TryGetSourceIdentity(CommentKey key, out CommentIdentity identity)
+        => _sourceIdentities.TryGetValue(key, out identity!);
+
+    internal bool TryGetOriginalBaseline(CommentKey key, out CommentState state)
+        => _originalBaseline.TryGetValue(key, out state!);
 
     internal CommentState GetState(CommentKey key)
     {
@@ -208,6 +212,30 @@ internal sealed class CommentWorkspace
 
         _undo.Clear();
         _redo.Clear();
+    }
+
+    private CommentState EnsureBaselineCore(CommentState sourceState)
+    {
+        ArgumentNullException.ThrowIfNull(sourceState);
+        if (sourceState.IsNew)
+            throw new ArgumentException("Un snapshot baseline no puede marcarse como comentario nuevo.", nameof(sourceState));
+        if (sourceState.Deleted)
+            throw new ArgumentException("Un snapshot baseline no puede iniciar eliminado.", nameof(sourceState));
+
+        if (_states.TryGetValue(sourceState.Key, out var existing))
+        {
+            if (!existing.SemanticallyEquals(sourceState))
+                throw new InvalidOperationException("La identidad del comentario ya está asociada a otro snapshot.");
+            return existing;
+        }
+
+        if (_originalBaseline.ContainsKey(sourceState.Key) || _savedBaseline.ContainsKey(sourceState.Key))
+            throw new InvalidOperationException("La identidad del comentario ya fue registrada en otro baseline.");
+
+        _states.Add(sourceState.Key, sourceState);
+        _originalBaseline.Add(sourceState.Key, sourceState);
+        _savedBaseline.Add(sourceState.Key, sourceState);
+        return sourceState;
     }
 
     private CommentState GetMutableState(CommentKey key)
