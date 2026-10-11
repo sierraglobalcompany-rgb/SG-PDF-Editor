@@ -41,7 +41,6 @@ internal sealed class PdfTextOverlayWriter
         CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(sourcePath);
-        ArgumentNullException.ThrowIfNull(fingerprint);
         ArgumentNullException.ThrowIfNull(placements);
         ArgumentException.ThrowIfNullOrWhiteSpace(destinationPath);
         if (placements.Count == 0)
@@ -49,7 +48,7 @@ internal sealed class PdfTextOverlayWriter
 
         var sourceFullPath = Path.GetFullPath(sourcePath);
         var destinationFullPath = Path.GetFullPath(destinationPath);
-        if (PdfEditSourceFingerprint.PathEquals(sourceFullPath, destinationFullPath))
+        if (string.Equals(sourceFullPath, destinationFullPath, StringComparison.OrdinalIgnoreCase))
             throw new ArgumentException("Source and destination PDF paths must differ.", nameof(destinationPath));
 
         ValidatePlacements(placements);
