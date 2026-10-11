@@ -2,7 +2,7 @@ using SGPdf.App.Features.Edit.Text;
 
 namespace SGPdf.App.Features.Utilities;
 
-internal sealed record WatermarkUtilityRequest
+internal sealed class WatermarkUtilityRequest
 {
     internal WatermarkUtilityRequest(
         string text,
