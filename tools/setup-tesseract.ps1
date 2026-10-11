@@ -16,7 +16,7 @@ $tessdataBaseUri = "https://raw.githubusercontent.com/tesseract-ocr/tessdata_fas
 $languages = @(
     @{
         Name = 'spa'
-        Size = 2297168
+        Size = 2294433
         GitBlobSha1 = '72e901f13ca52cfe34cf239a368b9ed3c0ddaf26'
     },
     @{
