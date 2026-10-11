@@ -57,6 +57,11 @@ public partial class MainWindow
             Name = "PageNumberingMenuItem",
             Header = "_Numerar páginas / Bates..."
         };
+        var protection = new MenuItem
+        {
+            Name = "ProtectionMenuItem",
+            Header = "_Proteger con contraseña..."
+        };
 
         watermark.SetBinding(
             IsEnabledProperty,
@@ -64,15 +69,21 @@ public partial class MainWindow
         numbering.SetBinding(
             IsEnabledProperty,
             new Binding(nameof(IsEnabled)) { Source = PrintPdfMenuItem });
+        protection.SetBinding(
+            IsEnabledProperty,
+            new Binding(nameof(IsEnabled)) { Source = PrintPdfMenuItem });
         watermark.Click += WatermarkText_Click;
         numbering.Click += PageNumbering_Click;
+        protection.Click += Protection_Click;
         utilities.Items.Add(watermark);
         utilities.Items.Add(numbering);
+        utilities.Items.Add(protection);
         menu.Items.Add(utilities);
 
         RegisterName(utilities.Name, utilities);
         RegisterName(watermark.Name, watermark);
         RegisterName(numbering.Name, numbering);
+        RegisterName(protection.Name, protection);
     }
 
     private void WatermarkText_Click(object sender, RoutedEventArgs e)
@@ -117,6 +128,28 @@ public partial class MainWindow
 
         var destination = SelectUtilityDestination("Guardar PDF numerado como", "numerado.pdf");
         TryRunPageNumberingUtility(dialog.Request, destination);
+    }
+
+    private async void Protection_Click(object sender, RoutedEventArgs e)
+    {
+        if (!CanRunUtility())
+        {
+            StatusText.Text = "No se puede ejecutar la utilidad en el estado actual del editor.";
+            return;
+        }
+
+        var dialog = new ProtectionDialog(_session!.OpenedWithPassword)
+        {
+            Owner = this
+        };
+        if (dialog.ShowDialog() != true || dialog.Request is null)
+        {
+            StatusText.Text = "Protección cancelada.";
+            return;
+        }
+
+        var destination = SelectUtilityDestination("Guardar PDF protegido como", "protegido.pdf");
+        await TryRunProtectionUtilityAsync(dialog.Request, destination);
     }
 
     private bool TryRunWatermarkUtility(WatermarkUtilityRequest request, string? destinationPath)
@@ -249,6 +282,66 @@ public partial class MainWindow
         catch (Exception ex)
         {
             StatusText.Text = $"No se pudo guardar la numeración: {ex.Message}";
+            return false;
+        }
+        finally
+        {
+            _utilityExecuting = false;
+        }
+    }
+
+    private async Task<bool> TryRunProtectionUtilityAsync(
+        PdfProtectionRequest request,
+        string? destinationPath)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        if (!CanRunUtility())
+        {
+            StatusText.Text = "No se puede ejecutar la utilidad en el estado actual del editor.";
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(destinationPath))
+        {
+            StatusText.Text = "Protección cancelada: no se seleccionó un destino.";
+            return false;
+        }
+
+        if (!request.TryBuild(_session!.OpenedWithPassword, out var settings, out var validationError))
+        {
+            StatusText.Text = validationError ?? "Los datos de protección no son válidos.";
+            return false;
+        }
+
+        _utilityExecuting = true;
+        try
+        {
+            var sourcePath = _session.FilePath;
+            var fingerprint = PdfEditSourceFingerprint.Capture(sourcePath);
+            var result = await new PdfProtectionWriter().SaveAsProtectedCopyAsync(
+                sourcePath,
+                fingerprint,
+                settings!,
+                destinationPath,
+                CancellationToken.None);
+
+            if (!result.Succeeded)
+            {
+                StatusText.Text = $"No se pudo guardar la copia protegida: {result.Error}";
+                return false;
+            }
+
+            StatusText.Text = $"Copia protegida guardada: {destinationPath}";
+            return true;
+        }
+        catch (OperationCanceledException)
+        {
+            StatusText.Text = "Protección cancelada.";
+            return false;
+        }
+        catch (Exception ex)
+        {
+            StatusText.Text = $"No se pudo guardar la copia protegida: {ex.Message}";
             return false;
         }
         finally
