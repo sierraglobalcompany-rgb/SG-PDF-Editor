@@ -145,16 +145,16 @@ public sealed class PdfCommentWriterTransactionTests
         var workspace = CommentWorkspace.Create(sourcePath, sourceOpenedWithPassword);
         workspace.Create(new CommentState(
             CommentKey.New(),
-            PageIndex: 0,
+            0,
             CommentSubtype.Text,
             new CommentRect(30d, 40d, 50d, 60d),
             new CommentColor(255, 220, 0, 255),
-            Contents: "Task 9",
             Array.Empty<CommentQuad>(),
+            "Task 9",
             Array.Empty<CommentStroke>(),
-            BorderWidth: null,
-            IsNew: true,
-            Deleted: false));
+            null,
+            true,
+            false));
         Assert.True(workspace.IsDirty);
         return workspace;
     }
@@ -218,8 +218,8 @@ public sealed class PdfCommentWriterTransactionTests
     }
 
     private static Exception Unwrap(Exception error)
-        => error is TargetInvocationException { InnerException: not null } wrapper
-            ? wrapper.InnerException
+        => error is TargetInvocationException wrapper && wrapper.InnerException is Exception inner
+            ? inner
             : error;
 
     private static void AssertNoTemps(string directory)
