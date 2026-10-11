@@ -71,7 +71,7 @@ public sealed class PdfCommentPreservationF8Tests
             item.Subtype == CommentSubtype.Text &&
             string.Equals(item.Contents, "Nueva nota F8 niño café", StringComparison.Ordinal));
         Assert.Contains(comments, item => item.Subtype is null);
-        Assert.Contains("/Subtype /Stamp", raw, StringComparison.Ordinal);
+        Assert.Matches(new Regex(@"/Subtype\s*/Stamp", RegexOptions.CultureInvariant), raw);
         Assert.Contains("(Unsupported F8 stamp)", raw, StringComparison.Ordinal);
     }
 
