@@ -55,4 +55,112 @@ public sealed class OcrPageEligibilityPolicyTests
             "GetPageText",
             BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic));
     }
+
+    [Fact]
+    public void Language_codes_are_exact_and_scope_factories_are_zero_based()
+    {
+        Assert.Equal("spa", OcrLanguage.Spanish.ToTesseractCode());
+        Assert.Equal("eng", OcrLanguage.English.ToTesseractCode());
+        Assert.Equal("spa+eng", OcrLanguage.SpanishEnglish.ToTesseractCode());
+
+        Assert.Equal(OcrPageScopeKind.Automatic, OcrPageScope.Automatic.Kind);
+
+        var current = OcrPageScope.Current(2);
+        Assert.Equal(OcrPageScopeKind.CurrentPage, current.Kind);
+        Assert.Equal(2, current.StartPageIndex);
+        Assert.Equal(2, current.EndPageIndex);
+
+        var range = OcrPageScope.Range(1, 3);
+        Assert.Equal(OcrPageScopeKind.Range, range.Kind);
+        Assert.Equal(1, range.StartPageIndex);
+        Assert.Equal(3, range.EndPageIndex);
+
+        Assert.Throws<ArgumentOutOfRangeException>(() => OcrPageScope.Current(-1));
+        Assert.Throws<ArgumentOutOfRangeException>(() => OcrPageScope.Range(-1, 1));
+        Assert.Throws<ArgumentOutOfRangeException>(() => OcrPageScope.Range(3, 2));
+    }
+
+    [Fact]
+    public void Meaningful_text_counts_only_unicode_letters_and_digits_at_19_20_boundary()
+    {
+        var method = typeof(OcrPageEligibilityPolicy).GetMethod(
+            "CountMeaningfulCharacters",
+            BindingFlags.Static | BindingFlags.NonPublic);
+        Assert.NotNull(method);
+
+        Assert.Equal(0, InvokeCount(method!, " \t\r\n—.,;:!?()[]{}"));
+        Assert.Equal(19, InvokeCount(method!, "áéíóúüñÑ 1234567890 A !!!"));
+        Assert.Equal(20, InvokeCount(method!, "áéíóúüñÑ 1234567890 AB !!!"));
+        Assert.Equal(19, InvokeCount(method!, "1234567890123456789"));
+        Assert.Equal(20, InvokeCount(method!, "12345678901234567890"));
+    }
+
+    [Fact]
+    public void Resolve_core_keeps_sparse_pages_candidates_and_skips_searchable_pages_in_order()
+    {
+        var resolveCore = typeof(OcrPageEligibilityPolicy).GetMethod(
+            "ResolveCore",
+            BindingFlags.Static | BindingFlags.NonPublic);
+        Assert.NotNull(resolveCore);
+
+        var pages = new[]
+        {
+            string.Empty,
+            "1234567890123456789",
+            "12345678901234567890",
+            "Página 7",
+            "Documento normalmente buscable con bastante contenido 2026"
+        };
+        var provider = new Func<int, string>(index => pages[index]);
+
+        var automatic = InvokeResolveCore(resolveCore!, pages.Length, provider, OcrPageScope.Automatic);
+        Assert.Equal(new[] { 0, 1, 3 }, automatic.CandidatePageIndices);
+        Assert.Equal(new[] { 2, 4 }, automatic.SkippedPageIndices);
+
+        var current = InvokeResolveCore(resolveCore!, pages.Length, provider, OcrPageScope.Current(2));
+        Assert.Empty(current.CandidatePageIndices);
+        Assert.Equal(new[] { 2 }, current.SkippedPageIndices);
+
+        var range = InvokeResolveCore(resolveCore!, pages.Length, provider, OcrPageScope.Range(1, 3));
+        Assert.Equal(new[] { 1, 3 }, range.CandidatePageIndices);
+        Assert.Equal(new[] { 2 }, range.SkippedPageIndices);
+    }
+
+    [Fact]
+    public void Resolve_core_rejects_scope_outside_document()
+    {
+        var resolveCore = typeof(OcrPageEligibilityPolicy).GetMethod(
+            "ResolveCore",
+            BindingFlags.Static | BindingFlags.NonPublic);
+        Assert.NotNull(resolveCore);
+
+        var provider = new Func<int, string>(_ => string.Empty);
+        AssertInvocationThrows<ArgumentOutOfRangeException>(
+            resolveCore!, 3, provider, OcrPageScope.Current(3));
+        AssertInvocationThrows<ArgumentOutOfRangeException>(
+            resolveCore!, 3, provider, OcrPageScope.Range(1, 3));
+    }
+
+    private static int InvokeCount(MethodInfo method, string text) =>
+        Assert.IsType<int>(method.Invoke(null, new object?[] { text }));
+
+    private static OcrPageEligibilityResult InvokeResolveCore(
+        MethodInfo method,
+        int pageCount,
+        Func<int, string> provider,
+        OcrPageScope scope) =>
+        Assert.IsType<OcrPageEligibilityResult>(
+            method.Invoke(null, new object?[] { pageCount, provider, scope, CancellationToken.None }));
+
+    private static void AssertInvocationThrows<TException>(
+        MethodInfo method,
+        int pageCount,
+        Func<int, string> provider,
+        OcrPageScope scope)
+        where TException : Exception
+    {
+        var exception = Assert.Throws<TargetInvocationException>(() =>
+            method.Invoke(null, new object?[] { pageCount, provider, scope, CancellationToken.None }));
+        Assert.IsType<TException>(exception.InnerException);
+    }
 }
