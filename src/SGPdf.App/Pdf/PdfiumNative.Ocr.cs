@@ -8,4 +8,7 @@ internal static partial class PdfiumNative
 
     [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
     internal static extern int FPDFTextObj_SetTextRenderMode(IntPtr textObject, int renderMode);
+
+    [DllImport(Library, CallingConvention = CallingConvention.StdCall)]
+    internal static extern int FPDFText_CountChars(IntPtr textPage);
 }
