@@ -13,6 +13,8 @@ public sealed class TesseractDistributionGateTests
     private const string ExpectedTessdataCommit = "87416418657359cb625c412a48b6e1d6d41c29bd";
     private const string ExpectedSpaBlob = "72e901f13ca52cfe34cf239a368b9ed3c0ddaf26";
     private const string ExpectedEngBlob = "bbef4675053b5b468cdb477053e28b1c698ba08e";
+    private const string ExpectedSpaSha256 = "6f2e04d02774a18f01bed44b1111f2cd7f3ba7ac9dc4373cd3f898a40ea6b464";
+    private const string ExpectedEngSha256 = "7d4322bd2a7749724879683fc3912cb542f19906c83bcc1a52132556427170b2";
 
     [Fact]
     public async Task Staged_private_runtime_has_exact_version_and_only_explicit_tessdata_path()
@@ -48,9 +50,8 @@ public sealed class TesseractDistributionGateTests
         Assert.Equal(ExpectedTessdataCommit, root.GetProperty("tessdataFastCommit").GetString());
         Assert.Equal(ExpectedSpaBlob, root.GetProperty("spaGitBlobSha1").GetString());
         Assert.Equal(ExpectedEngBlob, root.GetProperty("engGitBlobSha1").GetString());
-
-        AssertSha256(root.GetProperty("spaSha256").GetString());
-        AssertSha256(root.GetProperty("engSha256").GetString());
+        Assert.Equal(ExpectedSpaSha256, root.GetProperty("spaSha256").GetString());
+        Assert.Equal(ExpectedEngSha256, root.GetProperty("engSha256").GetString());
     }
 
     [Theory]
@@ -135,13 +136,6 @@ public sealed class TesseractDistributionGateTests
     private static string FirstNonEmptyLine(string text) =>
         text.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .FirstOrDefault() ?? string.Empty;
-
-    private static void AssertSha256(string? value)
-    {
-        Assert.NotNull(value);
-        Assert.Equal(64, value!.Length);
-        Assert.All(value, character => Assert.True(Uri.IsHexDigit(character), $"Non-hex SHA-256 character: {character}"));
-    }
 
     private sealed record ProcessResult(int ExitCode, string StandardOutput, string StandardError);
 }
