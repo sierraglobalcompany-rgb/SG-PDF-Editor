@@ -1,5 +1,5 @@
 using System.Reflection;
-using SGPdf.App.Pdf;
+using SGPdf.App.Features.Ocr;
 using Xunit;
 
 namespace SGPdf.App.Tests;
@@ -11,7 +11,7 @@ public sealed class OcrPageEligibilityPolicyTests
     [Fact]
     public void Task3_contract_exposes_language_scope_policy_and_whole_page_text_primitives()
     {
-        var appAssembly = typeof(PdfLoader).Assembly;
+        var appAssembly = typeof(TesseractRuntime).Assembly;
 
         var languageType = appAssembly.GetType($"{OcrNamespace}.OcrLanguage");
         Assert.NotNull(languageType);
