@@ -25,7 +25,7 @@
 1. Rotated/cropped pages: overlay geometry must remain visually correct rather than assuming portrait MediaBox coordinates. Task 3 owns tests.
 2. Signed/password-encrypted PDFs: utilities must fail closed unless a later protection slice explicitly owns authorized-password semantics. Tasks 3, 5 and 7 own tests.
 3. Cancellation or validator failure after temp creation: existing destination must survive unchanged and sibling temp must be removed. Tasks 3 and 5 own tests.
-4. Unicode numbering/watermark strings and very large page numbers: formatting must be deterministic and overflow-safe. Task 2 owns tests.
+4. Unicode numbering/watermark strings within pinned font coverage, unsupported code points, and very large page numbers: formatting must be deterministic and unsupported glyphs must fail closed. Tasks 1 and 2 own tests.
 5. Valid PDFs with unusual document-level structures: output must reopen and preserve representative metadata/forms/bookmarks/links/tags/attachments/page labels. Task 8 owns the preservation matrix.
 
 ---
@@ -40,12 +40,12 @@
 
 **Interfaces:**
 - Consumes existing `PdfiumRuntime`, `PdfiumNative`, pinned DejaVu fallback asset and PDFium save writer pattern.
-- Produces measured facts only: text overlay support, z-order behavior, Unicode/color/alpha/matrix/rotation round-trip, image overlay support and any exact interop additions required by the pinned binary.
+- Produces measured facts only: text overlay support, z-order behavior, supported-Unicode/color/alpha/matrix/rotation round-trip, unsupported-glyph fail-closed behavior, image overlay support and any exact interop additions required by the pinned binary.
 
-- [ ] **Step 1: Write RED capability tests** for a text overlay inserted behind and in front of existing content. Assert Unicode `NIÑO Bogotá 東京`, non-opaque RGBA, position/matrix, non-zero rotation, deterministic page-object order, Save As, reopen text/object discovery and low-DPI render smoke.
+- [ ] **Step 1: Write RED capability tests** for a text overlay inserted behind and in front of existing content. Assert supported Unicode `NIÑO Bogotá — € Ω`, rejection of a known unsupported code point, non-opaque RGBA, position/matrix, non-zero rotation, deterministic page-object order, Save As, reopen text/object discovery and low-DPI render smoke.
 - [ ] **Step 2: Add RED image-overlay characterization** using a tiny in-memory bitmap. Assert object insertion, matrix, alpha when measurable, z-order, Save As, reopen image discovery and render smoke.
 - [ ] **Step 3: Run exact Windows CI and accept RED only if failures are caused by missing gate harness/interop rather than broken test syntax or build errors.**
-- [ ] **Step 4: Implement the minimum characterization harness/interops.** Reuse the existing CID Type2/DejaVu path; do not add a product writer or UI.
+- [ ] **Step 4: Implement the minimum characterization harness/interops.** Reuse the existing CID Type2/DejaVu path; do not add a product writer, UI or second font asset.
 - [ ] **Step 5: Run the full suite.** Expected: all tests green, build 0 warnings / 0 errors excluding external runner deprecation noise.
 - [ ] **Step 6: Record measured capability decisions.** Image watermark is explicitly deferred if any required persistence/alpha/z-order behavior is not proven.
 - [ ] **Step 7: Commit checkpoint and run exact-head CI.**
@@ -64,7 +64,7 @@
 - `PageNumberFormatter.Format(long number, PageNumberingSettings settings) -> string`.
 - `UtilityPageRange.Resolve(int pageCount) -> IReadOnlyList<int>` returns zero-based ordered page indices.
 
-- [ ] **Step 1: RED tests** for all/current/explicit range, invalid range, deterministic ordering, start number, prefix/suffix, zero padding, Unicode and overflow boundaries.
+- [ ] **Step 1: RED tests** for all/current/explicit range, invalid range, deterministic ordering, start number, prefix/suffix, zero padding, supported Unicode, unsupported glyph rejection and overflow boundaries.
 - [ ] **Step 2: Implement minimum immutable models and formatter/parser behavior.**
 - [ ] **Step 3: Full suite + exact-head CI + checkpoint.**
 
