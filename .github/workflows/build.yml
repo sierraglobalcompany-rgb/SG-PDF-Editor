@@ -39,6 +39,10 @@ jobs:
         shell: pwsh
         run: ./tools/setup-labelize.ps1
 
+      - name: Stage pinned qpdf 12.4.2
+        shell: pwsh
+        run: ./tools/setup-qpdf.ps1
+
       - name: Restore locked dependencies
         run: dotnet restore SGPdf.slnx --locked-mode
 
