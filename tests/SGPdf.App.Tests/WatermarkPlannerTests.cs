@@ -1,4 +1,5 @@
 using System.Reflection;
+using SGPdf.App.Features.Edit;
 using SGPdf.App.Features.Utilities;
 using SGPdf.App.Pdf;
 using Xunit;
@@ -106,6 +107,39 @@ public sealed class WatermarkPlannerTests
             0d,
             0d,
             double.PositiveInfinity));
+    }
+
+    [Fact]
+    public void Integration_WatermarkPlan_SaveAs_ReopensWithTextAndRender()
+    {
+        using var fixture = UtilityOverlayNativeHarness.CreateSourcePdf();
+        IReadOnlyList<PdfPageSize> pageSizes;
+        using (var source = PdfDocumentSession.Open(fixture.SourcePath))
+            pageSizes = source.GetPageSizes();
+
+        var placements = new WatermarkPlanner().Plan(
+            new TextOverlaySettings("CONFIDENTIAL", 24d, 0.45d, TextOverlayLayer.Foreground),
+            UtilityPageRange.All,
+            pageSizes,
+            WatermarkAnchor.Center,
+            0d,
+            0d,
+            17d);
+        var destination = fixture.Output("watermark-integration.pdf");
+
+        var result = new PdfTextOverlayWriter().SaveAsCopy(
+            fixture.SourcePath,
+            PdfEditSourceFingerprint.Capture(fixture.SourcePath),
+            placements,
+            destination,
+            CancellationToken.None);
+
+        Assert.True(result.Succeeded, result.Error);
+        using var output = PdfDocumentSession.Open(destination);
+        Assert.Single(output.GetTextObjects(0), item => item.Text == "CONFIDENTIAL");
+        var rendered = output.RenderPage(0, 72d);
+        Assert.NotEmpty(rendered.Pixels);
+        Assert.Contains(rendered.Pixels, value => value != byte.MaxValue);
     }
 
     private static IReadOnlyList<TextOverlayPlacement> Plan(
