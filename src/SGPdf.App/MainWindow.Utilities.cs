@@ -1,4 +1,6 @@
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
 using Microsoft.Win32;
 using SGPdf.App.Features.Edit;
 using SGPdf.App.Features.Utilities;
@@ -8,7 +10,70 @@ namespace SGPdf.App;
 
 public partial class MainWindow
 {
+    private static readonly bool UtilitiesLoadedHookRegistered = RegisterUtilitiesLoadedHook();
+
+    private bool _utilityUiInitialized;
     private bool _utilityExecuting;
+
+    private static bool RegisterUtilitiesLoadedHook()
+    {
+        EventManager.RegisterClassHandler(
+            typeof(MainWindow),
+            FrameworkElement.LoadedEvent,
+            new RoutedEventHandler(UtilitiesHost_Loaded),
+            handledEventsToo: true);
+        return true;
+    }
+
+    private static void UtilitiesHost_Loaded(object sender, RoutedEventArgs e)
+    {
+        if (sender is MainWindow window)
+            window.InitializeUtilitiesUi();
+    }
+
+    private void InitializeUtilitiesUi()
+    {
+        if (_utilityUiInitialized)
+            return;
+
+        _utilityUiInitialized = true;
+        _ = UtilitiesLoadedHookRegistered;
+
+        var menu = (Content as DockPanel)?.Children.OfType<Menu>().FirstOrDefault()
+            ?? throw new InvalidOperationException("No se encontró el menú principal para Herramientas.");
+
+        var utilities = new MenuItem
+        {
+            Name = "UtilitiesMenuItem",
+            Header = "_Herramientas"
+        };
+        var watermark = new MenuItem
+        {
+            Name = "WatermarkTextMenuItem",
+            Header = "Marca de agua de _texto..."
+        };
+        var numbering = new MenuItem
+        {
+            Name = "PageNumberingMenuItem",
+            Header = "_Numerar páginas / Bates..."
+        };
+
+        watermark.SetBinding(
+            IsEnabledProperty,
+            new Binding(nameof(IsEnabled)) { Source = PrintPdfMenuItem });
+        numbering.SetBinding(
+            IsEnabledProperty,
+            new Binding(nameof(IsEnabled)) { Source = PrintPdfMenuItem });
+        watermark.Click += WatermarkText_Click;
+        numbering.Click += PageNumbering_Click;
+        utilities.Items.Add(watermark);
+        utilities.Items.Add(numbering);
+        menu.Items.Add(utilities);
+
+        RegisterName(utilities.Name, utilities);
+        RegisterName(watermark.Name, watermark);
+        RegisterName(numbering.Name, numbering);
+    }
 
     private void WatermarkText_Click(object sender, RoutedEventArgs e)
     {
