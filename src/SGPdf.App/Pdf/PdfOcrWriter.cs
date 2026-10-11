@@ -16,14 +16,17 @@ internal sealed record PdfOcrWriteResult(bool Succeeded, string? Error)
 
 internal sealed class PdfOcrWriter
 {
-    private readonly Func<string, CancellationToken, bool> _validator;
+    private const double ValidationRenderDpi = 72d;
+
+    private readonly Func<string, CancellationToken, bool>? _validator;
+    private readonly Func<string, OcrValidationExpectation, CancellationToken, PdfOcrValidationResult>? _semanticValidator;
     private readonly Func<PdfDocumentSession, CancellationToken, PdfEditPreflightResult> _preflight;
 
     internal PdfOcrWriter()
     {
         var utilityPreflight = new PdfUtilityPreflight();
         _preflight = utilityPreflight.Inspect;
-        _validator = ValidateReadableCopy;
+        _semanticValidator = PdfOcrOutputValidator.Validate;
     }
 
     internal PdfOcrWriter(
@@ -62,6 +65,7 @@ internal sealed class PdfOcrWriter
         if (string.IsNullOrWhiteSpace(destinationDirectory) || !Directory.Exists(destinationDirectory))
             throw new DirectoryNotFoundException("The destination directory does not exist.");
 
+        OcrValidationExpectation? semanticExpectation = null;
         string? temporaryPath = null;
         try
         {
@@ -86,6 +90,15 @@ internal sealed class PdfOcrWriter
                 var eligiblePages = eligibility.CandidatePageIndices.ToHashSet();
                 if (placements.Any(placement => !eligiblePages.Contains(placement.PageIndex)))
                     return PdfOcrWriteResult.Failure("OCR cannot add a hidden text layer to a page that already contains meaningful native text.");
+
+                if (_semanticValidator is not null)
+                {
+                    semanticExpectation = BuildSemanticExpectation(
+                        session,
+                        placements,
+                        eligibility,
+                        cancellationToken);
+                }
             }
 
             cancellationToken.ThrowIfCancellationRequested();
@@ -98,8 +111,21 @@ internal sealed class PdfOcrWriter
                 cancellationToken);
             cancellationToken.ThrowIfCancellationRequested();
 
-            if (!_validator(temporaryPath, cancellationToken))
+            if (_semanticValidator is not null)
+            {
+                var expectation = semanticExpectation
+                    ?? throw new InvalidOperationException("OCR semantic validation expectation was not captured before mutation.");
+                var validation = _semanticValidator(temporaryPath, expectation, cancellationToken);
+                if (!validation.Succeeded)
+                {
+                    return PdfOcrWriteResult.Failure(
+                        validation.Error ?? "The saved OCR output failed semantic validation.");
+                }
+            }
+            else if (_validator is null || !_validator(temporaryPath, cancellationToken))
+            {
                 return PdfOcrWriteResult.Failure("The saved OCR output failed validation.");
+            }
 
             cancellationToken.ThrowIfCancellationRequested();
             if (!fingerprint.MatchesCurrentFile(sourceFullPath))
@@ -134,6 +160,36 @@ internal sealed class PdfOcrWriter
                 }
             }
         }
+    }
+
+    private static OcrValidationExpectation BuildSemanticExpectation(
+        PdfDocumentSession session,
+        IReadOnlyList<OcrTextLinePlacement> placements,
+        OcrPageEligibilityResult eligibility,
+        CancellationToken cancellationToken)
+    {
+        var skippedPageTexts = new Dictionary<int, string>();
+        foreach (var pageIndex in eligibility.SkippedPageIndices)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            skippedPageTexts[pageIndex] = session.GetPageText(pageIndex, cancellationToken);
+        }
+
+        var sourceRenders = new List<PdfRenderedPage>();
+        foreach (var pageIndex in placements
+                     .Select(placement => placement.PageIndex)
+                     .Distinct()
+                     .OrderBy(pageIndex => pageIndex))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            sourceRenders.Add(session.RenderPage(pageIndex, ValidationRenderDpi, cancellationToken));
+        }
+
+        return new OcrValidationExpectation(
+            session.PageCount,
+            placements,
+            skippedPageTexts,
+            sourceRenders);
     }
 
     private static void ValidatePlacements(IReadOnlyList<OcrTextLinePlacement> placements)
@@ -192,14 +248,6 @@ internal sealed class PdfOcrWriter
             File.Replace(temporaryPath, destinationPath, destinationBackupFileName: null);
         else
             File.Move(temporaryPath, destinationPath);
-    }
-
-    private static bool ValidateReadableCopy(string path, CancellationToken cancellationToken)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-        using var session = PdfDocumentSession.Open(path);
-        cancellationToken.ThrowIfCancellationRequested();
-        return session.PageCount > 0;
     }
 
     private static void WriteTemporaryCopy(
