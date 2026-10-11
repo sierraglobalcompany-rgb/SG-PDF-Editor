@@ -169,6 +169,97 @@ public sealed class MainWindowUtilitiesTests
     }
 
     [Fact]
+    public void WatermarkCommand_SaveAsCopy_MaterializesAndReopens()
+    {
+        OrganizeWindowTestHost.RunInSta(async () =>
+        {
+            using var fixture = OrganizeWindowPdfFixture.Create(2);
+            var window = new MainWindow();
+            try
+            {
+                Assert.True(await OrganizeWindowTestHost.OpenReaderAsync(window, fixture.Path));
+                var original = File.ReadAllBytes(fixture.Path);
+                var destination = Path.Combine(fixture.DirectoryPath, "watermark-output.pdf");
+                var request = CreateRequest(
+                    "WatermarkUtilityRequest",
+                    new Dictionary<string, object?>
+                    {
+                        ["text"] = "SG WATERMARK",
+                        ["fontSize"] = 24d,
+                        ["opacity"] = 0.5d,
+                        ["rotationDegrees"] = -25d,
+                        ["offsetXPoints"] = 0d,
+                        ["offsetYPoints"] = 0d,
+                        ["startPageNumber"] = 1,
+                        ["endPageNumber"] = 2,
+                        ["useCurrentPage"] = false,
+                        ["background"] = false,
+                        ["anchorName"] = "Center",
+                        ["red"] = (byte)40,
+                        ["green"] = (byte)60,
+                        ["blue"] = (byte)80
+                    });
+
+                Assert.True((bool)InvokeByName(window, "TryRunWatermarkUtility", request, destination)!);
+                Assert.Equal(original, File.ReadAllBytes(fixture.Path));
+                using var output = PdfDocumentSession.Open(destination);
+                Assert.NotEmpty(output.FindTextOnPage(0, "SG WATERMARK"));
+                Assert.NotEmpty(output.FindTextOnPage(1, "SG WATERMARK"));
+                Assert.Contains("guardada", OrganizeWindowTestHost.Element<TextBlock>(window, "StatusText").Text, StringComparison.OrdinalIgnoreCase);
+                Assert.False(ReadBoolField(window, "_utilityExecuting"));
+            }
+            finally { OrganizeWindowTestHost.CloseClean(window); }
+        });
+    }
+
+    [Fact]
+    public void PageNumberingCommand_SaveAsCopy_MaterializesBatesSequenceAndReopens()
+    {
+        OrganizeWindowTestHost.RunInSta(async () =>
+        {
+            using var fixture = OrganizeWindowPdfFixture.Create(3);
+            var window = new MainWindow();
+            try
+            {
+                Assert.True(await OrganizeWindowTestHost.OpenReaderAsync(window, fixture.Path));
+                var original = File.ReadAllBytes(fixture.Path);
+                var destination = Path.Combine(fixture.DirectoryPath, "bates-output.pdf");
+                var request = CreateRequest(
+                    "PageNumberingUtilityRequest",
+                    new Dictionary<string, object?>
+                    {
+                        ["startNumber"] = 1001L,
+                        ["prefix"] = "SG-",
+                        ["suffix"] = "",
+                        ["paddingWidth"] = 6,
+                        ["fontSize"] = 11d,
+                        ["opacity"] = 1d,
+                        ["offsetXPoints"] = 0d,
+                        ["offsetYPoints"] = 0d,
+                        ["startPageNumber"] = 1,
+                        ["endPageNumber"] = 3,
+                        ["useCurrentPage"] = false,
+                        ["background"] = false,
+                        ["anchorName"] = "FooterCenter",
+                        ["red"] = (byte)0,
+                        ["green"] = (byte)0,
+                        ["blue"] = (byte)0
+                    });
+
+                Assert.True((bool)InvokeByName(window, "TryRunPageNumberingUtility", request, destination)!);
+                Assert.Equal(original, File.ReadAllBytes(fixture.Path));
+                using var output = PdfDocumentSession.Open(destination);
+                Assert.NotEmpty(output.FindTextOnPage(0, "SG-001001"));
+                Assert.NotEmpty(output.FindTextOnPage(1, "SG-001002"));
+                Assert.NotEmpty(output.FindTextOnPage(2, "SG-001003"));
+                Assert.Contains("guardada", OrganizeWindowTestHost.Element<TextBlock>(window, "StatusText").Text, StringComparison.OrdinalIgnoreCase);
+                Assert.False(ReadBoolField(window, "_utilityExecuting"));
+            }
+            finally { OrganizeWindowTestHost.CloseClean(window); }
+        });
+    }
+
+    [Fact]
     public void WatermarkCommand_WriterError_PreservesSourceAndReportsError()
     {
         OrganizeWindowTestHost.RunInSta(async () =>
