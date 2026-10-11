@@ -30,7 +30,7 @@ public sealed class TesseractTsvParserTests
         Assert.Equal(96.5d, Get<double>(word, "Confidence"), 6);
         Assert.Equal("NIÑO", Get<string>(word, "Text"));
 
-        var bounds = Get<object>(word, "Bounds");
+        var bounds = GetValue(word, "Bounds");
         Assert.Equal(10, Get<int>(bounds, "Left"));
         Assert.Equal(20, Get<int>(bounds, "Top"));
         Assert.Equal(30, Get<int>(bounds, "Width"));
@@ -129,10 +129,15 @@ public sealed class TesseractTsvParserTests
         return type!;
     }
 
-    private static T Get<T>(object target, string propertyName)
+    private static object GetValue(object target, string propertyName)
     {
         var property = target.GetType().GetProperty(propertyName);
         Assert.NotNull(property);
-        return Assert.IsType<T>(property!.GetValue(target));
+        return Assert.NotNull(property!.GetValue(target));
+    }
+
+    private static T Get<T>(object target, string propertyName)
+    {
+        return Assert.IsType<T>(GetValue(target, propertyName));
     }
 }
