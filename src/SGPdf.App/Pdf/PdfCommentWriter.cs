@@ -128,8 +128,17 @@ internal sealed class PdfCommentWriter
                 }
                 break;
 
+            case CommentSubtype.Ink:
+                if (!original.QuadPoints.SequenceEqual(current.QuadPoints) ||
+                    !string.Equals(original.Contents, current.Contents, StringComparison.Ordinal) ||
+                    !Nullable.Equals(original.BorderWidth, current.BorderWidth))
+                {
+                    throw new NotSupportedException("Ink solo permite editar trazos, posición, color o eliminar en Task 7.");
+                }
+                break;
+
             default:
-                throw new NotSupportedException("Task 6 solo materializa marcado de texto y notas TEXT.");
+                throw new NotSupportedException("Task 7 solo materializa marcado de texto, notas TEXT e Ink.");
         }
     }
 
@@ -151,8 +160,8 @@ internal sealed class PdfCommentWriter
     {
         foreach (var state in states)
         {
-            if (state.Subtype is not (CommentSubtype.Highlight or CommentSubtype.Underline or CommentSubtype.Strikeout or CommentSubtype.Text))
-                throw new NotSupportedException("Task 6 solo guarda marcado de texto y notas TEXT.");
+            if (state.Subtype is not (CommentSubtype.Highlight or CommentSubtype.Underline or CommentSubtype.Strikeout or CommentSubtype.Text or CommentSubtype.Ink))
+                throw new NotSupportedException("Task 7 solo guarda marcado de texto, notas TEXT e Ink.");
             if (state.IsNew && state.Deleted)
                 throw new InvalidOperationException("Un comentario nuevo eliminado no debe llegar al plan de materialización.");
 
@@ -163,8 +172,17 @@ internal sealed class PdfCommentWriter
                 continue;
             }
 
-            if (state.QuadPoints.Count != 0 || state.InkStrokes.Count != 0 || state.BorderWidth is not null)
-                throw new InvalidOperationException("Una nota TEXT no puede contener quadpoints, trazos Ink ni borde en Task 6.");
+            if (state.Subtype == CommentSubtype.Text)
+            {
+                if (state.QuadPoints.Count != 0 || state.InkStrokes.Count != 0 || state.BorderWidth is not null)
+                    throw new InvalidOperationException("Una nota TEXT no puede contener quadpoints, trazos Ink ni borde.");
+                continue;
+            }
+
+            if (state.QuadPoints.Count != 0 || !string.IsNullOrEmpty(state.Contents) || state.BorderWidth is not null)
+                throw new InvalidOperationException("Ink no puede contener quadpoints, Contents ni borde en Task 7.");
+            if (!state.Deleted && state.InkStrokes.Count == 0)
+                throw new InvalidOperationException("Una anotación Ink materializable requiere al menos un trazo.");
         }
     }
 
@@ -257,15 +275,23 @@ internal sealed class PdfCommentWriter
                 if (PdfiumNative.FPDFAnnot_GetSubtype(annotation) != expectedSubtype)
                     throw new InvalidOperationException("La anotación existente ya no corresponde al subtipo esperado.");
 
-                if (update.State.Subtype == CommentSubtype.Text)
+                switch (update.State.Subtype)
                 {
-                    SetRect(annotation, update.State.Rect);
-                    SetColor(annotation, update.State.Color);
-                    SetContents(annotation, update.State.Contents ?? string.Empty);
-                }
-                else
-                {
-                    SetColor(annotation, update.State.Color);
+                    case CommentSubtype.Text:
+                        SetRect(annotation, update.State.Rect);
+                        SetColor(annotation, update.State.Color);
+                        SetContents(annotation, update.State.Contents ?? string.Empty);
+                        break;
+
+                    case CommentSubtype.Ink:
+                        SetRect(annotation, update.State.Rect);
+                        SetColor(annotation, update.State.Color);
+                        ReplaceInkStrokes(annotation, update.State.InkStrokes, cancellationToken);
+                        break;
+
+                    default:
+                        SetColor(annotation, update.State.Color);
+                        break;
                 }
             }
             finally
@@ -311,6 +337,12 @@ internal sealed class PdfCommentWriter
                     continue;
                 }
 
+                if (state.Subtype == CommentSubtype.Ink)
+                {
+                    AppendInkStrokes(annotation, state.InkStrokes, cancellationToken);
+                    continue;
+                }
+
                 foreach (var quad in state.QuadPoints)
                 {
                     var nativeQuad = new PdfiumNative.QuadPointsF
@@ -332,6 +364,42 @@ internal sealed class PdfCommentWriter
             {
                 PdfiumNative.FPDFPage_CloseAnnot(annotation);
             }
+        }
+    }
+
+    private static void ReplaceInkStrokes(
+        IntPtr annotation,
+        IReadOnlyList<CommentStroke> strokes,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        if (PdfiumNative.FPDFAnnot_GetInkListCount(annotation) > 0 &&
+            PdfiumNative.FPDFAnnot_RemoveInkList(annotation) == 0)
+        {
+            throw new InvalidOperationException("PDFium no pudo reemplazar los trazos Ink existentes.");
+        }
+
+        AppendInkStrokes(annotation, strokes, cancellationToken);
+    }
+
+    private static void AppendInkStrokes(
+        IntPtr annotation,
+        IReadOnlyList<CommentStroke> strokes,
+        CancellationToken cancellationToken)
+    {
+        foreach (var stroke in strokes)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var nativePoints = stroke.Points
+                .Select(point => new PdfiumNative.PointF
+                {
+                    X = checked((float)point.X),
+                    Y = checked((float)point.Y)
+                })
+                .ToArray();
+
+            if (PdfiumNative.FPDFAnnot_AddInkStroke(annotation, nativePoints, (nuint)nativePoints.Length) < 0)
+                throw new InvalidOperationException("PDFium no pudo aplicar un trazo Ink.");
         }
     }
 
@@ -374,7 +442,8 @@ internal sealed class PdfCommentWriter
         CommentSubtype.Underline => PdfiumNative.FPDF_ANNOT_UNDERLINE,
         CommentSubtype.Strikeout => PdfiumNative.FPDF_ANNOT_STRIKEOUT,
         CommentSubtype.Text => PdfiumNative.FPDF_ANNOT_TEXT,
-        _ => throw new NotSupportedException("El subtipo aún no pertenece al writer de Task 6.")
+        CommentSubtype.Ink => PdfiumNative.FPDF_ANNOT_INK,
+        _ => throw new NotSupportedException("El subtipo aún no pertenece al writer de Task 7.")
     };
 
     private static string CreateTemporaryPath(string destinationPath)
