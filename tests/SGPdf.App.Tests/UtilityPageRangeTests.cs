@@ -89,7 +89,9 @@ public sealed class UtilityPageRangeTests
         var type = RequireType();
         var property = type.GetProperty("All", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
         Assert.NotNull(property);
-        return Assert.NotNull(property!.GetValue(null));
+        var value = property!.GetValue(null);
+        Assert.NotNull(value);
+        return value!;
     }
 
     private static object Current(int pageIndex) => InvokeFactory("Current", pageIndex);
@@ -102,7 +104,9 @@ public sealed class UtilityPageRangeTests
         var type = RequireType();
         var method = type.GetMethod(name, BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
         Assert.NotNull(method);
-        return Assert.NotNull(method!.Invoke(null, arguments));
+        var value = method!.Invoke(null, arguments);
+        Assert.NotNull(value);
+        return value!;
     }
 
     private static IReadOnlyList<int> Resolve(object range, int pageCount) =>
@@ -112,7 +116,9 @@ public sealed class UtilityPageRangeTests
     {
         var method = range.GetType().GetMethod("Resolve", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
         Assert.NotNull(method);
-        return Assert.NotNull(method!.Invoke(range, new object[] { pageCount }));
+        var value = method!.Invoke(range, new object[] { pageCount });
+        Assert.NotNull(value);
+        return value!;
     }
 
     private static Type RequireType()
