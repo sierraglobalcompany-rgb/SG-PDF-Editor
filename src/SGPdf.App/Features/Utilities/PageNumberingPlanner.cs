@@ -60,7 +60,8 @@ internal sealed class PageNumberingPlanner
                     0d,
                     1d,
                     anchorX + offsetXPoints,
-                    anchorY + offsetYPoints));
+                    anchorY + offsetYPoints),
+                settings.FillColor);
         }
 
         return Array.AsReadOnly(placements);
