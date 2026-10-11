@@ -23,6 +23,7 @@ public sealed class PdfProtectionCapabilityTests
 
         Assert.Equal(original, File.ReadAllBytes(fixture.SourcePath));
         Assert.True(File.Exists(destination));
+        Assert.Empty(Directory.GetFiles(fixture.DirectoryPath, "*sgpdf-qpdf-job-*.json"));
 
         var noPassword = Assert.Throws<PdfDocumentOpenException>(() => PdfDocumentSession.Open(destination));
         Assert.Equal(PdfDocumentOpenError.PasswordRequiredOrIncorrect, noPassword.Error);
@@ -31,9 +32,15 @@ public sealed class PdfProtectionCapabilityTests
             () => PdfDocumentSession.Open(destination, "wrong-password"));
         Assert.Equal(PdfDocumentOpenError.PasswordRequiredOrIncorrect, wrongPassword.Error);
 
-        using var session = PdfDocumentSession.Open(destination, "user-secret");
-        Assert.Equal(1, session.PageCount);
-        Assert.True(session.OpenedWithPassword);
+        using (var userSession = PdfDocumentSession.Open(destination, "user-secret"))
+        {
+            Assert.Equal(1, userSession.PageCount);
+            Assert.True(userSession.OpenedWithPassword);
+        }
+
+        using var ownerSession = PdfDocumentSession.Open(destination, "owner-secret");
+        Assert.Equal(1, ownerSession.PageCount);
+        Assert.True(ownerSession.OpenedWithPassword);
     }
 
     private static async Task CreateProtectedCopyAsync(
