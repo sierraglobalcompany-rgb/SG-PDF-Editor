@@ -73,6 +73,7 @@ internal static class PdfOcrOutputValidator
             if (placement.PageIndex < 0 || placement.PageIndex >= expectation.ExpectedPageCount)
                 return PdfOcrValidationResult.Failure("An OCR placement targets a page outside the saved document.");
 
+            var placementGeometryIntersects = false;
             foreach (var word in placement.Words)
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -80,7 +81,7 @@ internal static class PdfOcrOutputValidator
                     return PdfOcrValidationResult.Failure("An OCR placement contains an empty search token.");
 
                 var matches = output.FindTextOnPage(placement.PageIndex, word.Text, cancellationToken);
-                var exactGeometryMatch = false;
+                var exactTokenFound = false;
                 foreach (var match in matches)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
@@ -92,18 +93,22 @@ internal static class PdfOcrOutputValidator
                     if (!string.Equals(extracted, word.Text, StringComparison.Ordinal))
                         continue;
 
-                    if (match.Rects.Any(rect => Intersects(rect, word.Bounds)))
-                    {
-                        exactGeometryMatch = true;
-                        break;
-                    }
+                    exactTokenFound = true;
+                    if (match.Rects.Any(rect => Intersects(rect, placement.Bounds)))
+                        placementGeometryIntersects = true;
                 }
 
-                if (!exactGeometryMatch)
+                if (!exactTokenFound)
                 {
                     return PdfOcrValidationResult.Failure(
-                        $"OCR token '{word.Text}' was not found with exact Unicode text inside its expected page region.");
+                        $"OCR token '{word.Text}' was not found with exact Unicode text after reopen.");
                 }
+            }
+
+            if (!placementGeometryIntersects)
+            {
+                return PdfOcrValidationResult.Failure(
+                    "The reopened OCR text geometry does not intersect its expected source region.");
             }
         }
 
