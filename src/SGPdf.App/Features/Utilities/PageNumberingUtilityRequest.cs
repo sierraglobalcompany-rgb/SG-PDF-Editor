@@ -2,7 +2,7 @@ using SGPdf.App.Features.Edit.Text;
 
 namespace SGPdf.App.Features.Utilities;
 
-internal sealed record PageNumberingUtilityRequest
+internal sealed class PageNumberingUtilityRequest
 {
     internal PageNumberingUtilityRequest(
         long startNumber,
