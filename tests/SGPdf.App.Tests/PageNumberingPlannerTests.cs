@@ -1,4 +1,5 @@
 using System.Reflection;
+using SGPdf.App.Features.Edit;
 using SGPdf.App.Features.Utilities;
 using SGPdf.App.Pdf;
 using Xunit;
@@ -144,6 +145,50 @@ public sealed class PageNumberingPlannerTests
             TextOverlayLayer.Foreground,
             0d,
             0d));
+    }
+
+    [Fact]
+    public void Integration_MultiPageBatesPlan_SaveAs_ReopensWithTextAndRender()
+    {
+        using var fixture = Task4PdfFixture.CreateMarkerSource("SRC-");
+        IReadOnlyList<PdfPageSize> pageSizes;
+        using (var source = PdfDocumentSession.Open(fixture.Path))
+            pageSizes = source.GetPageSizes();
+
+        var settings = new PageNumberingSettings(
+            startNumber: 1001,
+            prefix: "BATES-",
+            paddingWidth: 6);
+        var placements = new PageNumberingPlanner().Plan(
+            settings,
+            UtilityPageRange.All,
+            pageSizes,
+            PageNumberAnchor.FooterLeft,
+            11d,
+            1d,
+            TextOverlayLayer.Foreground,
+            0d,
+            0d);
+        var destination = fixture.PathFor("bates-integration.pdf");
+
+        var result = new PdfTextOverlayWriter().SaveAsCopy(
+            fixture.Path,
+            PdfEditSourceFingerprint.Capture(fixture.Path),
+            placements,
+            destination,
+            CancellationToken.None);
+
+        Assert.True(result.Succeeded, result.Error);
+        using var output = PdfDocumentSession.Open(destination);
+        Assert.Equal(3, output.PageCount);
+        for (var pageIndex = 0; pageIndex < 3; pageIndex++)
+        {
+            var expected = $"BATES-{1001 + pageIndex:000000}";
+            Assert.Single(output.GetTextObjects(pageIndex), item => item.Text == expected);
+            var rendered = output.RenderPage(pageIndex, 72d);
+            Assert.NotEmpty(rendered.Pixels);
+            Assert.Contains(rendered.Pixels, value => value != byte.MaxValue);
+        }
     }
 
     private static IReadOnlyList<TextOverlayPlacement> Plan(
