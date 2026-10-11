@@ -135,6 +135,7 @@ internal sealed class PdfTextOverlayWriter
                 throw new ArgumentOutOfRangeException(nameof(placements), "Overlay font size must be finite and greater than zero.");
             if (!double.IsFinite(placement.Opacity) || placement.Opacity < 0d || placement.Opacity > 1d)
                 throw new ArgumentOutOfRangeException(nameof(placements), "Overlay opacity must be between zero and one.");
+            UtilityOverlayColors.Validate(placement.FillColor, nameof(placements));
             if (!MatrixIsFinite(placement.Matrix))
                 throw new ArgumentOutOfRangeException(nameof(placements), "Overlay matrix must contain finite values.");
         }
@@ -303,9 +304,16 @@ internal sealed class PdfTextOverlayWriter
             if (PdfiumNative.FPDFText_SetText(textObject, placement.Text) == 0)
                 throw new InvalidOperationException("PDFium could not assign Unicode text to an overlay object.");
 
-            var alpha = checked((uint)Math.Round(placement.Opacity * 255d, MidpointRounding.AwayFromZero));
-            if (PdfiumNative.FPDFPageObj_SetFillColor(textObject, 0u, 0u, 0u, alpha) == 0)
-                throw new InvalidOperationException("PDFium could not assign opacity to a text overlay object.");
+            var alpha = EffectiveAlpha(placement);
+            if (PdfiumNative.FPDFPageObj_SetFillColor(
+                    textObject,
+                    placement.FillColor.Red,
+                    placement.FillColor.Green,
+                    placement.FillColor.Blue,
+                    alpha) == 0)
+            {
+                throw new InvalidOperationException("PDFium could not assign fill color to a text overlay object.");
+            }
 
             var matrix = new PdfiumNative.Matrix
             {
@@ -332,6 +340,11 @@ internal sealed class PdfTextOverlayWriter
                 PdfiumNative.FPDFPageObj_Destroy(textObject);
         }
     }
+
+    private static uint EffectiveAlpha(TextOverlayPlacement placement) =>
+        checked((uint)Math.Round(
+            placement.FillColor.Alpha * placement.Opacity,
+            MidpointRounding.AwayFromZero));
 
     private static void SaveDocument(IntPtr document, string path)
     {
