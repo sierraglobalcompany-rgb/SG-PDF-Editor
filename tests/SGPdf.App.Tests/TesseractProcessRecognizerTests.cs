@@ -47,13 +47,14 @@ public sealed class TesseractProcessRecognizerTests
     }
 
     [Theory]
-    [InlineData(OcrLanguage.Spanish, "spa")]
-    [InlineData(OcrLanguage.English, "eng")]
-    [InlineData(OcrLanguage.SpanishEnglish, "spa+eng")]
+    [InlineData("Spanish", "spa")]
+    [InlineData("English", "eng")]
+    [InlineData("SpanishEnglish", "spa+eng")]
     public void BuildStartInfo_uses_only_explicit_private_paths_and_exact_tsv_arguments(
-        OcrLanguage language,
+        string languageName,
         string expectedLanguage)
     {
+        var language = Enum.Parse<OcrLanguage>(languageName);
         var root = CreateTempDirectory();
         try
         {
