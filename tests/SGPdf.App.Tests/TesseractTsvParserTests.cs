@@ -133,7 +133,9 @@ public sealed class TesseractTsvParserTests
     {
         var property = target.GetType().GetProperty(propertyName);
         Assert.NotNull(property);
-        return Assert.NotNull(property!.GetValue(target));
+        var value = property!.GetValue(target);
+        Assert.NotNull(value);
+        return value!;
     }
 
     private static T Get<T>(object target, string propertyName)
