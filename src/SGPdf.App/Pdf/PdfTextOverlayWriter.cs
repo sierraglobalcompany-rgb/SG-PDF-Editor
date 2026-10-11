@@ -1,3 +1,4 @@
+using System.IO;
 using System.Runtime.InteropServices;
 using SGPdf.App.Features.Edit;
 using SGPdf.App.Features.Edit.Text;
