@@ -143,7 +143,7 @@ public sealed class PdfCommentWriterTransactionTests
     private static CommentWorkspace CreateDirtyWorkspace(string sourcePath, bool sourceOpenedWithPassword)
     {
         var workspace = CommentWorkspace.Create(sourcePath, sourceOpenedWithPassword);
-        workspace.Create(new CommentState(
+        var state = new CommentState(
             CommentKey.New(),
             0,
             CommentSubtype.Text,
@@ -154,7 +154,8 @@ public sealed class PdfCommentWriterTransactionTests
             Array.Empty<CommentStroke>(),
             null,
             true,
-            false));
+            false);
+        workspace.CommitCandidate(workspace.PrepareCreate(state));
         Assert.True(workspace.IsDirty);
         return workspace;
     }
