@@ -137,8 +137,18 @@ internal sealed class PdfCommentWriter
                 }
                 break;
 
+            case CommentSubtype.Square:
+            case CommentSubtype.Circle:
+                if (!original.QuadPoints.SequenceEqual(current.QuadPoints) ||
+                    !string.Equals(original.Contents, current.Contents, StringComparison.Ordinal) ||
+                    !InkStrokesEqual(original.InkStrokes, current.InkStrokes))
+                {
+                    throw new NotSupportedException("Las figuras solo permiten mover, redimensionar, cambiar color/borde o eliminar en Task 8.");
+                }
+                break;
+
             default:
-                throw new NotSupportedException("Task 7 solo materializa marcado de texto, notas TEXT e Ink.");
+                throw new NotSupportedException("Task 8 solo materializa los siete subtipos de comentarios V1.");
         }
     }
 
@@ -160,8 +170,8 @@ internal sealed class PdfCommentWriter
     {
         foreach (var state in states)
         {
-            if (state.Subtype is not (CommentSubtype.Highlight or CommentSubtype.Underline or CommentSubtype.Strikeout or CommentSubtype.Text or CommentSubtype.Ink))
-                throw new NotSupportedException("Task 7 solo guarda marcado de texto, notas TEXT e Ink.");
+            if (state.Subtype is not (CommentSubtype.Highlight or CommentSubtype.Underline or CommentSubtype.Strikeout or CommentSubtype.Text or CommentSubtype.Ink or CommentSubtype.Square or CommentSubtype.Circle))
+                throw new NotSupportedException("Task 8 solo guarda los siete subtipos de comentarios V1.");
             if (state.IsNew && state.Deleted)
                 throw new InvalidOperationException("Un comentario nuevo eliminado no debe llegar al plan de materialización.");
 
@@ -179,10 +189,19 @@ internal sealed class PdfCommentWriter
                 continue;
             }
 
-            if (state.QuadPoints.Count != 0 || !string.IsNullOrEmpty(state.Contents) || state.BorderWidth is not null)
-                throw new InvalidOperationException("Ink no puede contener quadpoints, Contents ni borde en Task 7.");
-            if (!state.Deleted && state.InkStrokes.Count == 0)
-                throw new InvalidOperationException("Una anotación Ink materializable requiere al menos un trazo.");
+            if (state.Subtype == CommentSubtype.Ink)
+            {
+                if (state.QuadPoints.Count != 0 || !string.IsNullOrEmpty(state.Contents) || state.BorderWidth is not null)
+                    throw new InvalidOperationException("Ink no puede contener quadpoints, Contents ni borde en Task 7.");
+                if (!state.Deleted && state.InkStrokes.Count == 0)
+                    throw new InvalidOperationException("Una anotación Ink materializable requiere al menos un trazo.");
+                continue;
+            }
+
+            if (state.QuadPoints.Count != 0 || state.InkStrokes.Count != 0 || !string.IsNullOrEmpty(state.Contents))
+                throw new InvalidOperationException("Square/Circle no pueden contener quadpoints, Contents ni trazos Ink en Task 8.");
+            if (state.IsNew && state.BorderWidth is null)
+                throw new InvalidOperationException("Una figura nueva requiere un grosor de borde materializable.");
         }
     }
 
@@ -289,6 +308,14 @@ internal sealed class PdfCommentWriter
                         ReplaceInkStrokes(annotation, update.State.InkStrokes, cancellationToken);
                         break;
 
+                    case CommentSubtype.Square:
+                    case CommentSubtype.Circle:
+                        SetRect(annotation, update.State.Rect);
+                        SetColor(annotation, update.State.Color);
+                        if (update.State.BorderWidth is double borderWidth)
+                            SetBorder(annotation, borderWidth);
+                        break;
+
                     default:
                         SetColor(annotation, update.State.Color);
                         break;
@@ -340,6 +367,12 @@ internal sealed class PdfCommentWriter
                 if (state.Subtype == CommentSubtype.Ink)
                 {
                     AppendInkStrokes(annotation, state.InkStrokes, cancellationToken);
+                    continue;
+                }
+
+                if (state.Subtype is CommentSubtype.Square or CommentSubtype.Circle)
+                {
+                    SetBorder(annotation, state.BorderWidth!.Value);
                     continue;
                 }
 
@@ -430,6 +463,12 @@ internal sealed class PdfCommentWriter
         }
     }
 
+    private static void SetBorder(IntPtr annotation, double borderWidth)
+    {
+        if (PdfiumNative.FPDFAnnot_SetBorder(annotation, 0f, 0f, checked((float)borderWidth)) == 0)
+            throw new InvalidOperationException("PDFium no pudo aplicar el grosor del borde de la figura.");
+    }
+
     private static void SetContents(IntPtr annotation, string contents)
     {
         if (PdfiumNative.FPDFAnnot_SetStringValue(annotation, "Contents", contents) == 0)
@@ -443,7 +482,9 @@ internal sealed class PdfCommentWriter
         CommentSubtype.Strikeout => PdfiumNative.FPDF_ANNOT_STRIKEOUT,
         CommentSubtype.Text => PdfiumNative.FPDF_ANNOT_TEXT,
         CommentSubtype.Ink => PdfiumNative.FPDF_ANNOT_INK,
-        _ => throw new NotSupportedException("El subtipo aún no pertenece al writer de Task 7.")
+        CommentSubtype.Square => PdfiumNative.FPDF_ANNOT_SQUARE,
+        CommentSubtype.Circle => PdfiumNative.FPDF_ANNOT_CIRCLE,
+        _ => throw new NotSupportedException("El subtipo aún no pertenece al writer de Task 8.")
     };
 
     private static string CreateTemporaryPath(string destinationPath)
