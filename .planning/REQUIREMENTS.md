@@ -105,9 +105,21 @@ Task-13 hardening proves active-page-only discovery, no durable native handles i
 
 Real Windows text-edit UX/offline/manual QA: **NOT RUN**.
 
-## F8–F12
+## F8 — Comments V1 — AUTOMATED CLOSURE PASS
 
-- [ ] **COMMENTS** Highlight, underline/strike, notes, ink/shapes.
+Task-12 hardening evidence: `2359dc793667f59266062b64eb12e0e0f4efe08c`, workflow `38104169562`, job `114366028415`, Release build **0 warnings / 0 errors**, **851/851 tests PASS**.
+
+- [x] **COMMENTS — AUTO PASS** Real PDF annotations in independent `COMENTAR` mode: Select, Highlight, Underline, Strikeout, Note, Ink, Rectangle and Ellipse. Supported native subtypes are `TEXT`, `SQUARE`, `CIRCLE`, `HIGHLIGHT`, `UNDERLINE`, `STRIKEOUT` and `INK`.
+- [x] **COMMENTS — AUTO PASS** Stable managed structural identity + deterministic hit-testing; raw annotation index is never durable authority and duplicate/source mismatch fails closed.
+- [x] **COMMENTS — AUTO PASS** Transactional Save As uses fresh-source materialization, reopen/validation, source-race detection, atomic publication and sibling-temp cleanup; password-opened and cryptographically signed sources remain blocked.
+- [x] **COMMENTS — AUTO PASS** Fresh F8 preservation matrix proves representative forms, bookmarks, named destinations, internal links, tagged structure, page labels, attachments/payload, metadata, page rotation, supported comments and unsupported `STAMP` preservation/read-only behavior.
+- [x] **COMMENTS — AUTO PASS** Lifecycle proven across independent reopen cycles: create → save → reopen → edit → save → reopen → delete → save → reopen.
+- [x] **COMMENTS — AUTO PASS** Hardening proves no durable native handles in comment state, requested-page-bounded discovery and cancellation that does not poison subsequent reads.
+
+Preservation evidence: `docs/history/2026-10-10-F8-preservation-matrix.md`. Real Windows/stylus/touch/Adobe/Foxit/Edge compatibility QA: **NOT RUN**.
+
+## F9–F12
+
 - [ ] **UTILS** Only justified offline utilities.
 - [ ] **OCR** Local Tesseract searchable-text workflow.
 - [ ] **TEXT-V2** Reading order/lines/paragraphs/limited reflow.
@@ -116,11 +128,11 @@ Real Windows text-edit UX/offline/manual QA: **NOT RUN**.
 ## Cross-cutting
 
 - [ ] **OFFLINE** Normal functions require no Internet; full physical/offline smoke remains pending where noted.
-- [x] **LICENSE** Current runtime dependencies/assets audited through F7; Labelize font provenance re-audit before public installer.
+- [x] **LICENSE** Current runtime dependencies/assets audited through F8; Labelize font provenance re-audit before public installer.
 - [x] **PRIVACY** Private fixtures ignored and CI hygiene rejects tracked `tests/PrivateFixtures/**`.
-- [x] **ORIGINAL** Edit/sign/organize flows protect source and use Save As behavior.
-- [x] **CI** Completed automated slices through F7 have exact-head Windows CI evidence; final F7 docs/PR exact-head checks are part of Task 14 closure.
-- [x] **KISS** No preventive enterprise architecture, generic PDF object graph, second PDF editor engine or dependency expansion through the F7 closure audit.
+- [x] **ORIGINAL** Edit/sign/organize/comment flows protect source and use Save As behavior.
+- [x] **CI** Completed automated slices through F8 have Windows CI evidence; F8 Task-12 hardening exact-head ran 851/851 tests green before final closure documentation.
+- [x] **KISS** No preventive enterprise architecture, generic PDF object graph, second PDF editor engine, unjustified package or runtime network layer through the F8 closure audit.
 - [x] **NO-AUTOMERGE** Main remains untouched; merges require explicit user approval.
 
 ## Traceability
