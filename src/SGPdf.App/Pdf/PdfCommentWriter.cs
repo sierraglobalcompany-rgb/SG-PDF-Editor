@@ -33,7 +33,7 @@ internal sealed class PdfCommentWriter
         if (editedStates.Count == 0)
             throw new InvalidOperationException("No hay cambios de comentarios para guardar.");
 
-        ValidateTask5Scope(editedStates);
+        ValidateSupportedScope(editedStates);
         var resolvedExisting = ResolveExistingBeforeMutation(workspace, editedStates, cancellationToken);
         var temporaryPath = CreateTemporaryPath(normalizedDestination);
 
@@ -87,7 +87,7 @@ internal sealed class PdfCommentWriter
                 if (sourceComment.Subtype != state.Subtype)
                     throw new InvalidOperationException("El subtipo del comentario fuente ya no coincide con el plan de edición.");
 
-                ValidateExistingMarkupMutation(original, state);
+                ValidateExistingMutation(original, state);
                 resolved.Add(new ResolvedExistingComment(
                     state.PageIndex,
                     sourceComment.AnnotationIndex,
@@ -99,20 +99,37 @@ internal sealed class PdfCommentWriter
         return resolved;
     }
 
-    private static void ValidateExistingMarkupMutation(CommentState original, CommentState current)
+    private static void ValidateExistingMutation(CommentState original, CommentState current)
     {
-        if (original.Subtype is not (CommentSubtype.Highlight or CommentSubtype.Underline or CommentSubtype.Strikeout))
-            throw new NotSupportedException("Task 5 solo materializa anotaciones de marcado de texto.");
         if (original.PageIndex != current.PageIndex || original.Subtype != current.Subtype)
             throw new InvalidOperationException("La identidad lógica del comentario cambió durante la edición.");
 
-        if (original.Rect != current.Rect ||
-            !original.QuadPoints.SequenceEqual(current.QuadPoints) ||
-            !string.Equals(original.Contents, current.Contents, StringComparison.Ordinal) ||
-            !InkStrokesEqual(original.InkStrokes, current.InkStrokes) ||
-            !Nullable.Equals(original.BorderWidth, current.BorderWidth))
+        switch (original.Subtype)
         {
-            throw new NotSupportedException("Task 5 solo permite cambiar el color/opacidad o eliminar un marcado de texto existente.");
+            case CommentSubtype.Highlight:
+            case CommentSubtype.Underline:
+            case CommentSubtype.Strikeout:
+                if (original.Rect != current.Rect ||
+                    !original.QuadPoints.SequenceEqual(current.QuadPoints) ||
+                    !string.Equals(original.Contents, current.Contents, StringComparison.Ordinal) ||
+                    !InkStrokesEqual(original.InkStrokes, current.InkStrokes) ||
+                    !Nullable.Equals(original.BorderWidth, current.BorderWidth))
+                {
+                    throw new NotSupportedException("El marcado de texto solo permite cambiar color/opacidad o eliminar.");
+                }
+                break;
+
+            case CommentSubtype.Text:
+                if (!original.QuadPoints.SequenceEqual(current.QuadPoints) ||
+                    !InkStrokesEqual(original.InkStrokes, current.InkStrokes) ||
+                    !Nullable.Equals(original.BorderWidth, current.BorderWidth))
+                {
+                    throw new NotSupportedException("La nota TEXT solo permite editar contenido, posición, color o eliminar.");
+                }
+                break;
+
+            default:
+                throw new NotSupportedException("Task 6 solo materializa marcado de texto y notas TEXT.");
         }
     }
 
@@ -130,16 +147,24 @@ internal sealed class PdfCommentWriter
         return true;
     }
 
-    private static void ValidateTask5Scope(IReadOnlyList<CommentState> states)
+    private static void ValidateSupportedScope(IReadOnlyList<CommentState> states)
     {
         foreach (var state in states)
         {
-            if (state.Subtype is not (CommentSubtype.Highlight or CommentSubtype.Underline or CommentSubtype.Strikeout))
-                throw new NotSupportedException("Task 5 solo guarda Resaltar, Subrayar y Tachado.");
+            if (state.Subtype is not (CommentSubtype.Highlight or CommentSubtype.Underline or CommentSubtype.Strikeout or CommentSubtype.Text))
+                throw new NotSupportedException("Task 6 solo guarda marcado de texto y notas TEXT.");
             if (state.IsNew && state.Deleted)
                 throw new InvalidOperationException("Un comentario nuevo eliminado no debe llegar al plan de materialización.");
-            if (state.IsNew && state.QuadPoints.Count == 0)
-                throw new InvalidOperationException("Un marcado de texto nuevo requiere al menos un quadpoint.");
+
+            if (state.Subtype is CommentSubtype.Highlight or CommentSubtype.Underline or CommentSubtype.Strikeout)
+            {
+                if (state.IsNew && state.QuadPoints.Count == 0)
+                    throw new InvalidOperationException("Un marcado de texto nuevo requiere al menos un quadpoint.");
+                continue;
+            }
+
+            if (state.QuadPoints.Count != 0 || state.InkStrokes.Count != 0 || state.BorderWidth is not null)
+                throw new InvalidOperationException("Una nota TEXT no puede contener quadpoints, trazos Ink ni borde en Task 6.");
         }
     }
 
@@ -231,7 +256,17 @@ internal sealed class PdfCommentWriter
                 var expectedSubtype = MapSubtype(update.State.Subtype);
                 if (PdfiumNative.FPDFAnnot_GetSubtype(annotation) != expectedSubtype)
                     throw new InvalidOperationException("La anotación existente ya no corresponde al subtipo esperado.");
-                SetColor(annotation, update.State.Color);
+
+                if (update.State.Subtype == CommentSubtype.Text)
+                {
+                    SetRect(annotation, update.State.Rect);
+                    SetColor(annotation, update.State.Color);
+                    SetContents(annotation, update.State.Contents ?? string.Empty);
+                }
+                else
+                {
+                    SetColor(annotation, update.State.Color);
+                }
             }
             finally
             {
@@ -263,21 +298,19 @@ internal sealed class PdfCommentWriter
             cancellationToken.ThrowIfCancellationRequested();
             var annotation = PdfiumNative.FPDFPage_CreateAnnot(page, MapSubtype(state.Subtype));
             if (annotation == IntPtr.Zero)
-                throw new InvalidOperationException("PDFium no pudo crear la anotación de texto.");
+                throw new InvalidOperationException("PDFium no pudo crear la anotación.");
 
             try
             {
-                var rect = new PdfiumNative.RectF
-                {
-                    Left = checked((float)state.Rect.Left),
-                    Bottom = checked((float)state.Rect.Bottom),
-                    Right = checked((float)state.Rect.Right),
-                    Top = checked((float)state.Rect.Top)
-                };
-                if (PdfiumNative.FPDFAnnot_SetRect(annotation, ref rect) == 0)
-                    throw new InvalidOperationException("PDFium no pudo aplicar los límites del comentario.");
-
+                SetRect(annotation, state.Rect);
                 SetColor(annotation, state.Color);
+
+                if (state.Subtype == CommentSubtype.Text)
+                {
+                    SetContents(annotation, state.Contents ?? string.Empty);
+                    continue;
+                }
+
                 foreach (var quad in state.QuadPoints)
                 {
                     var nativeQuad = new PdfiumNative.QuadPointsF
@@ -302,6 +335,19 @@ internal sealed class PdfCommentWriter
         }
     }
 
+    private static void SetRect(IntPtr annotation, CommentRect rect)
+    {
+        var nativeRect = new PdfiumNative.RectF
+        {
+            Left = checked((float)rect.Left),
+            Bottom = checked((float)rect.Bottom),
+            Right = checked((float)rect.Right),
+            Top = checked((float)rect.Top)
+        };
+        if (PdfiumNative.FPDFAnnot_SetRect(annotation, ref nativeRect) == 0)
+            throw new InvalidOperationException("PDFium no pudo aplicar los límites del comentario.");
+    }
+
     private static void SetColor(IntPtr annotation, CommentColor color)
     {
         if (PdfiumNative.FPDFAnnot_SetColor(
@@ -316,12 +362,19 @@ internal sealed class PdfCommentWriter
         }
     }
 
+    private static void SetContents(IntPtr annotation, string contents)
+    {
+        if (PdfiumNative.FPDFAnnot_SetStringValue(annotation, "Contents", contents) == 0)
+            throw new InvalidOperationException("PDFium no pudo aplicar el contenido Unicode de la nota.");
+    }
+
     private static int MapSubtype(CommentSubtype subtype) => subtype switch
     {
         CommentSubtype.Highlight => PdfiumNative.FPDF_ANNOT_HIGHLIGHT,
         CommentSubtype.Underline => PdfiumNative.FPDF_ANNOT_UNDERLINE,
         CommentSubtype.Strikeout => PdfiumNative.FPDF_ANNOT_STRIKEOUT,
-        _ => throw new NotSupportedException("El subtipo aún no pertenece al writer de Task 5.")
+        CommentSubtype.Text => PdfiumNative.FPDF_ANNOT_TEXT,
+        _ => throw new NotSupportedException("El subtipo aún no pertenece al writer de Task 6.")
     };
 
     private static string CreateTemporaryPath(string destinationPath)
