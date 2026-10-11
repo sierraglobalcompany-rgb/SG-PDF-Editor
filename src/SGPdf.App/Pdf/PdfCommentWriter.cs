@@ -1,14 +1,42 @@
 using System.IO;
 using System.Runtime.InteropServices;
 using SGPdf.App.Features.Comments;
+using SGPdf.App.Features.Edit;
 
 namespace SGPdf.App.Pdf;
 
 internal sealed class PdfCommentWriter
 {
+    private readonly Action<string, CommentWorkspace, CancellationToken> _validateOutput;
+    private readonly Func<PdfDocumentSession, CancellationToken, PdfEditPreflightResult> _inspectPreflight;
+
+    internal PdfCommentWriter()
+        : this(PdfCommentOutputValidator.Validate, InspectDefaultPreflight)
+    {
+    }
+
+    internal PdfCommentWriter(
+        Action<string, CommentWorkspace, CancellationToken> validateOutput,
+        Func<PdfDocumentSession, CancellationToken, PdfEditPreflightResult> inspectPreflight)
+    {
+        _validateOutput = validateOutput ?? throw new ArgumentNullException(nameof(validateOutput));
+        _inspectPreflight = inspectPreflight ?? throw new ArgumentNullException(nameof(inspectPreflight));
+    }
+
     internal void SaveAsCopy(
         CommentWorkspace workspace,
         string destinationPath,
+        CancellationToken cancellationToken = default)
+        => SaveAsCopy(
+            workspace,
+            destinationPath,
+            warningsConfirmed: false,
+            cancellationToken);
+
+    internal void SaveAsCopy(
+        CommentWorkspace workspace,
+        string destinationPath,
+        bool warningsConfirmed,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(workspace);
@@ -34,6 +62,7 @@ internal sealed class PdfCommentWriter
             throw new InvalidOperationException("No hay cambios de comentarios para guardar.");
 
         ValidateSupportedScope(editedStates);
+        RunPreflight(sourcePath, warningsConfirmed, cancellationToken);
         var resolvedExisting = ResolveExistingBeforeMutation(workspace, editedStates, cancellationToken);
         var temporaryPath = CreateTemporaryPath(normalizedDestination);
 
@@ -41,7 +70,7 @@ internal sealed class PdfCommentWriter
         {
             WriteTemporary(sourcePath, temporaryPath, editedStates, resolvedExisting, cancellationToken);
             cancellationToken.ThrowIfCancellationRequested();
-            PdfCommentOutputValidator.Validate(temporaryPath, workspace, cancellationToken);
+            _validateOutput(temporaryPath, workspace, cancellationToken);
             cancellationToken.ThrowIfCancellationRequested();
             PublishTemporary(temporaryPath, normalizedDestination);
         }
@@ -50,6 +79,48 @@ internal sealed class PdfCommentWriter
             TryDelete(temporaryPath);
         }
     }
+
+    private void RunPreflight(
+        string sourcePath,
+        bool warningsConfirmed,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        using var session = PdfDocumentSession.Open(sourcePath);
+        var result = _inspectPreflight(session, cancellationToken);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        if (!result.CanProceed)
+        {
+            var details = string.Join(
+                Environment.NewLine,
+                result.Findings
+                    .Where(finding => finding.Severity == PdfEditFindingSeverity.Block)
+                    .Select(finding => $"• {finding.Message}"));
+            throw new InvalidOperationException(
+                string.IsNullOrWhiteSpace(details)
+                    ? "COMENTAR bloqueó el guardado durante el preflight."
+                    : $"COMENTAR bloqueó el guardado durante el preflight:{Environment.NewLine}{details}");
+        }
+
+        if (result.RequiresWarningConfirmation && !warningsConfirmed)
+        {
+            var details = string.Join(
+                Environment.NewLine,
+                result.Findings
+                    .Where(finding => finding.Severity == PdfEditFindingSeverity.Warning)
+                    .Select(finding => $"• {finding.Message}"));
+            throw new InvalidOperationException(
+                string.IsNullOrWhiteSpace(details)
+                    ? "COMENTAR requiere confirmación explícita de las advertencias antes de guardar."
+                    : $"COMENTAR requiere confirmación explícita antes de guardar:{Environment.NewLine}{details}");
+        }
+    }
+
+    private static PdfEditPreflightResult InspectDefaultPreflight(
+        PdfDocumentSession session,
+        CancellationToken cancellationToken)
+        => new PdfCommentPreflightInspector().Inspect(session, cancellationToken);
 
     private static IReadOnlyList<ResolvedExistingComment> ResolveExistingBeforeMutation(
         CommentWorkspace workspace,
