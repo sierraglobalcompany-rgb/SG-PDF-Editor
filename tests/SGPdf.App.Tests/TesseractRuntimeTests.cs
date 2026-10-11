@@ -148,7 +148,7 @@ public sealed class TesseractRuntimeTests
         }
         catch (TargetInvocationException ex) when (ex.InnerException is not null)
         {
-            throw ex.InnerException;
+            throw ex.InnerException!;
         }
     }
 
