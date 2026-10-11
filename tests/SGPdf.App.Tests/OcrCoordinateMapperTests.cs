@@ -99,7 +99,12 @@ public sealed class OcrCoordinateMapperTests
 
         var pixelRectType = assembly.GetType("SGPdf.App.Features.Ocr.OcrPixelRect");
         Assert.NotNull(pixelRectType);
-        var bounds = Activator.CreateInstance(pixelRectType!, left, top, width, height);
+        var bounds = Activator.CreateInstance(
+            pixelRectType!,
+            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
+            binder: null,
+            args: new object[] { left, top, width, height },
+            culture: null);
         Assert.NotNull(bounds);
 
         var method = mapperType!.GetMethod(
@@ -141,14 +146,20 @@ public sealed class OcrCoordinateMapperTests
         var transformType = transformProperty!.PropertyType.GetGenericArguments().Single();
         var transform = Activator.CreateInstance(
             transformType,
-            originX,
-            originY,
-            xAxisX,
-            xAxisY,
-            yAxisX,
-            yAxisY,
-            deviceWidth,
-            deviceHeight);
+            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
+            binder: null,
+            args: new object[]
+            {
+                originX,
+                originY,
+                xAxisX,
+                xAxisY,
+                yAxisX,
+                yAxisY,
+                deviceWidth,
+                deviceHeight
+            },
+            culture: null);
         Assert.NotNull(transform);
 
         transformProperty.SetValue(rendered, transform);
