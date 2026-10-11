@@ -17,7 +17,8 @@ internal sealed class OcrInvisibleTextCapabilitySnapshot : IDisposable
     internal required IReadOnlyList<PdfTextMatch> BogotaMatches { get; init; }
     internal required IReadOnlyList<PdfTextMatch> NumberMatches { get; init; }
     internal required IReadOnlyList<PdfTextRect> TextRects { get; init; }
-    internal required PdfTextRect ExpectedVisibleTextRegion { get; init; }
+    internal required bool TextGeometryIntersectsExpectedVisibleRegion { get; init; }
+    internal required bool SourceHadSearchableText { get; init; }
 
     public void Dispose()
     {
