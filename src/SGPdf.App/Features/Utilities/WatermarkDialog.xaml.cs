@@ -4,7 +4,7 @@ using System.Windows.Controls;
 
 namespace SGPdf.App.Features.Utilities;
 
-internal partial class WatermarkDialog : Window
+public partial class WatermarkDialog : Window
 {
     private readonly int _pageCount;
     private readonly int _currentPageNumber;
