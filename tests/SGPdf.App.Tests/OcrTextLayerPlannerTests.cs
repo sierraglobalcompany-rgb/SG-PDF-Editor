@@ -220,7 +220,7 @@ public sealed class OcrTextLayerPlannerTests
         Assert.NotNull(property);
         var value = property!.GetValue(target);
         Assert.NotNull(value);
-        return Assert.IsType<T>(value);
+        return Assert.IsAssignableFrom<T>(value);
     }
 
     private static void AssertValidRect(
