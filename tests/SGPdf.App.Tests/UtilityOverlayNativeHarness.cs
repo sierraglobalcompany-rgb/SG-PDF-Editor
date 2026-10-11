@@ -33,12 +33,14 @@ internal readonly record struct UtilityOverlayObjectSnapshot(
     uint Green,
     uint Blue,
     uint Alpha,
+    bool FillColorReadable,
     PdfObjectMatrix Matrix);
 
 internal sealed record UtilityOverlayResult(
     IReadOnlyList<UtilityOverlayObjectSnapshot> Objects,
     int RenderPixelWidth,
-    int RenderPixelHeight);
+    int RenderPixelHeight,
+    PdfRenderedPage RenderedPage);
 
 internal static class UtilityOverlayNativeHarness
 {
@@ -50,7 +52,6 @@ internal static class UtilityOverlayNativeHarness
     internal const uint ImageAlpha = 112;
 
     private const int TextObjectType = 1;
-    private const int ImageObjectType = 3;
 
     internal static readonly PdfObjectMatrix BackTextMatrix =
         RotationMatrix(degrees: 24d, x: 42d, y: 210d);
@@ -346,15 +347,15 @@ internal static class UtilityOverlayNativeHarness
                 var type = PdfiumNative.FPDFPageObj_GetType(handle);
                 if (PdfiumNative.FPDFPageObj_GetMatrix(handle, out var nativeMatrix) == 0)
                     throw new InvalidOperationException("PDFium could not read an F9 output object matrix.");
-                if (PdfiumNative.FPDFPageObj_GetFillColor(
-                        handle,
-                        out var red,
-                        out var green,
-                        out var blue,
-                        out var alpha) == 0)
-                {
-                    throw new InvalidOperationException("PDFium could not read an F9 output object fill color.");
-                }
+
+                var fillColorReadable = PdfiumNative.FPDFPageObj_GetFillColor(
+                    handle,
+                    out var red,
+                    out var green,
+                    out var blue,
+                    out var alpha) != 0;
+                if (type == TextObjectType && !fillColorReadable)
+                    throw new InvalidOperationException("PDFium could not read an F9 text object's fill color.");
 
                 var text = type == TextObjectType ? ReadText(handle, textPage) : null;
                 objects.Add(new UtilityOverlayObjectSnapshot(
@@ -365,6 +366,7 @@ internal static class UtilityOverlayNativeHarness
                     green,
                     blue,
                     alpha,
+                    fillColorReadable,
                     new PdfObjectMatrix(
                         nativeMatrix.A,
                         nativeMatrix.B,
@@ -386,8 +388,12 @@ internal static class UtilityOverlayNativeHarness
         }
 
         using var session = PdfDocumentSession.Open(path);
-        var rendered = session.RenderPage(0, 36d);
-        return new UtilityOverlayResult(objects.AsReadOnly(), rendered.PixelWidth, rendered.PixelHeight);
+        var rendered = session.RenderPage(0, 72d);
+        return new UtilityOverlayResult(
+            objects.AsReadOnly(),
+            rendered.PixelWidth,
+            rendered.PixelHeight,
+            rendered);
     }
 
     private static string ReadText(IntPtr textObject, IntPtr textPage)
