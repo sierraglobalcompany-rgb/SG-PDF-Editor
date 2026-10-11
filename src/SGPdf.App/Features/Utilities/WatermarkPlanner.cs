@@ -62,7 +62,8 @@ internal sealed class WatermarkPlanner
                     -sine,
                     cosine,
                     anchorX + offsetXPoints,
-                    anchorY + offsetYPoints));
+                    anchorY + offsetYPoints),
+                settings.FillColor);
         }
 
         return Array.AsReadOnly(placements);
