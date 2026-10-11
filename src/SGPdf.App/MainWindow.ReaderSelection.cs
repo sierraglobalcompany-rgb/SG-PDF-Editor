@@ -86,7 +86,7 @@ public partial class MainWindow
 
     private void ReaderSelectionMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
-        if (_readerPageList is null)
+        if (_readerPageList is null || !ReaderSelectionCanOwnGesture())
             return;
 
         var point = e.GetPosition(_readerPageList);
@@ -129,13 +129,14 @@ public partial class MainWindow
             return;
 
         var point = e.GetPosition(_readerPageList);
-        if (TryGetReaderTextHit(point, out var pageIndex, out var charIndex))
-            CompleteReaderTextSelection(pageIndex, charIndex);
-        else
-            CompleteReaderTextSelection(-1, -1);
+        var completed = TryGetReaderTextHit(point, out var pageIndex, out var charIndex)
+            ? CompleteReaderTextSelection(pageIndex, charIndex)
+            : CompleteReaderTextSelection(-1, -1);
 
         _readerPageList.ReleaseMouseCapture();
         e.Handled = true;
+        if (completed && _commentModeActive)
+            TryCreateCommentFromReaderSelection();
     }
 
     private bool BeginReaderTextSelection(int pageIndex, int charIndex)
@@ -143,6 +144,7 @@ public partial class MainWindow
         if (_session is null ||
             _signatureModeActive ||
             _zplDocument is not null ||
+            !ReaderSelectionCanOwnGesture() ||
             pageIndex < 0 ||
             pageIndex >= _readerPages.Count ||
             charIndex < 0)
