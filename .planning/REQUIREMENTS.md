@@ -99,28 +99,34 @@ Task-13 exact-head evidence: `b31a75cf99207e2e6ac9072b50c5a1ac5fa32d05`, workflo
 
 Independent F7 preservation evidence: `docs/history/2026-10-10-F7-preservation-matrix.md`.
 
-Representative combined-writer fixtures classify forms, bookmarks, named destinations/internal links, tagged structure, page labels, attachments, metadata and page rotation as `ProvenPreserved / Info`. Cryptographic signatures/password-opened sources remain Blocks.
-
-Task-13 hardening proves active-page-only discovery, no durable native handles in text state, >2 MiB fallback-font rejection before read/typeface open, transactional temp cleanup and dirty-baseline retention after stale/publication failure.
-
 Real Windows text-edit UX/offline/manual QA: **NOT RUN**.
 
 ## F8 — Comments V1 — AUTOMATED CLOSURE PASS
 
-Task-12 hardening evidence: `2359dc793667f59266062b64eb12e0e0f4efe08c`, workflow `38104169562`, job `114366028415`, Release build **0 warnings / 0 errors**, **851/851 tests PASS**.
+Closure `7e092166b04d72e2b8d4d1ba2d95d48e1acdebb3`; stacked draft PR #27 open/draft/unmerged.
 
 - [x] **COMMENTS — AUTO PASS** Real PDF annotations in independent `COMENTAR` mode: Select, Highlight, Underline, Strikeout, Note, Ink, Rectangle and Ellipse. Supported native subtypes are `TEXT`, `SQUARE`, `CIRCLE`, `HIGHLIGHT`, `UNDERLINE`, `STRIKEOUT` and `INK`.
 - [x] **COMMENTS — AUTO PASS** Stable managed structural identity + deterministic hit-testing; raw annotation index is never durable authority and duplicate/source mismatch fails closed.
 - [x] **COMMENTS — AUTO PASS** Transactional Save As uses fresh-source materialization, reopen/validation, source-race detection, atomic publication and sibling-temp cleanup; password-opened and cryptographically signed sources remain blocked.
 - [x] **COMMENTS — AUTO PASS** Fresh F8 preservation matrix proves representative forms, bookmarks, named destinations, internal links, tagged structure, page labels, attachments/payload, metadata, page rotation, supported comments and unsupported `STAMP` preservation/read-only behavior.
 - [x] **COMMENTS — AUTO PASS** Lifecycle proven across independent reopen cycles: create → save → reopen → edit → save → reopen → delete → save → reopen.
-- [x] **COMMENTS — AUTO PASS** Hardening proves no durable native handles in comment state, requested-page-bounded discovery and cancellation that does not poison subsequent reads.
 
 Preservation evidence: `docs/history/2026-10-10-F8-preservation-matrix.md`. Real Windows/stylus/touch/Adobe/Foxit/Edge compatibility QA: **NOT RUN**.
 
-## F9–F12
+## F9 — Utilities — AUTOMATED CLOSURE CANDIDATE
 
-- [ ] **UTILS** Only justified offline utilities.
+Task 8 checkpoint: `1eb4c2e580a158a544356a76358481a0259002f0`. Final Task 9 exact-head CI is still required before `UTILS` can be marked AUTO PASS.
+
+- [ ] **UTILS — closure candidate** Text watermark and page/Bates numbering are user-facing WPF commands with transactional Save As/reopen validation and deterministic Unicode/range/formatting behavior.
+- [ ] **UTILS — closure candidate** Authorized AES-256 open-password protection is user-facing; PDFium creation capability was NO-GO, so the single pinned fallback qpdf 12.4.2 is used locally/offline. Password bypass/removal is absent; signed sources fail closed; permission flags are intentionally not exposed.
+- [ ] **UTILS — closure candidate** Structural/lossless qpdf optimize is characterized GO with a fresh representative preservation matrix and no promise that output must be smaller. Task 8 exposes no WPF Optimize command.
+- [ ] **UTILS — closure candidate** Generic Repair is NO-GO from the measured synthetic corpus, so no placebo Repair command is exposed.
+- [ ] **UTILS — closure candidate** Image-watermark native primitives are characterized, but no product command is exposed because no transactional image-overlay writer exists in F9.
+
+Preservation evidence: `docs/history/2026-10-11-F9-preservation-matrix.md`. Real Windows utility UX/offline/manual Adobe/Foxit/Edge compatibility QA and private malformed-PDF repair corpus: **NOT RUN**.
+
+## F10–F12
+
 - [ ] **OCR** Local Tesseract searchable-text workflow.
 - [ ] **TEXT-V2** Reading order/lines/paragraphs/limited reflow.
 - [ ] **PRO** Cryptographic signing, forms, true redaction, compare, batch and audited conversions.
@@ -128,11 +134,11 @@ Preservation evidence: `docs/history/2026-10-10-F8-preservation-matrix.md`. Real
 ## Cross-cutting
 
 - [ ] **OFFLINE** Normal functions require no Internet; full physical/offline smoke remains pending where noted.
-- [x] **LICENSE** Current runtime dependencies/assets audited through F8; Labelize font provenance re-audit before public installer.
+- [x] **LICENSE** Runtime dependencies/assets audited through F9 candidate; qpdf 12.4.2 is pinned by archive digest with Apache-2.0 + NOTICE. Labelize font provenance re-audit remains required before public installer.
 - [x] **PRIVACY** Private fixtures ignored and CI hygiene rejects tracked `tests/PrivateFixtures/**`.
-- [x] **ORIGINAL** Edit/sign/organize/comment flows protect source and use Save As behavior.
-- [x] **CI** Completed automated slices through F8 have Windows CI evidence; F8 Task-12 hardening exact-head ran 851/851 tests green before final closure documentation.
-- [x] **KISS** No preventive enterprise architecture, generic PDF object graph, second PDF editor engine, unjustified package or runtime network layer through the F8 closure audit.
+- [x] **ORIGINAL** Edit/sign/organize/comment and F9 utility writers protect the source and use Save As behavior.
+- [ ] **CI** Completed automated slices through F8 have closure evidence; F9 final Task 9 exact-head closure run is still pending.
+- [x] **KISS** No preventive enterprise architecture or generic PDF object graph. qpdf is the single narrowly justified F9 sidecar after PDFium capability NO-GO; no pdfcpu fallback or runtime service layer was added.
 - [x] **NO-AUTOMERGE** Main remains untouched; merges require explicit user approval.
 
 ## Traceability
