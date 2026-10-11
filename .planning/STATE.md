@@ -1,12 +1,12 @@
 ---
 gsd_state_version: '1.0'
-status: f7-automated-closure
+status: f8-automated-closure
 progress:
   total_phases: 13
-  completed_phases: 8
+  completed_phases: 9
   total_plans: 13
-  completed_plans: 8
-  percent: 62
+  completed_plans: 9
+  percent: 69
 ---
 
 # Project State
@@ -17,7 +17,7 @@ See `.planning/PROJECT.md`.
 > Numeric GSD progress is orientation only. Automated, private and physical gates are tracked independently. GitHub exact heads/CI + this status are authoritative for executed work.
 
 **Core value:** Resolver PDF + ZPL diario de forma rápida, privada, estable y offline.  
-**Current focus:** **F7 Texto V1 automated closure finalization** — implementation through Task 13 is GREEN; Task 14 is reconciling docs, final exact-head CI and the stacked draft PR. Manual Windows QA remains **NOT RUN**.
+**Current focus:** **F8 Comentarios V1 automated closure finalization** — implementation, preservation and Task-12 hardening are GREEN; final closure docs/exact-head CI/stacked draft PR remain. Manual Windows/stylus/touch/external-reader QA remains **NOT RUN**.
 
 ## Stable gates
 
@@ -25,49 +25,50 @@ See `.planning/PROJECT.md`.
 - F4: `feat/f4-full-reader`, closure `1d620f1b2b9717aab35671e18a9dc78f28a8afdd`, draft PR #23; automated closure PASS; real Windows reader QA **NOT RUN**.
 - F5: `feat/f5-organize`, closure `327d7064c14131e603e3bce6947b593a10f46363`, stacked draft PR #24; automated closure PASS; real Windows organize QA **NOT RUN**.
 - F6: `feat/f6-images`, closure `c6d762efca01d50bfe3932d1f05617190a464fc6`, stacked draft PR #25 open/unmerged; automated closure PASS; real Windows image-edit QA **NOT RUN**.
-- F7: `feat/f7-text-v1`, Task-13 checkpoint `b31a75cf99207e2e6ac9072b50c5a1ac5fa32d05`; automated implementation through hardening PASS; Task 14 docs/PR finalization in progress.
+- F7: `feat/f7-text-v1`, closure `f4cd27a8e752071ca2ca4879b1eab84d52d188eb`, stacked draft PR #26 open/draft/unmerged; automated closure PASS; real Windows text-edit QA **NOT RUN**.
+- F8: `feat/f8-comments-v1`; Task-11 checkpoint `88fea2d0f0b4de2ccbb323620c2b45bdf6bba12c`; Task-12 hardening `2359dc793667f59266062b64eb12e0e0f4efe08c`; automated implementation/hardening PASS; final docs/PR exact-head gate in progress.
 
-## F7 Text V1 — automated closure evidence
+## F8 Comments V1 — automated closure evidence
 
-Fresh exact-head verification on the Task-13 checkpoint `b31a75cf99207e2e6ac9072b50c5a1ac5fa32d05`:
+Fresh Windows verification on Task-12 hardening commit `2359dc793667f59266062b64eb12e0e0f4efe08c`:
 
-- Windows workflow `38089770428`: PASS;
+- workflow `38104169562`, job `114366028415`: PASS;
+- repository hygiene: PASS;
 - locked restore: PASS;
 - Release build: **0 warnings / 0 errors**;
-- tests: **766 passed / 0 failed / 0 skipped**.
+- tests: **851 passed / 0 failed / 0 skipped**.
 
-Full F6→F7 pre-docs audit:
+F7→F8 pre-docs audit:
 
-- base `c6d762efca01d50bfe3932d1f05617190a464fc6`;
-- pre-docs head `b31a75cf99207e2e6ac9072b50c5a1ac5fa32d05`;
-- **100 commits ahead / 0 behind**;
-- no new NuGet package and no package-lockfile change;
-- the only `.csproj` change copies the pinned fallback TTF into build/publish output;
-- PDFium remains the only PDF editor engine;
+- base `f4cd27a8e752071ca2ca4879b1eab84d52d188eb`;
+- hardening head `2359dc793667f59266062b64eb12e0e0f4efe08c`;
+- **61 commits ahead / 0 behind**;
+- no `.csproj` or `packages.lock.json` change;
+- no unjustified package or second PDF editor engine;
 - no runtime network/cloud/account/API-key/service layer;
-- only DejaVu Sans 2.37 was added as a runtime asset, with provenance/license/hash recorded in `third_party/manifest.json`.
+- production changes remain constrained to comment feature state/geometry/writer/validator/preflight/UI, PDFium comment interop/discovery and the required reader-selection/XAML integration.
 
-### F7 delivered behavior
+### F8 delivered behavior
 
-- Discover top-level real PDF text page objects on the active page only, preserving Unicode, matrix, bounds/quad, font, size, fill and render mode in managed snapshots.
-- Deterministic mixed hit-testing across text + image objects by topmost `PageObjectIndex`.
-- Conservative `TextEditPolicy` + candidate-first `TextEditWorkspace`; non-Fill render modes remain selectable/read-only.
-- `OriginalFont` route for safe edits and pinned DejaVu Sans 2.37 fallback for new code points or size changes.
-- Fallback materialization uses `FPDFText_LoadCidType2Font` with explicit `ToUnicode` + `CIDToGIDMap`; `FPDFText_LoadFont` remains rejected for product fallback.
-- Combined image + text writer resolves objects before mutation, generates page content once per touched page and publishes transactionally through temp → reopen/validate → atomic publication.
-- Combined validator checks exact Unicode, TEXT type, matrix, size, fill, font route and rendered edited pages before publication.
-- F7 re-measured preservation with the real combined writer: forms, bookmarks, named destinations/internal links, tagged structure, page labels, attachments, metadata and page rotation are `ProvenPreserved / Info` on the representative corpus.
-- Text UI lives inside the single EDITAR shell, shares selection, dirty guards and Save As with images, and does not add another mode/guard chain.
-- Hardening covers active-page-only discovery, zero durable native handles, >2 MiB fallback-font rejection before read/typeface open, cancellation/temp cleanup and dirty-baseline retention after stale/publication failure.
+- Independent `COMENTAR` mode, not mixed into `EDITAR`.
+- Real PDF annotation model with Select, Highlight, Underline, Strikeout, Note, Ink, Rectangle and Ellipse.
+- Exact pinned PDFium capability characterized for native `TEXT`, `SQUARE`, `CIRCLE`, `HIGHLIGHT`, `UNDERLINE`, `STRIKEOUT` and `INK` annotations.
+- Managed candidate-first workspace with undo/redo, dirty tracking and no durable native handles.
+- Existing-annotation discovery is request/page-scoped; native handles are closed per call.
+- Stable structural identity uses page + subtype + structural fingerprint + duplicate ordinal/count; raw annotation index is not durable authority and mismatches fail closed.
+- Deterministic hit-testing uses markup quads, ink segment distance, ellipse/rect geometry and the authoritative page/device transform for rotation.
+- Text-markup geometry, Unicode sticky notes, ink and square/circle writer slices save real annotations and validate after reopen.
+- Transactional Save As materializes from a fresh source, reopens/validates before atomic publication, detects source races and cleans sibling temps on failure/cancellation.
+- Password-opened and cryptographically signed sources are blocked.
+- UI integrates all V1 tools with dirty guards and local save semantics while unsupported annotations remain preserved/read-only.
+- Fresh F8 preservation fixture proves forms, bookmarks, named destinations/internal links, tagged structure, page labels, attachments with exact payload, metadata, page rotation, supported comments and unsupported `STAMP` preservation.
+- Lifecycle is proven across independent reopen cycles: create → edit → delete.
+- Task-12 hardening proves no durable native handles, page-bounded discovery and cancellation that does not poison subsequent reads.
 
-### F7 requirement status
+### F8 requirement status
 
-- `TEXT-01` detect/select text objects — **AUTO PASS**.
-- `TEXT-02` conservative in-place text editing — **AUTO PASS**.
-- `TEXT-03` redistributable TTF fallback — **AUTO PASS**.
-- `TEXT-04` basic properties + save/reopen validation — **AUTO PASS**.
-
-Automated PASS does not imply real/manual PASS.
+- `COMMENTS` — **AUTO PASS**.
+- Automated PASS does not imply external-reader or physical/manual PASS.
 
 ## Manual/private/physical gates still open
 
@@ -78,40 +79,39 @@ Automated PASS does not imply real/manual PASS.
 - F4 real Windows reader QA: **NOT RUN**.
 - F5 real Windows organize QA: **NOT RUN**.
 - F6 real Windows image-edit UX: **NOT RUN**.
-- F7 real Windows text-edit UX: selection at zoom/rotation/overlap, read-only modes, typing/Apply, color/size controls, OriginalFont/fallback rendering, Save As dialogs, mixed image+text edits, heavy PDF, network-disabled and cross-mode smoke — **NOT RUN**.
+- F7 real Windows text-edit UX/offline/cross-mode smoke: **NOT RUN**.
+- F8 real Windows comment UX, mouse/stylus/touch, zoom/rotation/overlap, dirty guards, Save As, heavy PDF, network-disabled smoke and manual Adobe/Foxit/Edge reopen/interop: **NOT RUN**.
 
-## Runtime / architecture frozen through F7
+## Runtime / architecture frozen through F8
 
 - Windows x64 / C# / .NET 10 / WPF.
 - PDFium remains the only PDF editor engine; native calls use `PdfiumRuntime.NativeGate`.
 - Pinned PDFium package remains `bblanchon.PDFium.Win32 156.0.8076`.
 - PDFsharp remains labels/synthetic-fixture support, not a general editor engine.
 - Labelize 1.7.0 remains the ZPL runtime renderer.
-- DejaVu Sans 2.37 is the pinned offline text fallback asset; runtime never downloads it.
-- Save As protects originals; cryptographically signed/password-opened sources are blocked for EDITAR output.
+- DejaVu Sans 2.37 remains the pinned offline text fallback asset; runtime never downloads it.
+- Save As protects originals; cryptographically signed/password-opened sources are blocked for comment output.
 - No merge to `main` without explicit user approval.
 
 ## Next Gate
 
 ```text
-Task 14 docs/checkpoint commit
-→ exact-head push Windows CI PASS
-→ create stacked draft PR: feat/f6-images → feat/f7-text-v1
-→ PR CI PASS on expected head/merge ref
+F8 final docs/checkpoint commit
+→ exact-head Windows CI PASS
+→ create stacked draft PR: feat/f7-text-v1 → feat/f8-comments-v1
 → verify PR draft/open/unmerged + main unchanged
-→ STOP F7
+→ STOP F8
 
-next user continuation
-→ F8 Comentarios design/spec only
-→ no F8 implementation in the F7 closure gate
+manual QA remains a separate NOT RUN gate
+new feature phase requires a later explicit continuation
 ```
 
 ## Continuity
 
-- F7 design: `docs/superpowers/specs/2026-10-10-f7-text-v1-design.md`.
-- F7 TDD plan: `docs/superpowers/plans/2026-10-10-f7-text-v1.md`.
-- F7 phase plan: `.planning/phases/08-f7-text/PLAN.md`.
-- F7 preservation matrix: `docs/history/2026-10-10-F7-preservation-matrix.md`.
-- F7 closure history: `docs/history/2026-10-10-F7.md`.
-- Task-13 checkpoint: `docs/history/2026-10-10-F7-TASK13-CHECKPOINT.md`.
-- Task-14 checkpoint: `docs/history/2026-10-10-F7-TASK14-CHECKPOINT.md`.
+- F8 design: `docs/superpowers/specs/2026-10-10-f8-comments-v1-design.md`.
+- F8 TDD plan: `docs/superpowers/plans/2026-10-10-f8-comments-v1.md`.
+- F8 phase plan: `.planning/phases/09-f8-comments/PLAN.md`.
+- F8 preservation matrix: `docs/history/2026-10-10-F8-preservation-matrix.md`.
+- F8 closure history: `docs/history/2026-10-11-F8.md`.
+- Task-11 checkpoint: `docs/history/2026-10-10-F8-TASK11-PRESERVATION-LIFECYCLE-CHECKPOINT.md`.
+- Task-12 checkpoint: `docs/history/2026-10-11-F8-TASK12-CLOSURE-CHECKPOINT.md`.

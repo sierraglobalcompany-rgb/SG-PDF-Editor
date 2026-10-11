@@ -2,7 +2,7 @@ using System.Runtime.InteropServices;
 
 namespace SGPdf.App.Pdf;
 
-internal static class PdfiumNative
+internal static partial class PdfiumNative
 {
     private const string Library = "pdfium";
     internal const int FPDFBitmap_Gray = 1;

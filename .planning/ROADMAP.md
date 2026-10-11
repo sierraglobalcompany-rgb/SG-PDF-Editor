@@ -26,40 +26,45 @@
 `IMG-01..04`: **AUTO PASS**.
 
 ## Phase 8 — F7 Texto V1
-**Goal:** editar conservadoramente objetos de texto PDF reales dentro del único modo EDITAR, manteniendo PDFium como único motor y usando fallback TTF offline solo cuando la fuente original no es segura.
-
-**Estado:** **AUTOMATED FUNCTIONAL CLOSURE PASS; Task 14 docs/PR finalization in progress.** Real Windows/manual QA **NOT RUN**.
-
-Evidence before final Task-14 docs gate:
-
-- Task-13 checkpoint `b31a75cf99207e2e6ac9072b50c5a1ac5fa32d05`;
-- Windows workflow `38089770428`: PASS;
-- Release build: 0 warnings / 0 errors;
-- tests: 766/766 PASS;
-- F6→F7 pre-docs compare: 100 commits ahead / 0 behind;
-- no new NuGet/package-lock changes;
-- `.csproj` change is asset copy only;
-- PDFium remains the only editor engine;
-- no runtime network/cloud/service/account/API-key layer;
-- DejaVu Sans 2.37 is the only new runtime asset and is pinned with provenance/license/hash.
-
-Delivered:
-
-- active-page top-level text discovery with exact Unicode and managed snapshots;
-- mixed image/text topmost hit-testing;
-- conservative read-only/edit policy and text workspace;
-- OriginalFont route plus DejaVu Sans CID Type2 fallback with explicit Unicode maps;
-- combined image+text materialization and validation before atomic publication;
-- independent F7 preservation matrix including page rotation;
-- Texto V1 UI inside the existing EDITAR shell with shared dirty guards and Save As;
-- lifecycle/performance hardening without durable native handles.
+**Estado:** **AUTOMATED CLOSURE PASS**; real Windows/manual QA **NOT RUN**. Closure `f4cd27a8e752071ca2ca4879b1eab84d52d188eb`; stacked draft PR #26 open/draft/unmerged.
 
 `TEXT-01..04`: **AUTO PASS**.
 
-Real Windows text-edit UX/offline/manual QA: **NOT RUN**.
-
 ## Phase 9 — F8 Comentarios
-**Estado:** pending. Do not start inside F7 closure.
+**Goal:** comentarios PDF reales y conservadores en un modo `COMENTAR` independiente, offline y compatible con lectores comerciales, usando PDFium como único motor de edición.
+
+**Estado:** **AUTOMATED CLOSURE PASS; final docs/PR exact-head gate in progress.** Real Windows/stylus/touch/external-reader QA **NOT RUN**.
+
+Evidence before final closure-docs gate:
+
+- Task-11 checkpoint `88fea2d0f0b4de2ccbb323620c2b45bdf6bba12c`;
+- Task-12 hardening `2359dc793667f59266062b64eb12e0e0f4efe08c`;
+- Windows workflow `38104169562`, job `114366028415`: PASS;
+- Release build: 0 warnings / 0 errors;
+- tests: 851/851 PASS;
+- F7→F8 pre-docs compare: 61 commits ahead / 0 behind;
+- no `.csproj` or `packages.lock.json` change;
+- PDFium remains the only editor engine;
+- no unjustified runtime package;
+- no runtime network/cloud/service/account/API-key layer.
+
+Delivered:
+
+- independent `COMENTAR` mode;
+- Select + Highlight/Underline/Strikeout/Note/Ink/Rectangle/Ellipse;
+- real native annotation persistence for `TEXT`, `SQUARE`, `CIRCLE`, `HIGHLIGHT`, `UNDERLINE`, `STRIKEOUT`, `INK`;
+- managed candidate-first workspace with undo/redo and no durable native handles;
+- stable structural identity with fail-closed duplicate/source mismatch handling;
+- deterministic geometry/hit-testing including rotated-page device transforms;
+- fresh-source writer + reopen validator + transactional atomic Save As;
+- password/signature blocks, source-race detection, cancellation/failure cleanup;
+- fresh F8 preservation matrix including unsupported `STAMP` preservation/read-only behavior;
+- create→reopen→edit→reopen→delete→reopen lifecycle proof;
+- Task-12 regression/hardening with full 851-test Windows suite green.
+
+`COMMENTS`: **AUTO PASS**.
+
+Real Windows comment UX, stylus/touch and manual Adobe/Foxit/Edge interop: **NOT RUN**.
 
 ## Phase 10 — F9 Utilidades
 **Estado:** pending.
@@ -84,8 +89,9 @@ F3                            automated PASS / manual QA pending
 F4                            automated closure PASS / manual QA pending
 F5                            automated closure PASS / manual QA pending
 F6                            automated closure PASS / manual QA pending / PR #25 draft
-F7                            automated functional closure PASS / Task 14 finalization / manual QA pending
-F8–F12                        pending
+F7                            automated closure PASS / manual QA pending / PR #26 draft
+F8                            automated closure PASS / final docs+draft PR / manual QA pending
+F9–F12                        pending
 ```
 
 No merge to `main` without explicit user approval.
