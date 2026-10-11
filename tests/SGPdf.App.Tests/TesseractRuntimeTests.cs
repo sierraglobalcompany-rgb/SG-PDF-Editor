@@ -154,7 +154,7 @@ public sealed class TesseractRuntimeTests
 
     private static Exception Unwrap(Exception exception) =>
         exception is TargetInvocationException { InnerException: not null } target
-            ? target.InnerException
+            ? target.InnerException!
             : exception;
 
     private static string CreateTempDirectory()
