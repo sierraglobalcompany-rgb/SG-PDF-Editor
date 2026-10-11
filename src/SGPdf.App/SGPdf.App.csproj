@@ -30,4 +30,10 @@
              CopyToOutputDirectory="PreserveNewest"
              CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
+  <ItemGroup Condition="Exists('$(MSBuildThisFileDirectory)..\..\third_party\runtime\tesseract\tesseract.exe')">
+    <Content Include="$(MSBuildThisFileDirectory)..\..\third_party\runtime\tesseract\**\*"
+             Link="tesseract\%(RecursiveDir)%(Filename)%(Extension)"
+             CopyToOutputDirectory="PreserveNewest"
+             CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>
