@@ -1,4 +1,4 @@
-using SGPdf.App.Features.Edit.Text;
+using SGPdf.App.Pdf;
 
 namespace SGPdf.App.Features.Utilities;
 
@@ -9,8 +9,15 @@ internal enum TextOverlayLayer
 }
 
 internal sealed record TextOverlaySettings(
-    UtilityPageRange PageRange,
+    string Text,
     double FontSize,
-    PdfTextFillColor FillColor,
-    double RotationDegrees,
+    double Opacity,
     TextOverlayLayer Layer);
+
+internal sealed record TextOverlayPlacement(
+    int PageIndex,
+    string Text,
+    double FontSize,
+    double Opacity,
+    TextOverlayLayer Layer,
+    PdfObjectMatrix Matrix);
