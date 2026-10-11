@@ -228,7 +228,7 @@ public sealed class TesseractProcessRecognizerTests
 
         try
         {
-            var task = Assert.IsType<Task<TesseractChildProcessResult>>(method!.Invoke(
+            var task = Assert.IsAssignableFrom<Task<TesseractChildProcessResult>>(method!.Invoke(
                 null,
                 new object?[] { startInfo, timeout, cancellationToken }));
             return await task;
