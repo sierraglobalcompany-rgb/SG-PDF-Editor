@@ -18,11 +18,13 @@ $languages = @(
         Name = 'spa'
         Size = 2294433
         GitBlobSha1 = '72e901f13ca52cfe34cf239a368b9ed3c0ddaf26'
+        Sha256 = '6f2e04d02774a18f01bed44b1111f2cd7f3ba7ac9dc4373cd3f898a40ea6b464'
     },
     @{
         Name = 'eng'
         Size = 4113088
         GitBlobSha1 = 'bbef4675053b5b468cdb477053e28b1c698ba08e'
+        Sha256 = '7d4322bd2a7749724879683fc3912cb542f19906c83bcc1a52132556427170b2'
     }
 )
 
@@ -40,7 +42,9 @@ if (-not $Force -and (Test-Path $destinationExe) -and (Test-Path $runtimeManifes
     $existingManifest = Get-Content $runtimeManifestPath -Raw | ConvertFrom-Json
     if ($existingManifest.version -eq $version -and
         $existingManifest.installerSha256 -eq $expectedInstallerSha256 -and
-        $existingManifest.tessdataFastCommit -eq $tessdataCommit) {
+        $existingManifest.tessdataFastCommit -eq $tessdataCommit -and
+        $existingManifest.spaSha256 -eq $languages[0].Sha256 -and
+        $existingManifest.engSha256 -eq $languages[1].Sha256) {
         Write-Host "Tesseract $version already staged: $destinationExe"
         return
     }
@@ -145,6 +149,10 @@ foreach ($language in $languages) {
     }
 
     $actualSha256 = (Get-FileHash $languagePath -Algorithm SHA256).Hash.ToLowerInvariant()
+    if ($actualSha256 -ne $language.Sha256) {
+        throw "$fileName SHA-256 mismatch. Expected $($language.Sha256) but got $actualSha256."
+    }
+
     Write-Host "$fileName SHA-256: $actualSha256"
     $languageManifest[$name] = @{
         size = $actualLength
