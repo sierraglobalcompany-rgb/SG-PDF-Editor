@@ -25,6 +25,12 @@ internal readonly record struct OcrPixelRect
     public int Height { get; }
 }
 
+internal readonly record struct PdfOcrRect(
+    double Left,
+    double Bottom,
+    double Right,
+    double Top);
+
 internal sealed record OcrWord(
     int Page,
     int Block,
