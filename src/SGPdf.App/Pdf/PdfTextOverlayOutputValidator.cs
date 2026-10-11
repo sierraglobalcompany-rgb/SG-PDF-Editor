@@ -35,11 +35,14 @@ internal sealed class PdfTextOverlayOutputValidator
                     return PdfTextOverlayValidationResult.Invalid(
                         $"Overlay page {placement.PageIndex} is outside the saved document.");
 
-                var expectedAlpha = ToAlpha(placement.Opacity);
+                var expectedAlpha = ToAlpha(placement.FillColor.Alpha, placement.Opacity);
                 var matched = session.GetTextObjects(placement.PageIndex, cancellationToken)
                     .Any(candidate =>
                         string.Equals(candidate.Text, placement.Text, StringComparison.Ordinal) &&
                         Math.Abs(candidate.FontSize - placement.FontSize) <= FontSizeTolerance &&
+                        candidate.FillColor.Red == placement.FillColor.Red &&
+                        candidate.FillColor.Green == placement.FillColor.Green &&
+                        candidate.FillColor.Blue == placement.FillColor.Blue &&
                         candidate.FillColor.Alpha == expectedAlpha &&
                         MatrixMatches(candidate.Matrix, placement.Matrix));
 
@@ -64,8 +67,8 @@ internal sealed class PdfTextOverlayOutputValidator
         }
     }
 
-    private static uint ToAlpha(double opacity) =>
-        checked((uint)Math.Round(opacity * 255d, MidpointRounding.AwayFromZero));
+    private static uint ToAlpha(uint baseAlpha, double opacity) =>
+        checked((uint)Math.Round(baseAlpha * opacity, MidpointRounding.AwayFromZero));
 
     private static bool MatrixMatches(PdfObjectMatrix actual, PdfObjectMatrix expected) =>
         Math.Abs(actual.A - expected.A) <= MatrixTolerance &&
