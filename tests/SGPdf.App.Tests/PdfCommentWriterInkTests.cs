@@ -43,7 +43,7 @@ public sealed class PdfCommentWriterInkTests
 
         var native = Assert.Single(CommentNativeCharacterizationHarness.Inspect(destination));
         Assert.Equal(PdfiumNative.FPDF_ANNOT_INK, native.Subtype);
-        Assert.Equal(2, native.InkPaths.Length);
+        Assert.Equal(2, native.InkPaths.Count);
         Assert.Equal(3, native.InkPaths[0].Length);
         Assert.Equal(4, native.InkPaths[1].Length);
         Assert.Equal(70f, native.InkPaths[0][0].X, 3);
