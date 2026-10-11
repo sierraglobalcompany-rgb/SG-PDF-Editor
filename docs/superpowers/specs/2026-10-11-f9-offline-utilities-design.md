@@ -30,7 +30,8 @@ This mirrors the useful separation found in mature PDF products while avoiding a
 
 Required capabilities:
 
-- Unicode text;
+- Unicode text within the pinned offline font's proven glyph coverage;
+- unsupported code points fail closed rather than rendering silent tofu/substitutions;
 - page scope: all pages, current page, explicit range;
 - position presets plus explicit offset only if needed by the UI;
 - font size/scale;
@@ -40,7 +41,7 @@ Required capabilities:
 - foreground/background placement only if exact PDFium behavior is proven by the capability gate;
 - Save As and reopen/render validation.
 
-The implementation should reuse the pinned DejaVu Sans 2.37 fallback asset and the proven CID Type2 font path rather than inventing a second font stack.
+The implementation should reuse the pinned DejaVu Sans 2.37 fallback asset and the proven CID Type2 font path rather than inventing a second font stack. F9 does not claim universal Unicode coverage: scripts absent from DejaVu Sans 2.37 are rejected until a separately licensed/pinned font strategy is explicitly designed.
 
 ### Image watermark
 
@@ -57,7 +58,8 @@ One engine covers both ordinary numbering and Bates-like numbering:
 - zero-padding width, e.g. `000001`;
 - six header/footer anchor positions;
 - font size and color;
-- Unicode prefix/suffix;
+- Unicode prefix/suffix within proven font coverage;
+- unsupported code points fail closed;
 - deterministic numbering from the selected range order;
 - Save As and reopen/text/render validation.
 
@@ -111,14 +113,15 @@ Create a synthetic source PDF, then on an existing page:
 
 1. load pinned DejaVu Sans through the already-proven CID Type2 path;
 2. create a new text page object;
-3. assign Unicode text including `NIÑO Bogotá 東京`;
-4. set RGBA fill including non-255 alpha;
-5. set matrix/position and a non-zero rotation;
-6. insert once at the back and once at the front using deterministic page-object ordering;
-7. regenerate page content;
-8. Save As;
-9. reopen and prove text/object ordering/geometry/color where PDFium exposes it;
-10. render smoke at low DPI and prove the output is not blank/corrupt.
+3. assign representative supported Unicode text `NIÑO Bogotá — € Ω`;
+4. separately prove that at least one unsupported code point is rejected by the pinned font policy rather than silently substituted;
+5. set RGBA fill including non-255 alpha;
+6. set matrix/position and a non-zero rotation;
+7. insert once at the back and once at the front using deterministic page-object ordering;
+8. regenerate page content;
+9. Save As;
+10. reopen and prove text/object ordering/geometry/color where PDFium exposes it;
+11. render smoke at low DPI and prove the output is not blank/corrupt.
 
 ### Image-overlay proof
 
