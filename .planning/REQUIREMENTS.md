@@ -97,9 +97,7 @@ Task-13 exact-head evidence: `b31a75cf99207e2e6ac9072b50c5a1ac5fa32d05`, workflo
 - [x] **TEXT-03 — AUTO PASS** Redistributable fallback is pinned DejaVu Sans 2.37 with provenance/license/archive+TTF hashes. Fallback uses PDFium CID Type2 with explicit `ToUnicode` and `CIDToGIDMap`; runtime does not download fonts and no new NuGet was added.
 - [x] **TEXT-04 — AUTO PASS** Basic Texto V1 properties + combined save/reopen validation. The combined validator proves exact Unicode, TEXT type, matrix, size, fill, expected font route and valid render before atomic publication.
 
-Independent F7 preservation evidence: `docs/history/2026-10-10-F7-preservation-matrix.md`.
-
-Real Windows text-edit UX/offline/manual QA: **NOT RUN**.
+Independent F7 preservation evidence: `docs/history/2026-10-10-F7-preservation-matrix.md`. Real Windows text-edit UX/offline/manual QA: **NOT RUN**.
 
 ## F8 — Comments V1 — AUTOMATED CLOSURE PASS
 
@@ -113,15 +111,15 @@ Closure `7e092166b04d72e2b8d4d1ba2d95d48e1acdebb3`; stacked draft PR #27 open/dr
 
 Preservation evidence: `docs/history/2026-10-10-F8-preservation-matrix.md`. Real Windows/stylus/touch/Adobe/Foxit/Edge compatibility QA: **NOT RUN**.
 
-## F9 — Utilities — AUTOMATED CLOSURE CANDIDATE
+## F9 — Utilities — AUTOMATED CLOSURE PASS
 
-Task 8 checkpoint: `1eb4c2e580a158a544356a76358481a0259002f0`. Final Task 9 exact-head CI is still required before `UTILS` can be marked AUTO PASS.
+Task 9 closure-candidate exact-head evidence: commit `9f48c0a3c6c9358ea7c9c37a1a9f5973921f5b1d`, workflow `38118308492`, job `114407617996`, Release build **0 warnings / 0 errors**, **942/942 tests PASS**.
 
-- [ ] **UTILS — closure candidate** Text watermark and page/Bates numbering are user-facing WPF commands with transactional Save As/reopen validation and deterministic Unicode/range/formatting behavior.
-- [ ] **UTILS — closure candidate** Authorized AES-256 open-password protection is user-facing; PDFium creation capability was NO-GO, so the single pinned fallback qpdf 12.4.2 is used locally/offline. Password bypass/removal is absent; signed sources fail closed; permission flags are intentionally not exposed.
-- [ ] **UTILS — closure candidate** Structural/lossless qpdf optimize is characterized GO with a fresh representative preservation matrix and no promise that output must be smaller. Task 8 exposes no WPF Optimize command.
-- [ ] **UTILS — closure candidate** Generic Repair is NO-GO from the measured synthetic corpus, so no placebo Repair command is exposed.
-- [ ] **UTILS — closure candidate** Image-watermark native primitives are characterized, but no product command is exposed because no transactional image-overlay writer exists in F9.
+- [x] **UTILS — AUTO PASS** Text watermark and page/Bates numbering are user-facing WPF commands with transactional Save As/reopen validation and deterministic Unicode/range/formatting behavior.
+- [x] **UTILS — AUTO PASS** Authorized AES-256 open-password protection is user-facing; PDFium creation capability was NO-GO, so the single pinned fallback qpdf 12.4.2 is used locally/offline. Password bypass/removal is absent; signed sources fail closed; permission flags are intentionally not exposed.
+- [x] **UTILS — AUTO PASS** Structural/lossless qpdf optimize is characterized GO with a fresh representative preservation matrix and no promise that output must be smaller. Task 8 exposes no WPF Optimize command.
+- [x] **UTILS — AUTO PASS** Generic Repair is NO-GO from the measured synthetic corpus, so no placebo Repair command is exposed.
+- [x] **UTILS — AUTO PASS** Image-watermark native primitives are characterized, but no product command is exposed because no transactional image-overlay writer exists in F9.
 
 Preservation evidence: `docs/history/2026-10-11-F9-preservation-matrix.md`. Real Windows utility UX/offline/manual Adobe/Foxit/Edge compatibility QA and private malformed-PDF repair corpus: **NOT RUN**.
 
@@ -134,10 +132,10 @@ Preservation evidence: `docs/history/2026-10-11-F9-preservation-matrix.md`. Real
 ## Cross-cutting
 
 - [ ] **OFFLINE** Normal functions require no Internet; full physical/offline smoke remains pending where noted.
-- [x] **LICENSE** Runtime dependencies/assets audited through F9 candidate; qpdf 12.4.2 is pinned by archive digest with Apache-2.0 + NOTICE. Labelize font provenance re-audit remains required before public installer.
+- [x] **LICENSE** Runtime dependencies/assets audited through F9; qpdf 12.4.2 is pinned by archive digest with Apache-2.0 + NOTICE. Labelize font provenance re-audit remains required before public installer.
 - [x] **PRIVACY** Private fixtures ignored and CI hygiene rejects tracked `tests/PrivateFixtures/**`.
 - [x] **ORIGINAL** Edit/sign/organize/comment and F9 utility writers protect the source and use Save As behavior.
-- [ ] **CI** Completed automated slices through F8 have closure evidence; F9 final Task 9 exact-head closure run is still pending.
+- [x] **CI** Automated slices through F9 have Windows CI evidence; F9 closure-candidate exact-head ran 942/942 tests green, and the final status commit is required to remain exact-head green before the stacked draft PR is considered closed.
 - [x] **KISS** No preventive enterprise architecture or generic PDF object graph. qpdf is the single narrowly justified F9 sidecar after PDFium capability NO-GO; no pdfcpu fallback or runtime service layer was added.
 - [x] **NO-AUTOMERGE** Main remains untouched; merges require explicit user approval.
 
