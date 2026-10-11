@@ -42,7 +42,6 @@ internal sealed class PdfOcrWriter
         CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(sourcePath);
-        ArgumentNullException.ThrowIfNull(fingerprint);
         ArgumentNullException.ThrowIfNull(placements);
         ArgumentException.ThrowIfNullOrWhiteSpace(destinationPath);
         if (placements.Count == 0)
@@ -71,9 +70,6 @@ internal sealed class PdfOcrWriter
                 cancellationToken.ThrowIfCancellationRequested();
                 if (!fingerprint.MatchesCurrentFile(sourceFullPath))
                     return PdfOcrWriteResult.Failure("The source PDF changed before the OCR write began.");
-
-                if (!session.IsTrueInvisibleTextRenderModeAvailableForOcr())
-                    return PdfOcrWriteResult.Failure("PDFium true invisible text render mode is unavailable.");
 
                 var preflight = _preflight(session, cancellationToken);
                 if (!preflight.CanProceed)
@@ -342,8 +338,12 @@ internal sealed class PdfOcrWriter
             if (PdfiumNative.FPDFText_SetText(textObject, word.Text) == 0)
                 throw new InvalidOperationException("PDFium could not assign Unicode OCR text.");
 
-            if (!PdfiumNative.FPDFPageObj_SetRenderMode(textObject, 3))
+            if (PdfiumNative.FPDFTextObj_SetTextRenderMode(
+                    textObject,
+                    PdfiumNative.FPDF_TEXTRENDERMODE_INVISIBLE) == 0)
+            {
                 throw new InvalidOperationException("PDFium could not set true invisible render mode for OCR text.");
+            }
 
             var matrix = new PdfiumNative.Matrix
             {
