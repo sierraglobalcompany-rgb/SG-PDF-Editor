@@ -56,7 +56,7 @@ public sealed class PdfTextOverlayWriterTests
         var destination = fixture.Output("password-blocked.pdf");
         var writer = CreateInjectedWriter(
             static (_, _) => true,
-            static _ => PdfEditPreflightResult.Block(PdfEditRisk.PasswordProtected));
+            static (_, _) => Block(PdfEditFindingKind.PasswordProtectedSource, "password protected"));
 
         var result = Save(
             writer,
@@ -80,7 +80,7 @@ public sealed class PdfTextOverlayWriterTests
         var destination = fixture.Output("signature-blocked.pdf");
         var writer = CreateInjectedWriter(
             static (_, _) => true,
-            static _ => PdfEditPreflightResult.Block(PdfEditRisk.HasSignatures));
+            static (_, _) => Block(PdfEditFindingKind.CryptographicSignature, "cryptographic signature"));
 
         var result = Save(
             writer,
@@ -118,9 +118,9 @@ public sealed class PdfTextOverlayWriterTests
         Assert.True(Succeeded(result), Error(result));
         using var session = PdfDocumentSession.Open(destination);
         var textObjects = session.GetTextObjects(0);
-        var back = Assert.Single(textObjects.Where(item => item.Text == "WM-BACK"));
-        var original = Assert.Single(textObjects.Where(item => item.Text == UtilityOverlayNativeHarness.BaseText));
-        var front = Assert.Single(textObjects.Where(item => item.Text == "WM-FRONT"));
+        var back = Assert.Single(textObjects, item => item.Text == "WM-BACK");
+        var original = Assert.Single(textObjects, item => item.Text == UtilityOverlayNativeHarness.BaseText);
+        var front = Assert.Single(textObjects, item => item.Text == "WM-FRONT");
 
         Assert.True(back.Key.PageObjectIndex < original.Key.PageObjectIndex);
         Assert.True(original.Key.PageObjectIndex < front.Key.PageObjectIndex);
@@ -153,7 +153,7 @@ public sealed class PdfTextOverlayWriterTests
 
         Assert.True(Succeeded(result), Error(result));
         using var session = PdfDocumentSession.Open(destination);
-        var overlay = Assert.Single(session.GetTextObjects(0).Where(item => item.Text == "WM-ROTATED"));
+        var overlay = Assert.Single(session.GetTextObjects(0), item => item.Text == "WM-ROTATED");
         AssertMatrix(expected, overlay.Matrix, 0.0001d);
     }
 
@@ -172,7 +172,7 @@ public sealed class PdfTextOverlayWriterTests
                 token.ThrowIfCancellationRequested();
                 return true;
             },
-            static _ => PdfEditPreflightResult.Supported);
+            static (_, _) => Supported());
 
         AssertInvocationThrows<OperationCanceledException>(() =>
             Save(
@@ -197,7 +197,7 @@ public sealed class PdfTextOverlayWriterTests
         var originalDestination = File.ReadAllBytes(destination);
         var writer = CreateInjectedWriter(
             static (_, _) => false,
-            static _ => PdfEditPreflightResult.Supported);
+            static (_, _) => Supported());
 
         var result = Save(
             writer,
@@ -233,6 +233,19 @@ public sealed class PdfTextOverlayWriterTests
         Assert.Empty(TemporaryOutputs(fixture.DirectoryPath));
     }
 
+    private static PdfEditPreflightResult Supported() =>
+        new(Array.Empty<PdfEditFinding>());
+
+    private static PdfEditPreflightResult Block(PdfEditFindingKind kind, string message) =>
+        new(Array.AsReadOnly(new[]
+        {
+            new PdfEditFinding(
+                kind,
+                PdfEditFindingSeverity.Block,
+                message,
+                PdfEditPreservationStatus.Unknown)
+        }));
+
     private static object CreateWriter()
     {
         var type = RequireType(WriterTypeName);
@@ -243,7 +256,7 @@ public sealed class PdfTextOverlayWriterTests
 
     private static object CreateInjectedWriter(
         Func<string, CancellationToken, bool> validator,
-        Func<PdfDocumentSession, PdfEditPreflightResult> preflight)
+        Func<PdfDocumentSession, CancellationToken, PdfEditPreflightResult> preflight)
     {
         var type = RequireType(WriterTypeName);
         var constructor = type.GetConstructors(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
@@ -252,7 +265,7 @@ public sealed class PdfTextOverlayWriterTests
                 var parameters = candidate.GetParameters();
                 return parameters.Length == 2 &&
                        parameters[0].ParameterType == typeof(Func<string, CancellationToken, bool>) &&
-                       parameters[1].ParameterType == typeof(Func<PdfDocumentSession, PdfEditPreflightResult>);
+                       parameters[1].ParameterType == typeof(Func<PdfDocumentSession, CancellationToken, PdfEditPreflightResult>);
             });
         Assert.NotNull(constructor);
         var writer = constructor!.Invoke(new object[] { validator, preflight });

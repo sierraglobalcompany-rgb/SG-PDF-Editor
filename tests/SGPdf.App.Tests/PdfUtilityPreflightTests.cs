@@ -18,8 +18,8 @@ public sealed class PdfUtilityPreflightTests
 
         var result = Inspect(preflight, session, CancellationToken.None);
 
-        Assert.True(result.CanEdit);
-        Assert.Empty(result.Risks);
+        Assert.True(result.CanProceed);
+        Assert.Empty(result.Findings);
     }
 
     [Fact]
