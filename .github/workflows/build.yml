@@ -43,6 +43,10 @@ jobs:
         shell: pwsh
         run: ./tools/setup-qpdf.ps1
 
+      - name: Stage pinned Tesseract 5.5.3
+        shell: pwsh
+        run: ./tools/setup-tesseract.ps1
+
       - name: Restore locked dependencies
         run: dotnet restore SGPdf.slnx --locked-mode
 
