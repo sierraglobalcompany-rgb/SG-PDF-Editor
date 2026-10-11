@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.IO;
 using System.Text.Json;
 using SGPdf.App.Features.Labels;
 
@@ -32,7 +33,7 @@ internal static class PdfProtectionCapabilityAdapter
             throw new IOException("The destination PDF already exists.");
 
         var destinationDirectory = Path.GetDirectoryName(destinationFullPath);
-        if (string.IsNullOrWhiteSpace(destinationDirectory) || !Directory.Exists(destinationDirectory))
+        if (destinationDirectory is null || !Directory.Exists(destinationDirectory))
             throw new DirectoryNotFoundException("The destination directory does not exist.");
 
         var qpdfPath = Path.Combine(AppContext.BaseDirectory, "qpdf", "qpdf.exe");
