@@ -1,0 +1,70 @@
+<Window x:Class="SGPdf.App.Features.Utilities.ProtectionDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Proteger PDF con contraseña"
+        Width="500" Height="500"
+        MinWidth="480" MinHeight="470"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0"
+                   Text="Nueva contraseña de apertura"
+                   FontWeight="SemiBold" />
+        <PasswordBox x:Name="OpenPasswordBox" Grid.Row="1" Margin="0,6,0,14" Padding="8,5" />
+
+        <TextBlock Grid.Row="2"
+                   Text="Confirmar nueva contraseña"
+                   FontWeight="SemiBold" />
+        <PasswordBox x:Name="ConfirmPasswordBox" Grid.Row="3" Margin="0,6,0,14" Padding="8,5" />
+
+        <StackPanel x:Name="CurrentPasswordPanel" Grid.Row="4" Margin="0,0,0,14" Visibility="Collapsed">
+            <TextBlock Text="Contraseña actual del PDF" FontWeight="SemiBold" />
+            <PasswordBox x:Name="CurrentPasswordBox" Margin="0,6,0,0" Padding="8,5" />
+            <TextBlock Margin="0,6,0,0"
+                       Foreground="DimGray"
+                       TextWrapping="Wrap"
+                       Text="Se solicita de nuevo para autorizar el acceso al PDF fuente. No se guarda." />
+        </StackPanel>
+
+        <CheckBox x:Name="AuthorizationCheckBox"
+                  Grid.Row="5"
+                  Margin="0,0,0,14"
+                  Content="Confirmo que estoy autorizado para proteger este PDF." />
+
+        <TextBlock Grid.Row="6"
+                   Margin="0,0,0,10"
+                   Foreground="DimGray"
+                   TextWrapping="Wrap"
+                   Text="Se creará una copia nueva protegida con contraseña. El PDF original no se modifica." />
+
+        <TextBlock Grid.Row="7"
+                   Margin="0,0,0,10"
+                   Foreground="DimGray"
+                   TextWrapping="Wrap"
+                   Text="Esta opción controla la apertura del archivo. No agrega restricciones DRM de impresión, copia o edición." />
+
+        <TextBlock x:Name="ValidationText"
+                   Grid.Row="8"
+                   Foreground="Firebrick"
+                   TextWrapping="Wrap" />
+
+        <StackPanel Grid.Row="9" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Content="Cancelar" IsCancel="True" Padding="14,6" Margin="0,0,8,0" />
+            <Button Content="Continuar..." IsDefault="True" Padding="14,6" Click="Accept_Click" />
+        </StackPanel>
+    </Grid>
+</Window>
