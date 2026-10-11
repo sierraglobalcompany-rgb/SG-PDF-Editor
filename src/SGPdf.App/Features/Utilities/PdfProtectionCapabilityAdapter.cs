@@ -9,11 +9,26 @@ internal static class PdfProtectionCapabilityAdapter
 {
     private static readonly TimeSpan ProcessTimeout = TimeSpan.FromSeconds(30);
 
+    internal static Task CreateProtectedCopyAsync(
+        string sourcePath,
+        string destinationPath,
+        string userPassword,
+        string ownerPassword,
+        CancellationToken cancellationToken)
+        => CreateProtectedCopyAsync(
+            sourcePath,
+            destinationPath,
+            userPassword,
+            ownerPassword,
+            sourcePassword: null,
+            cancellationToken);
+
     internal static async Task CreateProtectedCopyAsync(
         string sourcePath,
         string destinationPath,
         string userPassword,
         string ownerPassword,
+        string? sourcePassword,
         CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(sourcePath);
@@ -57,6 +72,8 @@ internal static class PdfProtectionCapabilityAdapter
                     ["256bit"] = new Dictionary<string, object?>()
                 }
             };
+            if (!string.IsNullOrEmpty(sourcePassword))
+                job["password"] = sourcePassword;
 
             await File.WriteAllTextAsync(
                 jobPath,
