@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "lastAuditDate": "2026-10-10",
+  "lastAuditDate": "2026-10-11",
   "policy": {
     "runtimeMustWorkOffline": true,
     "preferredLicenses": ["MIT", "BSD-2-Clause", "BSD-3-Clause", "Apache-2.0"],
@@ -76,6 +76,21 @@
       "notes": "Unmodified DejaVuSans.ttf from the official 2.37 release archive. The asset is committed to the repository and copied into product output; runtime never downloads it. F7 uses it only through PDFium CID Type2 fallback with explicit ToUnicode/CIDToGIDMap."
     },
     {
+      "name": "qpdf",
+      "upstream": "https://github.com/qpdf/qpdf",
+      "version": "12.4.2",
+      "status": "runtime-current-f9",
+      "purpose": "Offline AES-256 PDF protection sidecar selected by the F9 Task 6 capability gate after pinned PDFium proved unable to create encryption through its public API",
+      "license": "Apache-2.0 with NOTICE",
+      "distribution": "qpdf-12.4.2-msvc64.zip",
+      "releaseArchiveSha256": "db87077e683630c1217e0e8f9a20a9749d952ab676e881c3689187763a5de25d",
+      "licenseFiles": [
+        "third_party/licenses/QPDF-Apache-2.0.txt",
+        "third_party/licenses/QPDF-NOTICE.md"
+      ],
+      "notes": "Single protection-engine fallback adopted only after PDFium gate NO-GO. Development/CI stages the verified official Windows MSVC64 ZIP with tools/setup-qpdf.ps1; product runtime never downloads it. No pdfcpu fallback is maintained."
+    },
+    {
       "name": "Tesseract",
       "upstream": "https://github.com/tesseract-ocr/tesseract",
       "version": null,
@@ -89,13 +104,6 @@
       "version": null,
       "status": "future-only-if-needed",
       "purpose": "Advanced text/layout analysis",
-      "license": "Apache-2.0"
-    },
-    {
-      "name": "qpdf/pdfcpu",
-      "version": null,
-      "status": "not-in-core",
-      "purpose": "Only evaluate if PDFium has a demonstrated structural-operation gap",
       "license": "Apache-2.0"
     },
     {

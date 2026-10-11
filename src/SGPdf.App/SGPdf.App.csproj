@@ -24,4 +24,10 @@
              CopyToOutputDirectory="PreserveNewest"
              CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
+  <ItemGroup Condition="Exists('$(MSBuildThisFileDirectory)..\..\third_party\runtime\qpdf\qpdf.exe')">
+    <Content Include="$(MSBuildThisFileDirectory)..\..\third_party\runtime\qpdf\**\*"
+             Link="qpdf\%(RecursiveDir)%(Filename)%(Extension)"
+             CopyToOutputDirectory="PreserveNewest"
+             CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>

@@ -1,0 +1,121 @@
+<Window x:Class="SGPdf.App.Features.Utilities.WatermarkDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Marca de agua de texto"
+        Width="520" Height="650"
+        MinWidth="500" MinHeight="620"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="Texto" FontWeight="SemiBold" />
+        <TextBox x:Name="WatermarkTextBox" Grid.Row="1" Margin="0,6,0,14" Padding="8,5" Text="CONFIDENCIAL" />
+
+        <Grid Grid.Row="2" Margin="0,0,0,14">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="16" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0">
+                <TextBlock Text="Páginas" FontWeight="SemiBold" Margin="0,0,0,6" />
+                <ComboBox x:Name="ScopeComboBox" SelectedIndex="0" SelectionChanged="ScopeComboBox_SelectionChanged">
+                    <ComboBoxItem Content="Todas" Tag="All" />
+                    <ComboBoxItem Content="Página actual" Tag="Current" />
+                    <ComboBoxItem Content="Rango" Tag="Range" />
+                </ComboBox>
+            </StackPanel>
+            <StackPanel Grid.Column="2">
+                <TextBlock Text="Posición" FontWeight="SemiBold" Margin="0,0,0,6" />
+                <ComboBox x:Name="AnchorComboBox" SelectedIndex="4">
+                    <ComboBoxItem Content="Inferior izquierda" Tag="BottomLeft" />
+                    <ComboBoxItem Content="Inferior centro" Tag="BottomCenter" />
+                    <ComboBoxItem Content="Inferior derecha" Tag="BottomRight" />
+                    <ComboBoxItem Content="Centro izquierda" Tag="MiddleLeft" />
+                    <ComboBoxItem Content="Centro" Tag="Center" />
+                    <ComboBoxItem Content="Centro derecha" Tag="MiddleRight" />
+                    <ComboBoxItem Content="Superior izquierda" Tag="TopLeft" />
+                    <ComboBoxItem Content="Superior centro" Tag="TopCenter" />
+                    <ComboBoxItem Content="Superior derecha" Tag="TopRight" />
+                </ComboBox>
+            </StackPanel>
+        </Grid>
+
+        <StackPanel x:Name="RangePanel" Grid.Row="3" Orientation="Horizontal" Margin="0,0,0,14" Visibility="Collapsed">
+            <TextBlock Text="Desde" VerticalAlignment="Center" Margin="0,0,6,0" />
+            <TextBox x:Name="StartPageTextBox" Width="60" Padding="6,3" Text="1" />
+            <TextBlock Text="hasta" VerticalAlignment="Center" Margin="12,0,6,0" />
+            <TextBox x:Name="EndPageTextBox" Width="60" Padding="6,3" Text="1" />
+        </StackPanel>
+
+        <Grid Grid.Row="4" Margin="0,0,0,14">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="16" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0">
+                <TextBlock Text="Tamaño de fuente" FontWeight="SemiBold" Margin="0,0,0,6" />
+                <TextBox x:Name="FontSizeTextBox" Padding="6,3" Text="36" />
+            </StackPanel>
+            <StackPanel Grid.Column="2">
+                <TextBlock Text="Opacidad (0–100 %)" FontWeight="SemiBold" Margin="0,0,0,6" />
+                <TextBox x:Name="OpacityTextBox" Padding="6,3" Text="35" />
+            </StackPanel>
+        </Grid>
+
+        <Grid Grid.Row="5" Margin="0,0,0,14">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="16" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0">
+                <TextBlock Text="Rotación (grados)" FontWeight="SemiBold" Margin="0,0,0,6" />
+                <TextBox x:Name="RotationTextBox" Padding="6,3" Text="-35" />
+            </StackPanel>
+            <StackPanel Grid.Column="2">
+                <TextBlock Text="Capa" FontWeight="SemiBold" Margin="0,0,0,6" />
+                <ComboBox x:Name="LayerComboBox" SelectedIndex="0">
+                    <ComboBoxItem Content="Detrás del contenido" Tag="Background" />
+                    <ComboBoxItem Content="Encima del contenido" Tag="Foreground" />
+                </ComboBox>
+            </StackPanel>
+        </Grid>
+
+        <TextBlock Grid.Row="6" Text="Color RGB" FontWeight="SemiBold" Margin="0,0,0,6" />
+        <StackPanel Grid.Row="7" Orientation="Horizontal" Margin="0,0,0,14">
+            <TextBlock Text="R" VerticalAlignment="Center" Margin="0,0,4,0" />
+            <TextBox x:Name="RedTextBox" Width="58" Padding="6,3" Text="96" />
+            <TextBlock Text="G" VerticalAlignment="Center" Margin="14,0,4,0" />
+            <TextBox x:Name="GreenTextBox" Width="58" Padding="6,3" Text="96" />
+            <TextBlock Text="B" VerticalAlignment="Center" Margin="14,0,4,0" />
+            <TextBox x:Name="BlueTextBox" Width="58" Padding="6,3" Text="96" />
+        </StackPanel>
+
+        <TextBlock Grid.Row="8"
+                   Text="Se guardará una copia nueva. El PDF original no se modifica."
+                   Foreground="DimGray" TextWrapping="Wrap" Margin="0,0,0,10" />
+        <TextBlock x:Name="ValidationText" Grid.Row="9" Foreground="Firebrick" TextWrapping="Wrap" />
+
+        <StackPanel Grid.Row="11" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Content="Cancelar" IsCancel="True" Padding="14,6" Margin="0,0,8,0" />
+            <Button Content="Continuar..." IsDefault="True" Padding="14,6" Click="Accept_Click" />
+        </StackPanel>
+    </Grid>
+</Window>
