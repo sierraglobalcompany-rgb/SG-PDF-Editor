@@ -143,7 +143,8 @@ public sealed class TesseractRuntimeTests
 
         try
         {
-            return Assert.IsType<string>(method!.Invoke(null, new object?[] { appBase }));
+            var result = method!.Invoke(null, new object?[] { appBase });
+            return Assert.IsType<string>(result);
         }
         catch (TargetInvocationException ex) when (ex.InnerException is not null)
         {
