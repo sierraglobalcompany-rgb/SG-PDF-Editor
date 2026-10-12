@@ -3,6 +3,12 @@ using SGPdf.App.Features.Edit;
 
 namespace SGPdf.App.Features.Edit.Text;
 
+internal sealed record TextReflowApplyResult(bool Applied, string? Reason)
+{
+    internal static TextReflowApplyResult Success() => new(true, null);
+    internal static TextReflowApplyResult Reject(string reason) => new(false, reason);
+}
+
 internal sealed class TextEditWorkspace
 {
     private readonly Dictionary<TextObjectKey, TextEditState> _states = new();
@@ -95,6 +101,57 @@ internal sealed class TextEditWorkspace
         {
             Candidate = result.Candidate with { ExpectedState = current }
         };
+    }
+
+    internal TextReflowApplyResult ApplyReflowPlan(TextReflowPlan plan)
+    {
+        ArgumentNullException.ThrowIfNull(plan);
+
+        if (!plan.Allowed)
+        {
+            return TextReflowApplyResult.Reject(
+                plan.Reason ?? "El plan de reflow fue rechazado antes de editar.");
+        }
+
+        if (plan.Assignments.Count == 0)
+            return TextReflowApplyResult.Reject("El plan de reflow no contiene asignaciones.");
+
+        var duplicateKey = plan.Assignments
+            .GroupBy(assignment => assignment.Key)
+            .FirstOrDefault(group => group.Count() > 1)?.Key;
+        if (duplicateKey is not null)
+        {
+            return TextReflowApplyResult.Reject(
+                $"El plan de reflow contiene más de una asignación para {duplicateKey.Value.PageIndex}:{duplicateKey.Value.PageObjectIndex}.");
+        }
+
+        var candidates = new List<TextEditCandidate>(plan.Assignments.Count);
+        foreach (var assignment in plan.Assignments)
+        {
+            if (!_states.TryGetValue(assignment.Key, out var current))
+            {
+                return TextReflowApplyResult.Reject(
+                    $"El objeto de texto {assignment.Key.PageIndex}:{assignment.Key.PageObjectIndex} no está registrado en el workspace.");
+            }
+
+            var result = PrepareCandidate(
+                assignment.Key,
+                assignment.Text,
+                current.FontSize,
+                current.FillColor);
+            if (result.Candidate is null)
+            {
+                return TextReflowApplyResult.Reject(
+                    result.Error ?? "Una asignación del reflow no superó la política de edición de texto.");
+            }
+
+            candidates.Add(result.Candidate);
+        }
+
+        foreach (var candidate in candidates)
+            CommitCandidate(candidate);
+
+        return TextReflowApplyResult.Success();
     }
 
     internal void CommitCandidate(TextEditCandidate candidate)
