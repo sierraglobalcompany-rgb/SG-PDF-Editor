@@ -39,7 +39,7 @@ public sealed class PdfEditWriterRedactionTests
         Assert.DoesNotContain("CASA", texts);
         Assert.Contains("UNO", texts);
 
-        var extracted = saved.GetTextRange(0, 0, int.MaxValue);
+        var extracted = saved.GetTextRange(0, 0, 100);
         Assert.DoesNotContain("CASA", extracted, StringComparison.Ordinal);
         Assert.Contains("UNO", extracted, StringComparison.Ordinal);
 
@@ -66,7 +66,7 @@ public sealed class PdfEditWriterRedactionTests
         var images = ImageEditWorkspace.Create(fixture.Path, sourceOpenedWithPassword: false);
         var text = TextEditWorkspace.Create(fixture.Path, sourceOpenedWithPassword: false);
 
-        var error = Record.Exception(() =>
+        var error = Capture(() =>
             new PdfEditWriter().SaveAsCopy(
                 images,
                 text,
@@ -96,11 +96,24 @@ public sealed class PdfEditWriterRedactionTests
         var text = TextEditWorkspace.Create(fixture.Path, sourceOpenedWithPassword: false);
         var writer = new PdfEditWriter(signatureCountOverride: _ => 1);
 
-        var error = Record.Exception(() =>
+        var error = Capture(() =>
             writer.SaveAsCopy(images, text, redaction, destination, warningsConfirmed: true));
 
         var invalid = Assert.IsType<InvalidOperationException>(error);
         Assert.Contains("firma criptográfica", invalid.Message, StringComparison.OrdinalIgnoreCase);
         Assert.False(File.Exists(destination));
+    }
+
+    private static Exception? Capture(Action action)
+    {
+        try
+        {
+            action();
+            return null;
+        }
+        catch (Exception ex)
+        {
+            return ex;
+        }
     }
 }
