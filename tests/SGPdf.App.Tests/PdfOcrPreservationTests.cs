@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Reflection;
 using System.Text;
 using SGPdf.App.Features.Edit;
@@ -63,7 +64,7 @@ public sealed class PdfOcrPreservationTests
         Assert.Contains("/PageLabels", syntax, StringComparison.Ordinal);
         Assert.Contains("/EmbeddedFiles", syntax, StringComparison.Ordinal);
         Assert.Contains("fixture.bin", syntax, StringComparison.Ordinal);
-        Assert.True(ContainsSequence(savedBytes, AttachmentPayload), "Embedded attachment payload changed or disappeared.");
+        Assert.Equal(AttachmentPayload, ExtractAttachment(destination, "fixture.bin"));
         Assert.Contains("/Title(F10PreservationCorpus)", syntax, StringComparison.Ordinal);
         Assert.Contains("/Author(SGPDF)", syntax, StringComparison.Ordinal);
         Assert.Contains("/Rotate90", syntax, StringComparison.Ordinal);
@@ -147,27 +148,46 @@ public sealed class PdfOcrPreservationTests
     private static string NormalizePdfSyntax(string value) =>
         string.Concat(value.Where(character => !char.IsWhiteSpace(character)));
 
-    private static bool ContainsSequence(byte[] haystack, byte[] needle)
+    private static byte[] ExtractAttachment(string pdfPath, string attachmentKey)
     {
-        if (needle.Length == 0 || needle.Length > haystack.Length)
-            return false;
-
-        for (var start = 0; start <= haystack.Length - needle.Length; start++)
+        var startInfo = new ProcessStartInfo
         {
-            var matches = true;
-            for (var index = 0; index < needle.Length; index++)
-            {
-                if (haystack[start + index] == needle[index])
-                    continue;
-                matches = false;
-                break;
-            }
+            FileName = RequireQpdfExecutable(),
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            CreateNoWindow = true
+        };
+        startInfo.ArgumentList.Add($"--show-attachment={attachmentKey}");
+        startInfo.ArgumentList.Add(pdfPath);
 
-            if (matches)
-                return true;
+        using var process = Process.Start(startInfo);
+        Assert.NotNull(process);
+        using var output = new MemoryStream();
+        var errorTask = process!.StandardError.ReadToEndAsync();
+        process.StandardOutput.BaseStream.CopyTo(output);
+        process.WaitForExit();
+        var error = errorTask.GetAwaiter().GetResult();
+
+        Assert.True(process.ExitCode == 0, $"qpdf attachment extraction failed ({process.ExitCode}): {error}");
+        return output.ToArray();
+    }
+
+    private static string RequireQpdfExecutable()
+    {
+        foreach (var start in new[] { Environment.CurrentDirectory, AppContext.BaseDirectory })
+        {
+            var directory = new DirectoryInfo(start);
+            while (directory is not null)
+            {
+                var candidate = Path.Combine(directory.FullName, "third_party", "runtime", "qpdf", "qpdf.exe");
+                if (File.Exists(candidate))
+                    return candidate;
+                directory = directory.Parent;
+            }
         }
 
-        return false;
+        throw new FileNotFoundException("Pinned qpdf runtime was not staged at third_party/runtime/qpdf/qpdf.exe.");
     }
 
     private sealed class HybridCorpusFixture : IDisposable
