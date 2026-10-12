@@ -19,6 +19,12 @@ internal static class RedactionPolicy
         if (!preflight.CanProceed)
             return RedactionDecision.Reject("El preflight general bloquea la redacción de este PDF.");
 
+        if (preflight.Findings.Any(finding => finding.Kind == PdfEditFindingKind.TaggedStructure))
+        {
+            return RedactionDecision.Reject(
+                "La redacción segura no admite PDF con estructura etiquetada en esta versión.");
+        }
+
         if (selectedKeys.Count == 0)
             return RedactionDecision.Reject("No hay una selección de texto para redactar.");
 
