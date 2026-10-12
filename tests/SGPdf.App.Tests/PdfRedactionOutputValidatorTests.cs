@@ -87,10 +87,10 @@ public sealed class PdfRedactionOutputValidatorTests
         {
             var width = targetBounds.Right - targetBounds.Left;
             var height = targetBounds.Top - targetBounds.Bottom;
-            var content = FormattableString.Invariant(
-                $"BT /F1 14 Tf 100 450 Td (DOS) Tj ET\n" +
+            var neighbor = "BT /F1 14 Tf 100 450 Td (DOS) Tj ET\n";
+            var mark = FormattableString.Invariant(
                 $"0 0 0 rg {targetBounds.Left:R} {targetBounds.Bottom:R} {width:R} {height:R} re f");
-            Write(OutputPath, content, includeFont: true);
+            Write(OutputPath, neighbor + mark, includeFont: true);
         }
 
         public void Dispose()
