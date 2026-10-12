@@ -91,6 +91,9 @@ internal static class PdfEditWriterRedactionExtensions
                 cancellationToken);
             cancellationToken.ThrowIfCancellationRequested();
 
+            if (!redactionWorkspace.SourceFingerprint.MatchesCurrentFile(sourcePath))
+                throw new IOException("El PDF fuente cambió o ya no está disponible.");
+
             if (File.Exists(destinationFullPath))
                 File.Replace(redactedPath, destinationFullPath, null, ignoreMetadataErrors: true);
             else
