@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 using SGPdf.App.Features.Edit;
 using SGPdf.App.Features.Ocr;
 using SGPdf.App.Pdf;
@@ -18,6 +19,7 @@ public sealed class PdfOcrPreservationTests
     {
         using var fixture = HybridCorpusFixture.Create();
         var sourceBefore = File.ReadAllBytes(fixture.SourcePath);
+        var sourceImagePayload = ExtractFirstImagePayload(fixture.SourcePath);
         var destination = fixture.Output("ocr-preserved.pdf");
 
         using var source = PdfDocumentSession.Open(fixture.SourcePath);
@@ -48,6 +50,7 @@ public sealed class PdfOcrPreservationTests
         Assert.Equal(sourceScanRender.PixelHeight, outputScanRender.PixelHeight);
         Assert.Equal(sourceScanRender.Stride, outputScanRender.Stride);
         Assert.Equal(sourceScanRender.Pixels, outputScanRender.Pixels);
+        Assert.Equal(sourceImagePayload, ExtractFirstImagePayload(destination));
 
         var savedBytes = File.ReadAllBytes(destination);
         var syntax = NormalizePdfSyntax(Encoding.Latin1.GetString(savedBytes));
@@ -148,7 +151,53 @@ public sealed class PdfOcrPreservationTests
     private static string NormalizePdfSyntax(string value) =>
         string.Concat(value.Where(character => !char.IsWhiteSpace(character)));
 
-    private static byte[] ExtractAttachment(string pdfPath, string attachmentKey)
+    private static byte[] ExtractFirstImagePayload(string pdfPath)
+    {
+        var listing = RunQpdfText("--show-pages", "--with-images", pdfPath);
+        var imageReference = Regex.Match(
+            listing,
+            @"(?im)^\s*/\S+\s*:?\s*(?<object>\d+)\s+(?<generation>\d+)\s+R\b");
+        Assert.True(imageReference.Success, $"qpdf did not report a page image object:\n{listing}");
+
+        var objectNumber = imageReference.Groups["object"].Value;
+        var generation = imageReference.Groups["generation"].Value;
+        return RunQpdfBinary($"--show-object={objectNumber},{generation}", "--filtered-stream-data", pdfPath);
+    }
+
+    private static byte[] ExtractAttachment(string pdfPath, string attachmentKey) =>
+        RunQpdfBinary($"--show-attachment={attachmentKey}", pdfPath);
+
+    private static string RunQpdfText(params string[] arguments)
+    {
+        var startInfo = CreateQpdfStartInfo(arguments);
+        using var process = Process.Start(startInfo);
+        Assert.NotNull(process);
+        var outputTask = process!.StandardOutput.ReadToEndAsync();
+        var errorTask = process.StandardError.ReadToEndAsync();
+        process.WaitForExit();
+        var output = outputTask.GetAwaiter().GetResult();
+        var error = errorTask.GetAwaiter().GetResult();
+
+        Assert.True(process.ExitCode == 0, $"qpdf inspection failed ({process.ExitCode}): {error}");
+        return output;
+    }
+
+    private static byte[] RunQpdfBinary(params string[] arguments)
+    {
+        var startInfo = CreateQpdfStartInfo(arguments);
+        using var process = Process.Start(startInfo);
+        Assert.NotNull(process);
+        using var output = new MemoryStream();
+        var errorTask = process!.StandardError.ReadToEndAsync();
+        process.StandardOutput.BaseStream.CopyTo(output);
+        process.WaitForExit();
+        var error = errorTask.GetAwaiter().GetResult();
+
+        Assert.True(process.ExitCode == 0, $"qpdf binary extraction failed ({process.ExitCode}): {error}");
+        return output.ToArray();
+    }
+
+    private static ProcessStartInfo CreateQpdfStartInfo(params string[] arguments)
     {
         var startInfo = new ProcessStartInfo
         {
@@ -158,19 +207,9 @@ public sealed class PdfOcrPreservationTests
             RedirectStandardError = true,
             CreateNoWindow = true
         };
-        startInfo.ArgumentList.Add($"--show-attachment={attachmentKey}");
-        startInfo.ArgumentList.Add(pdfPath);
-
-        using var process = Process.Start(startInfo);
-        Assert.NotNull(process);
-        using var output = new MemoryStream();
-        var errorTask = process!.StandardError.ReadToEndAsync();
-        process.StandardOutput.BaseStream.CopyTo(output);
-        process.WaitForExit();
-        var error = errorTask.GetAwaiter().GetResult();
-
-        Assert.True(process.ExitCode == 0, $"qpdf attachment extraction failed ({process.ExitCode}): {error}");
-        return output.ToArray();
+        foreach (var argument in arguments)
+            startInfo.ArgumentList.Add(argument);
+        return startInfo;
     }
 
     private static string RequireQpdfExecutable()
