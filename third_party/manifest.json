@@ -93,10 +93,23 @@
     {
       "name": "Tesseract",
       "upstream": "https://github.com/tesseract-ocr/tesseract",
-      "version": null,
-      "status": "future-f10-only",
-      "purpose": "Local OCR",
-      "license": "Apache-2.0"
+      "version": "5.5.3.20260724",
+      "status": "runtime-current-f10",
+      "purpose": "Offline OCR recognition sidecar; PDFium remains the PDF owner and writer",
+      "license": "Apache-2.0",
+      "distribution": "tesseract-ocr-w64-setup-5.5.3.20260724.exe",
+      "releaseTag": "5.5.3",
+      "installerSha256": "bee9e3434bd94fd65387d9be28cd467a41f61b1275383b55b0f59a1331270ae4",
+      "tessdataFastCommit": "87416418657359cb625c412a48b6e1d6d41c29bd",
+      "spaTraineddataGitBlobSha1": "72e901f13ca52cfe34cf239a368b9ed3c0ddaf26",
+      "spaTraineddataSha256": "6f2e04d02774a18f01bed44b1111f2cd7f3ba7ac9dc4373cd3f898a40ea6b464",
+      "engTraineddataGitBlobSha1": "bbef4675053b5b468cdb477053e28b1c698ba08e",
+      "engTraineddataSha256": "7d4322bd2a7749724879683fc3912cb542f19906c83bcc1a52132556427170b2",
+      "licenseFiles": [
+        "third_party/licenses/Tesseract-Apache-2.0.txt",
+        "third_party/licenses/Tessdata-Apache-2.0.txt"
+      ],
+      "notes": "Development/CI extracts the verified official upstream NSIS without installing it, then replaces language data with pinned tessdata_fast spa/eng from the exact recorded commit and verifies size, Git blob SHA-1 and SHA-256. Product runtime performs no download; TesseractRuntime never falls back to registry, PATH or a global installation."
     },
     {
       "name": "PdfPig",

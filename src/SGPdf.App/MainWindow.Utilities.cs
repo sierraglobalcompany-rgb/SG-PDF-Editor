@@ -62,6 +62,11 @@ public partial class MainWindow
             Name = "ProtectionMenuItem",
             Header = "_Proteger con contraseña..."
         };
+        var ocr = new MenuItem
+        {
+            Name = "OcrMenuItem",
+            Header = "OCR / Hacer PDF buscable…"
+        };
 
         watermark.SetBinding(
             IsEnabledProperty,
@@ -72,18 +77,24 @@ public partial class MainWindow
         protection.SetBinding(
             IsEnabledProperty,
             new Binding(nameof(IsEnabled)) { Source = PrintPdfMenuItem });
+        ocr.SetBinding(
+            IsEnabledProperty,
+            new Binding(nameof(IsEnabled)) { Source = PrintPdfMenuItem });
         watermark.Click += WatermarkText_Click;
         numbering.Click += PageNumbering_Click;
         protection.Click += Protection_Click;
+        ocr.Click += Ocr_Click;
         utilities.Items.Add(watermark);
         utilities.Items.Add(numbering);
         utilities.Items.Add(protection);
+        utilities.Items.Add(ocr);
         menu.Items.Add(utilities);
 
         RegisterName(utilities.Name, utilities);
         RegisterName(watermark.Name, watermark);
         RegisterName(numbering.Name, numbering);
         RegisterName(protection.Name, protection);
+        RegisterName(ocr.Name, ocr);
     }
 
     private void WatermarkText_Click(object sender, RoutedEventArgs e)
