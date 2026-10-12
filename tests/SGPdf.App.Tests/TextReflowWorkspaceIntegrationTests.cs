@@ -45,6 +45,12 @@ public sealed class TextReflowWorkspaceIntegrationTests
         Assert.Equal(2, after.Count);
         Assert.Equal("ASAC", after[0].Text);
         Assert.Equal("NOU", after[1].Text);
+
+        var rendered = saved.RenderPage(0, 36d);
+        Assert.True(rendered.PixelWidth > 0);
+        Assert.True(rendered.PixelHeight > 0);
+        Assert.NotEmpty(rendered.Pixels);
+
         Assert.Equal(sourceBytes, File.ReadAllBytes(fixture.Path));
     }
 
