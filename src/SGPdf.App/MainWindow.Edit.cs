@@ -7,6 +7,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using SGPdf.App.Features.Edit.Images;
+using SGPdf.App.Features.Edit.Redaction;
 using SGPdf.App.Features.Edit.Text;
 using SGPdf.App.Pdf;
 
@@ -62,6 +63,11 @@ public partial class MainWindow
     private Action<ImageEditWorkspace, TextEditWorkspace, string, bool, CancellationToken> _saveCombinedEditCopy =
         static (images, text, destination, warningsConfirmed, token) =>
             new PdfEditWriter().SaveAsCopy(images, text, destination, warningsConfirmed, token);
+
+    private Action<ImageEditWorkspace, TextEditWorkspace, RedactionWorkspace, string, bool, CancellationToken>
+        _saveRedactionEditCopy =
+            static (images, text, redaction, destination, warningsConfirmed, token) =>
+                new PdfEditWriter().SaveAsCopy(images, text, redaction, destination, warningsConfirmed, token);
 
     private static bool RegisterEditLoadedHook()
     {
@@ -183,6 +189,7 @@ public partial class MainWindow
 
         var workspace = _imageEditWorkspace;
         var textWorkspace = _textEditWorkspace;
+        var redactionWorkspace = _redactionWorkspace;
         var session = _session;
         _editMaterializing = true;
         UpdateEditSaveCommandAvailability();
@@ -210,7 +217,22 @@ public partial class MainWindow
                 warningsConfirmed = true;
             }
 
-            if (textWorkspace is null)
+            if (redactionWorkspace?.IsDirty == true)
+            {
+                if (textWorkspace is null)
+                    throw new InvalidOperationException("La redacción requiere el workspace de texto del PDF fuente.");
+
+                _saveRedactionEditCopy(
+                    workspace,
+                    textWorkspace,
+                    redactionWorkspace,
+                    destination,
+                    warningsConfirmed,
+                    CancellationToken.None);
+                workspace.MarkSavedBaseline();
+                textWorkspace.MarkSavedBaseline();
+            }
+            else if (textWorkspace is null)
             {
                 _saveImageEditCopy(workspace, destination, warningsConfirmed, CancellationToken.None);
                 workspace.MarkSavedBaseline();
