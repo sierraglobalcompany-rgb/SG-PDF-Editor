@@ -13,10 +13,14 @@ public sealed class PdfEditWriterRedactionTaggedTests
     private const string SemanticSecret = "SECRET_SEMANTIC_F12";
 
     [Fact]
-    public void SaveAsCopy_RedactionOfTaggedActualText_RemovesSemanticSecret()
+    public void SaveAsCopy_RedactionOfTaggedActualText_FailsClosedBeforePublishing()
     {
         using var fixture = TaggedActualTextFixture.Create();
         var destination = Path.Combine(fixture.DirectoryPath, "redacted-tagged.pdf");
+        Assert.Contains(
+            SemanticSecret,
+            Encoding.Latin1.GetString(File.ReadAllBytes(fixture.Path)),
+            StringComparison.Ordinal);
 
         PdfTextObjectInfo target;
         using (var source = PdfDocumentSession.Open(fixture.Path))
@@ -33,19 +37,18 @@ public sealed class PdfEditWriterRedactionTaggedTests
         var images = ImageEditWorkspace.Create(fixture.Path, sourceOpenedWithPassword: false);
         var text = TextEditWorkspace.Create(fixture.Path, sourceOpenedWithPassword: false);
 
-        new PdfEditWriter().SaveAsCopy(
-            images,
-            text,
-            redaction,
-            destination,
-            warningsConfirmed: true);
+        var error = Record.Exception(() =>
+            new PdfEditWriter().SaveAsCopy(
+                images,
+                text,
+                redaction,
+                destination,
+                warningsConfirmed: true));
 
-        Assert.True(File.Exists(destination));
-        using (var saved = PdfDocumentSession.Open(destination))
-            Assert.Empty(saved.GetTextObjects(0));
-
-        var raw = Encoding.Latin1.GetString(File.ReadAllBytes(destination));
-        Assert.DoesNotContain(SemanticSecret, raw, StringComparison.Ordinal);
+        var invalid = Assert.IsType<InvalidOperationException>(error);
+        Assert.Contains("etiquetada", invalid.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.False(File.Exists(destination));
+        Assert.Empty(Directory.GetFiles(fixture.DirectoryPath, "*.sgpdf.tmp"));
     }
 
     private sealed class TaggedActualTextFixture : IDisposable
