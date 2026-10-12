@@ -6,6 +6,7 @@ using System.Windows.Shapes;
 using SGPdf.App.Features.Edit;
 using SGPdf.App.Features.Edit.Images;
 using SGPdf.App.Features.Edit.Text;
+using SGPdf.App.Features.Edit.Text.Layout;
 using SGPdf.App.Pdf;
 
 namespace SGPdf.App;
@@ -23,9 +24,18 @@ public partial class MainWindow
     private TextBlock? _editTextStrategyValueText;
     private TextBlock? _editTextValidationText;
     private Button? _editTextApplyButton;
+    private TextBox? _editTextReflowTextBox;
+    private TextBlock? _editTextReflowStateText;
+    private Button? _editTextReflowApplyButton;
+    private TextLayoutPage? _selectedTextLayoutPage;
+    private TextParagraph? _selectedTextParagraph;
+    private PdfEditPreflightResult? _selectedTextReflowPreflight;
 
     private Func<PdfDocumentSession, int, CancellationToken, IReadOnlyList<PdfTextObjectInfo>> _getTextObjects =
         static (session, pageIndex, token) => session.GetTextObjects(pageIndex, token);
+
+    private Func<PdfDocumentSession, int, CancellationToken, TextLayoutPage> _analyzeTextLayout =
+        static (session, pageIndex, token) => session.AnalyzeTextLayout(pageIndex, token);
 
     private void InitializeEditTextUi()
     {
@@ -115,9 +125,56 @@ public partial class MainWindow
         {
             Name = "EditTextValidationText",
             TextWrapping = TextWrapping.Wrap,
-            Foreground = Brushes.Firebrick
+            Foreground = Brushes.Firebrick,
+            Margin = new Thickness(0, 0, 0, 16)
         };
         panel.Children.Add(validation);
+
+        panel.Children.Add(new Separator
+        {
+            Margin = new Thickness(0, 0, 0, 14)
+        });
+
+        panel.Children.Add(new TextBlock
+        {
+            Text = "Reflow seguro (Texto V2)",
+            FontWeight = FontWeights.SemiBold,
+            FontSize = 14,
+            Margin = new Thickness(0, 0, 0, 8)
+        });
+
+        var reflowState = new TextBlock
+        {
+            Name = "EditTextReflowStateText",
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = Brushes.DimGray,
+            Margin = new Thickness(0, 0, 0, 10)
+        };
+        panel.Children.Add(reflowState);
+
+        panel.Children.Add(FieldLabel("Párrafo reconocido"));
+        var reflowText = new TextBox
+        {
+            Name = "EditTextReflowTextBox",
+            AcceptsReturn = true,
+            TextWrapping = TextWrapping.Wrap,
+            MinHeight = 96,
+            Padding = new Thickness(6),
+            Margin = new Thickness(0, 0, 0, 10),
+            IsReadOnly = true
+        };
+        panel.Children.Add(reflowText);
+
+        var reflowApply = new Button
+        {
+            Name = "EditTextReflowApplyButton",
+            Content = "Aplicar reflow seguro",
+            HorizontalAlignment = HorizontalAlignment.Left,
+            Padding = new Thickness(12, 5, 12, 5),
+            IsEnabled = false
+        };
+        reflowApply.Click += (_, _) => TryApplySelectedTextReflow();
+        panel.Children.Add(reflowApply);
 
         var scroll = new ScrollViewer
         {
@@ -136,6 +193,9 @@ public partial class MainWindow
         RegisterName(color.Name, color);
         RegisterName(apply.Name, apply);
         RegisterName(validation.Name, validation);
+        RegisterName(reflowState.Name, reflowState);
+        RegisterName(reflowText.Name, reflowText);
+        RegisterName(reflowApply.Name, reflowApply);
 
         _editTextPropertiesScrollViewer = scroll;
         _editTextPropertiesPanel = panel;
@@ -146,6 +206,9 @@ public partial class MainWindow
         _editTextColorTextBox = color;
         _editTextApplyButton = apply;
         _editTextValidationText = validation;
+        _editTextReflowStateText = reflowState;
+        _editTextReflowTextBox = reflowText;
+        _editTextReflowApplyButton = reflowApply;
     }
 
     private static TextBlock FieldLabel(string text)
@@ -260,6 +323,130 @@ public partial class MainWindow
         _editTextValidationText.Text = editable
             ? string.Empty
             : "Este modo de renderizado es de solo lectura en Texto V1.";
+
+        RefreshTextReflowProperties(key);
+    }
+
+    private void RefreshTextReflowProperties(TextObjectKey key)
+    {
+        if (_editTextReflowTextBox is null ||
+            _editTextReflowStateText is null ||
+            _editTextReflowApplyButton is null)
+        {
+            return;
+        }
+
+        ResetTextReflowSelection(clearText: true);
+
+        if (!_editModeActive ||
+            _session is null ||
+            _navigation is null ||
+            _textEditWorkspace is null)
+        {
+            SetTextReflowUnavailable("No hay una página de edición activa.");
+            return;
+        }
+
+        var pageIndex = _navigation.CurrentPageIndex;
+        if (key.PageIndex != pageIndex)
+        {
+            SetTextReflowUnavailable("El objeto seleccionado no pertenece a la página activa.");
+            return;
+        }
+
+        try
+        {
+            var layout = _analyzeTextLayout(_session, pageIndex, CancellationToken.None);
+            var paragraph = FindSelectedTextParagraph(layout, key);
+            var preflight = _inspectEditPreflight(_session, CancellationToken.None);
+            var decision = TextReflowPolicy.Evaluate(layout, paragraph, preflight);
+
+            _selectedTextLayoutPage = layout;
+            _selectedTextParagraph = paragraph;
+            _selectedTextReflowPreflight = preflight;
+
+            if (paragraph is not null)
+                _editTextReflowTextBox.Text = BuildCurrentParagraphText(paragraph);
+
+            _editTextReflowTextBox.IsReadOnly = !decision.Allowed;
+            _editTextReflowApplyButton.IsEnabled = decision.Allowed;
+            _editTextReflowStateText.Foreground = decision.Allowed
+                ? Brushes.DarkGreen
+                : Brushes.Firebrick;
+            _editTextReflowStateText.Text = FormatTextReflowAvailability(decision.Allowed, decision.Reason);
+        }
+        catch (OperationCanceledException)
+        {
+            SetTextReflowUnavailable("El análisis del párrafo fue cancelado.");
+        }
+        catch (Exception ex)
+        {
+            SetTextReflowUnavailable($"No se pudo analizar el párrafo: {ex.Message}");
+        }
+    }
+
+    private static TextParagraph? FindSelectedTextParagraph(TextLayoutPage page, TextObjectKey key)
+    {
+        ArgumentNullException.ThrowIfNull(page);
+
+        return page.Columns
+            .SelectMany(column => column.Paragraphs)
+            .FirstOrDefault(paragraph => paragraph.Lines
+                .SelectMany(line => line.Runs)
+                .Any(run => run.SourceKey == key));
+    }
+
+    private string BuildCurrentParagraphText(TextParagraph paragraph)
+    {
+        if (_textEditWorkspace is null)
+            return string.Empty;
+
+        return string.Join(
+            Environment.NewLine,
+            paragraph.Lines.Select(line => string.Join(
+                " ",
+                line.Runs.Select(run => _textEditWorkspace.GetState(run.SourceKey).Text))));
+    }
+
+    private static string FormatTextReflowAvailability(bool allowed, string? reason)
+    {
+        if (allowed)
+            return "Texto V2: Simple · Reflow seguro disponible para este párrafo.";
+
+        var detail = string.IsNullOrWhiteSpace(reason)
+            ? "el bloque no cumple los criterios de seguridad."
+            : reason.Trim();
+        return $"Texto V2: no seguro · Reflow seguro no disponible: {detail}";
+    }
+
+    private void SetTextReflowUnavailable(string reason)
+    {
+        ResetTextReflowSelection(clearText: true);
+        if (_editTextReflowStateText is null)
+            return;
+
+        _editTextReflowStateText.Foreground = Brushes.Firebrick;
+        _editTextReflowStateText.Text = FormatTextReflowAvailability(false, reason);
+    }
+
+    private void ResetTextReflowSelection(bool clearText)
+    {
+        _selectedTextLayoutPage = null;
+        _selectedTextParagraph = null;
+        _selectedTextReflowPreflight = null;
+
+        if (_editTextReflowTextBox is not null)
+        {
+            if (clearText)
+                _editTextReflowTextBox.Text = string.Empty;
+            _editTextReflowTextBox.IsReadOnly = true;
+        }
+
+        if (_editTextReflowApplyButton is not null)
+            _editTextReflowApplyButton.IsEnabled = false;
+
+        if (_editTextReflowStateText is not null)
+            _editTextReflowStateText.Text = string.Empty;
     }
 
     private void HideEditTextProperties(bool showPlaceholder)
@@ -270,6 +457,7 @@ public partial class MainWindow
             _editTextPropertiesPanel.Visibility = Visibility.Collapsed;
         if (_editTextValidationText is not null)
             _editTextValidationText.Text = string.Empty;
+        ResetTextReflowSelection(clearText: true);
         if (showPlaceholder)
             PropertiesPlaceholderText.Visibility = Visibility.Visible;
     }
@@ -316,6 +504,58 @@ public partial class MainWindow
         UpdateEditSaveCommandAvailability();
         StatusText.Text = "Edición de texto aplicada al borrador. Usa Guardar como... para crear el PDF.";
         return true;
+    }
+
+    private bool TryApplySelectedTextReflow()
+    {
+        if (!_editModeActive ||
+            _textEditWorkspace is null ||
+            _selectedTextKey is null ||
+            _selectedTextLayoutPage is null ||
+            _selectedTextParagraph is null ||
+            _selectedTextReflowPreflight is null ||
+            _editTextReflowTextBox is null ||
+            _editTextReflowStateText is null ||
+            _editTextReflowApplyButton is null)
+        {
+            return false;
+        }
+
+        try
+        {
+            var plan = TextReflowPlanner.Plan(
+                _selectedTextLayoutPage,
+                _selectedTextParagraph,
+                _selectedTextReflowPreflight,
+                _editTextReflowTextBox.Text);
+            if (!plan.Allowed)
+            {
+                SetTextReflowUnavailable(plan.Reason ?? "El párrafo no admite reflow seguro.");
+                return false;
+            }
+
+            var result = _textEditWorkspace.ApplyReflowPlan(plan);
+            if (!result.Applied)
+            {
+                SetTextReflowUnavailable(result.Reason ?? "No se pudo aplicar el reflow seguro.");
+                return false;
+            }
+
+            RefreshTextEditProperties();
+            UpdateEditSaveCommandAvailability();
+            StatusText.Text = "Reflow seguro aplicado al borrador. Usa Guardar como... para crear el PDF.";
+            return true;
+        }
+        catch (OperationCanceledException)
+        {
+            SetTextReflowUnavailable("La aplicación del reflow fue cancelada.");
+            return false;
+        }
+        catch (Exception ex)
+        {
+            SetTextReflowUnavailable($"No se pudo aplicar el reflow seguro: {ex.Message}");
+            return false;
+        }
     }
 
     private static bool TryParseFontSize(string text, out double fontSize)
