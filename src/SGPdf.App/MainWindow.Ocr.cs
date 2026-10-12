@@ -7,7 +7,7 @@ public partial class MainWindow
 {
     private CancellationTokenSource? _ocrCancellation;
     private OcrDialog? _activeOcrDialog;
-    private Func<string, string, OcrRequest, IProgress<OcrProgress>?, CancellationToken, Task<OcrResult>>? _ocrWorkflowRunnerOverride;
+    private Func<string, string, OcrRequest, IProgress<OcrProgress>?, CancellationToken, Task<OcrResult>>? _ocrWorkflowRunnerOverride = null;
 
     private void Ocr_Click(object sender, RoutedEventArgs e)
     {
