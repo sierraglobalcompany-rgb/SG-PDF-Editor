@@ -33,7 +33,8 @@ internal sealed class OcrWorkflow
             rasterize,
             recognizeAndPlan: (raster, pageIndex, language, _, cancellationToken) =>
                 recognizeAndPlan(raster, pageIndex, language, cancellationToken),
-            writer)
+            writer,
+            useWorkspace: false)
     {
         ArgumentNullException.ThrowIfNull(recognizeAndPlan);
     }
@@ -61,7 +62,8 @@ internal sealed class OcrWorkflow
                     language,
                     workspacePath ?? throw new InvalidOperationException("El workspace OCR no está disponible."),
                     cancellationToken),
-            writer)
+            writer,
+            useWorkspace: true)
     {
         ArgumentNullException.ThrowIfNull(workspacePathFactory);
         ArgumentNullException.ThrowIfNull(recognizeAndPlan);
@@ -75,14 +77,15 @@ internal sealed class OcrWorkflow
         Func<PdfDocumentSession, OcrPageScope, CancellationToken, OcrPageEligibilityResult> eligibility,
         Func<PdfDocumentSession, int, CancellationToken, PdfRenderedPage> rasterize,
         Func<PdfRenderedPage, int, OcrLanguage, string?, CancellationToken, Task<IReadOnlyList<OcrTextLinePlacement>>> recognizeAndPlan,
-        Func<string, PdfEditSourceFingerprint, IReadOnlyList<OcrTextLinePlacement>, string, CancellationToken, PdfOcrWriteResult> writer)
+        Func<string, PdfEditSourceFingerprint, IReadOnlyList<OcrTextLinePlacement>, string, CancellationToken, PdfOcrWriteResult> writer,
+        bool useWorkspace)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(sourcePath);
         ArgumentException.ThrowIfNullOrWhiteSpace(destinationPath);
 
         _sourcePath = Path.GetFullPath(sourcePath);
         _destinationPath = Path.GetFullPath(destinationPath);
-        _workspacePathFactory = workspacePathFactory;
+        _workspacePathFactory = useWorkspace ? workspacePathFactory : null;
         _preflight = preflight ?? throw new ArgumentNullException(nameof(preflight));
         _eligibility = eligibility ?? throw new ArgumentNullException(nameof(eligibility));
         _rasterize = rasterize ?? throw new ArgumentNullException(nameof(rasterize));
