@@ -11,7 +11,7 @@ public sealed class PdfRedactionOutputValidatorTests
     [Fact]
     public void Validate_OutputWithoutBlackRedactionPath_FailsClosed()
     {
-        using var fixture = ValidatorFixture.Create();
+        using var fixture = ValidatorFixture.CreateWithoutMark();
 
         PdfTextObjectInfo target;
         using (var source = PdfDocumentSession.Open(fixture.SourcePath))
@@ -27,6 +27,31 @@ public sealed class PdfRedactionOutputValidatorTests
         Assert.Contains("marca", invalid.Message, StringComparison.OrdinalIgnoreCase);
     }
 
+    [Fact]
+    public void Validate_WrongNeighborWithCorrectCountAndBlackMark_FailsClosed()
+    {
+        using var fixture = ValidatorFixture.CreateNeighborMismatch();
+
+        PdfTextObjectInfo target;
+        using (var source = PdfDocumentSession.Open(fixture.SourcePath))
+        {
+            var objects = source.GetTextObjects(0);
+            target = Assert.Single(objects, item => item.Text == "CASA");
+            Assert.Single(objects, item => item.Text == "UNO");
+        }
+
+        fixture.WriteNeighborMismatchOutput(target.Bounds);
+
+        var workspace = RedactionWorkspace.Create(fixture.SourcePath);
+        workspace.Stage(new RedactionPlan(0, new[] { new RedactionTarget(target) }));
+
+        var error = Record.Exception(() =>
+            new PdfRedactionOutputValidator().Validate(fixture.OutputPath, workspace));
+
+        var invalid = Assert.IsType<InvalidOperationException>(error);
+        Assert.Contains("vecino", invalid.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
     private sealed class ValidatorFixture : IDisposable
     {
         private ValidatorFixture(string directoryPath, string sourcePath, string outputPath)
@@ -40,21 +65,48 @@ public sealed class PdfRedactionOutputValidatorTests
         internal string SourcePath { get; }
         internal string OutputPath { get; }
 
-        internal static ValidatorFixture Create()
+        internal static ValidatorFixture CreateWithoutMark()
         {
-            var directory = Path.Combine(Path.GetTempPath(), $"sgpdf-f12-validator-{Guid.NewGuid():N}");
-            Directory.CreateDirectory(directory);
-            var source = Path.Combine(directory, "source.pdf");
-            var output = Path.Combine(directory, "output-without-mark.pdf");
-            Write(source, "BT /F1 14 Tf 100 500 Td (CASA) Tj ET", includeFont: true);
-            Write(output, string.Empty, includeFont: false);
-            return new ValidatorFixture(directory, source, output);
+            var fixture = CreateBase("without-mark");
+            Write(fixture.SourcePath, "BT /F1 14 Tf 100 500 Td (CASA) Tj ET", includeFont: true);
+            Write(fixture.OutputPath, string.Empty, includeFont: false);
+            return fixture;
+        }
+
+        internal static ValidatorFixture CreateNeighborMismatch()
+        {
+            var fixture = CreateBase("neighbor");
+            const string sourceContent =
+                "BT /F1 14 Tf 100 500 Td (CASA) Tj ET\n" +
+                "BT /F1 14 Tf 100 450 Td (UNO) Tj ET";
+            Write(fixture.SourcePath, sourceContent, includeFont: true);
+            return fixture;
+        }
+
+        internal void WriteNeighborMismatchOutput(PdfObjectBounds targetBounds)
+        {
+            var width = targetBounds.Right - targetBounds.Left;
+            var height = targetBounds.Top - targetBounds.Bottom;
+            var content = FormattableString.Invariant(
+                $"BT /F1 14 Tf 100 450 Td (DOS) Tj ET\n" +
+                $"0 0 0 rg {targetBounds.Left:R} {targetBounds.Bottom:R} {width:R} {height:R} re f");
+            Write(OutputPath, content, includeFont: true);
         }
 
         public void Dispose()
         {
             if (Directory.Exists(DirectoryPath))
                 Directory.Delete(DirectoryPath, recursive: true);
+        }
+
+        private static ValidatorFixture CreateBase(string suffix)
+        {
+            var directory = Path.Combine(Path.GetTempPath(), $"sgpdf-f12-validator-{suffix}-{Guid.NewGuid():N}");
+            Directory.CreateDirectory(directory);
+            return new ValidatorFixture(
+                directory,
+                Path.Combine(directory, "source.pdf"),
+                Path.Combine(directory, "output.pdf"));
         }
 
         private static void Write(string path, string content, bool includeFont)
