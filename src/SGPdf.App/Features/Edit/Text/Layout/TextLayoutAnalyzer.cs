@@ -121,7 +121,9 @@ internal static class TextLayoutAnalyzer
             item.Bounds,
             item.Quad,
             item.FontName,
-            item.FontSize);
+            item.FontSize,
+            item.FillColor,
+            item.TextRenderMode);
         return true;
     }
 
