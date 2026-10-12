@@ -202,6 +202,12 @@ internal sealed class OcrWorkflow
                     writeResult.Error ?? "No se pudo publicar el PDF OCR.");
             }
 
+            progress?.Report(new OcrProgress(
+                candidates.Length,
+                candidates.Length,
+                candidates[^1],
+                OcrProgressStage.Validating));
+
             return OcrResult.Success(candidates, skipped);
         }
         finally
