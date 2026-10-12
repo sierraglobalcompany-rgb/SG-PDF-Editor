@@ -138,7 +138,7 @@ public sealed class RedactionPolicyTests
             ClearPreflight());
 
         Assert.False(decision.Allowed);
-        Assert.Contains("seleccion", decision.Reason, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("selección", decision.Reason, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
