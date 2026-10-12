@@ -189,7 +189,7 @@ public sealed class MainWindowOcrTests
     }
 
     private static Task<bool> InvokeRunAsync(MainWindow window, OcrRequest request, string? destinationPath)
-        => Assert.IsType<Task<bool>>(InvokeByName(window, "TryRunOcrRequestAsync", request, destinationPath));
+        => Assert.IsAssignableFrom<Task<bool>>(InvokeByName(window, "TryRunOcrRequestAsync", request, destinationPath));
 
     private static object? InvokeByName(MainWindow window, string name, params object?[] args)
     {
