@@ -87,6 +87,7 @@ internal static class PdfEditWriterRedactionExtensions
             cancellationToken.ThrowIfCancellationRequested();
             new PdfRedactionOutputValidator().Validate(
                 redactedPath,
+                stagingPath,
                 redactionWorkspace,
                 cancellationToken);
             cancellationToken.ThrowIfCancellationRequested();
