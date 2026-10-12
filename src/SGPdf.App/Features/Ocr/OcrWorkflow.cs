@@ -1,4 +1,5 @@
 using System.IO;
+using SGPdf.App.Features.Edit;
 using SGPdf.App.Features.Utilities;
 using SGPdf.App.Pdf;
 
