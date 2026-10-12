@@ -1,6 +1,6 @@
 ---
 gsd_state_version: '1.0'
-status: f11-automated-closure-declared
+status: f12-in-progress-redaction-ui-stage-green-paused
 progress:
   total_phases: 13
   completed_phases: 12
@@ -16,47 +16,52 @@ See `.planning/PROJECT.md`.
 
 **Core value:** Resolver PDF + ZPL diario de forma rápida, privada, estable y offline.
 
-## Current automated state
+## Current state
 
-**F11 Texto V2 — automated closure declared; exact-head integration gate pending for this documentation commit.** Branch `feat/f11-text-v2`, stacked exactly from F10 automated closure `42935a865c898dea9e3548fbf94e1b400c8a5732`.
+F12 is IN PROGRESS on branch `feat/f12-professional` and is intentionally PAUSED by user request after two GREEN redaction microblocks.
 
-Delivered: deterministic PDFium reading order, runs→lines→paragraphs, conservative one/two-column classification, explicit `Simple/Ambiguous/Unsupported`, safe reflow policy, conservative planner over existing text objects only, atomic integration through the existing Texto V1 workspace/writer, and minimal WPF exposure inside EDITAR with Spanish fail-closed reasons.
+Functional HEAD before checkpoint documentation: `142d7b063faabc897ee56c015ba4de5f35071013`.
 
-PdfPig gate result: **NO-NEED**. Existing PDFium geometry/data proved sufficient for the approved F11 scope; no new PDF dependency was added.
+Checkpoint document: `docs/history/2026-10-12-F12-checkpoint-redaction-ui-stage.md`.
 
-## Last verified functional evidence before this closure-doc commit
+Completed in this checkpoint:
 
-- Task 5 functional/render checkpoint: `024e0f043b6b46bee6b8901f8301c727c28aacbf`; exact-head Windows CI later verified GREEN with 1082/1082 tests.
-- Task 6 RED: `0e2d930e487716a7417304b595d17b86978aa327`; CI `38261990458` / `114854559091`; Release Build PASS with 0 warnings / 0 errors; exactly 3 new expected presentation failures while 1082 previous tests passed.
-- Task 6 GREEN: `554406390cf87a2e9a61471b60105c7fba2ba4fb`; CI `38262423101` / `114856039976`; Release Build PASS with 0 warnings / 0 errors; tests 1085/1085 PASS.
-- F11 preservation matrix: `docs/history/2026-10-12-F11-preservation-matrix.md`.
+- text-selection redaction eligibility shown in the existing properties panel using existing `RedactionPolicy`;
+- safe/unsafe reasons exposed conservatively;
+- `Redactar` stages only an in-memory redaction draft using existing `RedactionWorkspace`;
+- source path + fingerprint must match the active EDITAR source workspace;
+- staged redaction participates in the existing unsaved-changes guard;
+- source PDF bytes remain unchanged while staging;
+- no writer/materializer/Save As publication integration has been added yet.
 
-The exact SHA/run/job of **this** closure-doc commit is intentionally not self-referenced here. GitHub/PR are the authority for the post-commit exact-head evidence.
+## Fresh automated evidence
+
+- Eligibility GREEN `4e91710a5397c9c34f0d42058b137c10bc9682b2`: Windows CI run `38285822979`, job `114933825149`; Release build 0 warnings / 0 errors; 1110/1110 tests PASS.
+- Draft staging GREEN `142d7b063faabc897ee56c015ba4de5f35071013`: Windows CI run `38286648237`, job `114936510676`; Release build 0 warnings / 0 errors; 1111/1111 tests PASS.
 
 `LOCAL DIRECT RUN = NOT SEPARATELY EVIDENCED`.
 
-## Manual/private/physical gates still open
+## Guardrails
 
-F0–F10 manual/private/physical gates remain as previously documented. F11 additionally keeps real Windows paragraph/reflow UX, representative private PDFs, Adobe/Foxit/Edge interoperability, complex real-world layouts and physical-offline QA **NOT RUN**.
+KISS / YAGNI remain mandatory. Reuse existing F12 contracts and the current EDITAR/Save As pipeline. Do not add a second sidebar, service layer, workspace family, or parallel save architecture without demonstrated need. Redaction must fail closed and staging must never mutate the original PDF. No merge to `main` without explicit user approval.
 
-Automated PASS does not certify Word-like reflow. F11 deliberately supports only limited, conservative reflow for paragraphs proven safe by policy.
-
-## Integration gate / next
+## Next — NOT STARTED
 
 ```text
-exact-head Windows CI on this closure declaration
-→ draft PR feat/f10-local-ocr → feat/f11-text-v2
-→ verify OPEN / DRAFT / UNMERGED
-→ verify main unchanged
-→ STOP F11
+inspect existing Save As + PdfRedactionMaterializer contract
+→ write test-only RED proving staged redaction publishes only through Guardar como...
+→ minimum GREEN integration into the existing save pipeline
+→ source/fingerprint drift must fail closed
+→ focused + full Windows CI
 ```
 
-Do not start F12 and do not merge to `main` without explicit user approval.
+Do not skip directly to GREEN. Do not open additional F12 scope before this publication microblock closes.
+
+## Manual/private/physical gates
+
+All previously documented manual/private/physical gates remain open unless separately evidenced. Automated PASS does not replace representative private-PDF, real Windows UX, Adobe/Foxit/Edge interoperability, or physical/offline QA.
 
 ## Continuity
 
-- F11 design: `docs/superpowers/specs/2026-10-12-f11-text-v2-design.md`.
-- F11 executable plan: `docs/superpowers/plans/2026-10-12-f11-text-v2.md`.
-- F11 phase plan: `.planning/phases/12-f11-text-v2/PLAN.md`.
-- F11 preservation matrix: `docs/history/2026-10-12-F11-preservation-matrix.md`.
-- F11 closure: `docs/history/2026-10-12-F11.md`.
+- F12 plan: `docs/superpowers/plans/2026-10-12-f12-redaction.md`.
+- F12 checkpoint: `docs/history/2026-10-12-F12-checkpoint-redaction-ui-stage.md`.
