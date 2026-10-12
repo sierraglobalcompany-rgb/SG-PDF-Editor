@@ -1,5 +1,6 @@
 using System.Text;
 using SGPdf.App.Features.Edit.Redaction;
+using SGPdf.App.Features.Edit.Text;
 using SGPdf.App.Pdf;
 using Xunit;
 
