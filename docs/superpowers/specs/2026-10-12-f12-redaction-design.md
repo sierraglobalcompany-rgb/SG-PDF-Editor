@@ -10,7 +10,7 @@ Añadir una primera capacidad profesional de redacción que elimine contenido te
 
 Flujo objetivo:
 
-`selección de texto real → política fail-closed → plan de redacción → eliminar objeto textual → insertar rectángulo negro opaco → regenerar contenido → Guardar como → reabrir → validar`
+`selección de texto real → política fail-closed → plan de redacción → resolver todos los objetivos → preparar recursos sin mutar → eliminar texto e insertar rectángulos de forma determinista → regenerar contenido una vez → Guardar como → reabrir → validar`
 
 La primera versión debe reutilizar PDFium y la transacción existente de EDITAR. No se introduce un segundo motor PDF ni un segundo writer general.
 
@@ -58,6 +58,7 @@ La operación se rechaza antes de mutar cuando exista cualquiera de estas condic
 - contenido textual incrustado en una imagen;
 - objeto original no resoluble o distinto del snapshot;
 - PDF firmado criptográficamente;
+- PDF con estructura etiquetada (`TaggedStructure`) en F12.1, porque una representación semántica como `/ActualText` puede conservar contenido sensible aunque desaparezca el texto visible;
 - fuente abierta con contraseña o preflight bloqueante;
 - cualquier caso donde no pueda demostrarse que la mutación es segura.
 
@@ -99,13 +100,14 @@ La materialización extiende la transacción existente de EDITAR en vez de crear
 Orden obligatorio por página:
 
 1. resolver y validar todos los handles objetivo antes de la primera mutación;
-2. eliminar los objetos de texto aprobados;
-3. crear los rectángulos negros opacos;
-4. insertar los rectángulos de forma determinista;
-5. regenerar contenido una sola vez por página;
-6. guardar en temporal;
-7. validar la salida;
-8. publicar atómicamente el destino.
+2. preparar los rectángulos negros opacos sin mutar la página;
+3. eliminar cada objeto aprobado e insertar su rectángulo de forma determinista;
+4. regenerar contenido una sola vez por página;
+5. guardar en temporal;
+6. validar la salida;
+7. publicar atómicamente el destino.
+
+Este orden prioriza la propiedad transaccional relevante: no iniciar mutaciones hasta haber resuelto todos los objetivos y preparado los recursos que pueden fallar de forma determinista.
 
 Ante fallo, el original permanece intacto y el temporal se elimina.
 
@@ -116,8 +118,8 @@ La validación debe comprobar al menos:
 - reapertura por PDFium;
 - render válido de la página;
 - texto redaccionado ausente de extracción/búsqueda;
-- objetos no seleccionados relevantes conservados;
-- marca visual opaca presente;
+- objetos no seleccionados relevantes conservados contra el staging ya editado;
+- una marca visual negra opaca válida por objetivo;
 - número de páginas estable;
 - archivo fuente sin cambios.
 
@@ -139,7 +141,9 @@ No se crea un panel profesional independiente en esta primera slice.
 
 Los PDF con firma criptográfica continúan bloqueados para cualquier materialización que invalide la firma. F12.1 no relaja el `PdfEditPreflightInspector` ni el chequeo de `PdfEditWriter`.
 
-La presencia de formularios, marcadores, destinos, enlaces, estructura etiquetada, etiquetas de página, rotaciones, adjuntos o metadatos mantiene las reglas de preservación ya probadas por EDITAR; F12.1 no redefine esas políticas.
+La presencia de formularios, marcadores, destinos, enlaces, etiquetas de página, rotaciones, adjuntos o metadatos mantiene las reglas de preservación ya probadas por EDITAR; F12.1 no redefine esas políticas salvo cuando la seguridad de redacción exige un bloqueo más conservador.
+
+En particular, `TaggedStructure` puede seguir siendo preservable para edición normal, pero F12.1 la bloquea específicamente porque preservar la estructura no demuestra sanear representaciones semánticas alternativas como `/ActualText`.
 
 ## 9. Dependencias
 
