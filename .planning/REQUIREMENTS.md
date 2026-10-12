@@ -98,19 +98,24 @@ Preservation evidence: `docs/history/2026-10-11-F9-preservation-matrix.md`. Real
 
 Preservation evidence: `docs/history/2026-10-11-F10-preservation-matrix.md`. Real Windows OCR UX, low-quality/private scans, physical offline, representative hardware and Adobe/Foxit/Edge QA: **NOT RUN**.
 
-## F11–F12
+## F11 — Text V2
 
-- [ ] **TEXT-V2** Reading order/lines/paragraphs/columns/limited reflow.
+- [x] **TEXT-V2 — AUTO PASS** Deterministic reading order from PDFium geometry; runs→lines→paragraphs; conservative one/two-column classification; explicit `Simple/Ambiguous/Unsupported`; safe one-column homogeneous paragraph reflow over existing text objects only; reuse of Texto V1 transactional Save As/reopen/validate path; minimal WPF UI with Spanish rejection reason; F10 OCR corpus integration; no PdfPig/new PDF dependency required.
+
+Preservation evidence: `docs/history/2026-10-12-F11-preservation-matrix.md`. Real Windows reflow UX, representative private documents, complex real-world layouts, physical offline and Adobe/Foxit/Edge QA: **NOT RUN**.
+
+## F12 — Professional
+
 - [ ] **PRO** Cryptographic signing, advanced forms, true redaction, compare, batch and audited conversions.
 
 ## Cross-cutting
 
 - [ ] **OFFLINE** Normal functions require no Internet; full physical/offline smoke remains pending where noted.
-- [x] **LICENSE** Runtime dependencies/assets audited through F10; qpdf 12.4.2 and Tesseract 5.5.3 + `spa`/`eng` are pinned/licensed. Labelize font provenance re-audit remains required before public installer.
+- [x] **LICENSE** Runtime dependencies/assets audited through F11; F11 adds no runtime/PDF dependency. qpdf 12.4.2, Tesseract 5.5.3 + `spa`/`eng`, and existing pinned assets remain as previously audited. Labelize font provenance re-audit remains required before public installer.
 - [x] **PRIVACY** Private fixtures ignored and CI hygiene rejects tracked `tests/PrivateFixtures/**`.
-- [x] **ORIGINAL** Edit/sign/organize/comment/utilities/OCR writers protect source and use Save As semantics.
-- [x] **CI** Automated slices through F10 have exact-head Windows evidence; the F10 closure declaration itself requires one final exact-head CI integration gate before its draft PR is considered closed.
-- [x] **KISS** No preventive enterprise architecture or generic PDF object graph. PDFium remains primary PDF owner; qpdf is narrow; Tesseract is recognition-only; no second OCR/PDF engine.
+- [x] **ORIGINAL** Edit/sign/organize/comment/utilities/OCR/Text V2 writers protect source and use Save As semantics; F11 reuses the existing Text V1 transaction rather than creating a second writer.
+- [x] **CI** Functional automated slices through F11 have exact-head Windows evidence; the F11 closure declaration itself requires one final exact-head CI integration gate before its draft PR is considered closed.
+- [x] **KISS** No preventive enterprise architecture or generic PDF object graph. PDFium remains primary PDF owner; qpdf is narrow; Tesseract is recognition-only; F11 did not add PdfPig because the measured gate showed no need.
 - [x] **NO-AUTOMERGE** Main remains untouched; merges require explicit user approval.
 
 ## Traceability
