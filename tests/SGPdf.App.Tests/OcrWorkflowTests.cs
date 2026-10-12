@@ -150,10 +150,11 @@ public sealed class OcrWorkflowTests
     }
 
     [Theory]
-    [InlineData(OcrLanguage.English)]
-    [InlineData(OcrLanguage.SpanishEnglish)]
-    public async Task Workflow_ForwardsRequestedLanguage(OcrLanguage language)
+    [InlineData(1)]
+    [InlineData(2)]
+    public async Task Workflow_ForwardsRequestedLanguage(int languageValue)
     {
+        var language = (OcrLanguage)languageValue;
         using var fixture = UtilityOverlayNativeHarness.CreateSourcePdf();
         var destination = fixture.Output($"ocr-workflow-{language}.pdf");
         OcrLanguage? observedLanguage = null;
