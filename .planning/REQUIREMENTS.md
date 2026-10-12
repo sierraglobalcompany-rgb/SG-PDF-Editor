@@ -106,16 +106,19 @@ Preservation evidence: `docs/history/2026-10-12-F11-preservation-matrix.md`. Rea
 
 ## F12 — Professional
 
-- [ ] **PRO** Cryptographic signing, advanced forms, true redaction, compare, batch and audited conversions.
+- [x] **PRO-REDACTION — AUTO PASS** F12.1 true safe redaction for complete simple visible horizontal text objects: conservative policy; underlying object removal; opaque black path; semantic/tagged risk blocked fail-closed; source/fingerprint race protection; reopened-output validation; multi-target; combined text-edit + redaction; minimal existing-panel UI; `Guardar como...` as the only publication path; no new PDF engine/runtime dependency.
+- [ ] **PRO** Remaining professional scope: cryptographic signing, advanced forms, compare, batch and audited conversions.
+
+F12.1 closure evidence: `docs/history/2026-10-12-F12-1-safe-redaction-closure.md`. Real Windows redaction UX, representative private documents, external-reader interoperability, visual/print inspection and representative offline hardware QA: **NOT RUN**.
 
 ## Cross-cutting
 
 - [ ] **OFFLINE** Normal functions require no Internet; full physical/offline smoke remains pending where noted.
-- [x] **LICENSE** Runtime dependencies/assets audited through F11; F11 adds no runtime/PDF dependency. qpdf 12.4.2, Tesseract 5.5.3 + `spa`/`eng`, and existing pinned assets remain as previously audited. Labelize font provenance re-audit remains required before public installer.
+- [x] **LICENSE** Runtime dependencies/assets audited through F12.1; F12.1 adds no runtime/PDF dependency. qpdf 12.4.2, Tesseract 5.5.3 + `spa`/`eng`, and existing pinned assets remain as previously audited. Labelize font provenance re-audit remains required before public installer.
 - [x] **PRIVACY** Private fixtures ignored and CI hygiene rejects tracked `tests/PrivateFixtures/**`.
-- [x] **ORIGINAL** Edit/sign/organize/comment/utilities/OCR/Text V2 writers protect source and use Save As semantics; F11 reuses the existing Text V1 transaction rather than creating a second writer.
-- [x] **CI** Functional automated slices through F11 have exact-head Windows evidence; the F11 closure declaration itself requires one final exact-head CI integration gate before its draft PR is considered closed.
-- [x] **KISS** No preventive enterprise architecture or generic PDF object graph. PDFium remains primary PDF owner; qpdf is narrow; Tesseract is recognition-only; F11 did not add PdfPig because the measured gate showed no need.
+- [x] **ORIGINAL** Edit/sign/organize/comment/utilities/OCR/Text V2/F12.1 redaction writers protect source and use Save As semantics; F12.1 reuses the existing EDITAR transaction rather than creating a second general writer.
+- [x] **CI** Functional automated slices through F12.1 have exact-head Windows evidence. F12.1 functional closure SHA `f40b117cba235e221df4c4c5776b41bc8e89dac4`: 1111/1111 PASS, 0 warnings, 0 errors.
+- [x] **KISS** No preventive enterprise architecture or generic PDF object graph. PDFium remains primary PDF owner; qpdf is narrow; Tesseract is recognition-only; F11 did not add PdfPig; F12.1 reused existing owners and added no new engine/runtime dependency.
 - [x] **NO-AUTOMERGE** Main remains untouched; merges require explicit user approval.
 
 ## Traceability
@@ -134,4 +137,4 @@ Preservation evidence: `docs/history/2026-10-12-F11-preservation-matrix.md`. Rea
 | 10 | F9 Utilities | UTILS |
 | 11 | F10 OCR | OCR |
 | 12 | F11 Text V2 | TEXT-V2 |
-| 13 | F12 Professional | PRO |
+| 13 | F12 Professional | PRO-REDACTION, PRO |
