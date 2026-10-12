@@ -9,9 +9,10 @@ namespace SGPdf.App.Tests;
 public sealed class PdfEditWriterRedactionMultiTargetTests
 {
     [Fact]
-    public void SaveAsCopy_TwoTargets_PublishTwoValidatedRedactionMarks()
+    public void SaveAsCopy_TwoTargets_PublishesValidatedMarksPreservesSourceAndRenders()
     {
         using var fixture = PdfEditWriterTextFixtureFactory.CreateTwoTextObjects();
+        var sourceBytes = File.ReadAllBytes(fixture.Path);
         var destination = Path.Combine(fixture.DirectoryPath, "two-redactions.pdf");
 
         PdfTextObjectInfo[] targets;
@@ -33,10 +34,18 @@ public sealed class PdfEditWriterRedactionMultiTargetTests
             destination,
             warningsConfirmed: true);
 
+        Assert.True(File.Exists(destination));
+        Assert.Equal(sourceBytes, File.ReadAllBytes(fixture.Path));
+
         using var saved = PdfDocumentSession.Open(destination);
         Assert.Empty(saved.GetTextObjects(0));
         var extracted = saved.GetTextRange(0, 0, 100);
         Assert.DoesNotContain("CASA", extracted, StringComparison.Ordinal);
         Assert.DoesNotContain("UNO", extracted, StringComparison.Ordinal);
+
+        var rendered = saved.RenderPage(0, 36d);
+        Assert.True(rendered.PixelWidth > 0);
+        Assert.True(rendered.PixelHeight > 0);
+        Assert.NotEmpty(rendered.Pixels);
     }
 }
