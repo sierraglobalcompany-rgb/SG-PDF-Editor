@@ -16,7 +16,9 @@ internal sealed record TextRun(
     PdfObjectBounds Bounds,
     PdfTextObjectQuad Quad,
     string FontName,
-    double FontSize);
+    double FontSize,
+    PdfTextFillColor FillColor = default,
+    int TextRenderMode = 0);
 
 internal sealed record TextLine(
     PdfObjectBounds Bounds,
