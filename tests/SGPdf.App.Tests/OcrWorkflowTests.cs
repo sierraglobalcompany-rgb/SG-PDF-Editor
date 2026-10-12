@@ -9,6 +9,16 @@ namespace SGPdf.App.Tests;
 public sealed class OcrWorkflowTests
 {
     private const string PreflightTypeName = "SGPdf.App.Features.Ocr.OcrPreflight";
+    private const string PreflightResultTypeName = "SGPdf.App.Features.Ocr.OcrPreflightResult";
+
+    [Fact]
+    public void Preflight_ContractReturnsOcrSpecificResult()
+    {
+        var type = RequireType(PreflightTypeName);
+        var method = RequireInspectMethod(type);
+
+        Assert.Equal(PreflightResultTypeName, method.ReturnType.FullName);
+    }
 
     [Fact]
     public void Preflight_OrdinarySourceCanProceed()
@@ -19,8 +29,8 @@ public sealed class OcrWorkflowTests
 
         var result = Inspect(preflight, session, CancellationToken.None);
 
-        Assert.True(result.CanProceed);
-        Assert.DoesNotContain(result.Findings, finding => finding.Severity == PdfEditFindingSeverity.Block);
+        Assert.True(CanProceed(result));
+        Assert.DoesNotContain(Findings(result), finding => finding.Severity == PdfEditFindingSeverity.Block);
     }
 
     [Fact]
@@ -35,8 +45,8 @@ public sealed class OcrWorkflowTests
 
         var result = Inspect(preflight, session, CancellationToken.None);
 
-        Assert.False(result.CanProceed);
-        var finding = Assert.Single(result.Findings);
+        Assert.False(CanProceed(result));
+        var finding = Assert.Single(Findings(result));
         Assert.Equal(PdfEditFindingKind.PasswordProtectedSource, finding.Kind);
         Assert.Equal(PdfEditFindingSeverity.Block, finding.Severity);
     }
@@ -53,8 +63,8 @@ public sealed class OcrWorkflowTests
 
         var result = Inspect(preflight, session, CancellationToken.None);
 
-        Assert.False(result.CanProceed);
-        var finding = Assert.Single(result.Findings);
+        Assert.False(CanProceed(result));
+        var finding = Assert.Single(Findings(result));
         Assert.Equal(PdfEditFindingKind.CryptographicSignature, finding.Kind);
         Assert.Equal(PdfEditFindingSeverity.Block, finding.Severity);
     }
@@ -96,7 +106,7 @@ public sealed class OcrWorkflowTests
 
         var result = Inspect(preflight, session, cts.Token);
 
-        Assert.True(result.CanProceed);
+        Assert.True(CanProceed(result));
         Assert.Same(session, observedSession);
         Assert.Equal(cts.Token, observedToken);
     }
@@ -132,20 +142,45 @@ public sealed class OcrWorkflowTests
         return preflight!;
     }
 
-    private static PdfEditPreflightResult Inspect(
+    private static object Inspect(
         object preflight,
         PdfDocumentSession session,
         CancellationToken cancellationToken)
     {
-        var method = preflight.GetType().GetMethod(
+        var method = RequireInspectMethod(preflight.GetType());
+        var result = method.Invoke(preflight, new object[] { session, cancellationToken });
+        Assert.NotNull(result);
+        return result!;
+    }
+
+    private static MethodInfo RequireInspectMethod(Type type)
+    {
+        var method = type.GetMethod(
             "Inspect",
             BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
             binder: null,
             new[] { typeof(PdfDocumentSession), typeof(CancellationToken) },
             modifiers: null);
         Assert.NotNull(method);
-        var result = method!.Invoke(preflight, new object[] { session, cancellationToken });
-        return Assert.IsType<PdfEditPreflightResult>(result);
+        return method!;
+    }
+
+    private static bool CanProceed(object result)
+    {
+        var property = result.GetType().GetProperty(
+            "CanProceed",
+            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+        Assert.NotNull(property);
+        return Assert.IsType<bool>(property!.GetValue(result));
+    }
+
+    private static IReadOnlyList<PdfEditFinding> Findings(object result)
+    {
+        var property = result.GetType().GetProperty(
+            "Findings",
+            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+        Assert.NotNull(property);
+        return Assert.IsAssignableFrom<IReadOnlyList<PdfEditFinding>>(property!.GetValue(result));
     }
 
     private static PdfEditPreflightResult Supported() =>
