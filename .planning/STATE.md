@@ -1,6 +1,6 @@
 ---
 gsd_state_version: '1.0'
-status: f12-in-progress-redaction-ui-stage-green-paused
+status: f12-1-safe-redaction-automated-closed-f12-professional-in-progress
 progress:
   total_phases: 13
   completed_phases: 12
@@ -18,50 +18,77 @@ See `.planning/PROJECT.md`.
 
 ## Current state
 
-F12 is IN PROGRESS on branch `feat/f12-professional` and is intentionally PAUSED by user request after two GREEN redaction microblocks.
+F12 Professional remains IN PROGRESS on branch `feat/f12-professional`.
 
-Functional HEAD before checkpoint documentation: `142d7b063faabc897ee56c015ba4de5f35071013`.
+F12.1 Safe Redaction is **AUTOMATED CLOSED / AUTO PASS**.
 
-Checkpoint document: `docs/history/2026-10-12-F12-checkpoint-redaction-ui-stage.md`.
+Functional closure HEAD: `f40b117cba235e221df4c4c5776b41bc8e89dac4`.
 
-Completed in this checkpoint:
+Closure evidence: `docs/history/2026-10-12-F12-1-safe-redaction-closure.md`.
 
-- text-selection redaction eligibility shown in the existing properties panel using existing `RedactionPolicy`;
-- safe/unsafe reasons exposed conservatively;
-- `Redactar` stages only an in-memory redaction draft using existing `RedactionWorkspace`;
-- source path + fingerprint must match the active EDITAR source workspace;
-- staged redaction participates in the existing unsaved-changes guard;
-- source PDF bytes remain unchanged while staging;
-- no writer/materializer/Save As publication integration has been added yet.
+Main remains untouched at `31c0594758a83ec555d73ecdd7c597cdf8791fd7`.
+
+## F12.1 completed scope
+
+- conservative whole-text-object eligibility via existing `RedactionPolicy`;
+- fail-closed unsupported cases, including tagged / semantic-text risk;
+- staged redaction draft via existing EDITAR state;
+- no source mutation while staging;
+- source path + fingerprint identity and pre-publish race recheck;
+- true removal of approved text objects plus opaque black path;
+- reopened-output validation for secret absence, preserved non-target text, renderability and black path;
+- multi-target redaction;
+- combined normal text edit + redaction;
+- minimal existing-panel WPF route with `Redactar`;
+- `Guardar como...` remains the only publication path;
+- signed/source-drift/cancellation/failure paths remain fail closed;
+- duplicate multi-target test coverage merged under the Ley de Ruido.
 
 ## Fresh automated evidence
 
-- Eligibility GREEN `4e91710a5397c9c34f0d42058b137c10bc9682b2`: Windows CI run `38285822979`, job `114933825149`; Release build 0 warnings / 0 errors; 1110/1110 tests PASS.
-- Draft staging GREEN `142d7b063faabc897ee56c015ba4de5f35071013`: Windows CI run `38286648237`, job `114936510676`; Release build 0 warnings / 0 errors; 1111/1111 tests PASS.
+Exact functional SHA: `f40b117cba235e221df4c4c5776b41bc8e89dac4`.
+
+Windows CI run `38288995654`, job `114944198278`:
+
+- repository hygiene PASS;
+- locked restore PASS;
+- Release build PASS;
+- `0` warnings;
+- `0` errors;
+- `1111/1111` tests PASS;
+- `0` skipped.
 
 `LOCAL DIRECT RUN = NOT SEPARATELY EVIDENCED`.
 
 ## Guardrails
 
-KISS / YAGNI remain mandatory. Reuse existing F12 contracts and the current EDITAR/Save As pipeline. Do not add a second sidebar, service layer, workspace family, or parallel save architecture without demonstrated need. Redaction must fail closed and staging must never mutate the original PDF. No merge to `main` without explicit user approval.
-
-## Next — NOT STARTED
-
-```text
-inspect existing Save As + PdfRedactionMaterializer contract
-→ write test-only RED proving staged redaction publishes only through Guardar como...
-→ minimum GREEN integration into the existing save pipeline
-→ source/fingerprint drift must fail closed
-→ focused + full Windows CI
-```
-
-Do not skip directly to GREEN. Do not open additional F12 scope before this publication microblock closes.
+KISS / YAGNI remain mandatory. F12.1 added no new PDF engine, runtime dependency, second general writer, service layer or professional sidebar. PDFium and the existing EDITAR transaction remain the owners. No merge to `main` without explicit user approval.
 
 ## Manual/private/physical gates
 
-All previously documented manual/private/physical gates remain open unless separately evidenced. Automated PASS does not replace representative private-PDF, real Windows UX, Adobe/Foxit/Edge interoperability, or physical/offline QA.
+Still open unless separately evidenced:
+
+- real Windows redaction UX;
+- representative private PDFs;
+- complex real-world PDFs beyond the safe subset;
+- Adobe/Foxit/Edge interoperability;
+- offline/representative-hardware smoke;
+- visual/print inspection of redaction placement.
+
+Automated PASS does not replace those gates.
+
+## Next
+
+```text
+STOP F12.1
+→ do not merge to main
+→ do not start F12.2 implicitly
+→ next F12 Professional slice requires a narrow spec/plan
+→ preserve KISS + fail-closed + existing-owner reuse
+```
 
 ## Continuity
 
-- F12 plan: `docs/superpowers/plans/2026-10-12-f12-redaction.md`.
-- F12 checkpoint: `docs/history/2026-10-12-F12-checkpoint-redaction-ui-stage.md`.
+- F12.1 design: `docs/superpowers/specs/2026-10-12-f12-redaction-design.md`.
+- F12.1 plan: `docs/superpowers/plans/2026-10-12-f12-redaction.md`.
+- F12.1 closure: `docs/history/2026-10-12-F12-1-safe-redaction-closure.md`.
