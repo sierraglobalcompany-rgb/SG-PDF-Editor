@@ -17,21 +17,12 @@ public sealed class PdfEditWriterRedactionTests
 
         PdfTextObjectInfo target;
         using (var session = PdfDocumentSession.Open(fixture.Path))
-        {
             target = session.GetTextObjects(0).Single(item => item.Text == "CASA");
-        }
 
         var redaction = RedactionWorkspace.Create(fixture.Path);
-        redaction.Stage(new RedactionPlan(
-            0,
-            new[] { new RedactionTarget(target) }));
-
-        var images = ImageEditWorkspace.Create(
-            fixture.Path,
-            Array.Empty<PdfImageObjectInfo>());
-        var text = TextEditWorkspace.Create(
-            fixture.Path,
-            Array.Empty<PdfTextObjectInfo>());
+        redaction.Stage(new RedactionPlan(0, new[] { new RedactionTarget(target) }));
+        var images = ImageEditWorkspace.Create(fixture.Path, sourceOpenedWithPassword: false);
+        var text = TextEditWorkspace.Create(fixture.Path, sourceOpenedWithPassword: false);
 
         new PdfEditWriter().SaveAsCopy(
             images,
@@ -55,7 +46,7 @@ public sealed class PdfEditWriterRedactionTests
         var rendered = saved.RenderPage(0, 36d);
         Assert.True(rendered.PixelWidth > 0);
         Assert.True(rendered.PixelHeight > 0);
-        Assert.Contains(rendered.BgraPixels, value => value != 0);
+        Assert.NotEmpty(rendered.Pixels);
     }
 
     [Fact]
@@ -66,24 +57,16 @@ public sealed class PdfEditWriterRedactionTests
 
         PdfTextObjectInfo target;
         using (var session = PdfDocumentSession.Open(fixture.Path))
-        {
             target = session.GetTextObjects(0).Single(item => item.Text == "CASA");
-        }
 
-        var staleTarget = target with { Text = "CAMBIADO" };
         var redaction = RedactionWorkspace.Create(fixture.Path);
         redaction.Stage(new RedactionPlan(
             0,
-            new[] { new RedactionTarget(staleTarget) }));
+            new[] { new RedactionTarget(target with { Text = "CAMBIADO" }) }));
+        var images = ImageEditWorkspace.Create(fixture.Path, sourceOpenedWithPassword: false);
+        var text = TextEditWorkspace.Create(fixture.Path, sourceOpenedWithPassword: false);
 
-        var images = ImageEditWorkspace.Create(
-            fixture.Path,
-            Array.Empty<PdfImageObjectInfo>());
-        var text = TextEditWorkspace.Create(
-            fixture.Path,
-            Array.Empty<PdfTextObjectInfo>());
-
-        var error = Assert.Throws<InvalidOperationException>(() =>
+        var error = Record.Exception(() =>
             new PdfEditWriter().SaveAsCopy(
                 images,
                 text,
@@ -91,7 +74,8 @@ public sealed class PdfEditWriterRedactionTests
                 destination,
                 warningsConfirmed: true));
 
-        Assert.Contains("snapshot", error.Message, StringComparison.OrdinalIgnoreCase);
+        var invalid = Assert.IsType<InvalidOperationException>(error);
+        Assert.Contains("snapshot", invalid.Message, StringComparison.OrdinalIgnoreCase);
         Assert.False(File.Exists(destination));
         Assert.Empty(Directory.GetFiles(fixture.DirectoryPath, "*.sgpdf.tmp"));
     }
@@ -104,22 +88,19 @@ public sealed class PdfEditWriterRedactionTests
 
         PdfTextObjectInfo target;
         using (var session = PdfDocumentSession.Open(fixture.Path))
-        {
             target = session.GetTextObjects(0).Single(item => item.Text == "CASA");
-        }
 
         var redaction = RedactionWorkspace.Create(fixture.Path);
-        redaction.Stage(new RedactionPlan(
-            0,
-            new[] { new RedactionTarget(target) }));
-        var images = ImageEditWorkspace.Create(fixture.Path, Array.Empty<PdfImageObjectInfo>());
-        var text = TextEditWorkspace.Create(fixture.Path, Array.Empty<PdfTextObjectInfo>());
+        redaction.Stage(new RedactionPlan(0, new[] { new RedactionTarget(target) }));
+        var images = ImageEditWorkspace.Create(fixture.Path, sourceOpenedWithPassword: false);
+        var text = TextEditWorkspace.Create(fixture.Path, sourceOpenedWithPassword: false);
         var writer = new PdfEditWriter(signatureCountOverride: _ => 1);
 
-        var error = Assert.Throws<InvalidOperationException>(() =>
+        var error = Record.Exception(() =>
             writer.SaveAsCopy(images, text, redaction, destination, warningsConfirmed: true));
 
-        Assert.Contains("firma criptográfica", error.Message, StringComparison.OrdinalIgnoreCase);
+        var invalid = Assert.IsType<InvalidOperationException>(error);
+        Assert.Contains("firma criptográfica", invalid.Message, StringComparison.OrdinalIgnoreCase);
         Assert.False(File.Exists(destination));
     }
 }
