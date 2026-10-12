@@ -25,6 +25,8 @@ public partial class MainWindow
     private TextBlock? _editTextStrategyValueText;
     private TextBlock? _editTextValidationText;
     private TextBlock? _editTextRedactionStateText;
+    private Button? _editTextRedactButton;
+    private RedactionWorkspace? _redactionWorkspace;
     private Button? _editTextApplyButton;
     private TextBox? _editTextReflowTextBox;
     private TextBlock? _editTextReflowStateText;
@@ -137,9 +139,21 @@ public partial class MainWindow
             Name = "EditTextRedactionStateText",
             TextWrapping = TextWrapping.Wrap,
             Foreground = Brushes.DimGray,
-            Margin = new Thickness(0, 0, 0, 16)
+            Margin = new Thickness(0, 0, 0, 8)
         };
         panel.Children.Add(redactionState);
+
+        var redact = new Button
+        {
+            Name = "EditTextRedactButton",
+            Content = "Redactar",
+            HorizontalAlignment = HorizontalAlignment.Left,
+            Padding = new Thickness(12, 5, 12, 5),
+            Margin = new Thickness(0, 0, 0, 16),
+            IsEnabled = false
+        };
+        redact.Click += (_, _) => TryStageSelectedTextRedaction();
+        panel.Children.Add(redact);
 
         panel.Children.Add(new Separator
         {
@@ -205,6 +219,7 @@ public partial class MainWindow
         RegisterName(apply.Name, apply);
         RegisterName(validation.Name, validation);
         RegisterName(redactionState.Name, redactionState);
+        RegisterName(redact.Name, redact);
         RegisterName(reflowState.Name, reflowState);
         RegisterName(reflowText.Name, reflowText);
         RegisterName(reflowApply.Name, reflowApply);
@@ -219,6 +234,7 @@ public partial class MainWindow
         _editTextApplyButton = apply;
         _editTextValidationText = validation;
         _editTextRedactionStateText = redactionState;
+        _editTextRedactButton = redact;
         _editTextReflowStateText = reflowState;
         _editTextReflowTextBox = reflowText;
         _editTextReflowApplyButton = reflowApply;
@@ -343,12 +359,21 @@ public partial class MainWindow
 
     private void RefreshTextRedactionState(TextObjectKey key)
     {
-        if (_editTextRedactionStateText is null)
+        if (_editTextRedactionStateText is null || _editTextRedactButton is null)
             return;
 
-        if (!_editModeActive || _session is null)
+        var workspace = EnsureRedactionWorkspace();
+        if (!_editModeActive || _session is null || workspace is null)
         {
-            SetTextRedactionUnavailable("No hay una página de edición activa.");
+            SetTextRedactionUnavailable("No hay una página de edición segura activa.");
+            return;
+        }
+
+        if (workspace.Targets.Any(target => target.Original.Key == key))
+        {
+            _editTextRedactButton.IsEnabled = false;
+            _editTextRedactionStateText.Foreground = Brushes.DarkGreen;
+            _editTextRedactionStateText.Text = "Redacción preparada en el borrador. Usa Guardar como... para publicar los cambios.";
             return;
         }
 
@@ -356,6 +381,7 @@ public partial class MainWindow
         {
             var preflight = _inspectEditPreflight(_session, CancellationToken.None);
             var decision = RedactionPolicy.Evaluate(_activeTextObjects, new[] { key }, preflight);
+            _editTextRedactButton.IsEnabled = decision.Allowed;
             _editTextRedactionStateText.Foreground = decision.Allowed
                 ? Brushes.DarkGreen
                 : Brushes.Firebrick;
@@ -368,6 +394,80 @@ public partial class MainWindow
         catch (Exception)
         {
             SetTextRedactionUnavailable("No se pudo verificar la elegibilidad de redacción.");
+        }
+    }
+
+    private RedactionWorkspace? EnsureRedactionWorkspace()
+    {
+        if (_redactionWorkspace is not null)
+            return _redactionWorkspace;
+        if (!_editModeActive || _session is null || _imageEditWorkspace is null)
+            return null;
+
+        var candidate = RedactionWorkspace.Create(_session.FilePath, _session.OpenedWithPassword);
+        if (!string.Equals(
+                candidate.SourcePath,
+                _imageEditWorkspace.SourcePath,
+                StringComparison.OrdinalIgnoreCase) ||
+            candidate.SourceFingerprint != _imageEditWorkspace.SourceFingerprint)
+        {
+            return null;
+        }
+
+        _redactionWorkspace = candidate;
+        return _redactionWorkspace;
+    }
+
+    private bool TryStageSelectedTextRedaction()
+    {
+        if (!_editModeActive ||
+            _session is null ||
+            _selectedTextKey is not TextObjectKey key ||
+            _editTextRedactionStateText is null ||
+            _editTextRedactButton is null)
+        {
+            return false;
+        }
+
+        var workspace = EnsureRedactionWorkspace();
+        if (workspace is null)
+        {
+            SetTextRedactionUnavailable("El PDF fuente cambió y la redacción ya no es segura.");
+            return false;
+        }
+
+        if (workspace.Targets.Any(target => target.Original.Key == key))
+        {
+            RefreshTextRedactionState(key);
+            return false;
+        }
+
+        try
+        {
+            var preflight = _inspectEditPreflight(_session, CancellationToken.None);
+            var decision = RedactionPolicy.Evaluate(_activeTextObjects, new[] { key }, preflight);
+            if (!decision.Allowed || decision.Plan is null)
+            {
+                SetTextRedactionUnavailable(
+                    decision.Reason ?? "El objeto seleccionado no cumple los criterios de seguridad.");
+                return false;
+            }
+
+            workspace.Stage(decision.Plan);
+            RefreshTextRedactionState(key);
+            UpdateEditSaveCommandAvailability();
+            StatusText.Text = "Redacción preparada en el borrador. Usa Guardar como... para crear el PDF.";
+            return true;
+        }
+        catch (OperationCanceledException)
+        {
+            SetTextRedactionUnavailable("La preparación de la redacción fue cancelada.");
+            return false;
+        }
+        catch (Exception)
+        {
+            SetTextRedactionUnavailable("No se pudo preparar la redacción de forma segura.");
+            return false;
         }
     }
 
@@ -387,6 +487,8 @@ public partial class MainWindow
         if (_editTextRedactionStateText is null)
             return;
 
+        if (_editTextRedactButton is not null)
+            _editTextRedactButton.IsEnabled = false;
         _editTextRedactionStateText.Foreground = Brushes.Firebrick;
         _editTextRedactionStateText.Text = FormatTextRedactionAvailability(false, reason);
     }
@@ -523,6 +625,8 @@ public partial class MainWindow
             _editTextValidationText.Text = string.Empty;
         if (_editTextRedactionStateText is not null)
             _editTextRedactionStateText.Text = string.Empty;
+        if (_editTextRedactButton is not null)
+            _editTextRedactButton.IsEnabled = false;
         ResetTextReflowSelection(clearText: true);
         if (showPlaceholder)
             PropertiesPlaceholderText.Visibility = Visibility.Visible;
@@ -701,12 +805,15 @@ public partial class MainWindow
     }
 
     private bool HasUnsavedEditChanges()
-        => _imageEditWorkspace?.IsDirty == true || _textEditWorkspace?.IsDirty == true;
+        => _imageEditWorkspace?.IsDirty == true ||
+           _textEditWorkspace?.IsDirty == true ||
+           _redactionWorkspace?.IsDirty == true;
 
     private void ResetTextEditState()
     {
         _activeTextObjects = Array.Empty<PdfTextObjectInfo>();
         _selectedTextKey = null;
+        _redactionWorkspace = null;
         HideEditTextProperties(showPlaceholder: false);
     }
 }
