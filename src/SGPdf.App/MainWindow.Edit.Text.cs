@@ -5,6 +5,7 @@ using System.Windows.Media;
 using System.Windows.Shapes;
 using SGPdf.App.Features.Edit;
 using SGPdf.App.Features.Edit.Images;
+using SGPdf.App.Features.Edit.Redaction;
 using SGPdf.App.Features.Edit.Text;
 using SGPdf.App.Features.Edit.Text.Layout;
 using SGPdf.App.Pdf;
@@ -23,6 +24,7 @@ public partial class MainWindow
     private TextBlock? _editTextFontValueText;
     private TextBlock? _editTextStrategyValueText;
     private TextBlock? _editTextValidationText;
+    private TextBlock? _editTextRedactionStateText;
     private Button? _editTextApplyButton;
     private TextBox? _editTextReflowTextBox;
     private TextBlock? _editTextReflowStateText;
@@ -130,6 +132,15 @@ public partial class MainWindow
         };
         panel.Children.Add(validation);
 
+        var redactionState = new TextBlock
+        {
+            Name = "EditTextRedactionStateText",
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = Brushes.DimGray,
+            Margin = new Thickness(0, 0, 0, 16)
+        };
+        panel.Children.Add(redactionState);
+
         panel.Children.Add(new Separator
         {
             Margin = new Thickness(0, 0, 0, 14)
@@ -193,6 +204,7 @@ public partial class MainWindow
         RegisterName(color.Name, color);
         RegisterName(apply.Name, apply);
         RegisterName(validation.Name, validation);
+        RegisterName(redactionState.Name, redactionState);
         RegisterName(reflowState.Name, reflowState);
         RegisterName(reflowText.Name, reflowText);
         RegisterName(reflowApply.Name, reflowApply);
@@ -206,6 +218,7 @@ public partial class MainWindow
         _editTextColorTextBox = color;
         _editTextApplyButton = apply;
         _editTextValidationText = validation;
+        _editTextRedactionStateText = redactionState;
         _editTextReflowStateText = reflowState;
         _editTextReflowTextBox = reflowText;
         _editTextReflowApplyButton = reflowApply;
@@ -325,6 +338,57 @@ public partial class MainWindow
             : "Este modo de renderizado es de solo lectura en Texto V1.";
 
         RefreshTextReflowProperties(key);
+        RefreshTextRedactionState(key);
+    }
+
+    private void RefreshTextRedactionState(TextObjectKey key)
+    {
+        if (_editTextRedactionStateText is null)
+            return;
+
+        if (!_editModeActive || _session is null)
+        {
+            SetTextRedactionUnavailable("No hay una página de edición activa.");
+            return;
+        }
+
+        try
+        {
+            var preflight = _inspectEditPreflight(_session, CancellationToken.None);
+            var decision = RedactionPolicy.Evaluate(_activeTextObjects, new[] { key }, preflight);
+            _editTextRedactionStateText.Foreground = decision.Allowed
+                ? Brushes.DarkGreen
+                : Brushes.Firebrick;
+            _editTextRedactionStateText.Text = FormatTextRedactionAvailability(decision.Allowed, decision.Reason);
+        }
+        catch (OperationCanceledException)
+        {
+            SetTextRedactionUnavailable("La verificación de redacción fue cancelada.");
+        }
+        catch (Exception)
+        {
+            SetTextRedactionUnavailable("No se pudo verificar la elegibilidad de redacción.");
+        }
+    }
+
+    private static string FormatTextRedactionAvailability(bool allowed, string? reason)
+    {
+        if (allowed)
+            return "Redacción segura disponible para este objeto de texto.";
+
+        var detail = string.IsNullOrWhiteSpace(reason)
+            ? "el objeto seleccionado no cumple los criterios de seguridad."
+            : reason.Trim();
+        return $"Redacción segura no disponible: {detail}";
+    }
+
+    private void SetTextRedactionUnavailable(string reason)
+    {
+        if (_editTextRedactionStateText is null)
+            return;
+
+        _editTextRedactionStateText.Foreground = Brushes.Firebrick;
+        _editTextRedactionStateText.Text = FormatTextRedactionAvailability(false, reason);
     }
 
     private void RefreshTextReflowProperties(TextObjectKey key)
@@ -457,6 +521,8 @@ public partial class MainWindow
             _editTextPropertiesPanel.Visibility = Visibility.Collapsed;
         if (_editTextValidationText is not null)
             _editTextValidationText.Text = string.Empty;
+        if (_editTextRedactionStateText is not null)
+            _editTextRedactionStateText.Text = string.Empty;
         ResetTextReflowSelection(clearText: true);
         if (showPlaceholder)
             PropertiesPlaceholderText.Visibility = Visibility.Visible;
