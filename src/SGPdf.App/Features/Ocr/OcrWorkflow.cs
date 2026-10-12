@@ -7,6 +7,8 @@ namespace SGPdf.App.Features.Ocr;
 
 internal sealed class OcrWorkflow
 {
+    private static readonly TimeSpan ProductionRecognitionTimeout = TimeSpan.FromMinutes(2);
+
     private readonly string _sourcePath;
     private readonly string _destinationPath;
     private readonly Func<string>? _workspacePathFactory;
@@ -15,6 +17,19 @@ internal sealed class OcrWorkflow
     private readonly Func<PdfDocumentSession, int, CancellationToken, PdfRenderedPage> _rasterize;
     private readonly Func<PdfRenderedPage, int, OcrLanguage, string?, CancellationToken, Task<IReadOnlyList<OcrTextLinePlacement>>> _recognizeAndPlan;
     private readonly Func<string, PdfEditSourceFingerprint, IReadOnlyList<OcrTextLinePlacement>, string, CancellationToken, PdfOcrWriteResult> _writer;
+
+    internal OcrWorkflow(string sourcePath, string destinationPath)
+        : this(
+            sourcePath,
+            destinationPath,
+            CreateProductionWorkspacePath,
+            new OcrPreflight().Inspect,
+            new OcrPageEligibilityPolicy().Resolve,
+            OcrRasterizer.Render,
+            RecognizeAndPlanProductionAsync,
+            new PdfOcrWriter().SaveAsCopy)
+    {
+    }
 
     internal OcrWorkflow(
         string sourcePath,
@@ -196,6 +211,54 @@ internal sealed class OcrWorkflow
         }
     }
 
+    private static string CreateProductionWorkspacePath()
+    {
+        return Path.Combine(
+            Path.GetTempPath(),
+            $"sgpdf-ocr-{Guid.NewGuid():N}");
+    }
+
+    private static async Task<IReadOnlyList<OcrTextLinePlacement>> RecognizeAndPlanProductionAsync(
+        PdfRenderedPage raster,
+        int pageIndex,
+        OcrLanguage language,
+        string workspacePath,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(raster);
+        ArgumentException.ThrowIfNullOrWhiteSpace(workspacePath);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var fileStem = $"page-{pageIndex:D6}";
+        var imagePath = Path.Combine(workspacePath, fileStem + ".bmp");
+        var outputBasePath = Path.Combine(workspacePath, fileStem);
+        var tsvPath = outputBasePath + ".tsv";
+
+        try
+        {
+            OcrRasterFileSerializer.WriteBmp(raster, imagePath, cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var recognizer = new TesseractProcessRecognizer();
+            var processResult = await recognizer.RecognizeAsync(
+                imagePath,
+                outputBasePath,
+                language,
+                ProductionRecognitionTimeout,
+                cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var words = TesseractTsvParser.ParseFile(processResult.TsvPath);
+            cancellationToken.ThrowIfCancellationRequested();
+            return OcrTextLayerPlanner.Build(words, raster);
+        }
+        finally
+        {
+            DeletePageArtifact(imagePath);
+            DeletePageArtifact(tsvPath);
+        }
+    }
+
     private static string CreateWorkspace(string path)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
@@ -205,6 +268,21 @@ internal sealed class OcrWorkflow
 
         Directory.CreateDirectory(fullPath);
         return fullPath;
+    }
+
+    private static void DeletePageArtifact(string path)
+    {
+        try
+        {
+            if (File.Exists(path))
+                File.Delete(path);
+        }
+        catch (IOException)
+        {
+        }
+        catch (UnauthorizedAccessException)
+        {
+        }
     }
 
     private static void DeleteWorkspace(string path)
