@@ -24,7 +24,7 @@ public sealed class OcrProductionWorkflowTests
 
         Assert.Equal(OcrResultKind.Succeeded, result.Kind);
         Assert.Equal(new[] { 0 }, result.ProcessedPageIndices);
-        Assert.Empty(result.SkippedPageIndices);
+        Assert.Empty(result.SkippedSearchablePageIndices);
         Assert.True(File.Exists(destination));
         Assert.Equal(sourceBefore, File.ReadAllBytes(fixture.SourcePath));
 
