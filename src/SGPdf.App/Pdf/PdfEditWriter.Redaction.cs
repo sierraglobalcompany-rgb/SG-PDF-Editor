@@ -1,4 +1,5 @@
 using System.IO;
+using SGPdf.App.Features.Edit;
 using SGPdf.App.Features.Edit.Images;
 using SGPdf.App.Features.Edit.Redaction;
 using SGPdf.App.Features.Edit.Text;
@@ -125,15 +126,28 @@ internal static class PdfEditWriterRedactionExtensions
         CancellationToken cancellationToken)
     {
         using var source = PdfDocumentSession.Open(workspace.SourcePath);
+        var preflight = new PdfEditPreflightInspector().Inspect(source, cancellationToken);
+
         foreach (var group in workspace.Targets.GroupBy(target => target.Original.Key.PageIndex))
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var pageObjects = source.GetTextObjects(group.Key, cancellationToken)
-                .ToDictionary(item => item.Key);
-            foreach (var target in group)
+            var targets = group.ToArray();
+            var pageObjects = source.GetTextObjects(group.Key, cancellationToken);
+            var policy = RedactionPolicy.Evaluate(
+                pageObjects,
+                targets.Select(target => target.Original.Key).ToArray(),
+                preflight);
+            if (!policy.Allowed)
+            {
+                throw new InvalidOperationException(
+                    policy.Reason ?? "La selección no superó la política de redacción segura.");
+            }
+
+            var pageObjectsByKey = pageObjects.ToDictionary(item => item.Key);
+            foreach (var target in targets)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                if (!pageObjects.TryGetValue(target.Original.Key, out var actual) ||
+                if (!pageObjectsByKey.TryGetValue(target.Original.Key, out var actual) ||
                     !EquivalentSnapshot(actual, target.Original))
                 {
                     throw new InvalidOperationException(
