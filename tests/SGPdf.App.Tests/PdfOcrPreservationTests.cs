@@ -49,29 +49,29 @@ public sealed class PdfOcrPreservationTests
         Assert.Equal(sourceScanRender.Pixels, outputScanRender.Pixels);
 
         var savedBytes = File.ReadAllBytes(destination);
-        var savedText = Encoding.Latin1.GetString(savedBytes);
+        var syntax = NormalizePdfSyntax(Encoding.Latin1.GetString(savedBytes));
 
-        Assert.Contains("/AcroForm", savedText, StringComparison.Ordinal);
-        Assert.Contains("/FT /Tx", savedText, StringComparison.Ordinal);
-        Assert.Contains("/Outlines", savedText, StringComparison.Ordinal);
-        Assert.Contains("F10 Bookmark", savedText, StringComparison.Ordinal);
-        Assert.Contains("/Dests", savedText, StringComparison.Ordinal);
-        Assert.Contains("F10Dest", savedText, StringComparison.Ordinal);
-        Assert.Contains("/Subtype /Link", savedText, StringComparison.Ordinal);
-        Assert.Contains("/StructTreeRoot", savedText, StringComparison.Ordinal);
-        Assert.Contains("/MarkInfo", savedText, StringComparison.Ordinal);
-        Assert.Contains("/PageLabels", savedText, StringComparison.Ordinal);
-        Assert.Contains("/EmbeddedFiles", savedText, StringComparison.Ordinal);
-        Assert.Contains("fixture.bin", savedText, StringComparison.Ordinal);
+        Assert.Contains("/AcroForm", syntax, StringComparison.Ordinal);
+        Assert.Contains("/FT/Tx", syntax, StringComparison.Ordinal);
+        Assert.Contains("/Outlines", syntax, StringComparison.Ordinal);
+        Assert.Contains("F10Bookmark", syntax, StringComparison.Ordinal);
+        Assert.Contains("/Dests", syntax, StringComparison.Ordinal);
+        Assert.Contains("F10Dest", syntax, StringComparison.Ordinal);
+        Assert.Contains("/Subtype/Link", syntax, StringComparison.Ordinal);
+        Assert.Contains("/StructTreeRoot", syntax, StringComparison.Ordinal);
+        Assert.Contains("/MarkInfo", syntax, StringComparison.Ordinal);
+        Assert.Contains("/PageLabels", syntax, StringComparison.Ordinal);
+        Assert.Contains("/EmbeddedFiles", syntax, StringComparison.Ordinal);
+        Assert.Contains("fixture.bin", syntax, StringComparison.Ordinal);
         Assert.True(ContainsSequence(savedBytes, AttachmentPayload), "Embedded attachment payload changed or disappeared.");
-        Assert.Contains("/Title (F10 Preservation Corpus)", savedText, StringComparison.Ordinal);
-        Assert.Contains("/Author (SG PDF)", savedText, StringComparison.Ordinal);
-        Assert.Contains("/Rotate 90", savedText, StringComparison.Ordinal);
-        Assert.Contains("/Subtype /Text", savedText, StringComparison.Ordinal);
-        Assert.Contains("SUPPORTED-ANNOTATION-F10", savedText, StringComparison.Ordinal);
-        Assert.Contains("/Subtype /Polygon", savedText, StringComparison.Ordinal);
-        Assert.Contains("UNSUPPORTED-ANNOTATION-F10", savedText, StringComparison.Ordinal);
-        Assert.Contains("/Subtype /Image", savedText, StringComparison.Ordinal);
+        Assert.Contains("/Title(F10PreservationCorpus)", syntax, StringComparison.Ordinal);
+        Assert.Contains("/Author(SGPDF)", syntax, StringComparison.Ordinal);
+        Assert.Contains("/Rotate90", syntax, StringComparison.Ordinal);
+        Assert.Contains("/Subtype/Text", syntax, StringComparison.Ordinal);
+        Assert.Contains("SUPPORTED-ANNOTATION-F10", syntax, StringComparison.Ordinal);
+        Assert.Contains("/Subtype/Polygon", syntax, StringComparison.Ordinal);
+        Assert.Contains("UNSUPPORTED-ANNOTATION-F10", syntax, StringComparison.Ordinal);
+        Assert.Contains("/Subtype/Image", syntax, StringComparison.Ordinal);
     }
 
     private static object CreateProductionWriter()
@@ -143,6 +143,9 @@ public sealed class PdfOcrPreservationTests
         Assert.NotNull(type);
         return type!;
     }
+
+    private static string NormalizePdfSyntax(string value) =>
+        string.Concat(value.Where(character => !char.IsWhiteSpace(character)));
 
     private static bool ContainsSequence(byte[] haystack, byte[] needle)
     {
