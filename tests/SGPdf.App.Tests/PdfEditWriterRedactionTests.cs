@@ -34,19 +34,23 @@ public sealed class PdfEditWriterRedactionTests
         Assert.True(File.Exists(destination));
         Assert.Equal(sourceBytes, File.ReadAllBytes(fixture.Path));
 
-        using var saved = PdfDocumentSession.Open(destination);
-        var texts = saved.GetTextObjects(0).Select(item => item.Text).ToArray();
-        Assert.DoesNotContain("CASA", texts);
-        Assert.Contains("UNO", texts);
+        using (var saved = PdfDocumentSession.Open(destination))
+        {
+            var texts = saved.GetTextObjects(0).Select(item => item.Text).ToArray();
+            Assert.DoesNotContain("CASA", texts);
+            Assert.Contains("UNO", texts);
 
-        var extracted = saved.GetTextRange(0, 0, 100);
-        Assert.DoesNotContain("CASA", extracted, StringComparison.Ordinal);
-        Assert.Contains("UNO", extracted, StringComparison.Ordinal);
+            var extracted = saved.GetTextRange(0, 0, 100);
+            Assert.DoesNotContain("CASA", extracted, StringComparison.Ordinal);
+            Assert.Contains("UNO", extracted, StringComparison.Ordinal);
 
-        var rendered = saved.RenderPage(0, 36d);
-        Assert.True(rendered.PixelWidth > 0);
-        Assert.True(rendered.PixelHeight > 0);
-        Assert.NotEmpty(rendered.Pixels);
+            var rendered = saved.RenderPage(0, 36d);
+            Assert.True(rendered.PixelWidth > 0);
+            Assert.True(rendered.PixelHeight > 0);
+            Assert.NotEmpty(rendered.Pixels);
+        }
+
+        AssertBlackRedactionPath(destination, target.Bounds);
     }
 
     [Fact]
@@ -103,6 +107,80 @@ public sealed class PdfEditWriterRedactionTests
         Assert.Contains("firma criptográfica", invalid.Message, StringComparison.OrdinalIgnoreCase);
         Assert.False(File.Exists(destination));
     }
+
+    private static void AssertBlackRedactionPath(string path, PdfObjectBounds expectedBounds)
+    {
+        PdfiumRuntime.EnsureInitialized();
+        PdfiumRuntime.NativeGate.Wait();
+
+        IntPtr document = IntPtr.Zero;
+        IntPtr page = IntPtr.Zero;
+        try
+        {
+            document = PdfiumNative.FPDF_LoadDocument(path, null);
+            Assert.NotEqual(IntPtr.Zero, document);
+            page = PdfiumNative.FPDF_LoadPage(document, 0);
+            Assert.NotEqual(IntPtr.Zero, page);
+
+            var matches = new List<IntPtr>();
+            var count = PdfiumNative.FPDFPage_CountObjects(page);
+            Assert.True(count > 0);
+            for (var index = 0; index < count; index++)
+            {
+                var pageObject = PdfiumNative.FPDFPage_GetObject(page, index);
+                if (pageObject == IntPtr.Zero ||
+                    PdfiumNative.FPDFPageObj_GetType(pageObject) != PdfiumNative.FPDF_PAGEOBJ_PATH ||
+                    PdfiumNative.FPDFPageObj_GetBounds(
+                        pageObject,
+                        out var left,
+                        out var bottom,
+                        out var right,
+                        out var top) == 0)
+                {
+                    continue;
+                }
+
+                if (NearlyEqual(left, expectedBounds.Left) &&
+                    NearlyEqual(bottom, expectedBounds.Bottom) &&
+                    NearlyEqual(right, expectedBounds.Right) &&
+                    NearlyEqual(top, expectedBounds.Top))
+                {
+                    matches.Add(pageObject);
+                }
+            }
+
+            var rectangle = Assert.Single(matches);
+            Assert.NotEqual(IntPtr.Zero, rectangle);
+            Assert.NotEqual(0, PdfiumNative.FPDFPageObj_GetFillColor(
+                rectangle,
+                out var red,
+                out var green,
+                out var blue,
+                out var alpha));
+            Assert.Equal(0u, red);
+            Assert.Equal(0u, green);
+            Assert.Equal(0u, blue);
+            Assert.Equal(255u, alpha);
+
+            Assert.NotEqual(0, PdfiumNative.FPDFPath_GetDrawMode(
+                rectangle,
+                out var fillMode,
+                out var stroke));
+            Assert.Equal(PdfiumNative.FPDF_FILLMODE_WINDING, fillMode);
+            Assert.Equal(0, stroke);
+        }
+        finally
+        {
+            if (page != IntPtr.Zero)
+                PdfiumNative.FPDF_ClosePage(page);
+            if (document != IntPtr.Zero)
+                PdfiumNative.FPDF_CloseDocument(document);
+            PdfiumRuntime.NativeGate.Release();
+        }
+    }
+
+    private static bool NearlyEqual(double left, double right)
+        => double.IsFinite(left) && double.IsFinite(right) && Math.Abs(left - right) <= 0.10d;
 
     private static Exception? Capture(Action action)
     {
