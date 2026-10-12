@@ -3,7 +3,7 @@ using System.Windows.Controls;
 
 namespace SGPdf.App.Features.Ocr;
 
-internal partial class OcrDialog : Window
+public partial class OcrDialog : Window
 {
     private readonly int _pageCount;
     private readonly int _currentPageIndex;
