@@ -12,6 +12,7 @@ internal enum TextLayoutClassification
 internal sealed record TextRun(
     TextObjectKey SourceKey,
     string Text,
+    PdfObjectMatrix Matrix,
     PdfObjectBounds Bounds,
     PdfTextObjectQuad Quad,
     string FontName,
