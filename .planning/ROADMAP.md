@@ -15,18 +15,23 @@
 | F8 Comentarios | CLOSED / AUTO PASS | stylus/touch/external readers NOT RUN |
 | F9 Utilidades | CLOSED / AUTO PASS | Windows/external/private repair corpus NOT RUN |
 | F10 OCR Local | CLOSED / AUTO PASS | Windows OCR/external readers/private corpus NOT RUN |
-| **F11 Texto V2** | **AUTOMATED CLOSURE DECLARED; exact-head integration gate** | **Windows reflow/private layouts/external readers NOT RUN** |
-| F12 Profesional | NOT STARTED | — |
+| F11 Texto V2 | CLOSED / AUTO PASS | Windows reflow/private layouts/external readers NOT RUN |
+| **F12 Profesional** | **IN PROGRESS — F12.1 Safe Redaction CLOSED / AUTO PASS** | **redaction Windows/private/external-reader QA NOT RUN** |
 
 ## Current position
 
 ```text
-F0–F10       automated closed with manual/private gates where noted
-F11          feature + preservation + minimal UI complete; closure declaration committed
-              → exact-head CI → draft stacked PR → STOP
-F12          not started
+F0–F11       automated closed with manual/private gates where noted
+F12.1        Safe Redaction automated closed
+              → true whole-object removal + opaque black mark
+              → fail-closed policy + tagged semantic-text block
+              → transactional Guardar como... only
+              → 1111/1111 exact-head Windows tests PASS
+F12 overall  still open; remaining professional slices not started by this closure
 ```
 
-F11 stays deliberately narrow: PDFium reading-order/layout analysis; one/two simple columns; ambiguous layouts fail closed; reflow only for safe one-column homogeneous paragraphs; existing Texto V1 writer and Save As transaction are reused. PdfPig was evaluated as an optional gate and was not needed.
+F12.1 stays deliberately narrow: only complete simple visible horizontal text objects are eligible; unsafe/ambiguous cases fail closed; tagged PDFs are blocked for redaction rather than sanitized by a new subsystem; existing PDFium, EDITAR transaction, fingerprint model, `TextObjectKey`, text properties panel and Save As path are reused. No new PDF engine or runtime dependency was added.
 
-No merge to `main` without explicit user approval. Repository integration/governance remains a separate future gate and is not part of F11 closure.
+Closure evidence: `docs/history/2026-10-12-F12-1-safe-redaction-closure.md`.
+
+No merge to `main` without explicit user approval. Do not start F12.2 implicitly; the next F12 Professional slice requires its own narrow spec/plan.
