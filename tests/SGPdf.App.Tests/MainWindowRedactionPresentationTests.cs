@@ -89,6 +89,52 @@ public sealed class MainWindowRedactionPresentationTests
         });
     }
 
+    [Fact]
+    public void SaveAs_WithStagedRedaction_PublishesRedactedCopyAndKeepsSourceUntouched()
+    {
+        OrganizeWindowTestHost.RunInSta(async () =>
+        {
+            using var fixture = TextEditNativeCharacterizationHarness.CreateSimpleTextPdf();
+            var sourceBefore = File.ReadAllBytes(fixture.Path);
+            var destination = Path.Combine(
+                Path.GetDirectoryName(fixture.Path)!,
+                $"redacted-copy-{Guid.NewGuid():N}.pdf");
+            var window = new MainWindow();
+            try
+            {
+                var prepared = await PrepareTextAsync(window, fixture.Path);
+                OrganizeWindowTestHost.SetField(
+                    window,
+                    "_inspectEditPreflight",
+                    (Func<PdfDocumentSession, CancellationToken, PdfEditPreflightResult>)
+                    ((_, _) => new PdfEditPreflightResult(Array.Empty<PdfEditFinding>())));
+                OrganizeWindowTestHost.SetField(
+                    window,
+                    "_selectEditPdfDestination",
+                    (Func<string?>)(() => destination));
+
+                var text = Assert.Single(ActiveTexts(window));
+                SelectText(window, text, prepared.Transform);
+                Assert.True((bool)OrganizeWindowTestHost.Invoke(window, "TryStageSelectedTextRedaction")!);
+
+                Assert.True((bool)OrganizeWindowTestHost.Invoke(window, "TrySaveEditWorkspace")!);
+                Assert.True(File.Exists(destination));
+                Assert.Equal(sourceBefore, File.ReadAllBytes(fixture.Path));
+
+                using var output = PdfDocumentSession.Open(destination);
+                Assert.DoesNotContain(
+                    output.GetTextObjects(0),
+                    item => string.Equals(item.Text, text.Text, StringComparison.Ordinal));
+            }
+            finally
+            {
+                ImageEditCommandTestHost.CloseClean(window);
+                if (File.Exists(destination))
+                    File.Delete(destination);
+            }
+        });
+    }
+
     private static async Task<(TextEditWorkspace Workspace, PdfPageDeviceTransform Transform)> PrepareTextAsync(
         MainWindow window,
         string path)
