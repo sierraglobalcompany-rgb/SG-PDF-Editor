@@ -2,6 +2,7 @@ using System.Collections;
 using System.Windows.Controls;
 using SGPdf.App.Features.Edit;
 using SGPdf.App.Features.Edit.Images;
+using SGPdf.App.Features.Edit.Redaction;
 using SGPdf.App.Features.Edit.Text;
 using SGPdf.App.Pdf;
 using Xunit;
@@ -44,6 +45,45 @@ public sealed class MainWindowRedactionPresentationTests
 
                 Assert.Contains("Redacción segura no disponible", state.Text, StringComparison.OrdinalIgnoreCase);
                 Assert.Contains("texto visible seguro", state.Text, StringComparison.OrdinalIgnoreCase);
+            }
+            finally { ImageEditCommandTestHost.CloseClean(window); }
+        });
+    }
+
+    [Fact]
+    public void RedactCommand_StagesDraftWithoutMutatingSource()
+    {
+        OrganizeWindowTestHost.RunInSta(async () =>
+        {
+            using var fixture = TextEditNativeCharacterizationHarness.CreateSimpleTextPdf();
+            var sourceBefore = File.ReadAllBytes(fixture.Path);
+            var window = new MainWindow();
+            try
+            {
+                var prepared = await PrepareTextAsync(window, fixture.Path);
+                OrganizeWindowTestHost.SetField(
+                    window,
+                    "_inspectEditPreflight",
+                    (Func<PdfDocumentSession, CancellationToken, PdfEditPreflightResult>)
+                    ((_, _) => new PdfEditPreflightResult(Array.Empty<PdfEditFinding>())));
+
+                var text = Assert.Single(ActiveTexts(window));
+                SelectText(window, text, prepared.Transform);
+
+                var redact = OrganizeWindowTestHost.Element<Button>(window, "EditTextRedactButton");
+                Assert.True(redact.IsEnabled);
+
+                var workspace = Assert.IsType<RedactionWorkspace>(
+                    OrganizeWindowTestHost.GetField(window, "_redactionWorkspace"));
+                Assert.False(workspace.IsDirty);
+
+                Assert.True((bool)OrganizeWindowTestHost.Invoke(window, "TryStageSelectedTextRedaction")!);
+
+                Assert.True(workspace.IsDirty);
+                var target = Assert.Single(workspace.Targets);
+                Assert.Equal(text.Key, target.Original.Key);
+                Assert.True((bool)OrganizeWindowTestHost.Invoke(window, "HasUnsavedEditChanges")!);
+                Assert.Equal(sourceBefore, File.ReadAllBytes(fixture.Path));
             }
             finally { ImageEditCommandTestHost.CloseClean(window); }
         });
