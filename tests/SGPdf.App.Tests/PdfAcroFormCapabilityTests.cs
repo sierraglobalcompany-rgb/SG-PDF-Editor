@@ -35,6 +35,7 @@ public sealed class PdfAcroFormCapabilityTests
             string destinationPath = Path.Combine(directory, "acroform-output.pdf");
             CreateTextFieldFixture(sourcePath);
             byte[] sourceBytes = File.ReadAllBytes(sourcePath);
+            byte[] sourceAppearance = ReadNormalAppearance(sourcePath);
 
             PdfRenderedPage sourceRender;
             int sourcePageCount;
@@ -47,6 +48,7 @@ public sealed class PdfAcroFormCapabilityTests
             }
 
             Assert.Equal(OriginalValue, ReadFieldValue(sourcePath));
+            Assert.Contains(OriginalValue, Encoding.ASCII.GetString(sourceAppearance));
 
             WriteTextFieldValue(sourcePath, destinationPath, FieldName, UpdatedValue);
 
@@ -61,9 +63,11 @@ public sealed class PdfAcroFormCapabilityTests
             Assert.Equal(sourceRender.PixelWidth, destinationRender.PixelWidth);
             Assert.Equal(sourceRender.PixelHeight, destinationRender.PixelHeight);
 
-            string sourceFieldPixels = HashFieldRegion(sourceRender);
-            string destinationFieldPixels = HashFieldRegion(destinationRender);
-            Assert.NotEqual(sourceFieldPixels, destinationFieldPixels);
+            byte[] destinationAppearance = ReadNormalAppearance(destinationPath);
+            Assert.NotEqual(
+                Convert.ToHexString(SHA256.HashData(sourceAppearance)),
+                Convert.ToHexString(SHA256.HashData(destinationAppearance)));
+            Assert.Contains(UpdatedValue, Encoding.ASCII.GetString(destinationAppearance));
         }
         finally
         {
@@ -194,38 +198,37 @@ public sealed class PdfAcroFormCapabilityTests
     private static string? ReadFieldValue(string path)
     {
         using PdfDocument document = PdfReader.Open(path, PdfDocumentOpenMode.Import);
+        PdfDictionary field = GetFieldDictionary(document, FieldName);
+        return field.Elements.GetString("/V");
+    }
+
+    private static byte[] ReadNormalAppearance(string path)
+    {
+        using PdfDocument document = PdfReader.Open(path, PdfDocumentOpenMode.Import);
+        PdfDictionary field = GetFieldDictionary(document, FieldName);
+        PdfDictionary? appearanceDictionary = field.Elements.GetDictionary("/AP");
+        PdfDictionary? normalAppearance = appearanceDictionary?.Elements.GetDictionary("/N");
+        byte[]? bytes = normalAppearance?.Stream?.UnfilteredValue;
+        return bytes is null
+            ? throw new InvalidOperationException($"El campo '{FieldName}' no tiene un /AP/N legible.")
+            : (byte[])bytes.Clone();
+    }
+
+    private static PdfDictionary GetFieldDictionary(PdfDocument document, string fieldName)
+    {
         PdfDictionary? acroForm = document.Internals.Catalog.Elements.GetDictionary("/AcroForm");
         PdfArray? fields = acroForm?.Elements.GetArray("/Fields");
         if (fields is null)
-            return null;
+            throw new InvalidOperationException("El PDF no contiene /AcroForm/Fields.");
 
         for (int index = 0; index < fields.Elements.Count; index++)
         {
             PdfDictionary? field = fields.Elements.GetDictionary(index);
-            if (field?.Elements.GetString("/T") == FieldName)
-                return field.Elements.GetString("/V");
+            if (field?.Elements.GetString("/T") == fieldName)
+                return field;
         }
 
-        return null;
-    }
-
-    private static string HashFieldRegion(PdfRenderedPage render)
-    {
-        const int left = 40;
-        const int right = 360;
-        const int top = 80;
-        const int bottom = 120;
-
-        int bytesPerPixel = Math.Max(1, render.Stride / render.PixelWidth);
-        using var stream = new MemoryStream();
-        for (int y = top; y < bottom; y++)
-        {
-            int offset = checked((y * render.Stride) + (left * bytesPerPixel));
-            int count = checked((right - left) * bytesPerPixel);
-            stream.Write(render.Pixels, offset, count);
-        }
-
-        return Convert.ToHexString(SHA256.HashData(stream.ToArray()));
+        throw new InvalidOperationException($"No se encontró el campo '{fieldName}'.");
     }
 
     private static string CreateTempDirectory()
