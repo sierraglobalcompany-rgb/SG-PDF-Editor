@@ -131,7 +131,7 @@ public sealed class PdfCryptographicSignatureValidatorTests
         string replacement = mutation switch
         {
             "negative" => $"0 -1 {values[2]} {values[3]}",
-            "out-of-range" => $"0 {values[1]} {int.MaxValue} 1",
+            "out-of-range" => $"0 {values[1]} {values[2]} {checked(values[3] + 1)}",
             "overlap" => $"0 {checked(values[2] + 1)} {values[2]} {values[3]}",
             "wrong-count" => $"0 {values[1]}",
             _ => throw new ArgumentOutOfRangeException(nameof(mutation))
