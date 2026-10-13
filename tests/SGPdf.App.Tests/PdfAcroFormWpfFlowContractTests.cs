@@ -26,6 +26,30 @@ public sealed class PdfAcroFormWpfFlowContractTests
         Assert.DoesNotContain("new Window", forms, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void MainWindow_FormSaveTargetsOnlyChangedFieldsAndSkipsNoOpSave()
+    {
+        string root = FindRepositoryRoot();
+        string forms = File.ReadAllText(Path.Combine(root, "src", "SGPdf.App", "MainWindow.Forms.cs"));
+
+        Assert.Contains("_acroFormOriginalValues", forms, StringComparison.Ordinal);
+        Assert.Contains("GetChangedAcroFormValues", forms, StringComparison.Ordinal);
+        Assert.Contains("if (values.Count == 0)", forms, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void MainWindow_FormStateIsResetWhenDocumentWorkspaceChanges()
+    {
+        string root = FindRepositoryRoot();
+        string forms = File.ReadAllText(Path.Combine(root, "src", "SGPdf.App", "MainWindow.Forms.cs"));
+        string reader = File.ReadAllText(Path.Combine(root, "src", "SGPdf.App", "MainWindow.Reader.cs"));
+        string labels = File.ReadAllText(Path.Combine(root, "src", "SGPdf.App", "MainWindow.Labels.cs"));
+
+        Assert.Contains("ResetAcroFormUi", forms, StringComparison.Ordinal);
+        Assert.Contains("ResetAcroFormUi();", reader, StringComparison.Ordinal);
+        Assert.Contains("ResetAcroFormUi();", labels, StringComparison.Ordinal);
+    }
+
     private static string FindRepositoryRoot()
     {
         DirectoryInfo? directory = new(AppContext.BaseDirectory);
