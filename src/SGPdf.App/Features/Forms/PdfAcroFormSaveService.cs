@@ -2,6 +2,7 @@ using System.IO;
 using System.Reflection;
 using PdfSharp.Fonts;
 using PdfSharp.Pdf;
+using PdfSharp.Pdf.AcroForms;
 using PdfSharp.Pdf.IO;
 using SGPdf.App.Features.Edit;
 using SGPdf.App.Pdf;
@@ -153,8 +154,6 @@ internal sealed class PdfAcroFormSaveService
                 $"No se pudieron materializar los campos: {string.Join(", ", remaining)}.");
         }
 
-        UpdateTextFieldAppearances(document, values, cancellationToken);
-
         cancellationToken.ThrowIfCancellationRequested();
         document.Save(destinationPath);
     }
@@ -206,52 +205,28 @@ internal sealed class PdfAcroFormSaveService
             && !string.IsNullOrWhiteSpace(fullName)
             && values.TryGetValue(fullName, out string? value))
         {
-            field.Elements.SetString("/V", value);
+            UpdateTextFieldAppearance(field, fullName, value);
             remaining.Remove(fullName);
         }
     }
 
-    private static void UpdateTextFieldAppearances(
-        PdfDocument document,
-        IReadOnlyDictionary<string, string> values,
-        CancellationToken cancellationToken)
+    private static void UpdateTextFieldAppearance(
+        PdfDictionary field,
+        string name,
+        string value)
     {
-#pragma warning disable CS0618
-        object acroForm = document.AcroForm;
-#pragma warning restore CS0618
-        PropertyInfo? fieldsProperty = acroForm.GetType().GetProperty(
-            "Fields",
-            BindingFlags.Instance | BindingFlags.Public);
-        if (fieldsProperty?.GetValue(acroForm) is not object fields)
-            throw new InvalidOperationException("PDFsharp no expuso la colección AcroForm.Fields esperada.");
-
-        PropertyInfo? stringIndexer = fields.GetType().GetProperty(
-            "Item",
-            BindingFlags.Instance | BindingFlags.Public,
+        ConstructorInfo? constructor = typeof(PdfTextField).GetConstructor(
+            BindingFlags.Instance | BindingFlags.NonPublic,
             binder: null,
-            returnType: null,
-            types: new[] { typeof(string) },
+            new[] { typeof(PdfDictionary) },
             modifiers: null);
-        if (stringIndexer is null)
-            throw new InvalidOperationException("PDFsharp no expuso el acceso por nombre a AcroForm.Fields.");
-
-        foreach ((string name, string value) in values)
+        if (constructor?.Invoke(new object[] { field }) is not PdfTextField textField)
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            if (stringIndexer.GetValue(fields, new object[] { name }) is not object field)
-                throw new InvalidOperationException($"PDFsharp no encontró el campo AcroForm '{name}'.");
-
-            PropertyInfo? textProperty = field.GetType().GetProperty(
-                "Text",
-                BindingFlags.Instance | BindingFlags.Public);
-            if (textProperty is null || !textProperty.CanWrite)
-            {
-                throw new InvalidOperationException(
-                    $"El campo '{name}' fue materializado como {field.GetType().FullName} sin setter Text utilizable.");
-            }
-
-            textProperty.SetValue(field, value);
+            throw new InvalidOperationException(
+                $"PDFsharp no pudo materializar el campo de texto AcroForm '{name}'.");
         }
+
+        textField.Text = value;
     }
 
     private static void EnsurePdfSharpFontResolver()
