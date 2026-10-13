@@ -107,19 +107,23 @@ Preservation evidence: `docs/history/2026-10-12-F11-preservation-matrix.md`. Rea
 ## F12 — Professional
 
 - [x] **PRO-REDACTION — AUTO PASS** F12.1 true safe redaction for complete simple visible horizontal text objects: conservative policy; underlying object removal; opaque black path; semantic/tagged risk blocked fail-closed; source/fingerprint race protection; reopened-output validation; multi-target; combined text-edit + redaction; minimal existing-panel UI; `Guardar como...` as the only publication path; no new PDF engine/runtime dependency.
-- [ ] **PRO** Remaining professional scope: cryptographic signing, advanced forms, compare, batch and audited conversions.
+- [x] **PRO-SIGN-PFX — AUTO PASS** F12.2 local cryptographic-signature PFX/P12 MVP: RSA private-key certificate loading; detached SHA-256 CMS; PDFsharp 6.2.4 signature writer; PDFium signature snapshot; strict one-signature/`ByteRange`/`adbe.pkcs7.detached` validation; ASN.1 exact CMS extraction + `SignedCms.CheckSignature(true)`; transactional temp→independent validate→source fingerprint recheck→publish; existing destination preserved on failure; minimal `Firmar digitalmente` WPF flow; password memory-only; representative synthetic preservation gate for source bytes/page count/text/image/bookmark/link/pre-existing AcroForm field/metadata/render; no second PDF engine or new runtime dependency.
+- [ ] **PRO** Remaining professional scope: advanced forms, compare, batch, audited conversions and any advanced signing scope beyond the PFX MVP.
 
-F12.1 closure evidence: `docs/history/2026-10-12-F12-1-safe-redaction-closure.md`. Real Windows redaction UX, representative private documents, external-reader interoperability, visual/print inspection and representative offline hardware QA: **NOT RUN**.
+F12.1 closure evidence: `docs/history/2026-10-12-F12-1-safe-redaction-closure.md`.  
+F12.2 closure evidence: `docs/history/2026-10-12-F12-2-cryptographic-signature-closure.md`.
+
+F12.2 automated closure does **not** imply real/private/manual signing validation. Still **NOT RUN**: real Windows end-to-end UX, representative private PDFs and real PFX/P12 corpus, Adobe/Foxit/Edge interoperability, Windows Certificate Store, smartcard/HSM, TSA/timestamping, revocation/OCSP/CRL and legal/regulatory qualification.
 
 ## Cross-cutting
 
 - [ ] **OFFLINE** Normal functions require no Internet; full physical/offline smoke remains pending where noted.
-- [x] **LICENSE** Runtime dependencies/assets audited through F12.1; F12.1 adds no runtime/PDF dependency. qpdf 12.4.2, Tesseract 5.5.3 + `spa`/`eng`, and existing pinned assets remain as previously audited. Labelize font provenance re-audit remains required before public installer.
-- [x] **PRIVACY** Private fixtures ignored and CI hygiene rejects tracked `tests/PrivateFixtures/**`.
-- [x] **ORIGINAL** Edit/sign/organize/comment/utilities/OCR/Text V2/F12.1 redaction writers protect source and use Save As semantics; F12.1 reuses the existing EDITAR transaction rather than creating a second general writer.
-- [x] **CI** Functional automated slices through F12.1 have exact-head Windows evidence. F12.1 functional closure SHA `f40b117cba235e221df4c4c5776b41bc8e89dac4`: 1111/1111 PASS, 0 warnings, 0 errors.
-- [x] **KISS** No preventive enterprise architecture or generic PDF object graph. PDFium remains primary PDF owner; qpdf is narrow; Tesseract is recognition-only; F11 did not add PdfPig; F12.1 reused existing owners and added no new engine/runtime dependency.
-- [x] **NO-AUTOMERGE** Main remains untouched; merges require explicit user approval.
+- [x] **LICENSE** Runtime dependencies/assets audited through F12.2; F12.1/F12.2 add no runtime/PDF dependency. The direct PKCS PackageReference trial was rejected because .NET 10 already provides `SignedCms`. qpdf 12.4.2, Tesseract 5.5.3 + `spa`/`eng`, PDFium, PDFsharp and existing pinned assets remain as previously audited. Labelize font provenance re-audit remains required before public installer.
+- [x] **PRIVACY** Private fixtures ignored and CI hygiene rejects tracked `tests/PrivateFixtures/**`; F12.2 PFX tests use generated/self-signed material rather than committed private certificates.
+- [x] **ORIGINAL** Edit/visual-sign/organize/comment/utilities/OCR/Text V2/F12.1 redaction/F12.2 cryptographic-signature writers protect source and use Save As semantics; F12.2 publishes only after independent validation + final source fingerprint match.
+- [x] **CI** Functional automated slices through F12.2 have exact-head Windows evidence. F12.2 Task 6/preservation functional SHA `8d7c155972bd62740fbec48bc0a7a52b1b37b92a`: `1150/1150` PASS, `0` warnings, `0` errors, `0` skipped.
+- [x] **KISS** No preventive enterprise architecture or generic PDF object graph. PDFium remains primary PDF inspector/owner; PDFsharp is reused narrowly for signing; qpdf remains narrow; Tesseract is recognition-only; F12.2 adds no second engine, backend, generic signing framework, TSA/HSM layer or duplicate preflight/fingerprint system.
+- [x] **NO-AUTOMERGE** `main` remains untouched at `31c0594758a83ec555d73ecdd7c597cdf8791fd7`; merges require explicit user approval.
 
 ## Traceability
 
@@ -137,4 +141,4 @@ F12.1 closure evidence: `docs/history/2026-10-12-F12-1-safe-redaction-closure.md
 | 10 | F9 Utilities | UTILS |
 | 11 | F10 OCR | OCR |
 | 12 | F11 Text V2 | TEXT-V2 |
-| 13 | F12 Professional | PRO-REDACTION, PRO |
+| 13 | F12 Professional | PRO-REDACTION, PRO-SIGN-PFX, PRO |
