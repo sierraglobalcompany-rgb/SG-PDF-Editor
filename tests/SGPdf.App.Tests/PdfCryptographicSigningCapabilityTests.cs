@@ -27,8 +27,11 @@ public sealed class PdfCryptographicSigningCapabilityTests
         }
 
         Assert.NotNull(Type.GetType("PdfSharp.Pdf.Signatures.DigitalSignatureHandler, PdfSharp"));
-        Assert.NotNull(Type.GetType("PdfSharp.Pdf.Signatures.IDigitalSigner, PdfSharp"));
-        Assert.NotNull(Type.GetType("System.Security.Cryptography.Pkcs.SignedCms, System.Security.Cryptography.Pkcs"));
+        Assert.NotNull(Type.GetType("PdfSharp.Pdf.Signatures.IDigitalSigner, PdfSharp.System"));
+
+        Type? signedCmsType = Type.GetType("System.Security.Cryptography.Pkcs.SignedCms, System.Security.Cryptography.Pkcs");
+        Assert.NotNull(signedCmsType);
+        Assert.Equal(10, signedCmsType!.Assembly.GetName().Version?.Major);
     }
 
     private static void AssertExport(IntPtr library, string exportName)
