@@ -8,10 +8,12 @@ public sealed class PdfCryptographicSigningCapabilityTests
     [Fact]
     public void CapabilityGate_PinnedRuntimeSupportsPdfSharpPkcsAndPdfiumSignatureInspection()
     {
-        string pdfiumPath = Path.Combine(AppContext.BaseDirectory, "pdfium.dll");
-        Assert.True(File.Exists(pdfiumPath), $"Pinned PDFium runtime not found at '{pdfiumPath}'.");
+        string? pdfiumPath = Directory
+            .EnumerateFiles(AppContext.BaseDirectory, "pdfium.dll", SearchOption.AllDirectories)
+            .FirstOrDefault();
+        Assert.False(string.IsNullOrWhiteSpace(pdfiumPath), "Pinned PDFium runtime was not found in the test output.");
 
-        IntPtr library = NativeLibrary.Load(pdfiumPath);
+        IntPtr library = NativeLibrary.Load(pdfiumPath!);
         try
         {
             AssertExport(library, "FPDF_GetSignatureObject");
