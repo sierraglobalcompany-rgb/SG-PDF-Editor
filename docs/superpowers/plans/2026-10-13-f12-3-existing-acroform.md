@@ -4,7 +4,7 @@
 
 **Goal:** Rellenar campos AcroForm clásicos ya existentes mediante `Guardar como...`, sin modificar el original, sin segundo motor PDF y con validación automatizada de valor + apariencia + preservación.
 
-**Architecture:** PDFsharp 6.2.4 is only a candidate writer until Task 1 proves it. PDFium remains the reader/render engine and independent checker. Later transactional publication must reuse `PdfEditPreflightInspector`, `PdfEditSourceFingerprint`, same-directory temp, validation and atomic publish.
+**Architecture:** PDFsharp 6.2.4 is the candidate writer proven by Task 1 for a classic text field. PDFium remains the reader/render engine and independent checker. Later transactional publication must reuse `PdfEditPreflightInspector`, `PdfEditSourceFingerprint`, same-directory temp, validation and atomic publish.
 
 **Spec:** `docs/superpowers/specs/2026-10-13-f12-3-existing-acroform-design.md`
 
@@ -19,27 +19,29 @@
 
 ---
 
-### Task 1: PDFsharp AcroForm text-field capability gate
+### Task 1: PDFsharp AcroForm text-field capability gate — GO
 
 **Files:**
-- Create: `tests/SGPdf.App.Tests/PdfAcroFormCapabilityTests.cs`
-- Production files: unchanged.
+- `tests/SGPdf.App.Tests/PdfAcroFormCapabilityTests.cs`
+- Production files unchanged.
 
-**Gate:** A synthetic classic AcroForm text field must be writable on an output copy, persist after reopen, remain a form under PDFium, render successfully, visibly update its appearance, and leave source bytes exact.
+**Gate result:** GO for an existing classic text field. PDFsharp 6.2.4 persists `/V`, regenerates the field `/AP/N`, leaves source bytes exact, preserves page count/form detection, and the output reopens/renders through PDFium. The ordinary `PdfDocumentSession.RenderPage()` is not a widget renderer because it does not initialize FormFill/`FPDF_FFLDraw`; therefore persisted `/AP/N` is inspected directly for this gate while normal rendering remains an open/render smoke.
 
-- [ ] **Step 1 — RED:** add one focused test with a deliberately unimplemented test-only write probe. Require source intact, output value changed, form detected, page count stable and render appearance changed.
-- [ ] **Step 2 — exact RED evidence:** run Windows CI on exact RED SHA. Baseline tests must remain green; failure must belong only to the new gate.
-- [ ] **Step 3 — minimal GREEN:** implement only the test-side PDFsharp probe necessary to set the existing text-field value and save output. No production API/service/UI.
-- [ ] **Step 4 — appearance proof:** reopen semantic value independently and render the field region. A `/V`-only success without visible new appearance is a gate failure.
-- [ ] **Step 5 — preservation proof:** source bytes unchanged, page count stable, form still detected, output opens/renders, no new runtime dependency.
-- [ ] **Step 6 — exact-head CI:** hygiene, locked restore, Release build, full Windows suite; require 0 warnings / 0 errors / all tests PASS.
-- [ ] **Step 7 — decision:** record GO or NO-GO. On NO-GO, STOP F12.3; do not start Task 2.
+- [x] **Step 1 — RED:** focused gate created.
+- [x] **Step 2 — exact RED evidence:** SHA `2d430962185750d2c8e64ae06f9e5177869aaf2b`, build 0 warnings / 0 errors, 1150 baseline PASS, sole intended gate failure.
+- [x] **Step 3 — minimal GREEN:** test-only PDFsharp typed text-field setter; no production service/UI.
+- [x] **Step 4 — appearance proof:** source/output `/AP/N` unfiltered streams differ and output appearance contains `UPDATED BY SG PDF`; `/V` independently equals the new value.
+- [x] **Step 5 — preservation proof:** source bytes exact, page count stable, form still detected, output opens/renders, no package/runtime dependency added.
+- [x] **Step 6 — exact-head CI:** SHA `8dd08032efd5d917c7f344ee834c56c9c8cd9bc5`; build 0 warnings / 0 errors; 1151/1151 PASS, 0 skipped.
+- [x] **Step 7 — decision:** GO. Task 2 may start.
+
+**Characterization:** PDFsharp Core requires an explicit font-resolution strategy when materializing `PdfTextField`; the gate isolates this with a test-only resolver. Production font handling must be explicit before Task 3 and must not add an unnecessary PDF engine.
 
 ---
 
-### Task 2: Minimal AcroForm inspector/model — blocked until Task 1 GO
+### Task 2: Minimal AcroForm inspector/model — OPEN
 
-Potential files only after GO:
+Potential files:
 - `src/SGPdf.App/Pdf/PdfiumNative.Forms.cs`
 - `src/SGPdf.App/Pdf/PdfDocumentSession.Forms.cs`
 - one small managed field model
