@@ -14,7 +14,7 @@ internal static class PdfCompareService
             ExtractText(left),
             ExtractText(right),
             StringComparison.Ordinal);
-        bool visualChanged = HasVisualDifference(left, right);
+        bool visualChanged = !textChanged && HasVisualDifference(left, right);
 
         return new PdfCompareResult(
             left.PageCount,
