@@ -39,24 +39,41 @@
 
 ---
 
-### Task 2: Minimal AcroForm inspector/model — OPEN
+### Task 2: Minimal AcroForm inspector/model — CLOSED / GREEN
 
-Potential files:
-- `src/SGPdf.App/Pdf/PdfiumNative.Forms.cs`
-- `src/SGPdf.App/Pdf/PdfDocumentSession.Forms.cs`
-- one small managed field model
-- focused tests
+**Files:**
+- `src/SGPdf.App/Features/Forms/PdfAcroFormInspector.cs`
+- `src/SGPdf.App/Features/Forms/PdfAcroFormTextFieldInfo.cs`
+- `tests/SGPdf.App.Tests/PdfAcroFormInspectorTests.cs`
 
-Inspect only field kinds proven supportable. No native handles escape `NativeGate`.
+**Scope proven:**
+- root classic text fields;
+- hierarchical text fields via `/Kids`;
+- inherited `/FT`;
+- partial-name composition as `Parent.Child`;
+- terminal `/Tx` values only;
+- unsupported `/Btn` fields skipped;
+- intermediate hierarchy nodes are not surfaced.
+
+**KISS result:** inspection uses existing PDFsharp dictionaries only. No FormFill, no extra P/Invoke, no font resolver, no package, no second PDF engine and no UI were added.
+
+- [x] **Flat-field GREEN:** SHA `19726df0be1d54c2d4f6240075295f4297bd8d5b`; build 0 warnings / 0 errors; 1152/1152 PASS.
+- [x] **Hierarchy RED:** SHA `367cd78b7e813b68392af62610afe072a26a8900`; build 0 warnings / 0 errors; 1152 baseline PASS and one intended new failure.
+- [x] **Hierarchy GREEN:** SHA `6799b23512e874b1ae373f370c769e0f589fdd67`; workflow `38360052031`; job `115171840150`; 0 warnings / 0 errors; 1153/1153 PASS, 0 skipped.
+- [x] **Decision:** Task 2 CLOSED. Only classic text fields are proven. Checkbox/radio/combo/list remain NOT RUN.
+
+History: `docs/history/2026-10-13-F12-3-task2-acroform-inspector.md`.
 
 ---
 
-### Task 3: Transactional AcroForm writer/service — blocked until Task 2
+### Task 3: Transactional AcroForm writer/service — READY, NOT STARTED
 
 Reuse existing preflight/fingerprint transaction:
 `preflight → fingerprint → same-dir temp → write → validate → fingerprint recheck → atomic publish → cleanup`.
 
 Original never overwritten. Existing destination survives failures.
+
+Task 3 requires its own narrow design/RED before production changes.
 
 ---
 
