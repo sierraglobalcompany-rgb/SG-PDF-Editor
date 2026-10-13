@@ -111,8 +111,7 @@ public sealed class PdfAcroFormCapabilityTests
         if (useWindowsFonts is null || useWindowsFonts.PropertyType != typeof(bool))
             throw new InvalidOperationException("PDFsharp 6.2.4 no expuso UseWindowsFontsUnderWindows.");
 
-        if (useWindowsFonts.GetValue(null) is false)
-            useWindowsFonts.SetValue(null, true);
+        useWindowsFonts.SetValue(null, true);
     }
 
     private static void CreateTextFieldFixture(string path)
