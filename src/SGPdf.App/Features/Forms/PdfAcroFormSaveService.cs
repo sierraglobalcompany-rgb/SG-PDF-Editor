@@ -76,7 +76,11 @@ internal sealed class PdfAcroFormSaveService
             _beforeValidation?.Invoke(sourceFullPath, tempPath);
             cancellationToken.ThrowIfCancellationRequested();
 
-            ValidateTemp(tempPath, values, cancellationToken);
+            new PdfAcroFormOutputValidator().Validate(
+                sourceFullPath,
+                tempPath,
+                values,
+                cancellationToken);
 
             cancellationToken.ThrowIfCancellationRequested();
             if (!sourceFingerprint.MatchesCurrentFile(sourceFullPath))
@@ -233,37 +237,6 @@ internal sealed class PdfAcroFormSaveService
     {
         if (GlobalFontSettings.FontResolver is null)
             GlobalFontSettings.FontResolver = new AcroFormFontResolver();
-    }
-
-    private static void ValidateTemp(
-        string tempPath,
-        IReadOnlyDictionary<string, string> values,
-        CancellationToken cancellationToken)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-
-        using (var session = PdfDocumentSession.Open(tempPath))
-        {
-            if (session.GetOrganizeFormType(cancellationToken) == 0)
-                throw new InvalidDataException("El PDF temporal perdió su formulario AcroForm.");
-        }
-
-        var actual = new Dictionary<string, string>(StringComparer.Ordinal);
-        foreach (PdfAcroFormTextFieldInfo field in PdfAcroFormInspector.InspectTextFields(tempPath))
-        {
-            if (!actual.TryAdd(field.Name, field.Value))
-                throw new InvalidDataException($"El PDF temporal contiene el campo duplicado '{field.Name}'.");
-        }
-
-        foreach ((string name, string expectedValue) in values)
-        {
-            if (!actual.TryGetValue(name, out string? actualValue)
-                || !string.Equals(actualValue, expectedValue, StringComparison.Ordinal))
-            {
-                throw new InvalidDataException(
-                    $"El PDF temporal no conservó el valor esperado para el campo '{name}'.");
-            }
-        }
     }
 
     private static void TryDeleteTemp(string tempPath)
