@@ -67,6 +67,7 @@ public sealed class PdfAcroFormCapabilityTests
         string fieldName,
         string value)
     {
+        EnablePdfSharpWindowsFontsForCapabilityGate();
         using PdfDocument document = PdfReader.Open(sourcePath, PdfDocumentOpenMode.Modify);
 
 #pragma warning disable CS0618
@@ -99,6 +100,19 @@ public sealed class PdfAcroFormCapabilityTests
 
         textProperty.SetValue(field, value);
         document.Save(destinationPath);
+    }
+
+    private static void EnablePdfSharpWindowsFontsForCapabilityGate()
+    {
+        Type? settingsType = typeof(XFont).Assembly.GetType("PdfSharp.Fonts.GlobalFontSettings");
+        PropertyInfo? useWindowsFonts = settingsType?.GetProperty(
+            "UseWindowsFontsUnderWindows",
+            BindingFlags.Static | BindingFlags.Public);
+        if (useWindowsFonts is null || useWindowsFonts.PropertyType != typeof(bool))
+            throw new InvalidOperationException("PDFsharp 6.2.4 no expuso UseWindowsFontsUnderWindows.");
+
+        if (useWindowsFonts.GetValue(null) is false)
+            useWindowsFonts.SetValue(null, true);
     }
 
     private static void CreateTextFieldFixture(string path)
