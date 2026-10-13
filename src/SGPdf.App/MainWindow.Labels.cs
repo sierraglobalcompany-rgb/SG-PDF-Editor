@@ -102,6 +102,7 @@ public partial class MainWindow
         _renderedZplLabels = renderedLabels.ToArray();
         _selectedZplDesignIndex = 0;
         _zplQuantitySelection = new ZplQuantitySelection(ZplQuantityMode.FromFile);
+        ResetAcroFormUi();
 
         var firstRendered = _renderedZplLabels[0];
         _zplRenderOptions = new ZplRenderOptions(
