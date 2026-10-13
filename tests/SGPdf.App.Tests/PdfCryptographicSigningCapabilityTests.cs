@@ -10,8 +10,8 @@ public sealed class PdfCryptographicSigningCapabilityTests
     {
         string? pdfiumPath = Directory
             .EnumerateFiles(AppContext.BaseDirectory, "pdfium.dll", SearchOption.AllDirectories)
-            .FirstOrDefault();
-        Assert.False(string.IsNullOrWhiteSpace(pdfiumPath), "Pinned PDFium runtime was not found in the test output.");
+            .FirstOrDefault(path => path.Contains("win-x64", StringComparison.OrdinalIgnoreCase));
+        Assert.False(string.IsNullOrWhiteSpace(pdfiumPath), "Pinned x64 PDFium runtime was not found in the test output.");
 
         IntPtr library = NativeLibrary.Load(pdfiumPath!);
         try
