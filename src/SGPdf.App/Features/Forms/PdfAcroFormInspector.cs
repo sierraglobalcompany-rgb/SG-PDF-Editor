@@ -24,18 +24,49 @@ internal static class PdfAcroFormInspector
         for (var index = 0; index < fields.Elements.Count; index++)
         {
             PdfDictionary? field = fields.Elements.GetDictionary(index);
-            if (field is null || field.Elements.GetName("/FT") != "/Tx")
-                continue;
-
-            string name = field.Elements.GetString("/T");
-            if (string.IsNullOrWhiteSpace(name))
-                continue;
-
-            result.Add(new PdfAcroFormTextFieldInfo(
-                name,
-                field.Elements.GetString("/V")));
+            if (field is not null)
+                CollectTextFields(field, inheritedFieldType: null, parentName: null, result);
         }
 
         return result;
+    }
+
+    private static void CollectTextFields(
+        PdfDictionary field,
+        string? inheritedFieldType,
+        string? parentName,
+        List<PdfAcroFormTextFieldInfo> result)
+    {
+        string ownFieldType = field.Elements.GetName("/FT");
+        string? fieldType = string.IsNullOrEmpty(ownFieldType)
+            ? inheritedFieldType
+            : ownFieldType;
+
+        string ownName = field.Elements.GetString("/T");
+        string? fullName = string.IsNullOrWhiteSpace(ownName)
+            ? parentName
+            : string.IsNullOrWhiteSpace(parentName)
+                ? ownName
+                : $"{parentName}.{ownName}";
+
+        PdfArray? kids = field.Elements.GetArray("/Kids");
+        if (kids is not null && kids.Elements.Count > 0)
+        {
+            for (var index = 0; index < kids.Elements.Count; index++)
+            {
+                PdfDictionary? child = kids.Elements.GetDictionary(index);
+                if (child is not null)
+                    CollectTextFields(child, fieldType, fullName, result);
+            }
+
+            return;
+        }
+
+        if (fieldType != "/Tx" || string.IsNullOrWhiteSpace(fullName))
+            return;
+
+        result.Add(new PdfAcroFormTextFieldInfo(
+            fullName,
+            field.Elements.GetString("/V")));
     }
 }
