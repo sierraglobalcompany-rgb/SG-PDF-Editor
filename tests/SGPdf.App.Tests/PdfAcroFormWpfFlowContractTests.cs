@@ -50,6 +50,22 @@ public sealed class PdfAcroFormWpfFlowContractTests
         Assert.Contains("ResetAcroFormUi();", labels, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void MainWindow_AcroFormFlowIsMutuallyExclusiveWithExistingModes()
+    {
+        string root = FindRepositoryRoot();
+        string forms = File.ReadAllText(Path.Combine(root, "src", "SGPdf.App", "MainWindow.Forms.cs"));
+        string sign = File.ReadAllText(Path.Combine(root, "src", "SGPdf.App", "MainWindow.Sign.cs"));
+        string edit = File.ReadAllText(Path.Combine(root, "src", "SGPdf.App", "MainWindow.Edit.cs"));
+        string organize = File.ReadAllText(Path.Combine(root, "src", "SGPdf.App", "MainWindow.Organize.cs"));
+
+        Assert.Contains("ResetAcroFormUi();", sign, StringComparison.Ordinal);
+        Assert.Contains("ResetAcroFormUi();", edit, StringComparison.Ordinal);
+        Assert.Contains("ResetAcroFormUi();", organize, StringComparison.Ordinal);
+        Assert.Contains("TryLeaveEditModeWithGuard", forms, StringComparison.Ordinal);
+        Assert.Contains("TryLeaveOrganizeModeWithGuard", forms, StringComparison.Ordinal);
+    }
+
     private static string FindRepositoryRoot()
     {
         DirectoryInfo? directory = new(AppContext.BaseDirectory);
