@@ -9,6 +9,7 @@ namespace SGPdf.App;
 public partial class MainWindow
 {
     private readonly Dictionary<string, TextBox> _acroFormEditors = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, string> _acroFormOriginalValues = new(StringComparer.Ordinal);
     private MenuItem? _editAcroFormMenuItem;
     private StackPanel? _acroFormPropertiesPanel;
     private StackPanel? _acroFormFieldsPanel;
@@ -104,6 +105,7 @@ public partial class MainWindow
         {
             IReadOnlyList<PdfAcroFormTextFieldInfo> fields = PdfAcroFormInspector.InspectTextFields(_session.FilePath);
             _acroFormEditors.Clear();
+            _acroFormOriginalValues.Clear();
             _acroFormFieldsPanel.Children.Clear();
 
             foreach (PdfAcroFormTextFieldInfo field in fields)
@@ -115,6 +117,7 @@ public partial class MainWindow
                     Margin = new Thickness(0, 4, 0, 10)
                 };
                 _acroFormEditors.Add(field.Name, editor);
+                _acroFormOriginalValues.Add(field.Name, field.Value);
 
                 _acroFormFieldsPanel.Children.Add(new TextBlock
                 {
@@ -157,10 +160,50 @@ public partial class MainWindow
         }
     }
 
+    private IReadOnlyDictionary<string, string> GetChangedAcroFormValues()
+    {
+        var values = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach ((string name, TextBox editor) in _acroFormEditors)
+        {
+            if (!_acroFormOriginalValues.TryGetValue(name, out string? originalValue) ||
+                !string.Equals(editor.Text, originalValue, StringComparison.Ordinal))
+            {
+                values.Add(name, editor.Text);
+            }
+        }
+
+        return values;
+    }
+
+    private void ResetAcroFormUi()
+    {
+        _acroFormEditors.Clear();
+        _acroFormOriginalValues.Clear();
+        _acroFormFieldsPanel?.Children.Clear();
+
+        if (_acroFormPropertiesPanel is not null)
+            _acroFormPropertiesPanel.Visibility = Visibility.Collapsed;
+        if (_saveAcroFormButton is not null)
+            _saveAcroFormButton.IsEnabled = false;
+
+        if (_zplDocument is null)
+        {
+            LabelPropertiesPanel.Visibility = Visibility.Collapsed;
+            PropertiesPlaceholderText.Visibility = Visibility.Visible;
+        }
+    }
+
     private async void SaveAcroForm_Click(object sender, RoutedEventArgs e)
     {
         if (_session is null || _acroFormEditors.Count == 0)
             return;
+
+        IReadOnlyDictionary<string, string> values = GetChangedAcroFormValues();
+        if (values.Count == 0)
+        {
+            StatusText.Text = "No hay cambios de formulario para guardar.";
+            return;
+        }
 
         string sourcePath = _session.FilePath;
         var dialog = new SaveFileDialog
@@ -174,11 +217,6 @@ public partial class MainWindow
         };
         if (dialog.ShowDialog(this) != true)
             return;
-
-        var values = _acroFormEditors.ToDictionary(
-            pair => pair.Key,
-            pair => pair.Value.Text,
-            StringComparer.Ordinal);
 
         SetBusy(true);
         StatusText.Text = "Guardando formulario...";
