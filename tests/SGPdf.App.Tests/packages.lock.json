@@ -108,8 +108,8 @@
       },
       "System.Security.Cryptography.Pkcs": {
         "type": "Transitive",
-        "resolved": "8.0.1",
-        "contentHash": "CoCRHFym33aUSf/NtWSVSZa99dkd0Hm7OCZUxORBjRB16LNhIEOf8THPqzIYlvKM0nNDAPTRBa1FxEECrgaxxA=="
+        "resolved": "10.0.12",
+        "contentHash": "W6BsawU2tB2qy6u4+3cBOSOmiTUgYWW365b5WMVA1bDxQwZZeNWD+qufKJkDQNKzAKq4b6Q04DDKhmr2SNJ1eg=="
       },
       "xunit.abstractions": {
         "type": "Transitive",
@@ -155,6 +155,7 @@
         "type": "Project",
         "dependencies": {
           "PDFsharp": "[6.2.4, )",
+          "System.Security.Cryptography.Pkcs": "[10.0.12, )",
           "bblanchon.PDFium.Win32": "[156.0.8076, )"
         }
       }

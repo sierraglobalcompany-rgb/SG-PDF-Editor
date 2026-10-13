@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "lastAuditDate": "2026-10-11",
+  "lastAuditDate": "2026-10-13",
   "policy": {
     "runtimeMustWorkOffline": true,
     "preferredLicenses": ["MIT", "BSD-2-Clause", "BSD-3-Clause", "Apache-2.0"],
@@ -58,6 +58,19 @@
         "third_party/licenses/PDFsharp-MIT.txt"
       ],
       "notes": "Introduced in F2.4 only for local PDF composition/export. No MigraDoc and no network/runtime service."
+    },
+    {
+      "name": "System.Security.Cryptography.Pkcs",
+      "upstream": "https://github.com/dotnet/runtime",
+      "version": "10.0.12",
+      "status": "runtime-current-f12-2",
+      "purpose": "Offline CMS/PKCS#7 creation and verification for F12.2 cryptographic PDF signatures",
+      "license": "MIT",
+      "nugetContentHashSha512Base64": "W6BsawU2tB2qy6u4+3cBOSOmiTUgYWW365b5WMVA1bDxQwZZeNWD+qufKJkDQNKzAKq4b6Q04DDKhmr2SNJ1eg==",
+      "licenseFiles": [
+        "third_party/licenses/System.Security.Cryptography.Pkcs-MIT.txt"
+      ],
+      "notes": "Direct package pin for reproducible net10.0 CMS signing/verification. net10.0 has no additional package dependencies. Runtime remains fully offline."
     },
     {
       "name": "DejaVu Sans",
