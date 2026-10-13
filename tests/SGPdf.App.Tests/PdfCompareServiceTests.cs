@@ -83,8 +83,14 @@ public sealed class PdfCompareServiceTests
         Assert.NotNull(compareMethod);
 
         object? result = compareMethod.Invoke(null, [leftPath, rightPath]);
-        return Assert.IsType(serviceType.Assembly.GetType(
-            "SGPdf.App.Features.Compare.PdfCompareResult")!, result);
+        Assert.NotNull(result);
+
+        Type? resultType = serviceType.Assembly.GetType(
+            "SGPdf.App.Features.Compare.PdfCompareResult",
+            throwOnError: false);
+        Assert.NotNull(resultType);
+        Assert.Equal(resultType, result.GetType());
+        return result;
     }
 
     private static void CreateTextPdf(string path, string text)
