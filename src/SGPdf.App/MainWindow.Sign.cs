@@ -276,6 +276,7 @@ public partial class MainWindow
         if (_session is null || _navigation is null || _isBusy)
             return;
 
+        ResetAcroFormUi();
         EnsureCurrentDeviceTransform();
         _signatureModeActive = true;
         _signatureOverlayCanvas!.Visibility = Visibility.Visible;

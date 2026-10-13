@@ -101,6 +101,22 @@ public partial class MainWindow
             return;
         }
 
+        if (_editModeActive && !TryLeaveEditModeWithGuard())
+            return;
+        if (_organizeModeActive && !TryLeaveOrganizeModeWithGuard())
+            return;
+        if (_signatureEditState?.IsDirty == true &&
+            !TryResolvePendingSignatureEdits(SignatureGuardReason.LeaveSignMode))
+        {
+            return;
+        }
+
+        _signatureModeActive = false;
+        if (_signatureOverlayCanvas is not null)
+            _signatureOverlayCanvas.Visibility = Visibility.Collapsed;
+        if (_signaturePropertiesPanel is not null)
+            _signaturePropertiesPanel.Visibility = Visibility.Collapsed;
+
         try
         {
             IReadOnlyList<PdfAcroFormTextFieldInfo> fields = PdfAcroFormInspector.InspectTextFields(_session.FilePath);

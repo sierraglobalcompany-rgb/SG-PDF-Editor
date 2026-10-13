@@ -352,6 +352,7 @@ public partial class MainWindow
             _activeTextObjects = texts.ToArray();
             _selectedImageKey = null;
             _selectedTextKey = null;
+            ResetAcroFormUi();
             _editModeActive = true;
             _signatureModeActive = false;
             UpdateEditSaveCommandAvailability();

@@ -308,6 +308,7 @@ public partial class MainWindow
             _organizeSourcePageSizes[source.SourceId] = sizes;
             ApplyOrganizePlanSnapshot(plan);
 
+            ResetAcroFormUi();
             _organizeModeActive = true;
             _signatureModeActive = false;
             _resizeRenderScheduler.CancelCurrent();
