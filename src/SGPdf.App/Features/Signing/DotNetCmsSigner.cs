@@ -40,8 +40,7 @@ internal sealed class DotNetCmsSigner : IDigitalSigner
         if (!stream.CanRead)
             throw new ArgumentException("El flujo que se va a firmar debe ser legible.", nameof(stream));
 
-        if (stream.CanSeek)
-            stream.Position = 0;
+        stream.Position = 0;
 
         using var buffer = new MemoryStream();
         stream.CopyTo(buffer);
