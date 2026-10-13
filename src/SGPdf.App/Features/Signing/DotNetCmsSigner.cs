@@ -42,9 +42,15 @@ internal sealed class DotNetCmsSigner : IDigitalSigner
 
         stream.Position = 0;
 
-        using var buffer = new MemoryStream();
-        stream.CopyTo(buffer);
-        byte[] content = buffer.ToArray();
+        byte[] content = new byte[checked((int)stream.Length)];
+        int offset = 0;
+        while (offset < content.Length)
+        {
+            int read = stream.Read(content, offset, content.Length - offset);
+            if (read == 0)
+                throw new EndOfStreamException("El flujo terminó antes de leer todos los bytes que deben firmarse.");
+            offset += read;
+        }
 
         var signedCms = new SignedCms(new ContentInfo(content), detached: true);
         var signer = new CmsSigner(_certificate)
