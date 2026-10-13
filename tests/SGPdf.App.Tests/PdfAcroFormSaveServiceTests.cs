@@ -2,6 +2,7 @@ using System.Reflection;
 using System.Runtime.ExceptionServices;
 using System.Text;
 using PdfSharp.Pdf;
+using PdfSharp.Pdf.IO;
 using SGPdf.App.Features.Forms;
 using Xunit;
 
@@ -63,6 +64,42 @@ public sealed class PdfAcroFormSaveServiceTests
         }
     }
 
+    [Fact]
+    public void SaveTextFields_UpdatesPersistedNormalAppearance()
+    {
+        string directory = Path.Combine(
+            Path.GetTempPath(),
+            "sgpdf-f12-3-task3-appearance-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directory);
+
+        try
+        {
+            string sourcePath = Path.Combine(directory, "source.pdf");
+            string destinationPath = Path.Combine(directory, "destination.pdf");
+            CreateTextFieldPdf(sourcePath);
+            byte[] sourceAppearance = ReadNormalAppearance(sourcePath);
+            Assert.Contains(OriginalValue, Encoding.ASCII.GetString(sourceAppearance));
+
+            object service = CreateService(null);
+            InvokeSave(
+                service,
+                sourcePath,
+                destinationPath,
+                new Dictionary<string, string> { [FieldName] = UpdatedValue });
+
+            byte[] destinationAppearance = ReadNormalAppearance(destinationPath);
+            string sourceAppearanceText = Encoding.ASCII.GetString(sourceAppearance);
+            string destinationAppearanceText = Encoding.ASCII.GetString(destinationAppearance);
+
+            Assert.NotEqual(sourceAppearanceText, destinationAppearanceText);
+            Assert.Contains(UpdatedValue, destinationAppearanceText);
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
     private static object CreateService(Action<string, string>? beforeValidation)
     {
         Type? type = typeof(MainWindow).Assembly.GetType(
@@ -110,6 +147,31 @@ public sealed class PdfAcroFormSaveServiceTests
             ExceptionDispatchInfo.Capture(exception.InnerException).Throw();
             throw;
         }
+    }
+
+    private static byte[] ReadNormalAppearance(string path)
+    {
+        using PdfDocument document = PdfReader.Open(path, PdfDocumentOpenMode.Import);
+        PdfDictionary? acroForm = document.Internals.Catalog.Elements.GetDictionary("/AcroForm");
+        PdfArray? fields = acroForm?.Elements.GetArray("/Fields");
+        if (fields is null)
+            throw new InvalidOperationException("El PDF no contiene /AcroForm/Fields.");
+
+        for (var index = 0; index < fields.Elements.Count; index++)
+        {
+            PdfDictionary? field = fields.Elements.GetDictionary(index);
+            if (field?.Elements.GetString("/T") != FieldName)
+                continue;
+
+            PdfDictionary? appearanceDictionary = field.Elements.GetDictionary("/AP");
+            PdfDictionary? normalAppearance = appearanceDictionary?.Elements.GetDictionary("/N");
+            byte[]? bytes = normalAppearance?.Stream?.UnfilteredValue;
+            return bytes is null
+                ? throw new InvalidOperationException($"El campo '{FieldName}' no tiene un /AP/N legible.")
+                : (byte[])bytes.Clone();
+        }
+
+        throw new InvalidOperationException($"No se encontró el campo '{FieldName}'.");
     }
 
     private static void CreateTextFieldPdf(string path)
