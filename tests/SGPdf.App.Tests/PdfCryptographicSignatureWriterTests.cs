@@ -217,14 +217,7 @@ public sealed class PdfCryptographicSignatureWriterTests
         secondPage.Width = XUnit.FromPoint(420d);
         secondPage.Height = XUnit.FromPoint(620d);
 
-        using (var graphics = XGraphics.FromPdfPage(firstPage))
-        using (var imageStream = new MemoryStream(Convert.FromBase64String(
-                   "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAMCAgMCAgMDAwMEAwMEBQgFBQQEBQoHBwYIDAoMDAsKCwsNDhIQDQ4RDgsLEBYQERMUFRUVDA8XGBYUGBIUFRT/2wBDAQMEBAUEBQkFBQkUDQsNFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBT/wAARCAACAAIDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD50ooor8MP9Uz/2Q==")))
-        using (var image = XImage.FromStream(imageStream))
-        {
-            graphics.DrawImage(image, 40d, 100d, 36d, 36d);
-        }
-
+        AddRawImage(firstPage, document);
         AddRawText(firstPage, document);
         firstPage.AddWebLink(new PdfRectangle(new XRect(40d, 160d, 180d, 24d)), PreservationUri);
         document.Outlines.Add(PreservationBookmark, secondPage, true);
@@ -232,21 +225,34 @@ public sealed class PdfCryptographicSignatureWriterTests
         document.Save(path);
     }
 
+    private static void AddRawImage(PdfPage page, PdfDocument document)
+    {
+        PdfDictionary resources = GetOrCreateDictionary(page, "/Resources", document);
+        PdfDictionary xObjects = GetOrCreateDictionary(resources, "/XObject", document);
+
+        var image = new PdfDictionary(document);
+        image.Elements.SetName("/Type", "/XObject");
+        image.Elements.SetName("/Subtype", "/Image");
+        image.Elements.SetInteger("/Width", 2);
+        image.Elements.SetInteger("/Height", 2);
+        image.Elements.SetName("/ColorSpace", "/DeviceRGB");
+        image.Elements.SetInteger("/BitsPerComponent", 8);
+        image.CreateStream(new byte[]
+        {
+            255, 0, 0, 0, 255, 0,
+            0, 0, 255, 255, 255, 255
+        });
+        document.Internals.AddObject(image);
+        xObjects.Elements["/ImPreserve"] = image.Reference;
+
+        page.Contents.AppendContent().CreateStream(
+            Encoding.ASCII.GetBytes("q 36 0 0 36 40 100 cm /ImPreserve Do Q\n"));
+    }
+
     private static void AddRawText(PdfPage page, PdfDocument document)
     {
-        PdfDictionary? resources = page.Elements.GetDictionary("/Resources");
-        if (resources is null)
-        {
-            resources = new PdfDictionary(document);
-            page.Elements["/Resources"] = resources;
-        }
-
-        PdfDictionary? fonts = resources.Elements.GetDictionary("/Font");
-        if (fonts is null)
-        {
-            fonts = new PdfDictionary(document);
-            resources.Elements["/Font"] = fonts;
-        }
+        PdfDictionary resources = GetOrCreateDictionary(page, "/Resources", document);
+        PdfDictionary fonts = GetOrCreateDictionary(resources, "/Font", document);
 
         var font = new PdfDictionary(document);
         font.Elements.SetName("/Type", "/Font");
@@ -258,6 +264,20 @@ public sealed class PdfCryptographicSignatureWriterTests
         byte[] contentBytes = Encoding.ASCII.GetBytes(
             $"BT /FPreserve 14 Tf 40 500 Td ({PreservationText}) Tj ET\n");
         page.Contents.AppendContent().CreateStream(contentBytes);
+    }
+
+    private static PdfDictionary GetOrCreateDictionary(
+        PdfDictionary owner,
+        string key,
+        PdfDocument document)
+    {
+        PdfDictionary? dictionary = owner.Elements.GetDictionary(key);
+        if (dictionary is not null)
+            return dictionary;
+
+        dictionary = new PdfDictionary(document);
+        owner.Elements[key] = dictionary;
+        return dictionary;
     }
 
     private static void AddSyntheticAcroForm(PdfDocument document)
