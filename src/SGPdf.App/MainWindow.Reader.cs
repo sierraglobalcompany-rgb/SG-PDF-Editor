@@ -194,6 +194,7 @@ public partial class MainWindow
                 _renderedZplLabels = Array.Empty<ZplRenderedLabel>();
                 _signatureModeActive = false;
                 _signatureEditState = null;
+                ResetAcroFormUi();
                 candidateSession = null;
 
                 _updatingReaderScroll = true;
