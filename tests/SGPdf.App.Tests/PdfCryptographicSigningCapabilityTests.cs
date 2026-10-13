@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using System.Text.Json;
 using Xunit;
 
 namespace SGPdf.App.Tests;
@@ -32,6 +33,34 @@ public sealed class PdfCryptographicSigningCapabilityTests
         Type? signedCmsType = Type.GetType("System.Security.Cryptography.Pkcs.SignedCms, System.Security.Cryptography.Pkcs");
         Assert.NotNull(signedCmsType);
         Assert.Equal(10, signedCmsType!.Assembly.GetName().Version?.Major);
+
+        string repositoryRoot = FindRepositoryRoot();
+        string projectText = File.ReadAllText(Path.Combine(repositoryRoot, "src", "SGPdf.App", "SGPdf.App.csproj"));
+        Assert.Contains(
+            "<PackageReference Include=\"System.Security.Cryptography.Pkcs\" Version=\"10.0.12\" />",
+            projectText,
+            StringComparison.Ordinal);
+
+        using JsonDocument lockFile = JsonDocument.Parse(
+            File.ReadAllText(Path.Combine(repositoryRoot, "src", "SGPdf.App", "packages.lock.json")));
+        JsonElement target = lockFile.RootElement.GetProperty("dependencies").EnumerateObject().Single().Value;
+        JsonElement pkcs = target.GetProperty("System.Security.Cryptography.Pkcs");
+        Assert.Equal("Direct", pkcs.GetProperty("type").GetString());
+        Assert.Equal("[10.0.12, )", pkcs.GetProperty("requested").GetString());
+        Assert.Equal("10.0.12", pkcs.GetProperty("resolved").GetString());
+    }
+
+    private static string FindRepositoryRoot()
+    {
+        DirectoryInfo? current = new(AppContext.BaseDirectory);
+        while (current is not null)
+        {
+            if (File.Exists(Path.Combine(current.FullName, "SGPdf.slnx")))
+                return current.FullName;
+            current = current.Parent;
+        }
+
+        throw new DirectoryNotFoundException("Repository root containing SGPdf.slnx was not found.");
     }
 
     private static void AssertExport(IntPtr library, string exportName)
