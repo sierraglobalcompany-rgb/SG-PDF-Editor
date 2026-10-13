@@ -16,7 +16,7 @@
 | F9 Utilidades | CLOSED / AUTO PASS | Windows/external/private repair corpus NOT RUN |
 | F10 OCR Local | CLOSED / AUTO PASS | Windows OCR/external readers/private corpus NOT RUN |
 | F11 Texto V2 | CLOSED / AUTO PASS | Windows reflow/private layouts/external readers NOT RUN |
-| **F12 Profesional** | **IN PROGRESS — F12.1 Safe Redaction CLOSED / AUTO PASS** | **redaction Windows/private/external-reader QA NOT RUN** |
+| **F12 Profesional** | **IN PROGRESS — F12.1 Safe Redaction + F12.2 PFX Signature MVP CLOSED / AUTO PASS** | **real/private/external-reader signing + redaction QA NOT RUN** |
 
 ## Current position
 
@@ -26,12 +26,23 @@ F12.1        Safe Redaction automated closed
               → true whole-object removal + opaque black mark
               → fail-closed policy + tagged semantic-text block
               → transactional Guardar como... only
-              → 1111/1111 exact-head Windows tests PASS
-F12 overall  still open; remaining professional slices not started by this closure
+F12.2        Cryptographic Signature PFX/P12 MVP automated closed
+              → RSA PFX/P12 + detached SHA-256 CMS
+              → PDFsharp writer + PDFium inspector
+              → independent ByteRange/CMS validator
+              → transactional temp/validate/recheck/publish flow
+              → minimal Firmar digitalmente WPF command
+              → representative preservation gate PASS
+              → 1150/1150 exact-head Windows tests PASS
+F12 overall  still open; later professional slices are not started by this closure
 ```
 
-F12.1 stays deliberately narrow: only complete simple visible horizontal text objects are eligible; unsafe/ambiguous cases fail closed; tagged PDFs are blocked for redaction rather than sanitized by a new subsystem; existing PDFium, EDITAR transaction, fingerprint model, `TextObjectKey`, text properties panel and Save As path are reused. No new PDF engine or runtime dependency was added.
+F12.2 stays deliberately narrow. It supports local PFX/P12 RSA signing with an invisible cryptographic signature and `Guardar como...`, validates the produced file locally and fails closed on unsupported or inconsistent signature structures. It reuses existing PDFium, PDFsharp, edit preflight and source fingerprint machinery. No second PDF engine, direct PKCS package, TSA, HSM, Windows Certificate Store integration, backend/account system or visual cryptographic-signature appearance was added.
 
-Closure evidence: `docs/history/2026-10-12-F12-1-safe-redaction-closure.md`.
+Representative automated preservation covers exact source bytes, page count, text, image XObject, bookmark, URI link, a pre-existing AcroForm field, selected metadata, rendering and independent CMS validation. This is not universal corpus proof and does not replace real/private/external-reader QA.
 
-No merge to `main` without explicit user approval. Do not start F12.2 implicitly; the next F12 Professional slice requires its own narrow spec/plan.
+Closure evidence:
+- F12.1: `docs/history/2026-10-12-F12-1-safe-redaction-closure.md`.
+- F12.2: `docs/history/2026-10-12-F12-2-cryptographic-signature-closure.md`.
+
+No merge to `main` without explicit user approval. STOP after F12.2 closure; do not start F12.3 implicitly.
