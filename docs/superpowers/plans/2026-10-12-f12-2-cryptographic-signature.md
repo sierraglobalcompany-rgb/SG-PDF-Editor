@@ -4,9 +4,9 @@
 
 **Goal:** Añadir firma criptográfica PDF local mediante PFX/P12, CMS/PKCS#7 SHA-256, `Guardar como...` y validación independiente del `ByteRange`, sin modificar el original ni introducir un segundo motor PDF general.
 
-**Architecture:** PDFsharp 6.2.4, ya presente, será responsable únicamente de estructurar la firma PDF (`DigitalSignatureHandler`). Un adaptador pequeño `IDigitalSigner` usará `System.Security.Cryptography.Pkcs` 10.0.12 y `X509Certificate2` para producir CMS detached SHA-256. PDFium seguirá siendo el lector/inspector principal y expondrá únicamente las primitivas de firma necesarias para leer `Contents` y `ByteRange`; un validador independiente reconstruirá los bytes firmados y verificará CMS antes de publicar atómicamente la salida.
+**Architecture:** PDFsharp 6.2.4, ya presente, será responsable únicamente de estructurar la firma PDF (`DigitalSignatureHandler`). Un adaptador pequeño `IDigitalSigner` usará `System.Security.Cryptography.Pkcs` provisto por .NET 10 y `X509Certificate2` para producir CMS detached SHA-256. PDFium seguirá siendo el lector/inspector principal y expondrá únicamente las primitivas de firma necesarias para leer `Contents` y `ByteRange`; un validador independiente reconstruirá los bytes firmados y verificará CMS antes de publicar atómicamente la salida.
 
-**Tech Stack:** .NET 10 / WPF / PDFium 156.0.8076 / PDFsharp 6.2.4 / System.Security.Cryptography.Pkcs 10.0.12 / xUnit.
+**Tech Stack:** .NET 10 / WPF / PDFium 156.0.8076 / PDFsharp 6.2.4 / System.Security.Cryptography.Pkcs provisto por .NET 10 / xUnit.
 
 **Spec:** `docs/superpowers/specs/2026-10-12-f12-2-cryptographic-signature-design.md`
 
@@ -21,7 +21,7 @@
 - `Guardar como...` únicamente; el PDF fuente nunca se sobrescribe.
 - PDF con firma previa y PDF abierto con contraseña siguen fail-closed.
 - No BouncyCastle, iText, Syncfusion, Aspose ni SDK comercial/copyleft fuerte.
-- `System.Security.Cryptography.Pkcs` se fija en `10.0.12`, estable de la línea .NET 10 y licencia MIT; lock y manifiesto deben quedar reproducibles.
+- No añadir `PackageReference` directo a `System.Security.Cryptography.Pkcs` mientras .NET 10 lo provea automáticamente; el capability gate debe probar disponibilidad real. NuGet `NU1510` es evidencia de que el pin explícito sería ruido.
 - No merge a `main` sin aprobación explícita.
 
 ## Review Focus
@@ -34,42 +34,47 @@
 
 ---
 
-### Task 1: Capability + dependency gate
+### Task 1: Capability + dependency gate — CLOSED / AUTO PASS
 
-**Files:**
+**Final files:**
 - Create: `tests/SGPdf.App.Tests/PdfCryptographicSigningCapabilityTests.cs`
-- Modify: `src/SGPdf.App/SGPdf.App.csproj`
-- Modify: `src/SGPdf.App/packages.lock.json`
-- Modify: `tests/SGPdf.App.Tests/packages.lock.json`
-- Modify: `third_party/manifest.json`
-- Create: `third_party/licenses/System.Security.Cryptography.Pkcs-MIT.txt`
+- Runtime project / locks / manifest: unchanged after applying Ley del Ruido; no new signing package retained.
 
 **Interfaces:**
-- Consumes: pinned PDFium runtime and existing PDFsharp 6.2.4 package.
-- Produces: proven availability of `SignedCms` and pinned PDFium exports `FPDF_GetSignatureObject`, `FPDFSignatureObj_GetContents`, `FPDFSignatureObj_GetByteRange`, `FPDFSignatureObj_GetSubFilter`.
+- Consumes: pinned PDFium runtime, existing PDFsharp 6.2.4 package and .NET 10 PKCS capability.
+- Produces: proven availability of `SignedCms`, `DigitalSignatureHandler`, `IDigitalSigner` and pinned PDFium exports `FPDF_GetSignatureObject`, `FPDFSignatureObj_GetContents`, `FPDFSignatureObj_GetByteRange`, `FPDFSignatureObj_GetSubFilter`.
 
-- [ ] **Step 1: Write the failing capability test**
+- [x] **Step 1: Write the capability test**
 
-Add `CapabilityGate_PinnedRuntimeSupportsPdfSharpPkcsAndPdfiumSignatureInspection` asserting:
-- `Type.GetType("System.Security.Cryptography.Pkcs.SignedCms, System.Security.Cryptography.Pkcs")` is non-null;
-- the loaded pinned `pdfium.dll` exports the four signature inspection symbols above;
-- `PdfSharp.Pdf.Signatures.DigitalSignatureHandler` and `IDigitalSigner` are available from the already referenced PDFsharp package.
+`CapabilityGate_PinnedRuntimeSupportsPdfSharpPkcsAndPdfiumSignatureInspection` verifies:
+- `System.Security.Cryptography.Pkcs.SignedCms` loads from the .NET 10 runtime;
+- the pinned x64 `pdfium.dll` exports the four signature inspection symbols above;
+- `PdfSharp.Pdf.Signatures.DigitalSignatureHandler` exists in `PdfSharp`;
+- `PdfSharp.Pdf.Signatures.IDigitalSigner` exists in `PdfSharp.System`.
 
-- [ ] **Step 2: Run the focal test and verify RED**
+- [x] **Step 2: Establish a valid RED / capability evidence**
 
-Run the focal xUnit test on Windows. Expected: FAIL because `System.Security.Cryptography.Pkcs` is not yet in the locked runtime dependency graph; if any pinned PDFium export is missing, STOP F12.2 with a documented NO-GO rather than adding a parser.
+Two diagnostic failures were discarded because they were test defects (wrong PDFium architecture discovery, then wrong `IDigitalSigner` assembly name). The corrected gate proved all four PDFium exports and both PDFsharp signing types are available. The attempted assertion that a direct PKCS package was required became the final RED.
 
-- [ ] **Step 3: Add the minimal dependency**
+- [x] **Step 3: Apply Ley del Ruido to dependency decision**
 
-Add `<PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.12" />` only to `src/SGPdf.App/SGPdf.App.csproj`; restore locked files; record the component in `third_party/manifest.json` and add the upstream MIT license text. Do not add BouncyCastle or another signing package.
+A trial direct `System.Security.Cryptography.Pkcs 10.0.12` reference restored and built, but NuGet emitted `NU1510`: the package is automatically available in .NET 10 and the explicit reference should be removed. The existing offline dependency guard also rejected the new package. The direct reference, lock changes, manifest entry and copied license were therefore removed rather than whitelisted. Final runtime dependencies remain PDFium + PDFsharp only.
 
-- [ ] **Step 4: Run focal + locked restore + Release build**
+- [x] **Step 4: Exact-head verification**
 
-Expected: capability test PASS, `dotnet restore --locked-mode` PASS after committed lock update, Release build 0 warnings/0 errors.
+Exact SHA: `e276ac79c833949476c31cd02b4385f7a8e8cde3`.
+Windows CI run `38341476654`, job `115113211445`:
+- repository hygiene PASS;
+- locked restore PASS;
+- Release build PASS;
+- `0` warnings;
+- `0` errors;
+- `1112/1112` tests PASS;
+- `0` skipped.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Close Task 1**
 
-Commit only gate/dependency/license files.
+Capability gate is GO. No second parser, no new PDF engine and no additional runtime package were introduced. Next task is Task 2 only.
 
 ---
 

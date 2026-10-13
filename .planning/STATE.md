@@ -1,6 +1,6 @@
 ---
 gsd_state_version: '1.0'
-status: f12-1-safe-redaction-automated-closed-f12-professional-in-progress
+status: f12-2-task1-capability-closed-f12-professional-in-progress
 progress:
   total_phases: 13
   completed_phases: 12
@@ -22,9 +22,7 @@ F12 Professional remains IN PROGRESS on branch `feat/f12-professional`.
 
 F12.1 Safe Redaction is **AUTOMATED CLOSED / AUTO PASS**.
 
-Functional closure HEAD: `f40b117cba235e221df4c4c5776b41bc8e89dac4`.
-
-Closure evidence: `docs/history/2026-10-12-F12-1-safe-redaction-closure.md`.
+F12.2 Cryptographic Signature is **IN PROGRESS**. Task 1 capability gate is **CLOSED / AUTO PASS**; Task 2 has not started.
 
 Main remains untouched at `31c0594758a83ec555d73ecdd7c597cdf8791fd7`.
 
@@ -44,10 +42,20 @@ Main remains untouched at `31c0594758a83ec555d73ecdd7c597cdf8791fd7`.
 - signed/source-drift/cancellation/failure paths remain fail closed;
 - duplicate multi-target test coverage merged under the Ley de Ruido.
 
+## F12.2 Task 1 completed scope
+
+- pinned x64 PDFium capability proven for `FPDF_GetSignatureObject`, `FPDFSignatureObj_GetContents`, `FPDFSignatureObj_GetByteRange` and `FPDFSignatureObj_GetSubFilter`;
+- PDFsharp 6.2.4 signing surface proven: `DigitalSignatureHandler` plus `IDigitalSigner` from `PdfSharp.System`;
+- `System.Security.Cryptography.Pkcs.SignedCms` proven available from the .NET 10 runtime;
+- direct PKCS package trial rejected after NuGet `NU1510` proved the explicit reference redundant;
+- Ley del Ruido applied: no redundant PackageReference, lock entry, manifest entry or copied license retained;
+- runtime dependency allowlist remains PDFium + PDFsharp only.
+
 ## Fresh automated evidence
 
-Exact functional SHA: `f40b117cba235e221df4c4c5776b41bc8e89dac4`.
+### F12.1
 
+Exact functional SHA: `f40b117cba235e221df4c4c5776b41bc8e89dac4`.
 Windows CI run `38288995654`, job `114944198278`:
 
 - repository hygiene PASS;
@@ -58,37 +66,52 @@ Windows CI run `38288995654`, job `114944198278`:
 - `1111/1111` tests PASS;
 - `0` skipped.
 
+### F12.2 Task 1
+
+Exact functional SHA: `e276ac79c833949476c31cd02b4385f7a8e8cde3`.
+Windows CI run `38341476654`, job `115113211445`:
+
+- repository hygiene PASS;
+- locked restore PASS;
+- Release build PASS;
+- `0` warnings;
+- `0` errors;
+- `1112/1112` tests PASS;
+- `0` skipped.
+
 `LOCAL DIRECT RUN = NOT SEPARATELY EVIDENCED`.
 
 ## Guardrails
 
-KISS / YAGNI remain mandatory. F12.1 added no new PDF engine, runtime dependency, second general writer, service layer or professional sidebar. PDFium and the existing EDITAR transaction remain the owners. No merge to `main` without explicit user approval.
+KISS / YAGNI and Ley del Ruido remain mandatory. F12.2 Task 1 added no runtime dependency, no second PDF engine, no signing framework and no UI. PDFium remains the primary inspector; PDFsharp remains the already-approved narrow PDF composition/signature structure dependency. Do not add a direct PKCS PackageReference while .NET 10 provides the capability automatically. No merge to `main` without explicit user approval.
 
 ## Manual/private/physical gates
 
 Still open unless separately evidenced:
 
-- real Windows redaction UX;
-- representative private PDFs;
-- complex real-world PDFs beyond the safe subset;
+- real Windows redaction/signing UX;
+- representative private PDFs and real PFX/P12 certificates;
 - Adobe/Foxit/Edge interoperability;
 - offline/representative-hardware smoke;
-- visual/print inspection of redaction placement.
+- smartcard/HSM/TSA/revocation/legal-regulatory validation remains future scope.
 
 Automated PASS does not replace those gates.
 
 ## Next
 
 ```text
-STOP F12.1
+F12.2 Task 1 CLOSED / AUTO PASS
+→ Task 2 only: PFX loader + CMS signer
+→ RED certificate-loading tests first
+→ no PDF writing yet
+→ no UI yet
+→ no new dependency unless fresh evidence proves required
 → do not merge to main
-→ do not start F12.2 implicitly
-→ next F12 Professional slice requires a narrow spec/plan
-→ preserve KISS + fail-closed + existing-owner reuse
 ```
 
 ## Continuity
 
-- F12.1 design: `docs/superpowers/specs/2026-10-12-f12-redaction-design.md`.
-- F12.1 plan: `docs/superpowers/plans/2026-10-12-f12-redaction.md`.
 - F12.1 closure: `docs/history/2026-10-12-F12-1-safe-redaction-closure.md`.
+- F12.2 design: `docs/superpowers/specs/2026-10-12-f12-2-cryptographic-signature-design.md`.
+- F12.2 plan: `docs/superpowers/plans/2026-10-12-f12-2-cryptographic-signature.md`.
+- Task 1 checkpoint: `.planning/checkpoints/F12_2_CHECKPOINT_2026-10-13_TASK1_RED_CORRECTO.md`.
