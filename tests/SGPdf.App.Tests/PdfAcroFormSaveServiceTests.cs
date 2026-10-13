@@ -191,6 +191,53 @@ public sealed class PdfAcroFormSaveServiceTests
         }
     }
 
+    [Fact]
+    public void SaveTextFields_CancellationBeforePublish_PreservesExistingDestination_AndCleansTemp()
+    {
+        string directory = Path.Combine(
+            Path.GetTempPath(),
+            "sgpdf-f12-3-task3-cancel-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directory);
+
+        try
+        {
+            string sourcePath = Path.Combine(directory, "source.pdf");
+            string destinationPath = Path.Combine(directory, "destination.pdf");
+            CreateTextFieldPdf(sourcePath);
+            CreateTextFieldPdf(destinationPath);
+            byte[] sourceBefore = File.ReadAllBytes(sourcePath);
+            byte[] destinationBefore = File.ReadAllBytes(destinationPath);
+            string? observedTemp = null;
+            using var cancellation = new CancellationTokenSource();
+
+            object service = CreateService((observedSource, tempPath) =>
+            {
+                Assert.Equal(Path.GetFullPath(sourcePath), Path.GetFullPath(observedSource));
+                Assert.True(File.Exists(tempPath));
+                observedTemp = tempPath;
+                cancellation.Cancel();
+            });
+
+            Assert.Throws<OperationCanceledException>(() =>
+                InvokeSave(
+                    service,
+                    sourcePath,
+                    destinationPath,
+                    new Dictionary<string, string> { [FieldName] = UpdatedValue },
+                    cancellation.Token));
+
+            Assert.Equal(sourceBefore, File.ReadAllBytes(sourcePath));
+            Assert.Equal(destinationBefore, File.ReadAllBytes(destinationPath));
+            Assert.NotNull(observedTemp);
+            Assert.False(File.Exists(observedTemp));
+            Assert.Empty(Directory.GetFiles(directory, ".sgpdf-form-*.tmp.pdf"));
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
     private static object CreateService(Action<string, string>? beforeValidation)
     {
         Type? type = typeof(MainWindow).Assembly.GetType(
