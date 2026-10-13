@@ -234,10 +234,19 @@ public sealed class PdfCryptographicSignatureWriterTests
 
     private static void AddRawText(PdfPage page, PdfDocument document)
     {
-        PdfDictionary resources = page.Elements.GetDictionary("/Resources", VCF.Create)
-            ?? throw new InvalidOperationException("No se pudieron crear los recursos de página.");
-        PdfDictionary fonts = resources.Elements.GetDictionary("/Font", VCF.Create)
-            ?? throw new InvalidOperationException("No se pudo crear el diccionario de fuentes.");
+        PdfDictionary? resources = page.Elements.GetDictionary("/Resources");
+        if (resources is null)
+        {
+            resources = new PdfDictionary(document);
+            page.Elements["/Resources"] = resources;
+        }
+
+        PdfDictionary? fonts = resources.Elements.GetDictionary("/Font");
+        if (fonts is null)
+        {
+            fonts = new PdfDictionary(document);
+            resources.Elements["/Font"] = fonts;
+        }
 
         var font = new PdfDictionary(document);
         font.Elements.SetName("/Type", "/Font");
@@ -257,7 +266,7 @@ public sealed class PdfCryptographicSignatureWriterTests
         var fields = new PdfArray(document);
         acroForm.Elements["/Fields"] = fields;
         document.Internals.AddObject(acroForm);
-        document.Catalog.Elements["/AcroForm"] = acroForm.Reference;
+        document.Internals.Catalog.Elements["/AcroForm"] = acroForm.Reference;
 
         var field = new PdfDictionary(document);
         field.Elements.SetName("/FT", "/Tx");
@@ -307,7 +316,7 @@ public sealed class PdfCryptographicSignatureWriterTests
         {
             title = document.Info.Title;
             author = document.Info.Author;
-            PdfDictionary? acroForm = document.Catalog.Elements.GetDictionary("/AcroForm");
+            PdfDictionary? acroForm = document.Internals.Catalog.Elements.GetDictionary("/AcroForm");
             PdfArray? fields = acroForm?.Elements.GetArray("/Fields");
             formFieldCount = fields?.Elements.Count ?? 0;
             if (fields is not null)
