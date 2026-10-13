@@ -100,6 +100,51 @@ public sealed class PdfAcroFormSaveServiceTests
         }
     }
 
+    [Fact]
+    public void SaveTextFields_BeforeValidationFailure_PreservesExistingDestination_AndCleansTemp()
+    {
+        string directory = Path.Combine(
+            Path.GetTempPath(),
+            "sgpdf-f12-3-task3-existing-destination-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directory);
+
+        try
+        {
+            string sourcePath = Path.Combine(directory, "source.pdf");
+            string destinationPath = Path.Combine(directory, "destination.pdf");
+            CreateTextFieldPdf(sourcePath);
+            CreateTextFieldPdf(destinationPath);
+            byte[] sourceBefore = File.ReadAllBytes(sourcePath);
+            byte[] destinationBefore = File.ReadAllBytes(destinationPath);
+            string? observedTemp = null;
+
+            object service = CreateService((_, tempPath) =>
+            {
+                Assert.True(File.Exists(tempPath));
+                observedTemp = tempPath;
+                throw new InvalidOperationException("forced form validation failure");
+            });
+
+            InvalidOperationException exception = Assert.Throws<InvalidOperationException>(() =>
+                InvokeSave(
+                    service,
+                    sourcePath,
+                    destinationPath,
+                    new Dictionary<string, string> { [FieldName] = UpdatedValue }));
+
+            Assert.Equal("forced form validation failure", exception.Message);
+            Assert.Equal(sourceBefore, File.ReadAllBytes(sourcePath));
+            Assert.Equal(destinationBefore, File.ReadAllBytes(destinationPath));
+            Assert.NotNull(observedTemp);
+            Assert.False(File.Exists(observedTemp));
+            Assert.Empty(Directory.GetFiles(directory, ".sgpdf-form-*.tmp.pdf"));
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
     private static object CreateService(Action<string, string>? beforeValidation)
     {
         Type? type = typeof(MainWindow).Assembly.GetType(
