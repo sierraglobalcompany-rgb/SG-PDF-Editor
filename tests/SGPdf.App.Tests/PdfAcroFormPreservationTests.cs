@@ -68,6 +68,8 @@ public sealed class PdfAcroFormPreservationTests
             Assert.Equal(Uri, after.Uri);
             Assert.Equal(before.UntouchedFieldValue, after.UntouchedFieldValue);
             Assert.Equal(UntouchedValue, after.UntouchedFieldValue);
+            Assert.False(string.IsNullOrWhiteSpace(after.UntouchedFieldAppearanceHash));
+            Assert.Equal(before.UntouchedFieldAppearanceHash, after.UntouchedFieldAppearanceHash);
             Assert.Equal(before.MetadataTitle, after.MetadataTitle);
             Assert.Equal(MetadataTitle, after.MetadataTitle);
             Assert.Equal(before.MetadataAuthor, after.MetadataAuthor);
@@ -92,6 +94,7 @@ public sealed class PdfAcroFormPreservationTests
         string content = ReadPageContent(firstPage);
         string imageHash = ReadImageHash(firstPage, "/ImKeep");
         string uri = ReadUri(firstPage);
+        string untouchedFieldAppearanceHash = ReadFieldAppearanceHash(document, UntouchedField);
 
         Assert.Single(document.Outlines);
         PdfOutline outline = document.Outlines[0];
@@ -111,6 +114,7 @@ public sealed class PdfAcroFormPreservationTests
             uri,
             fields[TargetField],
             fields[UntouchedField],
+            untouchedFieldAppearanceHash,
             document.Info.Title,
             document.Info.Author);
     }
@@ -138,6 +142,31 @@ public sealed class PdfAcroFormPreservationTests
             throw new InvalidOperationException($"El XObject de imagen '{resourceName}' no tiene stream legible.");
 
         return Convert.ToHexString(SHA256.HashData(bytes));
+    }
+
+    private static string ReadFieldAppearanceHash(PdfDocument document, string fieldName)
+    {
+        PdfDictionary? acroForm = document.Internals.Catalog.Elements.GetDictionary("/AcroForm");
+        PdfArray? fields = acroForm?.Elements.GetArray("/Fields");
+        if (fields is null)
+            throw new InvalidOperationException("El fixture perdió /AcroForm/Fields.");
+
+        for (var index = 0; index < fields.Elements.Count; index++)
+        {
+            PdfDictionary? field = fields.Elements.GetDictionary(index);
+            if (field?.Elements.GetString("/T") != fieldName)
+                continue;
+
+            PdfDictionary? appearance = field.Elements.GetDictionary("/AP");
+            PdfDictionary? normalAppearance = appearance?.Elements.GetDictionary("/N");
+            byte[]? bytes = normalAppearance?.Stream?.UnfilteredValue;
+            if (bytes is null || bytes.Length == 0)
+                throw new InvalidOperationException($"El campo '{fieldName}' perdió su /AP/N.");
+
+            return Convert.ToHexString(SHA256.HashData(bytes));
+        }
+
+        throw new InvalidOperationException($"No se encontró el campo '{fieldName}'.");
     }
 
     private static string ReadUri(PdfPage page)
@@ -379,6 +408,7 @@ public sealed class PdfAcroFormPreservationTests
         string Uri,
         string TargetFieldValue,
         string UntouchedFieldValue,
+        string UntouchedFieldAppearanceHash,
         string MetadataTitle,
         string MetadataAuthor);
 }
