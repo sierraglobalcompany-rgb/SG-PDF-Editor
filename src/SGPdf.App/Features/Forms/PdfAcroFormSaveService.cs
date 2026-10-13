@@ -1,4 +1,6 @@
 using System.IO;
+using System.Reflection;
+using PdfSharp.Fonts;
 using PdfSharp.Pdf;
 using PdfSharp.Pdf.IO;
 using SGPdf.App.Features.Edit;
@@ -120,6 +122,8 @@ internal sealed class PdfAcroFormSaveService
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
+        EnsurePdfSharpFontResolver();
+
         using PdfDocument document = PdfReader.Open(sourcePath, PdfDocumentOpenMode.Modify);
         PdfDictionary? acroForm = document.Internals.Catalog.Elements.GetDictionary("/AcroForm");
         PdfArray? fields = acroForm?.Elements.GetArray("/Fields");
@@ -148,6 +152,8 @@ internal sealed class PdfAcroFormSaveService
             throw new InvalidOperationException(
                 $"No se pudieron materializar los campos: {string.Join(", ", remaining)}.");
         }
+
+        UpdateTextFieldAppearances(document, values, cancellationToken);
 
         cancellationToken.ThrowIfCancellationRequested();
         document.Save(destinationPath);
@@ -205,6 +211,55 @@ internal sealed class PdfAcroFormSaveService
         }
     }
 
+    private static void UpdateTextFieldAppearances(
+        PdfDocument document,
+        IReadOnlyDictionary<string, string> values,
+        CancellationToken cancellationToken)
+    {
+#pragma warning disable CS0618
+        object acroForm = document.AcroForm;
+#pragma warning restore CS0618
+        PropertyInfo? fieldsProperty = acroForm.GetType().GetProperty(
+            "Fields",
+            BindingFlags.Instance | BindingFlags.Public);
+        if (fieldsProperty?.GetValue(acroForm) is not object fields)
+            throw new InvalidOperationException("PDFsharp no expuso la colección AcroForm.Fields esperada.");
+
+        PropertyInfo? stringIndexer = fields.GetType().GetProperty(
+            "Item",
+            BindingFlags.Instance | BindingFlags.Public,
+            binder: null,
+            returnType: null,
+            types: new[] { typeof(string) },
+            modifiers: null);
+        if (stringIndexer is null)
+            throw new InvalidOperationException("PDFsharp no expuso el acceso por nombre a AcroForm.Fields.");
+
+        foreach ((string name, string value) in values)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (stringIndexer.GetValue(fields, new object[] { name }) is not object field)
+                throw new InvalidOperationException($"PDFsharp no encontró el campo AcroForm '{name}'.");
+
+            PropertyInfo? textProperty = field.GetType().GetProperty(
+                "Text",
+                BindingFlags.Instance | BindingFlags.Public);
+            if (textProperty is null || !textProperty.CanWrite)
+            {
+                throw new InvalidOperationException(
+                    $"El campo '{name}' fue materializado como {field.GetType().FullName} sin setter Text utilizable.");
+            }
+
+            textProperty.SetValue(field, value);
+        }
+    }
+
+    private static void EnsurePdfSharpFontResolver()
+    {
+        if (GlobalFontSettings.FontResolver is null)
+            GlobalFontSettings.FontResolver = new AcroFormFontResolver();
+    }
+
     private static void ValidateTemp(
         string tempPath,
         IReadOnlyDictionary<string, string> values,
@@ -250,6 +305,34 @@ internal sealed class PdfAcroFormSaveService
         }
         catch (UnauthorizedAccessException)
         {
+        }
+    }
+
+    private sealed class AcroFormFontResolver : IFontResolver
+    {
+        private const string FaceName = "SGPDF_ACROFORM_FONT";
+        private readonly byte[] _fontBytes = LoadFontBytes();
+
+        public FontResolverInfo? ResolveTypeface(string familyName, bool bold, bool italic)
+            => new(FaceName, bold, italic);
+
+        public byte[]? GetFont(string faceName)
+            => string.Equals(faceName, FaceName, StringComparison.Ordinal)
+                ? _fontBytes
+                : null;
+
+        private static byte[] LoadFontBytes()
+        {
+            string fontsDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Fonts);
+            foreach (string fileName in new[] { "segoeui.ttf", "arial.ttf", "cour.ttf" })
+            {
+                string path = Path.Combine(fontsDirectory, fileName);
+                if (File.Exists(path))
+                    return File.ReadAllBytes(path);
+            }
+
+            throw new FileNotFoundException(
+                $"No se encontró una fuente TrueType de Windows para actualizar la apariencia AcroForm en '{fontsDirectory}'.");
         }
     }
 }
