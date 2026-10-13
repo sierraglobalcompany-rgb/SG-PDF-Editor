@@ -175,8 +175,7 @@ public sealed class PdfCompareCapabilityTests
         double graphicX)
     {
         string contentText = FormattableString.Invariant(
-            $"q 0 0 0 rg {graphicX:0.###} 60 80 40 re f Q\n" +
-            $"BT /F1 20 Tf 40 220 Td ({text}) Tj ET\n");
+            $"q 0 0 0 rg {graphicX:0.###} 60 80 40 re f Q\nBT /F1 20 Tf 40 220 Td ({text}) Tj ET\n");
         var content = new PdfDictionary(document);
         content.CreateStream(Encoding.ASCII.GetBytes(contentText));
         document.Internals.AddObject(content);
