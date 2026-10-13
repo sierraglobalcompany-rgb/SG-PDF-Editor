@@ -66,7 +66,40 @@ public sealed class PdfAcroFormCapabilityTests
         string destinationPath,
         string fieldName,
         string value)
-        => throw new NotImplementedException("Task 1 RED: PDFsharp AcroForm write probe is not implemented yet.");
+    {
+        using PdfDocument document = PdfReader.Open(sourcePath, PdfDocumentOpenMode.Modify);
+
+#pragma warning disable CS0618
+        object acroForm = document.AcroForm;
+#pragma warning restore CS0618
+        PropertyInfo? fieldsProperty = acroForm.GetType().GetProperty(
+            "Fields",
+            BindingFlags.Instance | BindingFlags.Public);
+        if (fieldsProperty?.GetValue(acroForm) is not object fields)
+            throw new InvalidOperationException("PDFsharp no expuso la colección AcroForm.Fields esperada.");
+
+        PropertyInfo? stringIndexer = fields.GetType().GetProperty(
+            "Item",
+            BindingFlags.Instance | BindingFlags.Public,
+            binder: null,
+            returnType: null,
+            types: new[] { typeof(string) },
+            modifiers: null);
+        if (stringIndexer?.GetValue(fields, new object[] { fieldName }) is not object field)
+            throw new InvalidOperationException($"PDFsharp no encontró el campo AcroForm '{fieldName}'.");
+
+        PropertyInfo? textProperty = field.GetType().GetProperty(
+            "Text",
+            BindingFlags.Instance | BindingFlags.Public);
+        if (textProperty is null || !textProperty.CanWrite)
+        {
+            throw new InvalidOperationException(
+                $"El campo '{fieldName}' fue materializado como {field.GetType().FullName} sin setter Text utilizable.");
+        }
+
+        textProperty.SetValue(field, value);
+        document.Save(destinationPath);
+    }
 
     private static void CreateTextFieldFixture(string path)
     {
