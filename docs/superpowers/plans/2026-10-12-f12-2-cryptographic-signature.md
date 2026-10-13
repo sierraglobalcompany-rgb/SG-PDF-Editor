@@ -128,9 +128,9 @@ Create a small synthetic PDF, snapshot source bytes, generate a valid test RSA c
 
 Open source with PDFsharp in modify mode, attach `DigitalSignatureHandler.ForDocument(document, new DotNetCmsSigner(certificate), options)`, use SHA-256 signer, `PageIndex = 0`, invisible/default-zero rectangle for this technical gate, and save only to the provided destination path. Do not add visual appearance or UI.
 
-- [ ] **Step 3: Add fail-fast input tests**
+- [ ] **Step 3: Add narrow input tests**
 
-Reject same source/destination path, missing source, pre-existing signed source for this MVP, and cancellation before save. The writer itself remains narrow; orchestration/publish guarantees belong to Task 5.
+Reject same source/destination path, missing source and cancellation before save. Do **not** duplicate the signed/password policy here; `PdfEditPreflightInspector` in Task 5 remains the single owner of those decisions.
 
 - [ ] **Step 4: Run focused + full suite, then commit**
 
