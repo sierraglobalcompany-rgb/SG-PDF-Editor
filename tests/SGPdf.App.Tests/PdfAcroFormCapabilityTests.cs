@@ -2,6 +2,7 @@ using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using PdfSharp.Drawing;
+using PdfSharp.Fonts;
 using PdfSharp.Pdf;
 using PdfSharp.Pdf.IO;
 using SGPdf.App.Pdf;
@@ -9,6 +10,13 @@ using Xunit;
 
 namespace SGPdf.App.Tests;
 
+[CollectionDefinition(Name, DisableParallelization = true)]
+public sealed class PdfSharpFontGateCollection
+{
+    public const string Name = "PdfSharpFontGate";
+}
+
+[Collection(PdfSharpFontGateCollection.Name)]
 public sealed class PdfAcroFormCapabilityTests
 {
     private const string FieldName = "SGPDF_TextGate";
@@ -18,6 +26,8 @@ public sealed class PdfAcroFormCapabilityTests
     [Fact]
     public void CapabilityGate_PdfSharpCanUpdateExistingTextFieldValueAndVisibleAppearance()
     {
+        EnablePdfSharpFontResolverForCapabilityGate();
+
         string directory = CreateTempDirectory();
         try
         {
@@ -67,7 +77,6 @@ public sealed class PdfAcroFormCapabilityTests
         string fieldName,
         string value)
     {
-        EnablePdfSharpWindowsFontsForCapabilityGate();
         using PdfDocument document = PdfReader.Open(sourcePath, PdfDocumentOpenMode.Modify);
 
 #pragma warning disable CS0618
@@ -102,16 +111,10 @@ public sealed class PdfAcroFormCapabilityTests
         document.Save(destinationPath);
     }
 
-    private static void EnablePdfSharpWindowsFontsForCapabilityGate()
+    private static void EnablePdfSharpFontResolverForCapabilityGate()
     {
-        Type? settingsType = typeof(XFont).Assembly.GetType("PdfSharp.Fonts.GlobalFontSettings");
-        PropertyInfo? useWindowsFonts = settingsType?.GetProperty(
-            "UseWindowsFontsUnderWindows",
-            BindingFlags.Static | BindingFlags.Public);
-        if (useWindowsFonts is null || useWindowsFonts.PropertyType != typeof(bool))
-            throw new InvalidOperationException("PDFsharp 6.2.4 no expuso UseWindowsFontsUnderWindows.");
-
-        useWindowsFonts.SetValue(null, true);
+        if (GlobalFontSettings.FontResolver is null)
+            GlobalFontSettings.FontResolver = new CapabilityGateFontResolver();
     }
 
     private static void CreateTextFieldFixture(string path)
@@ -230,5 +233,33 @@ public sealed class PdfAcroFormCapabilityTests
         string directory = Path.Combine(Path.GetTempPath(), "sgpdf-acroform-gate-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(directory);
         return directory;
+    }
+
+    private sealed class CapabilityGateFontResolver : IFontResolver
+    {
+        private const string FaceName = "SGPDF_CAPABILITY_FONT";
+        private readonly byte[] _fontBytes = LoadFontBytes();
+
+        public FontResolverInfo? ResolveTypeface(string familyName, bool bold, bool italic)
+            => new(FaceName, bold, italic);
+
+        public byte[]? GetFont(string faceName)
+            => string.Equals(faceName, FaceName, StringComparison.Ordinal)
+                ? _fontBytes
+                : null;
+
+        private static byte[] LoadFontBytes()
+        {
+            string fontsDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Fonts);
+            foreach (string fileName in new[] { "segoeui.ttf", "arial.ttf", "cour.ttf" })
+            {
+                string path = Path.Combine(fontsDirectory, fileName);
+                if (File.Exists(path))
+                    return File.ReadAllBytes(path);
+            }
+
+            throw new FileNotFoundException(
+                $"No se encontró una fuente TrueType del sistema para el capability gate en '{fontsDirectory}'.");
+        }
     }
 }
