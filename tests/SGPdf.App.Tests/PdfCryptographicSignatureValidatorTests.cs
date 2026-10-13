@@ -63,7 +63,7 @@ public sealed class PdfCryptographicSignatureValidatorTests
         string mutatedPath = fixture.CreateCopy("invalid-cms");
         CorruptCmsContents(mutatedPath);
 
-        Assert.ThrowsAny<Exception>(() => InvokeValidateExpectingProductionException(mutatedPath));
+        Assert.Throws<CryptographicException>(() => InvokeValidate(mutatedPath));
     }
 
     [Fact]
