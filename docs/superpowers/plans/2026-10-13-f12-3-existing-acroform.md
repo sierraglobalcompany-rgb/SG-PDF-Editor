@@ -108,15 +108,46 @@ History: `docs/history/2026-10-13-F12-3-task3-transactional-acroform-writer.md`.
 
 ---
 
-### Task 4: Independent validator + preservation — READY, NOT STARTED
+### Task 4: Independent validator + representative preservation — CLOSED / GREEN
 
-Validate supported field values after reopen, rendered appearance, page count and representative preserved structures. Fail closed on ambiguity.
+**Files:**
+- `src/SGPdf.App/Features/Forms/PdfAcroFormOutputValidator.cs`
+- `src/SGPdf.App/Features/Forms/PdfAcroFormSaveService.cs`
+- `tests/SGPdf.App.Tests/PdfAcroFormFormFillCapabilityTests.cs`
+- `tests/SGPdf.App.Tests/PdfAcroFormOutputValidatorTests.cs`
+- `tests/SGPdf.App.Tests/PdfAcroFormPreservationTests.cs`
+- `tests/SGPdf.App.Tests/PdfAcroFormSaveServiceValidatorIntegrationTests.cs`
+
+**Validation proven:**
+- persisted target `/V` must equal the expected value after reopen;
+- target `/Rect` must stay stable;
+- target `/AP/N` must remain usable and must change when the value changes;
+- representative source/output visual evidence is compared with PDFium FormFill + `FPDF_FFLDraw`;
+- validator failure occurs before publication and preserves the previous destination while cleaning the temp;
+- the source fingerprint is still rechecked after validation and before atomic publication.
+
+**Representative preservation gate:** page count, unrelated page text, a native image XObject, bookmark + destination, URI link, second untouched `/Tx` value + `/AP/N`, selected Info metadata and exact source bytes are preserved by the representative fixture. This is not a universal PDF-preservation claim.
+
+**KISS / independence boundary:** PDFsharp performs narrow structural checks of values, geometry and persisted appearance; PDFium FormFill provides a separate rendered visual signal. The save path now uses `PdfAcroFormOutputValidator` as the single pre-publication validator; the older redundant `ValidateTemp` path was removed. No second PDF engine, new package, generic forms framework, backend, network, telemetry or UI were introduced.
+
+- [x] **Task 4.1 — FormFill capability GO:** `e2d245b6945c854b495db3e02083903c192d1779`; workflow `38432225516`; job `115417065446`; 1163/1163 PASS.
+- [x] **Task 4.2 — validator RED:** `68c61f26e5a8c27f3574546acfde07e33f135be1`; workflow `38433037081`; job `115419867542`; build clean, 1163 baseline PASS + 4 intended RED failures.
+- [x] **Task 4.3 — validator GREEN:** functional `67d9b83c11bd6d241b65572cc08b126e9ad795ea`, exact-head `7e35fe8599801621a99bb7d2b62a90f05937b7f6`; workflow `38435244741`; job `115427392807`; 1167/1167 PASS.
+- [x] **Task 4.4 — representative preservation:** `0474586f8a026d224db60acfc7cb79d26bebb719` → `c9da1c2d20cbb71af2c2b987efb12198ab63f2c6`; workflow `38438239079`; job `115437752560`; 1168/1168 PASS.
+- [x] **Task 4.5 integration RED:** `c5f0e29d2540af71dac78c007c2f3bfb73d8f7c7`; workflow `38439465785`; job `115441952240`; 1168 baseline PASS + 1 intended failure proving the validator was not yet wired into publication.
+- [x] **Task 4.5 integration GREEN:** `fbe16db8f5e1dcf2bdd08e608e474763028be431`; workflow `38439821214`; job `115443183657`; build 0 warnings / 0 errors; 1169/1169 PASS, 0 skipped.
+
+**Decision:** Task 4 is functionally GREEN. Its final closure claim is conditioned on the exact-head CI generated after this documentation update. Task 5 must not start until that run is green.
+
+History: `docs/history/2026-10-13-F12-3-task4-independent-validator-preservation.md`.
 
 ---
 
-### Task 5: Minimal WPF flow — blocked until Task 4
+### Task 5: Minimal WPF flow — READY / NOT STARTED
 
 Expose only existing supported fields in a focused editor. No second editor shell/sidebar architecture. `Guardar como...` only.
+
+Task 5 remains intentionally untouched by the Task 4 closure checkpoint.
 
 ---
 
