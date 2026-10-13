@@ -178,6 +178,18 @@ History: `docs/history/2026-10-13-F12-3-task5-minimal-wpf-flow.md`.
 
 ---
 
-### Task 6: Exact-head closure — READY / NOT STARTED
+### Task 6: Exact-head closure — CLOSED / GREEN
 
-Run the final exact-head closure gate for F12.3 after Task 5 documentation is green. Update planning/history only after that full CI. Mark only proven classic text-field behavior AUTO PASS; all other field types/features remain NOT RUN/out of scope. STOP without starting another professional slice or merging.
+**Pre-closure fresh verification:** HEAD `38a4aab4b2593c16b6d95233c84147f2e3210ab9`; workflow `38451787497`, rerun job `115504632038`; Windows build 0 warnings / 0 errors; 1173/1173 PASS, 0 skipped; repository hygiene PASS.
+
+**AUTO PASS:** existing classic text fields `/Tx` only, including flat fields, hierarchy via `/Kids`, inherited `/FT /Tx`, composed names, transactional save, target value `/V`, target appearance `/AP/N`, representative PDFium FormFill visual validation and the minimal WPF `Guardar como...` flow.
+
+**NOT RUN / out of scope:** checkbox/radio (`/Btn`), combo/list (`/Ch`), XFA, JavaScript/calculations/actions, form signature fields, flattening, form creation/designer, advanced styling and universal reader/PDF preservation claims.
+
+**Final boundary:** preservation remains a **representative preservation gate**. No universal preservation or compatibility claim is made.
+
+**KISS / Ley del Ruido:** PASS. F12.3 introduced no new package, second PDF engine, backend, network, telemetry, mode coordinator, parallel MVVM/controller architecture or second editor shell. No `.csproj` or lockfile changed from the F12.2 base.
+
+**Decision:** F12.3 is CLOSED / GREEN only when the exact-head Windows workflow triggered by this documentation commit passes. On PASS, STOP without starting F12.4 and without merge.
+
+History: `docs/history/2026-10-13-F12-3-exact-head-closure.md`.
