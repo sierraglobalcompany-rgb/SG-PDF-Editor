@@ -66,6 +66,31 @@ public sealed class PdfCompareServiceTests
         }
     }
 
+    [Fact]
+    public void Compare_VisualOnlyChange_ClassifiesVisualWithoutTextChange()
+    {
+        string directory = Path.Combine(
+            Path.GetTempPath(),
+            "sgpdf-f12-4-compare-visual-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directory);
+
+        try
+        {
+            string leftPath = Path.Combine(directory, "left.pdf");
+            string rightPath = Path.Combine(directory, "right.pdf");
+            CreateTextAndGraphicPdf(leftPath, rectangleX: 40);
+            CreateTextAndGraphicPdf(rightPath, rectangleX: 180);
+
+            object result = Compare(leftPath, rightPath);
+            Assert.False(ReadProperty<bool>(result, "TextChanged"));
+            Assert.True(ReadProperty<bool>(result, "VisualChanged"));
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
     private static object Compare(string leftPath, string rightPath)
     {
         Assembly appAssembly = typeof(PdfDocumentSession).Assembly;
@@ -115,6 +140,34 @@ public sealed class PdfCompareServiceTests
         var content = new PdfDictionary(document);
         content.CreateStream(Encoding.ASCII.GetBytes(
             $"BT /F1 20 Tf 40 220 Td ({text}) Tj ET\n"));
+        document.Internals.AddObject(content);
+        page.Elements["/Contents"] = content.Reference;
+
+        document.Save(path);
+    }
+
+    private static void CreateTextAndGraphicPdf(string path, int rectangleX)
+    {
+        using var document = new PdfDocument();
+        PdfPage page = document.AddPage();
+        page.Width = PdfSharp.Drawing.XUnit.FromPoint(400d);
+        page.Height = PdfSharp.Drawing.XUnit.FromPoint(300d);
+
+        var resources = new PdfDictionary(document);
+        var fonts = new PdfDictionary(document);
+        var font = new PdfDictionary(document);
+        font.Elements.SetName("/Type", "/Font");
+        font.Elements.SetName("/Subtype", "/Type1");
+        font.Elements.SetName("/BaseFont", "/Helvetica");
+        font.Elements.SetName("/Encoding", "/WinAnsiEncoding");
+        document.Internals.AddObject(font);
+        fonts.Elements["/F1"] = font.Reference;
+        resources.Elements["/Font"] = fonts;
+        page.Elements["/Resources"] = resources;
+
+        var content = new PdfDictionary(document);
+        content.CreateStream(Encoding.ASCII.GetBytes(
+            $"BT /F1 20 Tf 40 220 Td (BASELINE) Tj ET\n0 0 0 rg {rectangleX} 120 80 40 re f\n"));
         document.Internals.AddObject(content);
         page.Elements["/Contents"] = content.Reference;
 
