@@ -143,7 +143,7 @@ Exact-head CI:
 - job `115973245330`;
 - hygiene/staging/restore/build/tests SUCCESS.
 
-### UI-2 Main shell — BLOCKED AFTER GREEN ATTEMPT
+### UI-2 Main shell — BLOCKED / ROOT CAUSE IDENTIFIED / FIX NOT APPLIED
 
 RED contract commit:
 `383413bff2cdf6dca130ccb6bd1379f2ad89cc06`
@@ -169,11 +169,33 @@ Attempted scope only:
 Exact-head CI for GREEN attempt:
 - run `38600360434`;
 - job `115977718873`;
-- result: **FAIL during XAML compilation/build**;
-- tests did not become authoritative for this HEAD because compilation failed;
-- root cause has **not** been diagnosed yet.
+- Release build **SUCCEEDED** with 0 errors; the two reported warnings are the already-open transitive `System.Security.Cryptography.Pkcs 8.0.1` NU1902/NU1903 item;
+- tests executed: **995 PASS / 213 FAIL / 0 skipped / 1208 total**;
+- the repeated failure is `System.Windows.Markup.XamlParseException` from `StaticResourceExtension` with `Cannot find resource named 'SgSurfaceBrush'`;
+- this corrects the earlier checkpoint wording that described the failure as XAML compilation/build failure.
 
-**UI-2 is NOT GREEN. Do not patch forward and do not start UI-3/dialogs until the exact XAML compile cause is identified and fixed minimally.**
+Root cause diagnosis completed on 2026-10-14:
+- `Themes/Modern.xaml` does define `SgSurfaceBrush` and the other SG resources;
+- `App.xaml` merges `Themes/Modern.xaml` at application scope;
+- many existing tests instantiate `new MainWindow()` directly in STA without bootstrapping the real `App.xaml` application resources;
+- UI-2 introduced eager `StaticResource` consumption on `MainWindow` itself, beginning with `Background="{StaticResource SgSurfaceBrush}"`;
+- therefore direct `MainWindow` construction in tests fails before functional behavior can run, producing the 213 shared failures;
+- this is one shared resource-resolution defect, not 213 independent product failures;
+- names, handlers, three-column shell structure, SG resource keys and style target types were inspected and are not the identified cause.
+
+Approved-plan check:
+- Task 2 requires the shell to **consume shared surface/canvas/panel styles** and preserve existing names/handlers;
+- the approved plan does **not** require `StaticResource` specifically;
+- the RED test currently over-specifies `StaticResource`, so that implementation detail may be relaxed while retaining the actual architectural contract.
+
+Next minimal correction candidate — **NOT YET IMPLEMENTED OR VERIFIED**:
+1. add/adjust one causal contract proving `MainWindow` can be constructed in the existing standalone test context;
+2. change only SG resource references in `MainWindow.xaml` from eager static lookup to deferred resource lookup where required;
+3. adjust the UI contract to assert consumption of the same SG resource keys without coupling the contract to `StaticResource` syntax;
+4. run focused UI contract + representative `MainWindow` constructor test, then full suite and exact-head CI;
+5. call UI-2 GREEN only if those checks pass.
+
+Do **not** add a test bootstrap, duplicate the theme dictionary, modify 213 tests, introduce a new UI framework, or start UI-3 before UI-2 is GREEN.
 
 ## Official icon — USER APPROVED REFERENCE
 
@@ -194,30 +216,30 @@ The user-provided image in chat is the visual master reference. The binary `.ico
 Checkpoint branch:
 `feat/release-ui-modernization`
 
-Product HEAD at stop request:
+Last product-code HEAD:
 `4a83e7ac48f7fbbcc716274236192285d91c8062`
 
-Checkpoint sequence:
+Latest diagnosis before this checkpoint:
 - UI-1: GREEN and CI verified;
-- UI-2 RED: valid and confirmed by one expected failing contract test;
-- UI-2 test analyzer noise: cleaned;
-- UI-2 GREEN attempt: written, but exact-head CI fails during XAML compilation; **BLOCKED / NOT GREEN**;
-- root cause of the XAML compile failure: pending diagnosis;
-- icon identity: approved and documented; binary asset integration pending;
+- UI-2 RED: valid at the architectural level, but one assertion over-specified `StaticResource` syntax;
+- UI-2 GREEN attempt: visual shell written, build succeeds, full tests fail 213 times from one missing application resource lookup;
+- UI-2 root cause: **IDENTIFIED** as eager `StaticResource` lookup when tests instantiate `MainWindow` without application-level resources;
+- minimal correction: defined but **not applied**;
+- icon identity: approved/documented; binary asset integration pending;
 - dialogs: not started;
 - screenshot QA: not started;
 - portable publish: intentionally paused until visual gate;
 - installer: intentionally not started;
 - `main`: unchanged/read-only.
 
-No further product changes are authorized by this checkpoint itself.
+User explicitly requested a checkpoint and stop here. No UI-2 correction was applied after diagnosis.
 
 ## Resume order
 
-1. Start from `feat/release-ui-modernization` and read the exact build/XAML error for run `38600360434`, job `115977718873`.
-2. Reproduce/classify the XAML compile failure and identify root cause before editing.
-3. Apply the smallest UI-2 correction only; no opportunistic redesign.
-4. Run focused contract + full suite + exact-head CI; UI-2 may be called GREEN only after build/tests succeed.
+1. Start from `feat/release-ui-modernization` and this checkpoint; do not re-diagnose the 213 failures from scratch.
+2. Preserve the demonstrated cause: direct `MainWindow` construction + eager SG `StaticResource` lookup without `App.xaml` resources.
+3. Implement the smallest causal UI-2 correction only: causal constructor contract + deferred SG resource lookup + contract syntax decoupling as needed.
+4. Run focused contract + representative constructor test + full suite + exact-head CI; UI-2 may be called GREEN only after all succeed.
 5. Modernize dialogs using the same shared resources.
 6. Integrate the approved app/PDF icon asset.
 7. Run real Windows screenshot QA at 1366×768+ and system scaling.
