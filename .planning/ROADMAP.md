@@ -29,7 +29,7 @@
 | F12.3 Existing AcroForm text fields | **CLOSED / AUTO PASS** | advanced form types only by separate approval |
 | F12.4 Compare | **CLOSED / AUTO PASS** — core + minimal UI | representative real-PDF/manual QA later |
 | F12.5 Batch | **CLOSED / AUTO PASS — TextWatermark MVP** | additional batch operations only by separate value/capability decision |
-| F12.6 Code Generator | **PLANNED / NOT STARTED** | **current next: narrow scope/capability gate** |
+| F12.6 Code Generator | **CAPABILITY GATE COMPLETE / IMPLEMENTATION BLOCKED ON DEPENDENCY APPROVAL** | approve or reject one narrow QR dependency path |
 | F12.7 Audited Conversions | **PLANNED / NOT STARTED** | each conversion approved and audited separately |
 | Release integration/stabilization | **OPEN** | deliberate branch/main consolidation + manual/private QA |
 
@@ -42,30 +42,38 @@ F12.2       CLOSED — PFX/P12 cryptographic signature MVP
 F12.3       CLOSED — existing classic AcroForm /Tx
 F12.4       CLOSED — Compare core + minimal existing-panel UI
 F12.5       CLOSED — sequential TextWatermark Batch MVP
-F12.6       Code Generator — current next, capability/scope gate first
+F12.6       Code Generator — capability gate complete; dependency approval required
 F12.7       Audited Conversions — pending
 Release     Integration + manual/private/physical QA — pending
 ```
 
-Current automated functional baseline before this documentation-closure commit:
-- exact implementation HEAD `2dd9a502965e3a2158b2f86c09e00a7eb917f8c7` on `feat/f12-5-batch-contract`;
+Current automated functional baseline before the F12.6 capability-gate documentation commits:
+- exact implementation/documentation HEAD `ea8486ec2aaf6ebe26dd8947c925f32eef092e2d` on `feat/f12-5-batch-contract`;
 - **1192/1192** tests PASS, 0 failed, 0 skipped;
 - Release build **0 warnings / 0 errors**;
-- exact-head CI run `38509616735`, job `115674867232`;
+- exact-head CI run `38509929841`, job `115675852458`;
 - no merge to `main`.
 
 ## Remaining development sequence
 
-### 1. F12.6 Code Generator — current next
+### 1. F12.6 Code Generator — dependency approval gate
 
-Open only after an explicit scope/capability gate determines which code formats are actually required and supported. Do not assume barcode/QR symbologies prematurely. Prefer a tiny generator slice that reuses existing export paths over a generic barcode studio.
+Capability inspection is complete. The current application has no QR/barcode generation owner or dependency to reuse. `SGPdf.App.csproj` and `packages.lock.json` contain no ZXing, QRCoder, SkiaSharp or ImageSharp package, and repository search found no existing QR/Code128 generator. Therefore implementation must not start until a new dependency is explicitly approved.
+
+Frozen recommended first slice if dependency expansion is approved:
+`text/value → QR only → deterministic local generation → standalone PNG export`.
 
 KISS guardrails:
+- no hand-written QR/Code128 encoder;
 - no generic barcode/code studio;
 - no plugin architecture for symbologies;
-- no new dependency until an existing owner/capability check proves one is necessary;
-- implement one narrow format/value path first;
-- preserve local/offline behavior.
+- no dependency addition without explicit approval;
+- QR only in the first implementation slice;
+- Code128 deferred to a separate value/capability decision;
+- EAN/UPC/DataMatrix/PDF417 and bulk generation deferred;
+- PDF insertion deferred until standalone QR export is proven;
+- preserve local/offline behavior;
+- no cloud/backend.
 
 ### 2. F12.7 Audited Conversions
 
@@ -152,5 +160,6 @@ Separate user stops remain only for decisions, architecture changes, new depende
 - F12.4 UI plan: `docs/superpowers/plans/2026-10-14-f12-4-compare-ui.md`
 - F12.4 UI closure: `docs/history/2026-10-14-F12-4-compare-ui-closure.md`
 - F12.5: operational closure recorded in `.planning/STATE.md` + this roadmap; no extra history Markdown added to avoid documentation noise.
+- F12.6 capability gate: operational decision recorded in `.planning/STATE.md` + this roadmap; no extra history Markdown added because no implementation exists yet.
 
 No merge to `main` without explicit user approval.
