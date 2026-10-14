@@ -11,12 +11,6 @@ public partial class MainWindow
 {
     private bool _compareUiInitialized;
 
-    protected override void OnContentRendered(EventArgs e)
-    {
-        base.OnContentRendered(e);
-        InitializeCompareUi();
-    }
-
     private void InitializeCompareUi()
     {
         if (_compareUiInitialized)
