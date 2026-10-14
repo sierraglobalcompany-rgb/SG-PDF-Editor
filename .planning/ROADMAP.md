@@ -29,7 +29,7 @@
 | F12.3 Existing AcroForm text fields | **CLOSED / AUTO PASS** | advanced form types only by separate approval |
 | F12.4 Compare | **CLOSED / AUTO PASS** — core + minimal UI | representative real-PDF/manual QA later |
 | F12.5 Batch | **CLOSED / AUTO PASS — TextWatermark MVP** | additional batch operations only by separate value/capability decision |
-| F12.6 Code Generator | **PLANNED / NOT STARTED** | **current next: narrow scope/capability gate** |
+| F12.6 Code Generator | **IN PROGRESS / AUTO PASS — QR core MVP** | **current next: minimal QR value-entry + Guardar PNG UI** |
 | F12.7 Audited Conversions | **PLANNED / NOT STARTED** | each conversion approved and audited separately |
 | Release integration/stabilization | **OPEN** | deliberate branch/main consolidation + manual/private QA |
 
@@ -42,30 +42,47 @@ F12.2       CLOSED — PFX/P12 cryptographic signature MVP
 F12.3       CLOSED — existing classic AcroForm /Tx
 F12.4       CLOSED — Compare core + minimal existing-panel UI
 F12.5       CLOSED — sequential TextWatermark Batch MVP
-F12.6       Code Generator — current next, capability/scope gate first
+F12.6       IN PROGRESS — QR capability gate + core renderer path GREEN; minimal UI/export next
 F12.7       Audited Conversions — pending
 Release     Integration + manual/private/physical QA — pending
 ```
 
-Current automated functional baseline before this documentation-closure commit:
-- exact implementation HEAD `2dd9a502965e3a2158b2f86c09e00a7eb917f8c7` on `feat/f12-5-batch-contract`;
-- **1192/1192** tests PASS, 0 failed, 0 skipped;
-- Release build **0 warnings / 0 errors**;
-- exact-head CI run `38509616735`, job `115674867232`;
+Current F12.6 core implementation checkpoint before documentation-only commits:
+- exact implementation HEAD `c532d9d4b8c5b1fab07ad3174e57ad5d7ebf2dc6` on `feat/f12-6-qr-generator`;
+- exact-head Release build step PASS;
+- exact-head full Test step PASS (baseline 1192 + 4 QR contract cases = 1196 cases);
+- exact-head CI run `38511920615`, job `115682120833`;
 - no merge to `main`.
 
 ## Remaining development sequence
 
-### 1. F12.6 Code Generator — current next
+### 1. F12.6 Code Generator — current
 
-Open only after an explicit scope/capability gate determines which code formats are actually required and supported. Do not assume barcode/QR symbologies prematurely. Prefer a tiny generator slice that reuses existing export paths over a generic barcode studio.
+Capability gate result: **reuse the existing Labels/ZPL/Labelize owner; QR only for the first MVP**.
+
+Current GREEN core:
+- text/URL payload;
+- UTF-8 bytes encoded safely as ZPL `^FH` field data;
+- minimal `^BQ` source;
+- existing `ZplDocumentParser`;
+- existing `LabelizeProcessRenderer`;
+- local PNG bytes;
+- real decode assertion back to the exact source value, including UTF-8 and ZPL-looking text;
+- blank input rejected and payload bounded.
+
+Current next action is one small user-facing slice:
+`Herramientas/menu existing pattern → QR value entry → QrCodeGenerator → Guardar PNG`.
 
 KISS guardrails:
 - no generic barcode/code studio;
-- no plugin architecture for symbologies;
-- no new dependency until an existing owner/capability check proves one is necessary;
-- implement one narrow format/value path first;
+- no plugin architecture or factory for symbologies;
+- no new runtime dependency;
+- no Code128 until real value justifies extending the same owner;
+- no cloud/backend or second renderer;
+- reuse existing WPF/menu/dialog/save patterns;
 - preserve local/offline behavior.
+
+F12.6 closes only after that minimal UI/export path is exact-head GREEN; the current checkpoint is intentionally not mislabeled as a complete user-facing feature.
 
 ### 2. F12.7 Audited Conversions
 
@@ -77,7 +94,7 @@ After functional F12, group the accumulated physical/manual/private work into bo
 - Reader/Organize/Editing;
 - ZPL + physical print/scan;
 - visual + cryptographic signatures;
-- OCR/Forms/Compare/Batch.
+- OCR/Forms/Compare/Batch/QR.
 
 ### 4. Documentation consolidation
 
@@ -152,5 +169,6 @@ Separate user stops remain only for decisions, architecture changes, new depende
 - F12.4 UI plan: `docs/superpowers/plans/2026-10-14-f12-4-compare-ui.md`
 - F12.4 UI closure: `docs/history/2026-10-14-F12-4-compare-ui-closure.md`
 - F12.5: operational closure recorded in `.planning/STATE.md` + this roadmap; no extra history Markdown added to avoid documentation noise.
+- F12.6 core checkpoint: operational evidence recorded in `.planning/STATE.md` + this roadmap; no extra history Markdown until the user-facing slice closes.
 
 No merge to `main` without explicit user approval.
