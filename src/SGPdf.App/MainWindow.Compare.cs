@@ -10,6 +10,7 @@ namespace SGPdf.App;
 public partial class MainWindow
 {
     private bool _compareUiInitialized;
+    private MenuItem? _closeCompareMenuItem;
 
     private void InitializeCompareUi()
     {
@@ -28,8 +29,18 @@ public partial class MainWindow
             IsEnabledProperty,
             new Binding(nameof(MenuItem.IsEnabled)) { Source = PrintPdfMenuItem });
 
+        var closeCompareMenuItem = new MenuItem
+        {
+            Header = "Cerrar comparación",
+            IsEnabled = false
+        };
+        closeCompareMenuItem.Click += CloseCompare_Click;
+
         int printIndex = fileMenu.Items.IndexOf(PrintPdfMenuItem);
-        fileMenu.Items.Insert(printIndex >= 0 ? printIndex + 1 : fileMenu.Items.Count, compareMenuItem);
+        int insertIndex = printIndex >= 0 ? printIndex + 1 : fileMenu.Items.Count;
+        fileMenu.Items.Insert(insertIndex, compareMenuItem);
+        fileMenu.Items.Insert(insertIndex + 1, closeCompareMenuItem);
+        _closeCompareMenuItem = closeCompareMenuItem;
         _compareUiInitialized = true;
     }
 
@@ -48,6 +59,16 @@ public partial class MainWindow
 
         if (dialog.ShowDialog(this) != true)
             return;
+
+        if (_editModeActive && !TryLeaveEditModeWithGuard())
+            return;
+        if (_organizeModeActive && !TryLeaveOrganizeModeWithGuard())
+            return;
+        if (_signatureEditState?.IsDirty == true &&
+            !TryResolvePendingSignatureEdits(SignatureGuardReason.LeaveSignMode))
+        {
+            return;
+        }
 
         string leftPath = _session.FilePath;
         string rightPath = Path.GetFullPath(dialog.FileName);
@@ -91,11 +112,35 @@ public partial class MainWindow
 
     private void ShowComparePresentation(ComparePresentation presentation)
     {
+        if (_signaturePropertiesPanel is not null)
+            _signaturePropertiesPanel.Visibility = Visibility.Collapsed;
+        if (_acroFormPropertiesPanel is not null)
+            _acroFormPropertiesPanel.Visibility = Visibility.Collapsed;
         LabelPropertiesPanel.Visibility = Visibility.Collapsed;
         PropertiesPlaceholderText.Visibility = Visibility.Visible;
         PropertiesPlaceholderText.TextWrapping = TextWrapping.Wrap;
         PropertiesPlaceholderText.FontWeight = FontWeights.Normal;
         PropertiesPlaceholderText.Text = BuildComparePanelText(presentation);
+        if (_closeCompareMenuItem is not null)
+            _closeCompareMenuItem.IsEnabled = true;
+    }
+
+    private void CloseCompare_Click(object sender, RoutedEventArgs e)
+    {
+        ResetCompareUi();
+        StatusText.Text = "Comparación cerrada.";
+    }
+
+    private void ResetCompareUi()
+    {
+        if (_closeCompareMenuItem is not null)
+            _closeCompareMenuItem.IsEnabled = false;
+
+        PropertiesPlaceholderText.Text = "Propiedades";
+        PropertiesPlaceholderText.TextWrapping = TextWrapping.NoWrap;
+        PropertiesPlaceholderText.FontWeight = FontWeights.SemiBold;
+        if (_zplDocument is null)
+            PropertiesPlaceholderText.Visibility = Visibility.Visible;
     }
 
     private static string BuildComparePanelText(ComparePresentation presentation)
