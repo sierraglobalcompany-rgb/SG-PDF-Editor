@@ -106,24 +106,94 @@ Preservation evidence: `docs/history/2026-10-12-F11-preservation-matrix.md`. Rea
 
 ## F12 — Professional
 
-- [x] **PRO-REDACTION — AUTO PASS** F12.1 true safe redaction for complete simple visible horizontal text objects: conservative policy; underlying object removal; opaque black path; semantic/tagged risk blocked fail-closed; source/fingerprint race protection; reopened-output validation; multi-target; combined text-edit + redaction; minimal existing-panel UI; `Guardar como...` as the only publication path; no new PDF engine/runtime dependency.
-- [x] **PRO-SIGN-PFX — AUTO PASS** F12.2 local cryptographic-signature PFX/P12 MVP: RSA private-key certificate loading; detached SHA-256 CMS; PDFsharp 6.2.4 signature writer; PDFium signature snapshot; strict one-signature/`ByteRange`/`adbe.pkcs7.detached` validation; ASN.1 exact CMS extraction + `SignedCms.CheckSignature(true)`; transactional temp→independent validate→source fingerprint recheck→publish; existing destination preserved on failure; minimal `Firmar digitalmente` WPF flow; password memory-only; representative synthetic preservation gate for source bytes/page count/text/image/bookmark/link/pre-existing AcroForm field/metadata/render; no second PDF engine or new runtime dependency.
-- [ ] **PRO** Remaining professional scope: advanced forms, compare, batch, audited conversions and any advanced signing scope beyond the PFX MVP.
+### F12.1 Safe Redaction
 
-F12.1 closure evidence: `docs/history/2026-10-12-F12-1-safe-redaction-closure.md`.  
-F12.2 closure evidence: `docs/history/2026-10-12-F12-2-cryptographic-signature-closure.md`.
+- [x] **PRO-REDACTION — AUTO PASS** True safe redaction for complete simple visible horizontal text objects: conservative policy; underlying object removal; opaque black path; semantic/tagged risk blocked fail-closed; source/fingerprint race protection; reopened-output validation; multi-target; combined text-edit + redaction; minimal existing-panel UI; `Guardar como...` as the only publication path; no new PDF engine/runtime dependency.
 
-F12.2 automated closure does **not** imply real/private/manual signing validation. Still **NOT RUN**: real Windows end-to-end UX, representative private PDFs and real PFX/P12 corpus, Adobe/Foxit/Edge interoperability, Windows Certificate Store, smartcard/HSM, TSA/timestamping, revocation/OCSP/CRL and legal/regulatory qualification.
+Evidence: `docs/history/2026-10-12-F12-1-safe-redaction-closure.md`.
+
+### F12.2 Cryptographic Signature PFX/P12 MVP
+
+- [x] **PRO-SIGN-PFX — AUTO PASS** RSA private-key certificate loading; detached SHA-256 CMS; PDFsharp 6.2.4 signature writer; PDFium signature snapshot; strict one-signature/`ByteRange`/`adbe.pkcs7.detached` validation; ASN.1 exact CMS extraction + `SignedCms.CheckSignature(true)`; transactional temp→independent validate→source fingerprint recheck→publish; existing destination preserved on failure; minimal `Firmar digitalmente` WPF flow; password memory-only; representative synthetic preservation gate; no second PDF engine or new runtime dependency.
+
+Evidence: `docs/history/2026-10-12-F12-2-cryptographic-signature-closure.md`.
+
+Advanced signing such as Windows Certificate Store, smartcard/HSM, TSA/timestamping, revocation policy and legal/regulatory qualification is **not baseline scope** and requires separate approval.
+
+### F12.3 Existing AcroForm text fields
+
+- [x] **PRO-FORMS-TX — AUTO PASS** Inspect, edit and transactionally save existing classic AcroForm `/Tx` fields.
+- [x] Flat fields, hierarchical `/Kids`, inherited `/FT /Tx` and names such as `Parent.Child`.
+- [x] Preserve source bytes and validate destination value/appearance through a **representative preservation gate**.
+- [x] Fail closed for signed/password-protected source paths within the demonstrated save flow.
+- [x] Minimal WPF flow reusing existing properties panel and `Guardar como...`.
+- [ ] `/Btn`, `/Ch`, XFA, JavaScript/calculations/actions, signature-form fields, flattening, form creation/designer and advanced styling — **NOT BASELINE / separate approval**.
+- [ ] Universal Adobe/Foxit/Edge compatibility or universal structure preservation — **NOT CLAIMED**.
+
+Evidence: `docs/history/2026-10-13-F12-3-exact-head-closure.md`.
+
+### F12.4 Compare
+
+#### Core
+
+- [x] **PRO-COMPARE-CORE — AUTO PASS** Local/offline comparison using existing PDFium signals only.
+- [x] Detect identical documents.
+- [x] Detect text-only change.
+- [x] Detect visual-only change when text is equivalent.
+- [x] Represent structural page-count differences independently.
+- [x] Compare content only across common pages so added/removed pages do not become false text/visual signals.
+- [x] `VisualChanged` means **visual change independent of text**; simultaneous text+graphic decomposition is not claimed.
+
+Evidence: `docs/history/2026-10-14-F12-4-compare-core-closure.md`.
+
+#### Minimal UI
+
+- [ ] **PRO-COMPARE-UI-01** With PDF A open, expose `Archivo → Comparar con otro PDF...`.
+- [ ] **PRO-COMPARE-UI-02** Select local PDF B; cancel is no-op.
+- [ ] **PRO-COMPARE-UI-03** Call existing `PdfCompareService.Compare(A,B)`.
+- [ ] **PRO-COMPARE-UI-04** Show A/B names, page counts, text signal, visual-only signal, structural status and overall conclusion in the existing right panel.
+- [ ] **PRO-COMPARE-UI-05** Close/reset comparison without replacing or reloading A unnecessarily.
+- [ ] **PRO-COMPARE-UI-06** Respect existing Edit/Organize/Sign/Form guards/lifecycle.
+- [ ] **PRO-COMPARE-UI-07** Invalid/unreadable/protected B fails in a controlled way and does not destroy A.
+
+Design: `docs/superpowers/specs/2026-10-14-f12-4-compare-ui-design.md`.  
+Plan: `docs/superpowers/plans/2026-10-14-f12-4-compare-ui.md`.
+
+Not baseline: side-by-side viewers, A/B toggling, per-page results, overlay/heatmap, OCR, semantic diff, page matching/reordering, deep signature/metadata comparison or report export.
+
+### F12.5 Batch
+
+- [ ] **PRO-BATCH-01** Local/offline batch processing with explicit inputs and outputs.
+- [ ] **PRO-BATCH-02** Preserve originals; no silent overwrite.
+- [ ] **PRO-BATCH-03** Report per-item success/failure.
+- [ ] **PRO-BATCH-04** Reuse existing operations instead of duplicating writers/pipelines.
+- [ ] Exact supported batch operations require a narrow product/capability gate before implementation.
+
+### F12.6 Code Generator
+
+- [ ] **PRO-CODEGEN-01** Local/offline generator slice without paid/cloud dependency.
+- [ ] **PRO-CODEGEN-02** Exact code types/symbologies require explicit scope/capability approval before implementation.
+- [ ] **PRO-CODEGEN-03** Reuse existing output/export paths where appropriate rather than introduce a parallel rendering stack.
+
+### F12.7 Audited Conversions
+
+- [ ] **PRO-CONVERT-01** Each conversion must be separately scoped and capability-gated.
+- [ ] **PRO-CONVERT-02** Keep local/offline operation where feasible and protect originals.
+- [ ] **PRO-CONVERT-03** Validate output with representative, conversion-specific evidence.
+- [ ] **PRO-CONVERT-04** Declare limitations honestly; no universal-fidelity claim.
+- [ ] No second PDF engine/cloud service without explicit approval.
 
 ## Cross-cutting
 
 - [ ] **OFFLINE** Normal functions require no Internet; full physical/offline smoke remains pending where noted.
-- [x] **LICENSE** Runtime dependencies/assets audited through F12.2; F12.1/F12.2 add no runtime/PDF dependency. The direct PKCS PackageReference trial was rejected because .NET 10 already provides `SignedCms`. qpdf 12.4.2, Tesseract 5.5.3 + `spa`/`eng`, PDFium, PDFsharp and existing pinned assets remain as previously audited. Labelize font provenance re-audit remains required before public installer.
-- [x] **PRIVACY** Private fixtures ignored and CI hygiene rejects tracked `tests/PrivateFixtures/**`; F12.2 PFX tests use generated/self-signed material rather than committed private certificates.
-- [x] **ORIGINAL** Edit/visual-sign/organize/comment/utilities/OCR/Text V2/F12.1 redaction/F12.2 cryptographic-signature writers protect source and use Save As semantics; F12.2 publishes only after independent validation + final source fingerprint match.
-- [x] **CI** Functional automated slices through F12.2 have exact-head Windows evidence. F12.2 Task 6/preservation functional SHA `8d7c155972bd62740fbec48bc0a7a52b1b37b92a`: `1150/1150` PASS, `0` warnings, `0` errors, `0` skipped.
-- [x] **KISS** No preventive enterprise architecture or generic PDF object graph. PDFium remains primary PDF inspector/owner; PDFsharp is reused narrowly for signing; qpdf remains narrow; Tesseract is recognition-only; F12.2 adds no second engine, backend, generic signing framework, TSA/HSM layer or duplicate preflight/fingerprint system.
-- [x] **NO-AUTOMERGE** `main` remains untouched at `31c0594758a83ec555d73ecdd7c597cdf8791fd7`; merges require explicit user approval.
+- [x] **LICENSE** Runtime dependencies/assets audited through current automated implementation; no new dependency added by F12.3/F12.4 core. Labelize font provenance re-audit remains required before public installer.
+- [x] **PRIVACY** Private fixtures ignored and CI hygiene rejects tracked `tests/PrivateFixtures/**`.
+- [x] **ORIGINAL** Existing writer flows protect source and use Save As semantics where modification occurs; Compare is read-only.
+- [x] **CI** Functional automated baseline through F12.4 core: exact implementation HEAD `149f716b704c43ea43bf94fa517fa5922920237b`, Release build `0` warnings / `0` errors, `1178/1178` PASS, `0` skipped.
+- [x] **KISS** No preventive enterprise architecture, generic PDF graph, second viewer architecture or generalized ModeManager. PDFium remains primary PDF inspector/render owner; existing narrow dependencies retain their bounded roles.
+- [x] **NO-AUTOMERGE** `main` remains at `31c0594758a83ec555d73ecdd7c597cdf8791fd7`; merges require explicit user approval.
+- [ ] **INTEGRATION** Active implementation lineage is roughly 1155 commits ahead of `main`; controlled consolidation is required before release and is not authorized by this requirements update.
+- [ ] **REAL-QA** Representative manual/private/physical/external-reader QA remains open where phase sections say NOT RUN.
 
 ## Traceability
 
@@ -141,4 +211,4 @@ F12.2 automated closure does **not** imply real/private/manual signing validatio
 | 10 | F9 Utilities | UTILS |
 | 11 | F10 OCR | OCR |
 | 12 | F11 Text V2 | TEXT-V2 |
-| 13 | F12 Professional | PRO-REDACTION, PRO-SIGN-PFX, PRO |
+| 13 | F12 Professional | PRO-REDACTION, PRO-SIGN-PFX, PRO-FORMS-TX, PRO-COMPARE-*, PRO-BATCH-*, PRO-CODEGEN-*, PRO-CONVERT-* |
