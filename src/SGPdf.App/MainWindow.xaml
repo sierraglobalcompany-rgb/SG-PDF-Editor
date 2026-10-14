@@ -2,10 +2,16 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="SG PDF Editor" Height="760" Width="1200"
+        MinHeight="640" MinWidth="960"
+        Background="{StaticResource SgSurfaceBrush}"
+        FontFamily="Segoe UI"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True"
         WindowStartupLocation="CenterScreen"
         Closed="Window_Closed">
     <DockPanel>
-        <Menu DockPanel.Dock="Top">
+        <Menu DockPanel.Dock="Top"
+              Background="{StaticResource SgSurfaceBrush}">
             <MenuItem Header="_Archivo">
                 <MenuItem x:Name="OpenPdfMenuItem" Header="_Abrir..." Click="OpenPdf_Click" />
                 <MenuItem x:Name="OpenZplMenuItem"
@@ -31,18 +37,16 @@
 
         <Border x:Name="NavigationBar"
                 DockPanel.Dock="Top"
-                BorderThickness="0,0,0,1"
-                BorderBrush="LightGray"
-                Background="White"
+                Style="{StaticResource SgToolbarBorderStyle}"
                 Visibility="Collapsed"
                 IsVisibleChanged="NavigationBar_IsVisibleChanged">
             <StackPanel Orientation="Horizontal"
                         HorizontalAlignment="Center"
-                        Margin="8">
+                        Margin="12,8">
                 <Button x:Name="PreviousPageButton"
                         Content="← Anterior"
-                        MinWidth="92"
-                        Padding="10,4"
+                        MinWidth="96"
+                        Style="{StaticResource SgToolbarButtonStyle}"
                         Click="PreviousPage_Click"
                         IsEnabled="False" />
 
@@ -53,9 +57,9 @@
                                VerticalAlignment="Center"
                                FontWeight="SemiBold" />
                     <TextBox x:Name="PageNumberTextBox"
-                             Width="46"
-                             Margin="6,0"
-                             Padding="4,2"
+                             Width="48"
+                             MinHeight="32"
+                             Margin="8,0"
                              Text="1"
                              TextAlignment="Center"
                              VerticalContentAlignment="Center"
@@ -71,49 +75,46 @@
 
                 <Button x:Name="NextPageButton"
                         Content="Siguiente →"
-                        MinWidth="92"
-                        Padding="10,4"
+                        MinWidth="96"
+                        Style="{StaticResource SgToolbarButtonStyle}"
                         Click="NextPage_Click"
                         IsEnabled="False" />
 
                 <Border Width="1"
                         Height="24"
                         Margin="14,0"
-                        Background="LightGray" />
+                        Background="{StaticResource SgBorderBrush}" />
 
                 <Button x:Name="ZoomOutButton"
                         Content="−"
-                        Width="34"
-                        Padding="6,4"
+                        Style="{StaticResource SgIconButtonStyle}"
                         ToolTip="Reducir"
                         Click="ZoomOut_Click"
                         IsEnabled="False" />
                 <Button x:Name="ZoomPercentButton"
                         Content="100%"
-                        MinWidth="58"
-                        Margin="4,0"
-                        Padding="8,4"
+                        MinWidth="62"
+                        Style="{StaticResource SgToolbarButtonStyle}"
                         ToolTip="Tamaño real (100%)"
                         Click="ActualSize_Click"
                         IsEnabled="False" />
                 <Button x:Name="ZoomInButton"
                         Content="+"
-                        Width="34"
-                        Padding="6,4"
+                        Style="{StaticResource SgIconButtonStyle}"
                         ToolTip="Ampliar"
                         Click="ZoomIn_Click"
                         IsEnabled="False" />
 
                 <Button x:Name="FitPageButton"
                         Content="Ajustar página"
-                        Margin="12,0,4,0"
-                        Padding="10,4"
+                        Margin="12,0,2,0"
+                        Style="{StaticResource SgToolbarButtonStyle}"
                         ToolTip="Mostrar la página completa"
                         Click="FitPage_Click"
                         IsEnabled="False" />
                 <Button x:Name="FitWidthButton"
                         Content="Ajustar ancho"
-                        Padding="10,4"
+                        Style="{StaticResource SgToolbarButtonStyle}"
                         ToolTip="Ajustar al ancho del visor"
                         Click="FitWidth_Click"
                         IsEnabled="False" />
@@ -122,35 +123,34 @@
 
         <Border x:Name="LabelNavigationBar"
                 DockPanel.Dock="Top"
-                BorderThickness="0,0,0,1"
-                BorderBrush="LightGray"
-                Background="White"
+                Style="{StaticResource SgToolbarBorderStyle}"
                 Visibility="Collapsed"
                 IsEnabled="{Binding IsEnabled, ElementName=OpenPdfMenuItem}">
             <StackPanel Orientation="Horizontal"
                         HorizontalAlignment="Center"
-                        Margin="8">
+                        Margin="12,8">
                 <Button x:Name="PreviousLabelButton"
                         Content="← Anterior"
-                        MinWidth="92"
-                        Padding="10,4"
+                        MinWidth="96"
+                        Style="{StaticResource SgToolbarButtonStyle}"
                         Click="PreviousLabel_Click"
                         IsEnabled="False" />
                 <TextBlock x:Name="LabelCountText"
                            Text="Etiqueta 0 de 0"
-                           Margin="16,0"
+                           Margin="18,0"
                            VerticalAlignment="Center"
                            FontWeight="SemiBold" />
                 <Button x:Name="NextLabelButton"
                         Content="Siguiente →"
-                        MinWidth="92"
-                        Padding="10,4"
+                        MinWidth="96"
+                        Style="{StaticResource SgToolbarButtonStyle}"
                         Click="NextLabel_Click"
                         IsEnabled="False" />
             </StackPanel>
         </Border>
 
-        <StatusBar DockPanel.Dock="Bottom">
+        <StatusBar DockPanel.Dock="Bottom"
+                   Background="{StaticResource SgSurfaceBrush}">
             <TextBlock x:Name="StatusText" Text="Listo" />
         </StatusBar>
 
@@ -161,11 +161,16 @@
                 <ColumnDefinition Width="320" />
             </Grid.ColumnDefinitions>
 
-            <Border Grid.Column="0" BorderThickness="0,0,1,0" BorderBrush="LightGray">
-                <TextBlock Margin="16" Text="Páginas" FontWeight="SemiBold" />
+            <Border Grid.Column="0"
+                    Background="{StaticResource SgPanelBrush}"
+                    BorderThickness="0,0,1,0"
+                    BorderBrush="{StaticResource SgBorderBrush}">
+                <TextBlock Margin="16,18"
+                           Text="Páginas"
+                           Style="{StaticResource SgSectionHeaderStyle}" />
             </Border>
 
-            <Grid Grid.Column="1" Background="#F3F3F3">
+            <Grid Grid.Column="1" Background="{StaticResource SgCanvasBrush}">
                 <ScrollViewer x:Name="PdfScrollViewer"
                               HorizontalScrollBarVisibility="Auto"
                               VerticalScrollBarVisibility="Auto"
@@ -190,33 +195,34 @@
                 <TextBlock x:Name="EmptyStateText"
                            HorizontalAlignment="Center"
                            VerticalAlignment="Center"
-                           Text="Abrir un PDF"
-                           FontSize="24"
-                           Foreground="#666" />
+                           Text="Abre un PDF para empezar"
+                           FontSize="22"
+                           FontWeight="SemiBold"
+                           Style="{StaticResource SgMutedTextStyle}" />
             </Grid>
 
             <Border Grid.Column="2"
+                    Background="{StaticResource SgPanelBrush}"
                     BorderThickness="1,0,0,0"
-                    BorderBrush="LightGray"
+                    BorderBrush="{StaticResource SgBorderBrush}"
                     IsEnabled="{Binding IsEnabled, ElementName=OpenPdfMenuItem}">
                 <Grid>
                     <TextBlock x:Name="PropertiesPlaceholderText"
-                               Margin="16"
+                               Margin="16,18"
                                Text="Propiedades"
-                               FontWeight="SemiBold" />
+                               Style="{StaticResource SgSectionHeaderStyle}" />
 
                     <ScrollViewer VerticalScrollBarVisibility="Auto">
                         <StackPanel x:Name="LabelPropertiesPanel"
-                                    Margin="16"
+                                    Margin="18"
                                     Visibility="Collapsed">
                             <TextBlock Text="Propiedades de etiqueta"
-                                       FontWeight="SemiBold"
                                        FontSize="16"
+                                       Style="{StaticResource SgSectionHeaderStyle}"
                                        Margin="0,0,0,16" />
 
                             <TextBlock Text="Vista previa"
-                                       FontWeight="SemiBold"
-                                       Margin="0,0,0,8" />
+                                       Style="{StaticResource SgSectionHeaderStyle}" />
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                                 <RadioButton x:Name="PreviewLabelRadio"
                                              GroupName="LabelPreviewMode"
@@ -234,8 +240,7 @@
                             <Separator Margin="0,12,0,14" />
 
                             <TextBlock Text="Cantidad"
-                                       FontWeight="SemiBold"
-                                       Margin="0,0,0,8" />
+                                       Style="{StaticResource SgSectionHeaderStyle}" />
                             <RadioButton x:Name="QuantityFromFileRadio"
                                          GroupName="LabelQuantity"
                                          Content="Del archivo"
@@ -255,20 +260,17 @@
                                      Width="110"
                                      HorizontalAlignment="Left"
                                      Margin="22,0,0,8"
-                                     Padding="6,3"
                                      Text="1"
                                      TextChanged="CustomQuantityTextBox_TextChanged"
                                      IsEnabled="False" />
                             <TextBlock x:Name="OutputQuantityText"
                                        Text="Cantidad de salida: 0"
-                                       Foreground="#555"
-                                       TextWrapping="Wrap" />
+                                       Style="{StaticResource SgMutedTextStyle}" />
 
                             <Separator Margin="0,16,0,14" />
 
                             <TextBlock Text="Tamaño de etiqueta"
-                                       FontWeight="SemiBold"
-                                       Margin="0,0,0,8" />
+                                       Style="{StaticResource SgSectionHeaderStyle}" />
                             <ComboBox x:Name="LabelSizeComboBox"
                                       SelectedIndex="0"
                                       SelectionChanged="LabelSizeComboBox_SelectionChanged"
@@ -286,25 +288,23 @@
                                 <TextBox x:Name="CustomWidthTextBox"
                                          Width="110"
                                          HorizontalAlignment="Left"
-                                         Padding="6,3"
                                          Text="102"
                                          Margin="0,0,0,8" />
                                 <TextBlock Text="Alto (mm)" Margin="0,0,0,4" />
                                 <TextBox x:Name="CustomHeightTextBox"
                                          Width="110"
                                          HorizontalAlignment="Left"
-                                         Padding="6,3"
                                          Text="152"
                                          Margin="0,0,0,8" />
                                 <Button x:Name="ApplyCustomSizeButton"
                                         Content="Aplicar tamaño"
                                         HorizontalAlignment="Left"
-                                        Padding="10,4"
+                                        Style="{StaticResource SgToolbarButtonStyle}"
                                         Click="ApplyCustomSize_Click" />
                             </StackPanel>
 
                             <TextBlock Text="Resolución"
-                                       FontWeight="SemiBold"
+                                       Style="{StaticResource SgSectionHeaderStyle}"
                                        Margin="0,4,0,8" />
                             <ComboBox x:Name="LabelDpmmComboBox"
                                       SelectedIndex="1"
@@ -318,14 +318,12 @@
 
                             <TextBlock x:Name="RenderSettingsText"
                                        Text="102 × 152 mm · 8 dpmm (~203 dpi)"
-                                       Foreground="#555"
-                                       TextWrapping="Wrap" />
+                                       Style="{StaticResource SgMutedTextStyle}" />
 
                             <Separator Margin="0,16,0,14" />
 
                             <TextBlock Text="Hoja / salida"
-                                       FontWeight="SemiBold"
-                                       Margin="0,0,0,8" />
+                                       Style="{StaticResource SgSectionHeaderStyle}" />
                             <TextBlock Text="Medio" Margin="0,0,0,4" />
                             <ComboBox x:Name="SheetMediaComboBox"
                                       SelectedIndex="0"
@@ -345,14 +343,12 @@
                                          Width="110"
                                          HorizontalAlignment="Left"
                                          Text="210"
-                                         Padding="6,3"
                                          Margin="0,0,0,6" />
                                 <TextBlock Text="Alto de hoja (mm)" Margin="0,0,0,4" />
                                 <TextBox x:Name="CustomSheetHeightTextBox"
                                          Width="110"
                                          HorizontalAlignment="Left"
-                                         Text="297"
-                                         Padding="6,3" />
+                                         Text="297" />
                             </StackPanel>
 
                             <TextBlock Text="Orientación" Margin="0,0,0,4" />
@@ -387,14 +383,12 @@
                                          Width="80"
                                          HorizontalAlignment="Left"
                                          Text="2"
-                                         Padding="6,3"
                                          Margin="0,0,0,6" />
                                 <TextBlock Text="Columnas" Margin="0,0,0,4" />
                                 <TextBox x:Name="CustomSheetColumnsTextBox"
                                          Width="80"
                                          HorizontalAlignment="Left"
-                                         Text="2"
-                                         Padding="6,3" />
+                                         Text="2" />
                             </StackPanel>
 
                             <TextBlock Text="Rotación de etiqueta" Margin="0,0,0,4" />
@@ -408,28 +402,24 @@
                             <TextBlock Text="Margen horizontal (mm)" Margin="0,0,0,4" />
                             <TextBox x:Name="SheetHorizontalMarginTextBox"
                                      Text="0"
-                                     Padding="6,3"
                                      Margin="0,0,0,6" />
                             <TextBlock Text="Margen vertical (mm)" Margin="0,0,0,4" />
                             <TextBox x:Name="SheetVerticalMarginTextBox"
                                      Text="0"
-                                     Padding="6,3"
                                      Margin="0,0,0,6" />
                             <TextBlock Text="Separación horizontal (mm)" Margin="0,0,0,4" />
                             <TextBox x:Name="SheetHorizontalGapTextBox"
                                      Text="0"
-                                     Padding="6,3"
                                      Margin="0,0,0,6" />
                             <TextBlock Text="Separación vertical (mm)" Margin="0,0,0,4" />
                             <TextBox x:Name="SheetVerticalGapTextBox"
                                      Text="0"
-                                     Padding="6,3"
                                      Margin="0,0,0,10" />
 
                             <Button x:Name="ApplySheetLayoutButton"
                                     Content="Aplicar layout"
                                     HorizontalAlignment="Left"
-                                    Padding="12,5"
+                                    Style="{StaticResource SgToolbarButtonStyle}"
                                     Click="ApplySheetLayout_Click" />
 
                             <TextBlock x:Name="LayoutValidationText"
@@ -442,7 +432,7 @@
                                     Content="Guardar como PDF..."
                                     HorizontalAlignment="Left"
                                     Margin="0,12,0,0"
-                                    Padding="12,5"
+                                    Style="{StaticResource SgPrimaryButtonStyle}"
                                     IsEnabled="False"
                                     Click="ExportLabelPdf_Click" />
 
@@ -450,7 +440,7 @@
                                     Content="Imprimir etiquetas..."
                                     HorizontalAlignment="Left"
                                     Margin="0,8,0,0"
-                                    Padding="12,5"
+                                    Style="{StaticResource SgToolbarButtonStyle}"
                                     IsEnabled="False"
                                     Click="PrintLabels_Click" />
                         </StackPanel>
