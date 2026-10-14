@@ -77,22 +77,34 @@ public partial class WatermarkDialog : Window
             return;
         }
 
-        var request = new WatermarkUtilityRequest(
-            WatermarkTextBox.Text,
-            fontSize,
-            opacityPercent / 100d,
-            rotationDegrees,
-            0d,
-            0d,
-            startPage,
-            endPage,
-            useCurrent,
-            SelectedTag(LayerComboBox) == "Background",
-            SelectedTag(AnchorComboBox) ?? string.Empty,
-            red,
-            green,
-            blue,
-            useAll);
+        var request = useAll
+            ? WatermarkUtilityRequest.CreateAllPages(
+                WatermarkTextBox.Text,
+                fontSize,
+                opacityPercent / 100d,
+                rotationDegrees,
+                0d,
+                0d,
+                SelectedTag(LayerComboBox) == "Background",
+                SelectedTag(AnchorComboBox) ?? string.Empty,
+                red,
+                green,
+                blue)
+            : new WatermarkUtilityRequest(
+                WatermarkTextBox.Text,
+                fontSize,
+                opacityPercent / 100d,
+                rotationDegrees,
+                0d,
+                0d,
+                startPage,
+                endPage,
+                useCurrent,
+                SelectedTag(LayerComboBox) == "Background",
+                SelectedTag(AnchorComboBox) ?? string.Empty,
+                red,
+                green,
+                blue);
 
         if (!request.TryBuild(_pageCount, _currentPageNumber - 1, out _, out _, out _, out var error))
         {
