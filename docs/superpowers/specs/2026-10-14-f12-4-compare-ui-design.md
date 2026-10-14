@@ -1,7 +1,7 @@
 # F12.4 — Compare UI mínima sobre la shell existente
 
 Fecha: 2026-10-14  
-Estado del diseño: **APPROVED IN CHAT / SPEC WRITTEN / IMPLEMENTATION NOT STARTED**  
+Estado del diseño: **DESIGN APPROVED IN CHAT / SPEC WRITTEN / WRITTEN SPEC REVIEW PENDING / IMPLEMENTATION NOT STARTED**  
 Rama de contexto: `feat/f12-4-task2-compare-core`  
 Base documental previa: `b3729dbc7063e918572e1259cd8d09d0609191ed`
 
