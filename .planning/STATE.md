@@ -1,12 +1,12 @@
 ---
 gsd_state_version: '1.1'
-status: f12-6-qr-closed-professional-in-progress
+status: f12-functional-baseline-closed-release-stabilization-next
 progress:
   total_phases: 13
-  completed_phases: 12
-  functional_percent_estimate: 99
-  release_readiness_percent_estimate: 89
-  overall_percent_estimate: 94
+  completed_phases: 13
+  functional_percent_estimate: 100
+  release_readiness_percent_estimate: 90
+  overall_percent_estimate: 95
 ---
 
 # Project State
@@ -22,9 +22,9 @@ progress:
 
 ## Current position — 2026-10-14
 
-F12 Professional is **IN PROGRESS**.
+The **automated functional baseline F0–F12 is CLOSED**. Manual/private/physical QA, documentation consolidation and release integration remain open.
 
-Current functional branch: `feat/f12-6-qr-generator-ui`.
+Current functional branch: `feat/f12-7-pdf-to-png`.
 
 | Slice | Status |
 |---|---|
@@ -34,156 +34,81 @@ Current functional branch: `feat/f12-6-qr-generator-ui`.
 | F12.3 Existing AcroForm `/Tx` | CLOSED / AUTO PASS |
 | F12.4 Compare | CLOSED / AUTO PASS — core + minimal UI |
 | F12.5 Batch | CLOSED / AUTO PASS — TextWatermark MVP |
-| F12.6 Code Generator | **CLOSED / AUTO PASS — QR PNG MVP** |
-| F12.7 Audited Conversions | PLANNED / NOT STARTED |
+| F12.6 Code Generator | CLOSED / AUTO PASS — QR PNG MVP |
+| F12.7 Audited Conversions | **CLOSED / AUTO PASS — PDF→PNG MVP** |
 | Release integration/stabilization | OPEN |
 
-Current exact F12.6 user-facing implementation baseline before this documentation-closure commit:
-- branch: `feat/f12-6-qr-generator-ui`;
-- exact HEAD: `2be0fc5345160e500d78102d99a833c9b9729bae`;
-- repository hygiene: **PASS**;
-- locked restore/runtime staging: **PASS**;
-- Windows Release build step: **PASS**;
-- full Test step: **PASS**;
-- exact-head CI run: `38513237239`, job `115686247754`;
+## F12.7 Audited Conversions — closed baseline
+
+Capability gate approved exactly one conversion: **PDF → PNG, one PNG per page**.
+
+Closed KISS flow:
+`PDF already open → Herramientas → Convertir PDF a PNG... → explicit output folder → sequential PDFium render at 150 DPI → page-0001.png, page-0002.png, ...`.
+
+Automated evidence proves:
+- existing `PdfDocumentSession.RenderPage` / PDFium is reused;
+- WPF `PngBitmapEncoder` is reused; no new package/runtime;
+- all pages are exported sequentially at fixed 150 DPI;
+- deterministic zero-padded output names;
+- representative 2-page PDF produces exactly two decodable PNGs with expected 300×150 and 150×300 dimensions;
+- all target names are preflighted before the first write;
+- `FileMode.CreateNew` adds a second fail-closed overwrite barrier;
+- if conversion fails after writing starts, newly written outputs are cleaned up best-effort;
+- original PDF is read-only and never modified;
+- existing `Herramientas` owner and `CanRunUtility()` lifecycle are reused.
+
+Honest limits:
+- raster output only; PDF text/searchability, links, forms, annotations and vector semantics do not remain interactive in PNG;
+- fixed 150 DPI baseline; no universal print/color/fidelity claim;
+- no DOCX/PPTX/XLSX conversion, Office automation, LibreOffice runtime, cloud conversion or second PDF engine;
+- no generic `ConversionEngine`, format registry, plugin architecture, batch converter or multi-format selector.
+
+Scope: `docs/superpowers/specs/2026-10-14-f12-7-pdf-to-png-scope.md`.  
+Plan: `docs/superpowers/plans/2026-10-14-f12-7-pdf-to-png.md`.
+
+Functional implementation exact-head evidence before this documentation closure:
+- branch: `feat/f12-7-pdf-to-png`;
+- HEAD: `521f0974b4b8a6b5ae7138a51cf11e61d572a998`;
+- RED: `d127b9aa06350d4ad92399ef66b82736ab038e4e`, expected missing `Features.Conversions` only;
+- RED CI: run `38514104282`, job `115688906599`;
+- GREEN CI: run `38514284225`, job `115689481722`;
+- repository hygiene/runtime staging/locked restore: PASS;
+- Release build: **0 warnings / 0 errors**;
+- tests: **1201/1201 PASS, 0 failed, 0 skipped**;
 - no merge to `main`.
 
 ## Engineering progress estimates
 
 These are planning estimates, not telemetry.
 
-- **Automated functional implementation: ~99%.**
-- **Release readiness including manual/private/physical QA and integration: ~89%.**
-- **Headline weighted project state: ~94%.**
+- **Automated functional implementation: ~100%.**
+- **Release readiness including manual/private/physical QA and integration: ~90%.**
+- **Headline weighted project state: ~95%.**
 
-Why release readiness is lower than functional completion:
-1. representative real/private/manual/physical QA remains open across several slices;
-2. interoperability/real-device checks remain open where documented;
-3. the active development lineage remains far ahead of `main`;
-4. stacked branches/PRs need deliberate release integration/hygiene.
+Release readiness is lower because representative real/private/manual/physical QA, interoperability/device checks, documentation consolidation and controlled branch integration remain open.
 
-## F12.3 Forms closed scope
+## KISS / anti-noise audit
 
-- existing classic AcroForm text fields (`/Tx`) only;
-- flat, hierarchical and inherited `/FT`;
-- read/edit/save transactional copy;
-- original protected;
-- value + appearance + representative structure validation;
-- **representative preservation gate** only, not universal preservation;
-- no `/Btn`, `/Ch`, XFA, JS/calculation/actions, form designer, flattening or universal-reader guarantee.
+**PASS.** F12.7 added one focused converter and one existing-menu command. New runtime dependencies: **0**. New PDF engines: **0**. Cloud/backend: **0**. Generic conversion framework: **0**.
 
-Closure: `docs/history/2026-10-13-F12-3-exact-head-closure.md`.
+The final F12 baseline continues to use narrow existing owners: PDFium for PDF inspection/rendering, PDFsharp/qpdf/Tesseract only where already approved, and Labelize for ZPL/QR.
 
-## F12.4 Compare closed scope
+## Integration drift
 
-### Core
+**OPEN / HIGH PRIORITY BEFORE RELEASE.** `main` remains intentionally untouched. No merge/rebase/destructive branch cleanup is authorized by this document.
 
-`PdfCompareService` reuses existing PDFium signals:
-- page count;
-- text objects;
-- rendered pixels.
+## Manual/private/physical QA
 
-Closed automated behavior:
-1. identical documents;
-2. text-only change;
-3. visual-only change;
-4. structural page-count difference.
-
-`VisualChanged` intentionally means **visual change independent of text**. The core does not claim decomposition of an additional graphic change when text also changed.
-
-Core closure: `docs/history/2026-10-14-F12-4-compare-core-closure.md`.
-
-### Minimal UI
-
-Closed KISS flow:
-`PDF A already open → Archivo > Comparar con otro PDF... → choose PDF B → PdfCompareService.Compare(A,B) → existing right panel summary → close/reset`.
-
-Automated UI closure includes local B selection/cancel, existing service reuse, A/B summary, close/reset, existing mode guards, controlled errors and shared workspace reset. No second viewer/sidebar, ModeManager, cloud/backend, new PDF engine, global XAML architecture or new dependency was introduced.
-
-UI design: `docs/superpowers/specs/2026-10-14-f12-4-compare-ui-design.md`.  
-UI implementation plan: `docs/superpowers/plans/2026-10-14-f12-4-compare-ui.md`.  
-Exact-head closure: `docs/history/2026-10-14-F12-4-compare-ui-closure.md`.
-
-## F12.5 Batch closed scope
-
-Closed MVP is deliberately narrow: **text watermark batch only**.
-
-KISS flow:
-`Herramientas → Marca de agua por lotes... → select local PDFs → reuse existing watermark dialog → select output folder → sequential processing → one result per input + final summary`.
-
-Closed automated behavior:
-- explicit multi-file local PDF input/output directory;
-- existing watermark request/planner/writer reused;
-- all-pages resolved per document;
-- sequential execution only;
-- per-item success/error without stopping the remaining items;
-- originals protected and no silent output overwrite;
-- final UI summary.
-
-Explicitly not introduced: generic BatchEngine, workflow designer, database/job store, workers/scheduler/queue, concurrency framework, new PDF engine, backend/cloud or dependency.
-
-## F12.6 Code Generator closed scope
-
-Capability gate: **PASS for QR using the existing Labels owner**.
-
-Closed KISS flow:
-`Herramientas → Generar código QR... → texto/URL → QrCodeGenerator → existing ZPL parser + Labelize renderer → explicit Guardar PNG`.
-
-Automated evidence proves:
-- local/offline QR generation through already-approved Labelize 1.7.0;
-- PNG output decodes back to the exact original value;
-- UTF-8 content is preserved;
-- ZPL-looking payload text such as `^XZ` and `~JA` remains field data rather than becoming commands;
-- blank values are rejected;
-- payload is bounded to 512 UTF-8 bytes;
-- user-facing menu entry reuses the existing `Herramientas` owner;
-- input is collected by one focused dialog;
-- PNG destination is explicit and `OverwritePrompt=true` prevents silent replacement;
-- cancel paths are controlled and do not alter an open document;
-- generated QR does not require a PDF to be open.
-
-KISS / anti-noise result:
-- **0 new runtime dependencies**;
-- no ZXing production dependency; existing test-only decoder is verification-only;
-- no generic barcode studio, symbology factory/plugin architecture, cloud/backend or second renderer;
-- no parallel top-level menu owner;
-- Code128 remains outside baseline until separate value/capability approval.
-
-Manual phone/scanner verification of generated QR belongs to the later ZPL/physical or professional QA pack; automated decoder PASS does not claim every physical scanner/environment.
-
-## Operational audit
-
-### Architecture
-
-**PASS.** PDFium remains primary PDF owner; PDFsharp/qpdf/Tesseract stay narrow approved tools; Labelize remains the single approved ZPL/QR renderer; WPF feature partials remain focused; no generalized enterprise architecture was introduced.
-
-### Documentation drift
-
-**CORRECTED through F12.6.** Operational sources now reflect QR PNG MVP as CLOSED / AUTO PASS.
-
-### Integration drift
-
-**OPEN / HIGH PRIORITY BEFORE RELEASE.** `main` remains intentionally untouched. No merge/rebase/branch cleanup is authorized by this document.
-
-### Manual/private/physical QA
-
-**OPEN.** Automated PASS does not replace representative private corpora, Windows end-to-end UX smoke, relevant hardware checks, external-reader interoperability, real certificates/signing corpus or physical QR scanning where applicable.
-
-## Operating cadence
-
-> **1 `continua` = 1 meaningful bounded product task closed.**
-
-Inside that task, ChatGPT executes RED → intended failure → minimal GREEN → focused verification → exact-head full CI → KISS/Ley del Ruido audit → checkpoint/state update.
-
-Stop early only for a real product decision, architectural fork, new dependency/second engine, capability NO-GO, unsafe Git integration or scope requiring explicit approval.
+**OPEN.** Automated PASS does not replace representative private corpora, Windows UX smoke, physical printer/scanner/stylus checks, external-reader interoperability, certificate/signing corpus, physical QR scanning or representative PDF→PNG visual review where applicable.
 
 ## Next
 
 ```text
-F12.7 Audited Conversions — capability/scope gate
-→ inventory conversion requests against existing owners
-→ approve one narrow conversion only if quality can be validated locally/offline
-→ no universal converter, second PDF engine, LibreOffice/Office automation or cloud dependency without explicit decision
+Functional F12 baseline CLOSED
+→ bounded real QA packs
+→ documentation consolidation
+→ controlled release integration/stabilization
+→ release candidate gates
 ```
 
 No merge to `main` without explicit user approval.
