@@ -6,10 +6,11 @@ namespace SGPdf.App.Tests;
 
 public sealed class QrCodeGeneratorTests
 {
-    [Fact]
-    public async Task GeneratePngAsync_RendersDecodableQrWithExactValue()
+    [Theory]
+    [InlineData("https://example.com/sg-pdf?source=qr")]
+    [InlineData("Medellín ^XZ ~JA café")]
+    public async Task GeneratePngAsync_RendersDecodableQrWithExactValue(string value)
     {
-        const string value = "https://example.com/sg-pdf?source=qr";
         var generator = new QrCodeGenerator();
 
         var pngBytes = await generator.GeneratePngAsync(value);
