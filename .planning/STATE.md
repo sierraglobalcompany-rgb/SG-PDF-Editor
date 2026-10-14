@@ -143,22 +143,37 @@ Exact-head CI:
 - job `115973245330`;
 - hygiene/staging/restore/build/tests SUCCESS.
 
-### UI-2 Main shell — OPEN / RED CONTRACT IN PROGRESS
+### UI-2 Main shell — BLOCKED AFTER GREEN ATTEMPT
 
-Contract commit before checkpoint:
+RED contract commit:
 `383413bff2cdf6dca130ccb6bd1379f2ad89cc06`
 
-Contract protects:
-- root `DockPanel`;
-- three-column reader grid;
-- left navigation host used structurally by thumbnail code;
-- behavior-owned control names/event wiring;
-- modern surface resources for window/navigation/canvas/right panel.
+RED exact-head evidence:
+- run `38599600200`;
+- job `115975105472`;
+- Release build PASS;
+- tests: 1207 PASS, exactly 1 FAIL as expected because `MainWindow` had not yet adopted the modern shell surfaces;
+- 7 `xUnit2031` analyzer warnings came from the test contract itself, not production code.
 
-Workflow run:
-`38599600200`
+Analyzer-noise cleanup commit:
+`e70a5aada42f4181328e3f55dcc92ebf2e957d2d`
 
-At checkpoint request, build had not yet completed the test result. **Do not call UI-2 GREEN without reading final exact-head evidence.**
+GREEN implementation attempt:
+`4a83e7ac48f7fbbcc716274236192285d91c8062`
+
+Attempted scope only:
+- apply shared modern surfaces/styles to the existing `MainWindow` shell;
+- preserve root `DockPanel`, three-column reader layout, behavior-owned control names and event wiring;
+- no dialogs, icon, installer, publish or new package work.
+
+Exact-head CI for GREEN attempt:
+- run `38600360434`;
+- job `115977718873`;
+- result: **FAIL during XAML compilation/build**;
+- tests did not become authoritative for this HEAD because compilation failed;
+- root cause has **not** been diagnosed yet.
+
+**UI-2 is NOT GREEN. Do not patch forward and do not start UI-3/dialogs until the exact XAML compile cause is identified and fixed minimally.**
 
 ## Official icon — USER APPROVED REFERENCE
 
@@ -174,32 +189,42 @@ Visual identity:
 
 The user-provided image in chat is the visual master reference. The binary `.ico` asset is **not yet committed**. When work resumes, derive the required Windows multi-resolution icon from that reference without redesigning its identity.
 
-## Current checkpoint / STOP POINT
+## Current checkpoint / STOP POINT — 2026-10-14
 
 Checkpoint branch:
 `feat/release-ui-modernization`
 
+Product HEAD at stop request:
+`4a83e7ac48f7fbbcc716274236192285d91c8062`
+
 Checkpoint sequence:
 - UI-1: GREEN and CI verified;
-- UI-2: RED contract written; final RED evidence must be checked first on resume;
-- icon identity: approved and documented; asset integration pending;
+- UI-2 RED: valid and confirmed by one expected failing contract test;
+- UI-2 test analyzer noise: cleaned;
+- UI-2 GREEN attempt: written, but exact-head CI fails during XAML compilation; **BLOCKED / NOT GREEN**;
+- root cause of the XAML compile failure: pending diagnosis;
+- icon identity: approved and documented; binary asset integration pending;
 - dialogs: not started;
 - screenshot QA: not started;
 - portable publish: intentionally paused until visual gate;
-- installer: intentionally not started.
+- installer: intentionally not started;
+- `main`: unchanged/read-only.
+
+No further product changes are authorized by this checkpoint itself.
 
 ## Resume order
 
-1. Read final result/log of UI-2 run `38599600200`.
-2. If RED is valid, implement minimal main-shell visual GREEN only.
-3. Exact-head CI.
-4. Modernize dialogs using the same shared resources.
-5. Integrate the approved app/PDF icon asset.
-6. Run real Windows screenshot QA at 1366×768+ and system scaling.
-7. Resolve the transitive `System.Security.Cryptography.Pkcs` vulnerability cleanly.
-8. Resume deterministic self-contained `win-x64` publish.
-9. Only after publish/offline smoke GREEN, add one minimal installer technology.
-10. RC + remaining representative Packs A–D; `main` only with explicit approval.
+1. Start from `feat/release-ui-modernization` and read the exact build/XAML error for run `38600360434`, job `115977718873`.
+2. Reproduce/classify the XAML compile failure and identify root cause before editing.
+3. Apply the smallest UI-2 correction only; no opportunistic redesign.
+4. Run focused contract + full suite + exact-head CI; UI-2 may be called GREEN only after build/tests succeed.
+5. Modernize dialogs using the same shared resources.
+6. Integrate the approved app/PDF icon asset.
+7. Run real Windows screenshot QA at 1366×768+ and system scaling.
+8. Resolve the transitive `System.Security.Cryptography.Pkcs` vulnerability cleanly.
+9. Resume deterministic self-contained `win-x64` publish.
+10. Only after publish/offline smoke GREEN, add one minimal installer technology.
+11. RC + remaining representative Packs A–D; `main` only with explicit approval.
 
 ## Planning estimates
 
