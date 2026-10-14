@@ -1,6 +1,6 @@
 ---
 gsd_state_version: '1.1'
-status: f12-6-qr-closed-professional-in-progress
+status: f12-7-conversions-gate-passed-in-progress
 progress:
   total_phases: 13
   completed_phases: 12
@@ -24,7 +24,7 @@ progress:
 
 F12 Professional is **IN PROGRESS**.
 
-Current functional branch: `feat/f12-6-qr-generator`.
+Current functional branch: `feat/f12-7-conversions-gate`.
 
 | Slice | Status |
 |---|---|
@@ -34,18 +34,19 @@ Current functional branch: `feat/f12-6-qr-generator`.
 | F12.3 Existing AcroForm `/Tx` | CLOSED / AUTO PASS |
 | F12.4 Compare | CLOSED / AUTO PASS — core + minimal UI |
 | F12.5 Batch | CLOSED / AUTO PASS — TextWatermark MVP |
-| F12.6 Code Generator | **CLOSED / AUTO PASS — QR PNG MVP** |
-| F12.7 Audited Conversions | PLANNED / NOT STARTED |
+| F12.6 Code Generator | CLOSED / AUTO PASS — QR PNG MVP |
+| F12.7 Audited Conversions | **IN PROGRESS / GATE PASS — PDF→PNG MVP next** |
 | Release integration/stabilization | OPEN |
 
-Current exact F12.6 implementation baseline before this documentation-closure commit:
+Current exact F12.6 closure baseline:
 - branch: `feat/f12-6-qr-generator`;
-- exact implementation HEAD: `5387e705098b448c7eb0aab87831c48acc3a9060`;
-- Windows Release build: **PASS / 0 errors**;
-- build reports **2 pre-existing NuGet vulnerability warnings** for test dependency `System.Security.Cryptography.Pkcs 8.0.1` (`NU1902`, `NU1903`); they were not introduced by F12.6 and remain release/stabilization debt;
+- exact final HEAD: `6e82e18d60c6c3e8eee74b4e96769a2cb8892e08`;
+- Windows Release build: **PASS / 0 warnings / 0 errors**;
 - tests: **1197/1197 PASS**, 0 failed, 0 skipped;
-- exact-head CI run: `38534493694`, job `115753962287`;
+- exact-head CI run: `38534984770`, job `115755569827`;
 - no merge to `main`.
+
+An earlier F12.6 implementation run exposed `NU1902`/`NU1903` for test dependency `System.Security.Cryptography.Pkcs 8.0.1`; the final exact-head locked restore/build did not reproduce those warnings. Package/advisory review remains a stabilization concern rather than part of F12.7 conversion scope.
 
 ## Engineering progress estimates
 
@@ -59,8 +60,7 @@ Why release readiness is lower than functional completion:
 1. representative real/private/manual/physical QA remains open across several slices;
 2. interoperability/real-device checks remain open where documented;
 3. the active development lineage remains far ahead of `main`;
-4. stacked branches/PRs need deliberate release integration/hygiene;
-5. the current CI exposes NuGet advisories on `System.Security.Cryptography.Pkcs 8.0.1`, to be handled in stabilization rather than hidden inside the QR slice.
+4. stacked branches/PRs need deliberate release integration/hygiene.
 
 ## F12.3 Forms closed scope
 
@@ -171,20 +171,64 @@ KISS / anti-noise result:
 
 Manual Windows end-to-end UX smoke remains part of the later representative QA packs; automated closure is not a physical/mobile scanner interoperability claim.
 
+## F12.7 Audited Conversions — capability gate
+
+Gate result: **PASS for one narrow first conversion: PDF→PNG**.
+
+Why PDF→PNG is the selected first MVP:
+- the authoritative baseline already has `PdfDocumentSession` as the PDFium render owner;
+- conversion is an export of an existing render capability, not a second PDF engine;
+- it remains local/offline and deterministic;
+- output validity, dimensions, naming, overwrite protection and page count are directly testable;
+- a divergent historical prototype branch (`feat/f12-7-pdf-to-png`) independently demonstrates feasibility through the same PDFium owner, but it is **not an operational base** because it diverges from the closed F12.6 lineage and carries unrelated work.
+
+Frozen next MVP flow:
+`open local PDF → choose PDF→PNG export → select output folder → existing PdfDocumentSession/PDFium renders every page → one PNG per page`.
+
+Frozen MVP contract:
+- current/open PDF only;
+- all pages only;
+- deterministic names such as `<basename>-pagina-001.png`;
+- refuse silent overwrite;
+- original PDF untouched;
+- controlled error/cancel behavior;
+- cancellation propagated;
+- reuse `PdfDocumentSession`; no duplicate PDFium wrapper.
+
+Explicitly excluded from this first conversion slice:
+- JPEG/WebP/TIFF or generic image-format selector;
+- page-range selector;
+- custom DPI/quality studio unless separately justified;
+- OCR or content interpretation;
+- image→PDF in the same slice;
+- Office formats;
+- cloud/backend;
+- second renderer/PDF engine;
+- generic converter framework, registry, plugin system or workflow engine.
+
+Conversion classification after the gate:
+- **GO:** PDF→PNG, next bounded MVP.
+- **DEFER:** image→PDF; useful potential direction, but it creates/assembles PDF from raster input and is a separate capability/quality contract rather than the same render-export path.
+- **NO-GO for baseline F12.7:** DOCX/XLSX/PPTX↔PDF, PDF→Office and other conversions that would require LibreOffice, Office automation, cloud conversion, a second document engine, or broad fidelity claims. They require a separate value/capability decision and explicit approval.
+
 ## Operational audit
 
 ### Architecture
 
 **PASS.** The product architecture remains narrow and local-first:
-- PDFium remains primary PDF inspection/render owner;
+- PDFium remains primary PDF inspection/render owner and is the approved owner for PDF→PNG;
 - PDFsharp/qpdf/Tesseract remain narrow, already-approved tools;
-- Labelize remains the single approved ZPL renderer and is reused for QR generation;
+- Labelize remains the single approved ZPL renderer;
 - WPF partials/features remain focused;
-- no generalized enterprise architecture was introduced.
+- no generalized enterprise/conversion architecture was introduced.
 
 ### Documentation drift
 
-**CORRECTED through F12.6.** Operational sources now mark the QR PNG MVP closed and advance the functional sequence to F12.7.
+**CORRECTED through the F12.7 capability gate.** Operational sources now freeze PDF→PNG as the next narrow MVP instead of treating F12.7 as a universal conversion phase.
+
+### Branch drift
+
+`feat/f12-7-pdf-to-png` is a **divergent/non-authoritative prototype** relative to the exact F12.6 closure baseline. It must not be merged or used as the implementation base. Current authoritative continuation is `feat/f12-7-conversions-gate`, created directly from `6e82e18d60c6c3e8eee74b4e96769a2cb8892e08`.
 
 ### Integration drift
 
@@ -201,13 +245,13 @@ Manual Windows end-to-end UX smoke remains part of the later representative QA p
 - external reader interoperability where applicable;
 - real certificates/signing corpus where applicable.
 
-Compare, Batch and QR still belong in later representative real/manual QA packs; automated closure is not a universal compatibility claim.
+Compare, Batch and QR still belong in later representative real/manual QA packs. PDF→PNG will require representative visual/export QA after its automated MVP closes.
 
 ## Operating cadence
 
 > **1 `continua` = 1 meaningful bounded product task closed.**
 
-Inside that task, ChatGPT executes:
+Inside an implementation task, ChatGPT executes:
 1. RED;
 2. verify intended failure;
 3. minimal GREEN;
@@ -215,6 +259,8 @@ Inside that task, ChatGPT executes:
 5. exact-head full CI;
 6. KISS/Ley del Ruido audit;
 7. checkpoint + percentage/state update.
+
+Capability gates may close with evidence + frozen scope before production code, by design.
 
 Stop early only for:
 - a real product decision;
@@ -229,10 +275,13 @@ Operational docs update once per meaningful closed task/slice, not after every t
 ## Next
 
 ```text
-F12.7 Audited Conversions — capability/scope gate
-→ evaluate conversions one by one
-→ no universal-fidelity claim
-→ reject LibreOffice/Office automation/cloud/second-engine expansion without explicit value + approval
+F12.7 PDF→PNG core MVP
+→ existing PdfDocumentSession/PDFium owner
+→ current PDF, all pages
+→ deterministic PNG names + refuse overwrite
+→ original untouched + cancellation/error contract
+→ RED → minimal GREEN → exact-head CI
+→ no generic conversion framework or extra formats
 ```
 
 No merge to `main` without explicit user approval.
