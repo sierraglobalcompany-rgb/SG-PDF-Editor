@@ -62,6 +62,104 @@ public sealed class UiThemeContractTests
         }
     }
 
+    [Fact]
+    public void MainWindow_PreservesReaderShellStructure()
+    {
+        var document = LoadMainWindow();
+        var root = Assert.IsType<XElement>(document.Root);
+        var dock = Assert.Single(root.Elements().Where(element => element.Name.LocalName == "DockPanel"));
+        var mainGrid = Assert.Single(dock.Elements().Where(IsThreeColumnGrid));
+
+        var directBorders = mainGrid.Elements().Where(element => element.Name.LocalName == "Border").ToList();
+        Assert.Contains(directBorders, border => GridColumn(border) == 0);
+        Assert.Contains(directBorders, border => GridColumn(border) == 2);
+    }
+
+    [Fact]
+    public void MainWindow_UsesModernShellSurfaces()
+    {
+        var document = LoadMainWindow();
+        var root = Assert.IsType<XElement>(document.Root);
+        Assert.Equal("{StaticResource SgSurfaceBrush}", (string?)root.Attribute("Background"));
+
+        Assert.Equal(
+            "{StaticResource SgToolbarBorderStyle}",
+            (string?)FindNamed(document, "NavigationBar").Attribute("Style"));
+        Assert.Equal(
+            "{StaticResource SgToolbarBorderStyle}",
+            (string?)FindNamed(document, "LabelNavigationBar").Attribute("Style"));
+
+        var dock = Assert.Single(root.Elements().Where(element => element.Name.LocalName == "DockPanel"));
+        var mainGrid = Assert.Single(dock.Elements().Where(IsThreeColumnGrid));
+        var center = Assert.Single(mainGrid.Elements().Where(element =>
+            element.Name.LocalName == "Grid" && GridColumn(element) == 1));
+        var right = Assert.Single(mainGrid.Elements().Where(element =>
+            element.Name.LocalName == "Border" && GridColumn(element) == 2));
+
+        Assert.Equal("{StaticResource SgCanvasBrush}", (string?)center.Attribute("Background"));
+        Assert.Equal("{StaticResource SgPanelBrush}", (string?)right.Attribute("Background"));
+        Assert.Equal("{StaticResource SgBorderBrush}", (string?)right.Attribute("BorderBrush"));
+    }
+
+    [Fact]
+    public void MainWindow_PreservesBehaviorOwnedControlNames()
+    {
+        var document = LoadMainWindow();
+        var requiredNames = new[]
+        {
+            "OpenPdfMenuItem",
+            "OpenZplMenuItem",
+            "PrintPdfMenuItem",
+            "NavigationBar",
+            "PreviousPageButton",
+            "PageNumberTextBox",
+            "PageCountText",
+            "NextPageButton",
+            "ZoomOutButton",
+            "ZoomPercentButton",
+            "ZoomInButton",
+            "FitPageButton",
+            "FitWidthButton",
+            "LabelNavigationBar",
+            "PdfScrollViewer",
+            "PdfImage",
+            "LabelSheetCanvas",
+            "EmptyStateText",
+            "PropertiesPlaceholderText",
+            "LabelPropertiesPanel",
+            "StatusText"
+        };
+
+        var names = document
+            .Descendants()
+            .Attributes(Xaml + "Name")
+            .Select(attribute => attribute.Value)
+            .ToHashSet(StringComparer.Ordinal);
+
+        foreach (var requiredName in requiredNames)
+            Assert.Contains(requiredName, names);
+    }
+
+    private static XDocument LoadMainWindow()
+        => XDocument.Load(ProjectPath("src", "SGPdf.App", "MainWindow.xaml"));
+
+    private static XElement FindNamed(XDocument document, string name)
+        => Assert.Single(document.Descendants().Where(element =>
+            string.Equals((string?)element.Attribute(Xaml + "Name"), name, StringComparison.Ordinal)));
+
+    private static bool IsThreeColumnGrid(XElement element)
+        => element.Name.LocalName == "Grid" &&
+           element.Elements().Any(child =>
+               child.Name.LocalName == "Grid.ColumnDefinitions" &&
+               child.Elements().Count(column => column.Name.LocalName == "ColumnDefinition") == 3);
+
+    private static int GridColumn(XElement element)
+    {
+        var value = element.Attributes()
+            .FirstOrDefault(attribute => attribute.Name.LocalName == "Grid.Column")?.Value;
+        return int.TryParse(value, out var column) ? column : 0;
+    }
+
     private static string ProjectPath(params string[] segments)
     {
         var current = new DirectoryInfo(AppContext.BaseDirectory);
