@@ -10,11 +10,12 @@ internal static class PdfCompareService
         using var left = PdfDocumentSession.Open(leftPath);
         using var right = PdfDocumentSession.Open(rightPath);
 
+        int comparablePageCount = Math.Min(left.PageCount, right.PageCount);
         bool textChanged = !string.Equals(
-            ExtractText(left),
-            ExtractText(right),
+            ExtractText(left, comparablePageCount),
+            ExtractText(right, comparablePageCount),
             StringComparison.Ordinal);
-        bool visualChanged = !textChanged && HasVisualDifference(left, right);
+        bool visualChanged = !textChanged && HasVisualDifference(left, right, comparablePageCount);
 
         return new PdfCompareResult(
             left.PageCount,
@@ -23,10 +24,10 @@ internal static class PdfCompareService
             visualChanged);
     }
 
-    private static string ExtractText(PdfDocumentSession session)
+    private static string ExtractText(PdfDocumentSession session, int pageCount)
     {
         var builder = new StringBuilder();
-        for (int pageIndex = 0; pageIndex < session.PageCount; pageIndex++)
+        for (int pageIndex = 0; pageIndex < pageCount; pageIndex++)
         {
             foreach (var textObject in session.GetTextObjects(pageIndex))
                 builder.Append(textObject.Text).Append('\u001f');
@@ -39,12 +40,10 @@ internal static class PdfCompareService
 
     private static bool HasVisualDifference(
         PdfDocumentSession left,
-        PdfDocumentSession right)
+        PdfDocumentSession right,
+        int pageCount)
     {
-        if (left.PageCount != right.PageCount)
-            return true;
-
-        for (int pageIndex = 0; pageIndex < left.PageCount; pageIndex++)
+        for (int pageIndex = 0; pageIndex < pageCount; pageIndex++)
         {
             PdfRenderedPage leftPage = left.RenderPage(pageIndex, 72d);
             PdfRenderedPage rightPage = right.RenderPage(pageIndex, 72d);
