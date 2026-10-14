@@ -19,6 +19,41 @@ internal sealed class WatermarkUtilityRequest
         byte red,
         byte green,
         byte blue)
+        : this(
+            text,
+            fontSize,
+            opacity,
+            rotationDegrees,
+            offsetXPoints,
+            offsetYPoints,
+            startPageNumber,
+            endPageNumber,
+            useCurrentPage,
+            background,
+            anchorName,
+            red,
+            green,
+            blue,
+            useAllPages: false)
+    {
+    }
+
+    internal WatermarkUtilityRequest(
+        string text,
+        double fontSize,
+        double opacity,
+        double rotationDegrees,
+        double offsetXPoints,
+        double offsetYPoints,
+        int startPageNumber,
+        int endPageNumber,
+        bool useCurrentPage,
+        bool background,
+        string anchorName,
+        byte red,
+        byte green,
+        byte blue,
+        bool useAllPages)
     {
         Text = text;
         FontSize = fontSize;
@@ -34,6 +69,7 @@ internal sealed class WatermarkUtilityRequest
         Red = red;
         Green = green;
         Blue = blue;
+        UseAllPages = useAllPages;
     }
 
     internal string Text { get; }
@@ -50,6 +86,7 @@ internal sealed class WatermarkUtilityRequest
     internal byte Red { get; }
     internal byte Green { get; }
     internal byte Blue { get; }
+    internal bool UseAllPages { get; }
 
     internal bool TryBuild(
         int pageCount,
@@ -83,6 +120,10 @@ internal sealed class WatermarkUtilityRequest
         if (UseCurrentPage)
         {
             range = UtilityPageRange.Current(currentPageIndex);
+        }
+        else if (UseAllPages)
+        {
+            range = UtilityPageRange.All;
         }
         else
         {
