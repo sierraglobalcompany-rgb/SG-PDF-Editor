@@ -27,10 +27,10 @@
 | F12.1 Safe Redaction | **CLOSED / AUTO PASS** | keep limits honest |
 | F12.2 Cryptographic Signature PFX/P12 MVP | **CLOSED / AUTO PASS** | advanced signing only by separate approval |
 | F12.3 Existing AcroForm text fields | **CLOSED / AUTO PASS** | advanced form types only by separate approval |
-| F12.4 Compare | **CLOSED / AUTO PASS** — core + minimal UI | representative real-PDF/manual QA later |
-| F12.5 Batch | **CLOSED / AUTO PASS — TextWatermark MVP** | additional batch operations only by separate value/capability decision |
-| F12.6 Code Generator | **IN PROGRESS / AUTO PASS — QR core MVP** | **current next: minimal QR value-entry + Guardar PNG UI** |
-| F12.7 Audited Conversions | **PLANNED / NOT STARTED** | each conversion approved and audited separately |
+| F12.4 Compare | **CLOSED / AUTO PASS — core + minimal UI** | representative real-PDF/manual QA later |
+| F12.5 Batch | **CLOSED / AUTO PASS — TextWatermark MVP** | additional operations only by separate value/capability decision |
+| F12.6 Code Generator | **CLOSED / AUTO PASS — QR PNG MVP** | Code128/other formats only by separate value/capability decision |
+| F12.7 Audited Conversions | **PLANNED / NOT STARTED** | **current next: narrow capability/scope gate** |
 | Release integration/stabilization | **OPEN** | deliberate branch/main consolidation + manual/private QA |
 
 ## Current position
@@ -42,61 +42,72 @@ F12.2       CLOSED — PFX/P12 cryptographic signature MVP
 F12.3       CLOSED — existing classic AcroForm /Tx
 F12.4       CLOSED — Compare core + minimal existing-panel UI
 F12.5       CLOSED — sequential TextWatermark Batch MVP
-F12.6       IN PROGRESS — QR capability gate + core renderer path GREEN; minimal UI/export next
-F12.7       Audited Conversions — pending
+F12.6       CLOSED — local QR PNG MVP using existing Labelize owner
+F12.7       Audited Conversions — current next, capability/scope gate first
 Release     Integration + manual/private/physical QA — pending
 ```
 
-Current F12.6 core implementation checkpoint before documentation-only commits:
-- exact implementation HEAD `c532d9d4b8c5b1fab07ad3174e57ad5d7ebf2dc6` on `feat/f12-6-qr-generator`;
-- exact-head Release build step PASS;
-- exact-head full Test step PASS (baseline 1192 + 4 QR contract cases = 1196 cases);
-- exact-head CI run `38511920615`, job `115682120833`;
+Current F12.6 implementation checkpoint before documentation-only closure commits:
+- exact implementation HEAD `2be0fc5345160e500d78102d99a833c9b9729bae` on `feat/f12-6-qr-generator-ui`;
+- repository hygiene PASS;
+- runtime staging + locked restore PASS;
+- exact-head Release Build step PASS;
+- exact-head full Test step PASS;
+- exact-head CI run `38513237239`, job `115686247754`;
 - no merge to `main`.
+
+## F12.6 Code Generator — closed QR PNG MVP
+
+Capability decision: **reuse the existing Labels/ZPL/Labelize owner and support QR only in baseline F12.6**.
+
+Closed flow:
+`Herramientas → Generar código QR... → texto/URL → QrCodeGenerator → ZplDocumentParser → LabelizeProcessRenderer → Guardar PNG`.
+
+Closed automated behavior:
+- local/offline generation;
+- QR payload encoded as safe UTF-8 `^FH` field data;
+- actual rendered PNG decodes back to the exact source value;
+- regression includes UTF-8 plus ZPL-looking sequences (`^XZ`, `~JA`);
+- blank input rejected; payload bounded to 512 UTF-8 bytes;
+- existing `Herramientas` menu owner reused;
+- focused value-entry dialog only;
+- explicit PNG `SaveFileDialog` with overwrite confirmation;
+- generation is independent of an open PDF and does not modify document state;
+- controlled cancel/error paths.
+
+KISS guardrails preserved:
+- no generic barcode/code studio;
+- no plugin/factory architecture for symbologies;
+- no new runtime dependency;
+- no production ZXing dependency;
+- no cloud/backend or second renderer;
+- no Code128 in baseline.
+
+Code128, styling/logo customization, templates, batch QR, inserting QR into PDFs and additional symbologies require separate value/capability approval; they do not reopen F12.6 baseline.
 
 ## Remaining development sequence
 
-### 1. F12.6 Code Generator — current
+### 1. F12.7 Audited Conversions — current next
 
-Capability gate result: **reuse the existing Labels/ZPL/Labelize owner; QR only for the first MVP**.
-
-Current GREEN core:
-- text/URL payload;
-- UTF-8 bytes encoded safely as ZPL `^FH` field data;
-- minimal `^BQ` source;
-- existing `ZplDocumentParser`;
-- existing `LabelizeProcessRenderer`;
-- local PNG bytes;
-- real decode assertion back to the exact source value, including UTF-8 and ZPL-looking text;
-- blank input rejected and payload bounded.
-
-Current next action is one small user-facing slice:
-`Herramientas/menu existing pattern → QR value entry → QrCodeGenerator → Guardar PNG`.
+Each conversion is its own narrow capability/quality gate. Start from actual existing owners and prove output quality before exposing anything.
 
 KISS guardrails:
-- no generic barcode/code studio;
-- no plugin architecture or factory for symbologies;
-- no new runtime dependency;
-- no Code128 until real value justifies extending the same owner;
-- no cloud/backend or second renderer;
-- reuse existing WPF/menu/dialog/save patterns;
-- preserve local/offline behavior.
+- no “convert everything” framework;
+- no universal-fidelity claim;
+- no second PDF engine merely for convenience;
+- no LibreOffice runtime, Office automation or cloud conversion service without explicit approval;
+- protect originals and use explicit output paths;
+- one conversion slice at a time, with representative validation and honest limitations.
 
-F12.6 closes only after that minimal UI/export path is exact-head GREEN; the current checkpoint is intentionally not mislabeled as a complete user-facing feature.
+### 2. Real QA packs
 
-### 2. F12.7 Audited Conversions
-
-Each conversion is its own narrow capability/quality gate. No universal-fidelity claim. No second engine, LibreOffice runtime, Office automation or cloud dependency without explicit approval.
-
-### 3. Real QA packs
-
-After functional F12, group the accumulated physical/manual/private work into bounded packs instead of one giant final QA block:
+After functional F12, group accumulated physical/manual/private work into bounded packs instead of one giant final QA block:
 - Reader/Organize/Editing;
-- ZPL + physical print/scan;
+- ZPL + QR + physical print/scan;
 - visual + cryptographic signatures;
-- OCR/Forms/Compare/Batch/QR.
+- OCR/Forms/Compare/Batch.
 
-### 4. Documentation consolidation
+### 3. Documentation consolidation
 
 One bounded cleanup after functional F12:
 - reconcile stale `AGENTS.md` / historical master-plan wording where useful;
@@ -104,7 +115,7 @@ One bounded cleanup after functional F12:
 - mark superseded docs rather than multiplying handoffs;
 - do not create Markdown for every commit.
 
-### 5. Release integration / stabilization
+### 4. Release integration / stabilization
 
 Before release:
 - map active branch/PR ancestry and unique commits;
@@ -116,41 +127,23 @@ Before release:
 - execute prioritized real/private/manual/physical QA;
 - close installer/license provenance items.
 
-### 6. Release candidate / final
+### 5. Release candidate / final
 
 Release candidate requires clean-clone reproducibility, locked restore, Release build/tests, packaged runtime/installer smoke, offline smoke and no P0/P1 blockers. Final release adds no feature creep.
 
 ## F12.5 Batch — closed MVP
 
-Closed scope is intentionally one operation: **TextWatermark**.
+Closed scope remains one operation: **TextWatermark**. It reuses existing watermark request/planner/writer, runs sequentially, protects originals, refuses silent output overwrite and reports each item independently. No generic BatchEngine, workflow designer, workers/queue/database or concurrency framework exists.
 
-Behavior:
-- multi-select local PDFs;
-- reuse existing watermark configuration and write owners;
-- explicit output folder;
-- sequential execution;
-- per-item success/error result;
-- one bad item does not stop the others;
-- protect originals and refuse silent output overwrite;
-- all-pages scope resolves independently for each document;
-- empty batch/blank destination rejected;
-- final UI summary of successes/errors.
-
-Not part of this MVP:
-- generic `BatchEngine`;
-- workflow designer;
-- queue/workers/scheduler/database;
-- concurrency framework;
-- implicit support for Bates, OCR, protection or organize operations.
-
-Those operations can be evaluated later only if real value justifies extending the same narrow owner.
+Additional Bates/OCR/protection/organize batch operations require a separate value/capability decision.
 
 ## What is not automatically in baseline F12
 
 These require separate approval and do not block the current baseline roadmap:
 - advanced form types (`/Btn`, `/Ch`, XFA, designer);
 - advanced signing (Windows store, smartcard/HSM, TSA, legal qualification);
-- universal PDF preservation/compatibility promises;
+- additional code symbologies or barcode studio behavior;
+- universal PDF/conversion preservation promises;
 - AI/cloud/backend features.
 
 ## Operating cadence
@@ -169,6 +162,6 @@ Separate user stops remain only for decisions, architecture changes, new depende
 - F12.4 UI plan: `docs/superpowers/plans/2026-10-14-f12-4-compare-ui.md`
 - F12.4 UI closure: `docs/history/2026-10-14-F12-4-compare-ui-closure.md`
 - F12.5: operational closure recorded in `.planning/STATE.md` + this roadmap; no extra history Markdown added to avoid documentation noise.
-- F12.6 core checkpoint: operational evidence recorded in `.planning/STATE.md` + this roadmap; no extra history Markdown until the user-facing slice closes.
+- F12.6: operational closure recorded in `.planning/STATE.md`, `.planning/REQUIREMENTS.md` + this roadmap; no extra history Markdown added to avoid documentation noise.
 
 No merge to `main` without explicit user approval.
