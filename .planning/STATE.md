@@ -49,6 +49,35 @@ Exact-head Windows CI:
 
 No merge/rebase/force-push to `main` is authorized without explicit user approval.
 
+### Release QA checkpoint — Pack A
+
+Canonical Pack A record:
+`docs/release/2026-10-14-pack-a-reader-organize-editing.md`
+
+Release-QA branch:
+`plan/release-pack-a-qa`
+
+Pack A record commit:
+`4e329da2d08f271613c2832f788d780f806ed9c3`
+
+Exact-head CI for that record:
+- run `38583576077`;
+- job `115919513476`;
+- repository hygiene PASS;
+- pinned Labelize/qpdf/Tesseract staging PASS;
+- locked restore PASS;
+- Release build PASS;
+- full test step PASS.
+
+Pack A status:
+- automated evidence preflight: **PASS**;
+- real/manual Windows QA: **NOT RUN — ENVIRONMENT**;
+- final Pack A gate: **NOT RUN**;
+- no P0/P1 discovered by manual QA because manual QA was not executed;
+- no product code, tests, dependencies, PDF engine or runtime architecture changed.
+
+This is an honest environment endpoint, not a manual PASS. Pack A real QA remains an open release gate and must be executed on a suitable Windows/manual environment before release closure.
+
 ## Phase status
 
 | Slice | Automated status |
@@ -132,7 +161,9 @@ Root-cause correction and final GREEN:
 
 ## Branch hygiene notes
 
-Authoritative continuation is `feat/f12-7-pdf-to-png-mvp-green3`.
+Authoritative functional continuation remains `feat/f12-7-pdf-to-png-mvp-green3`.
+
+Release QA/preflight work is currently recorded on `plan/release-pack-a-qa`; this does not replace the functional baseline branch.
 
 Do not use as operational bases:
 - divergent historical `feat/f12-7-pdf-to-png`;
@@ -167,18 +198,23 @@ These are planning estimates, not telemetry:
 
 Release readiness remains below 100% because real/private/manual/physical QA, integration/hygiene, installer/runtime smoke and release-candidate validation remain open.
 
+Pack A preflight documentation/CI does not increase these percentages because the required manual gate remains NOT RUN.
+
 ## Next authoritative work
 
 Functional F12 is frozen. Do **not** add new features opportunistically.
 
 Next sequence:
-1. execute representative QA packs without converting automated PASS into physical/manual PASS;
-2. consolidate stale operational docs only where they can misroute work;
-3. audit branch/PR ancestry and build one conservative integration candidate;
-4. keep `main` read-only until explicit approval;
-5. release-candidate gate: clean clone, locked restore, Release build/tests, packaged runtime/installer smoke, offline smoke, no P0/P1 blockers.
+1. continue bounded QA preparation/execution without converting automated PASS into physical/manual PASS;
+2. keep Pack A manual A01–A15 open until a suitable Windows/manual environment executes them;
+3. prepare **Pack B — ZPL / QR / physical print-scan** automated evidence map + executable manual checklist, reusing existing evidence and adding no tests unless a real gap is demonstrated;
+4. then Pack C and Pack D under the same honest-status rule;
+5. consolidate stale operational docs only where they can misroute work;
+6. audit branch/PR ancestry and build one conservative integration candidate;
+7. keep `main` read-only until explicit approval;
+8. release-candidate gate: clean clone, locked restore, Release build/tests, packaged runtime/installer smoke, offline smoke, no P0/P1 blockers.
 
-Recommended first next bounded task:
-`Pack A — Reader / Organize / Editing representative QA preflight + executable manual checklist`, unless a newer exact-head release checkpoint already supersedes it.
+Recommended next bounded task:
+`Pack B — ZPL / QR / physical print-scan representative QA preflight + executable manual checklist`.
 
 No merge to `main` without explicit user approval.
