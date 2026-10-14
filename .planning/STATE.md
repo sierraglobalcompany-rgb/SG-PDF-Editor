@@ -147,6 +147,42 @@ Pack C does not claim Windows Certificate Store, smartcard/HSM, TSA/timestamping
 
 This is an honest environment endpoint, not a manual signature PASS. Pack C remains an open release gate until representative real/manual evidence is executed.
 
+### Release QA checkpoint — Pack D
+
+Canonical Pack D record:
+`docs/release/2026-10-14-pack-d-ocr-forms-compare-batch-convert.md`
+
+Release-QA branch:
+`plan/release-pack-d-qa`
+
+Pack D record commit:
+`0078827702d79293ffbb2f8821998dea487d19cd`
+
+Exact-head CI for that record:
+- run `38588865904`;
+- job `115938075636`;
+- repository hygiene PASS;
+- pinned Labelize/qpdf/Tesseract staging PASS;
+- locked restore PASS;
+- Release build PASS;
+- full test step PASS.
+
+Pack D status:
+- automated OCR / Forms `/Tx` / Compare / Batch TextWatermark / PDF→PNG evidence preflight: **PASS**;
+- representative real low/medium-quality OCR scans: **NOT RUN — ENVIRONMENT**;
+- real Windows/external-reader OCR QA: **NOT RUN — ENVIRONMENT**;
+- representative real `/Tx` forms/manual interoperability: **NOT RUN — ENVIRONMENT**;
+- real/private Compare document pairs: **NOT RUN — ENVIRONMENT**;
+- representative multi-file Batch QA: **NOT RUN — ENVIRONMENT**;
+- PDF→PNG visual/orientation/dimensions review: **NOT RUN — ENVIRONMENT**;
+- physical offline Pack D smoke: **NOT RUN — ENVIRONMENT**;
+- final Pack D gate: **NOT RUN**;
+- no product code, tests, dependencies, PDF engine, BatchEngine or conversion framework changed.
+
+Pack D does not claim universal OCR/form/compare/conversion fidelity. Forms remain existing classic `/Tx`; Batch remains TextWatermark only; conversion remains PDF→PNG only.
+
+This is an honest environment endpoint, not a manual/private PASS. Pack D remains an open release gate until representative real/manual/private evidence is executed.
+
 ## Phase status
 
 | Slice | Automated status |
@@ -235,7 +271,8 @@ Authoritative functional continuation remains `feat/f12-7-pdf-to-png-mvp-green3`
 Release QA/preflight progression is recorded through:
 - `plan/release-pack-a-qa` — Pack A preflight checkpoint;
 - `plan/release-pack-b-qa` — Pack B preflight checkpoint;
-- `plan/release-pack-c-qa` — current Pack C preflight checkpoint.
+- `plan/release-pack-c-qa` — Pack C preflight checkpoint;
+- `plan/release-pack-d-qa` — current Pack D preflight checkpoint.
 
 These release-QA planning branches do not replace the functional baseline branch.
 
@@ -272,24 +309,23 @@ These are planning estimates, not telemetry:
 
 Release readiness remains below 100% because real/private/manual/physical QA, integration/hygiene, installer/runtime smoke and release-candidate validation remain open.
 
-Pack A, Pack B and Pack C preflight documentation/CI do not increase these percentages because their required real/manual/private/physical gates remain NOT RUN.
+Pack A, Pack B, Pack C and Pack D preflight documentation/CI do not increase these percentages because their required real/manual/private/physical gates remain NOT RUN.
 
 ## Next authoritative work
 
 Functional F12 is frozen. Do **not** add new features opportunistically.
 
 Next sequence:
-1. continue bounded QA preparation/execution without converting automated PASS into physical/manual PASS;
-2. keep Pack A manual A01–A15 open until a suitable Windows/manual environment executes them;
-3. keep Pack B private/physical B01–B11 open until suitable corpus/hardware executes them;
-4. keep Pack C real/manual C01–C14 open until suitable Windows/photo/stylus/PFX/external-reader environment executes them;
-5. prepare **Pack D — OCR / Forms / Compare / Batch / PDF→PNG** automated evidence map + executable manual checklist, reusing existing evidence and adding no tests unless a real gap is demonstrated;
-6. consolidate stale operational docs only where they can misroute work;
-7. audit branch/PR ancestry and build one conservative integration candidate;
-8. keep `main` read-only until explicit approval;
-9. release-candidate gate: clean clone, locked restore, Release build/tests, packaged runtime/installer smoke, offline smoke, no P0/P1 blockers.
+1. keep Pack A manual A01–A15 open until a suitable Windows/manual environment executes them;
+2. keep Pack B private/physical B01–B11 open until suitable corpus/hardware executes them;
+3. keep Pack C real/manual C01–C14 open until suitable Windows/photo/stylus/PFX/external-reader environment executes them;
+4. keep Pack D real/manual/private D01–D15 open until suitable Windows/private-document/external-reader environment executes them;
+5. consolidate stale operational/release docs only where they can misroute continuation work; do not merge historical branches wholesale;
+6. audit branch/PR ancestry and build one conservative integration candidate from the latest audited canonical head;
+7. keep `main` read-only until explicit approval;
+8. release-candidate gate: clean clone, locked restore, Release build/tests, packaged runtime/installer smoke, offline smoke, Labelize font provenance/license closure and no P0/P1 blockers.
 
 Recommended next bounded task:
-`Pack D — OCR / Forms / Compare / Batch / PDF→PNG representative QA preflight + executable manual checklist`.
+`Release operational-doc consolidation / routing audit — identify stale documents that can misroute work, then minimally neutralize or consolidate them without changing product code.`
 
 No merge to `main` without explicit user approval.
