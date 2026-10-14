@@ -1,12 +1,12 @@
 ---
 gsd_state_version: '1.1'
-status: f12-4-compare-ui-plan-ready-professional-in-progress
+status: f12-4-compare-closed-professional-in-progress
 progress:
   total_phases: 13
   completed_phases: 12
-  functional_percent_estimate: 96
-  release_readiness_percent_estimate: 86
-  overall_percent_estimate: 91
+  functional_percent_estimate: 97
+  release_readiness_percent_estimate: 87
+  overall_percent_estimate: 92
 ---
 
 # Project State
@@ -24,7 +24,7 @@ progress:
 
 F12 Professional is **IN PROGRESS**.
 
-Checkpoint branch for this audit: `audit/f12-4-state-plan-20261014`.
+Current functional branch: `feat/f12-4-task3-compare-ui`.
 
 | Slice | Status |
 |---|---|
@@ -32,32 +32,31 @@ Checkpoint branch for this audit: `audit/f12-4-state-plan-20261014`.
 | F12.1 Safe Redaction | CLOSED / AUTO PASS |
 | F12.2 Cryptographic Signature PFX/P12 MVP | CLOSED / AUTO PASS |
 | F12.3 Existing AcroForm `/Tx` | CLOSED / AUTO PASS |
-| F12.4 Compare core | CLOSED / GREEN |
-| F12.4 Compare UI | DESIGN APPROVED + SPEC WRITTEN + IMPLEMENTATION PLAN READY |
+| F12.4 Compare | **CLOSED / AUTO PASS** — core + minimal UI |
 | F12.5 Batch | PLANNED / NOT STARTED |
 | F12.6 Code Generator | PLANNED / NOT STARTED |
 | F12.7 Audited Conversions | PLANNED / NOT STARTED |
 | Release integration/stabilization | OPEN |
 
-Current implementation baseline before this state-audit commit:
-- branch: `feat/f12-4-task2-compare-core`;
-- exact HEAD: `149f716b704c43ea43bf94fa517fa5922920237b`;
-- Windows build: 0 warnings / 0 errors;
-- tests: **1178/1178 PASS**, 0 failed, 0 skipped;
+Current exact implementation baseline before this documentation-closure commit:
+- branch: `feat/f12-4-task3-compare-ui`;
+- exact HEAD: `488d59f7a9e47ae0ccaafe474e7215cdc4cdc1d2`;
+- Windows Release build: **0 warnings / 0 errors**;
+- tests: **1186/1186 PASS**, 0 failed, 0 skipped;
 - no merge to `main`.
 
 ## Engineering progress estimates
 
 These are planning estimates, not telemetry.
 
-- **Automated functional implementation: ~96%.**
-- **Release readiness including manual/private/physical QA and integration: ~86%.**
-- **Headline weighted project state: ~91%.**
+- **Automated functional implementation: ~97%.**
+- **Release readiness including manual/private/physical QA and integration: ~87%.**
+- **Headline weighted project state: ~92%.**
 
 Why release readiness is lower than functional completion:
 1. representative real/private/manual/physical QA remains open across several slices;
 2. interoperability/real-device checks remain open where documented;
-3. the active development lineage is far ahead of `main`;
+3. the active development lineage remains far ahead of `main`;
 4. stacked branches/PRs need deliberate release integration/hygiene.
 
 ## F12.3 Forms closed scope
@@ -72,9 +71,9 @@ Why release readiness is lower than functional completion:
 
 Closure: `docs/history/2026-10-13-F12-3-exact-head-closure.md`.
 
-## F12.4 Compare current scope
+## F12.4 Compare closed scope
 
-### Closed core
+### Core
 
 `PdfCompareService` reuses existing PDFium signals:
 - page count;
@@ -87,22 +86,30 @@ Closed automated behavior:
 3. visual-only change;
 4. structural page-count difference.
 
-Current `VisualChanged` semantics are intentionally **visual change independent of text**. The core does not attempt to split an additional graphic change when text also changed.
+`VisualChanged` intentionally means **visual change independent of text**. The core does not claim decomposition of an additional graphic change when text also changed.
 
-Closure: `docs/history/2026-10-14-F12-4-compare-core-closure.md`.
+Core closure: `docs/history/2026-10-14-F12-4-compare-core-closure.md`.
 
-### UI ready for implementation
+### Minimal UI
 
-Approved design:
-`docs/superpowers/specs/2026-10-14-f12-4-compare-ui-design.md`.
+Closed KISS flow:
+`PDF A already open → Archivo > Comparar con otro PDF... → choose PDF B → PdfCompareService.Compare(A,B) → existing right panel summary → close/reset`.
 
-Implementation plan:
-`docs/superpowers/plans/2026-10-14-f12-4-compare-ui.md`.
+Automated UI closure includes:
+- local B selection with cancel as no-op;
+- reuse of existing `PdfCompareService`;
+- A/B names and page counts;
+- text, visual-independent, structure and overall status;
+- close/reset without replacing A;
+- existing Edit/Organize/Sign/Form guards;
+- controlled failure for invalid/unreadable/protected B;
+- shared workspace reset owner instead of duplicated mode-specific resets.
 
-KISS flow:
-`PDF A already open → choose PDF B → PdfCompareService.Compare(A,B) → existing right panel summary`.
+No second viewer, new sidebar, ModeManager, cloud/backend, new PDF engine, global XAML change or new dependency was introduced.
 
-No second viewer, no new sidebar, no ModeManager, no cloud/backend, no new PDF engine.
+UI design: `docs/superpowers/specs/2026-10-14-f12-4-compare-ui-design.md`.  
+UI implementation plan: `docs/superpowers/plans/2026-10-14-f12-4-compare-ui.md`.  
+Exact-head closure: `docs/history/2026-10-14-F12-4-compare-ui-closure.md`.
 
 ## Operational audit
 
@@ -116,17 +123,13 @@ No second viewer, no new sidebar, no ModeManager, no cloud/backend, no new PDF e
 
 ### Documentation drift
 
-**FOUND and corrected by this audit.**
-
-Before this checkpoint, `STATE`, `ROADMAP` and `REQUIREMENTS` still stopped at F12.2 even though F12.3 and most of F12.4 were already implemented. This caused repeated reconstruction of context and made progress look circular.
+**CORRECTED through F12.4.** Operational sources now advance Compare from plan-ready to closed functional scope.
 
 ### Integration drift
 
 **OPEN / HIGH PRIORITY BEFORE RELEASE.**
 
-`main` remains at `31c0594758a83ec555d73ecdd7c597cdf8791fd7`, while the active implementation lineage is roughly 1155 commits ahead as of this audit.
-
-No merge/rebase/branch cleanup is authorized by this document. Integration requires an explicit, separately approved consolidation gate.
+`main` remains intentionally untouched. No merge/rebase/branch cleanup is authorized by this document. Integration requires an explicit, separately approved consolidation gate.
 
 ### Manual/private/physical QA
 
@@ -137,11 +140,9 @@ No merge/rebase/branch cleanup is authorized by this document. Integration requi
 - external reader interoperability where applicable;
 - real certificates/signing corpus where applicable.
 
-## New operating cadence
+Compare specifically still belongs in the later representative real-PDF/manual QA pack; automated closure is not a claim of universal PDF comparison fidelity.
 
-The former externally-visible cadence of one `continua` per tiny RED/GREEN/CI substep created unnecessary ping-pong.
-
-Default from this checkpoint:
+## Operating cadence
 
 > **1 `continua` = 1 meaningful bounded product task closed.**
 
@@ -167,10 +168,10 @@ Operational docs update once per meaningful closed task/slice, not after every t
 ## Next
 
 ```text
-F12.4 Compare UI — Task 3.1
-→ close presentation contract + minimal owner in one bounded task
-→ RED → GREEN → CI → audit internally
-→ STOP with updated project percentage
+F12.5 Batch — capability/scope gate
+→ choose the smallest high-value batch operations that already have safe existing owners
+→ reject generic workflow/job/pipeline architecture
+→ define MVP before implementation
 ```
 
 No merge to `main` without explicit user approval.
