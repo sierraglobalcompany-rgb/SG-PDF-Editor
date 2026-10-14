@@ -164,37 +164,48 @@ Not baseline: side-by-side viewers, A/B toggling, per-page results, overlay/heat
 
 Real/private/manual Compare QA remains **NOT RUN** and belongs to the later OCR/Forms/Compare QA pack. Automated closure is not a universal-fidelity claim.
 
-### F12.5 Batch
+### F12.5 Batch — TextWatermark MVP
 
-- [ ] **PRO-BATCH-01** Local/offline batch processing with explicit inputs and outputs.
-- [ ] **PRO-BATCH-02** Preserve originals; no silent overwrite.
-- [ ] **PRO-BATCH-03** Report per-item success/failure.
-- [ ] **PRO-BATCH-04** Reuse existing operations instead of duplicating writers/pipelines.
-- [ ] Exact supported batch operations require a narrow product/capability gate before implementation.
+- [x] **PRO-BATCH-01 — AUTO PASS** Local/offline multi-PDF processing with explicit input PDFs and explicit output folder.
+- [x] **PRO-BATCH-02 — AUTO PASS** Originals preserved; deterministic output copies; existing destination is never silently overwritten.
+- [x] **PRO-BATCH-03 — AUTO PASS** Per-item success/error results; one bad PDF does not abort the remaining items; final summary reports successes and failures.
+- [x] **PRO-BATCH-04 — AUTO PASS** Reuses existing `WatermarkUtilityRequest`, `WatermarkPlanner` and `PdfTextOverlayWriter` instead of duplicating writers/pipelines.
+- [x] Baseline operation is **TextWatermark only**; Bates, OCR, protection, organize and other batch operations require a separate value/capability decision.
 
-### F12.6 Code Generator
+Representative real/manual batch QA remains **NOT RUN**.
 
-- [ ] **PRO-CODEGEN-01** Local/offline generator slice without paid/cloud dependency.
-- [ ] **PRO-CODEGEN-02** Exact code types/symbologies require explicit scope/capability approval before implementation.
-- [ ] **PRO-CODEGEN-03** Reuse existing output/export paths where appropriate rather than introduce a parallel rendering stack.
+### F12.6 Code Generator — QR PNG MVP
 
-### F12.7 Audited Conversions
+- [x] **PRO-CODEGEN-01 — AUTO PASS** Local/offline QR PNG generation with no paid/cloud dependency and no new production QR package.
+- [x] **PRO-CODEGEN-02 — AUTO PASS** Baseline symbology is **QR only**; Code128 and other symbologies require separate approval.
+- [x] **PRO-CODEGEN-03 — AUTO PASS** Reuses existing ZPL parsing + `LabelizeProcessRenderer`; no parallel production rendering stack.
+- [x] **PRO-CODEGEN-04 — AUTO PASS** Rendered PNG decodes back to the exact payload, including UTF-8 and ZPL-looking text such as `^XZ` / `~JA`; blank and oversized payloads are rejected.
+- [x] **PRO-CODEGEN-05 — AUTO PASS** Minimal `Herramientas` UI accepts text/URL and saves explicitly to PNG with controlled cancel/error behavior.
 
-- [ ] **PRO-CONVERT-01** Each conversion must be separately scoped and capability-gated.
-- [ ] **PRO-CONVERT-02** Keep local/offline operation where feasible and protect originals.
-- [ ] **PRO-CONVERT-03** Validate output with representative, conversion-specific evidence.
-- [ ] **PRO-CONVERT-04** Declare limitations honestly; no universal-fidelity claim.
-- [ ] No second PDF engine/cloud service without explicit approval.
+Real phone/scanner interoperability and Windows UX smoke remain **NOT RUN**.
+
+### F12.7 Audited Conversions — PDF→PNG MVP
+
+- [x] **PRO-CONVERT-01 — AUTO PASS** Conversion was separately capability-gated; baseline F12.7 approves and closes only **PDF→PNG**.
+- [x] **PRO-CONVERT-02 — AUTO PASS** Local/offline path, source PDF untouched, deterministic outputs and no silent overwrite.
+- [x] **PRO-CONVERT-03 — AUTO PASS** Real synthetic multi-page PDF evidence verifies one PNG per page, PNG validity, deterministic naming and collision fail-before-write behavior.
+- [x] **PRO-CONVERT-04 — AUTO PASS** Limitations are explicit; no universal-fidelity claim, no Office/document-conversion claim and no implicit extra formats.
+- [x] **PRO-CONVERT-05 — AUTO PASS** Reuses existing `PdfDocumentSession`/PDFium and WPF `PngBitmapEncoder`; no second PDF engine, cloud service or new runtime dependency.
+- [x] **PRO-CONVERT-06 — AUTO PASS** Minimal existing `Herramientas` UI selects an output folder and exports all pages at fixed 144 DPI with controlled cancel/error status.
+
+Not baseline: JPEG/WebP/TIFF, ranges, configurable DPI/quality studio, image→PDF, Office↔PDF/PDF→Office, LibreOffice/Office automation, cloud conversion or generic converter/plugin/workflow architecture.
+
+Representative visual/export Windows QA remains **NOT RUN**.
 
 ## Cross-cutting
 
 - [ ] **OFFLINE** Normal functions require no Internet; full physical/offline smoke remains pending where noted.
-- [x] **LICENSE** Runtime dependencies/assets audited through current automated implementation; no new dependency added by F12.3/F12.4. Labelize font provenance re-audit remains required before public installer.
+- [x] **LICENSE** Runtime dependencies/assets audited through the F12 automated baseline; F12.5 Batch, F12.6 QR and F12.7 PDF→PNG add no new production runtime dependency. Labelize font provenance re-audit remains required before public installer.
 - [x] **PRIVACY** Private fixtures ignored and CI hygiene rejects tracked `tests/PrivateFixtures/**`.
-- [x] **ORIGINAL** Existing writer flows protect source and use Save As semantics where modification occurs; Compare is read-only and keeps A active.
-- [x] **CI** Functional automated baseline through F12.4 Compare UI: implementation HEAD `488d59f7a9e47ae0ccaafe474e7215cdc4cdc1d2`, Release build `0` warnings / `0` errors, `1186/1186` PASS, `0` failed, `0` skipped.
-- [x] **KISS** Compare UI added no second viewer/sidebar, generalized ModeManager, new PDF engine/runtime dependency or global XAML architecture; lifecycle reset reuses the existing shared workspace-reset owner.
-- [x] **NO-AUTOMERGE** `main` remains at the previously audited baseline and merges require explicit user approval.
+- [x] **ORIGINAL** Existing writer flows protect source and use Save As/copy semantics where modification occurs; Compare is read-only; Batch preserves each source; PDF→PNG only renders the opened source and writes separate PNG files.
+- [x] **CI** Functional automated baseline through F12.7: implementation HEAD `8e1845d6d8fe72374d7a80994d8500b6d36077cc`, exact-head CI run `38555829715`, job `115824598759`, Release build `0` warnings / `0` errors, **1202/1202 PASS**, `0` failed, `0` skipped.
+- [x] **KISS** F12 closes without generic BatchEngine, barcode studio, conversion framework/registry, second viewer/sidebar, generalized ModeManager, second PDF engine, cloud backend or new production runtime dependency for Batch/QR/PDF→PNG.
+- [x] **NO-AUTOMERGE** `main` remains at `31c0594758a83ec555d73ecdd7c597cdf8791fd7`; merge requires explicit user approval.
 - [ ] **INTEGRATION** Active implementation lineage remains far ahead of `main`; controlled consolidation is required before release and is not authorized by this requirements update.
 - [ ] **REAL-QA** Representative manual/private/physical/external-reader QA remains open where phase sections say NOT RUN.
 
