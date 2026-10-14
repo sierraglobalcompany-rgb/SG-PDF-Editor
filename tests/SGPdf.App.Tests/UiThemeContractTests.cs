@@ -164,8 +164,12 @@ public sealed class UiThemeContractTests
     private static void AssertSharedResource(XElement element, string attributeName, string resourceKey)
     {
         var value = (string?)element.Attribute(attributeName);
-        Assert.Contains(value, candidate => candidate is
-            $"{{StaticResource {resourceKey}}}" or $"{{DynamicResource {resourceKey}}}");
+        var staticValue = $"{{StaticResource {resourceKey}}}";
+        var dynamicValue = $"{{DynamicResource {resourceKey}}}";
+        Assert.True(
+            string.Equals(value, staticValue, StringComparison.Ordinal) ||
+            string.Equals(value, dynamicValue, StringComparison.Ordinal),
+            $"Expected {attributeName} to use shared resource {resourceKey}, but was '{value}'.");
     }
 
     private static void AssertDeferredResource(XElement element, string attributeName, string resourceKey)
