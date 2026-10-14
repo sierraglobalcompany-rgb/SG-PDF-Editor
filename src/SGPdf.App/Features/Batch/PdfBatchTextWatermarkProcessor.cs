@@ -15,6 +15,10 @@ internal sealed class PdfBatchTextWatermarkProcessor
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(request.InputPaths);
         ArgumentNullException.ThrowIfNull(watermarkRequest);
+        ArgumentException.ThrowIfNullOrWhiteSpace(request.OutputDirectory);
+
+        if (request.InputPaths.Count == 0)
+            throw new ArgumentException("Debes seleccionar al menos un PDF.", nameof(request));
 
         if (request.Operation != PdfBatchOperation.TextWatermark)
             throw new ArgumentOutOfRangeException(nameof(request), "La operación por lotes no es compatible.");
