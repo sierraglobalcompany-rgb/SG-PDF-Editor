@@ -38,7 +38,7 @@ public sealed class UiThemeContractTests
 
         var document = XDocument.Load(themePath);
         var keys = document
-            .DescendantsAndSelf()
+            .Descendants()
             .Attributes(Xaml + "Key")
             .Select(attribute => attribute.Value)
             .ToHashSet(StringComparer.Ordinal);
