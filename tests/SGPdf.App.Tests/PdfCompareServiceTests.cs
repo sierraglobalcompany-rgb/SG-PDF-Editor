@@ -91,6 +91,44 @@ public sealed class PdfCompareServiceTests
         }
     }
 
+    [Fact]
+    public void Compare_AddedBlankPage_ReportsStructureWithoutTextOrVisualOnlyChange()
+    {
+        string directory = Path.Combine(
+            Path.GetTempPath(),
+            "sgpdf-f12-4-compare-pages-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directory);
+
+        try
+        {
+            string leftPath = Path.Combine(directory, "left.pdf");
+            string rightPath = Path.Combine(directory, "right.pdf");
+
+            using (var leftDocument = new PdfDocument())
+            {
+                leftDocument.AddPage();
+                leftDocument.Save(leftPath);
+            }
+
+            using (var rightDocument = new PdfDocument())
+            {
+                rightDocument.AddPage();
+                rightDocument.AddPage();
+                rightDocument.Save(rightPath);
+            }
+
+            object result = Compare(leftPath, rightPath);
+            Assert.Equal(1, ReadProperty<int>(result, "LeftPageCount"));
+            Assert.Equal(2, ReadProperty<int>(result, "RightPageCount"));
+            Assert.False(ReadProperty<bool>(result, "TextChanged"));
+            Assert.False(ReadProperty<bool>(result, "VisualChanged"));
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
     private static object Compare(string leftPath, string rightPath)
     {
         Assembly appAssembly = typeof(PdfDocumentSession).Assembly;
