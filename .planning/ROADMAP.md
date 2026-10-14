@@ -30,7 +30,7 @@
 | F12.4 Compare | **CLOSED / AUTO PASS** — core + minimal UI | representative real-PDF/manual QA later |
 | F12.5 Batch | **CLOSED / AUTO PASS — TextWatermark MVP** | additional batch operations only by separate value/capability decision |
 | F12.6 Code Generator | **CLOSED / AUTO PASS — QR PNG MVP** | additional symbologies only by separate value/capability decision |
-| F12.7 Audited Conversions | **PLANNED / NOT STARTED** | **current next: capability/scope gate, one conversion at a time** |
+| F12.7 Audited Conversions | **IN PROGRESS / GATE PASS — PDF→PNG selected** | **current next: PDF→PNG core MVP** |
 | Release integration/stabilization | **OPEN** | deliberate branch/main consolidation + manual/private QA |
 
 ## Current position
@@ -43,38 +43,77 @@ F12.3       CLOSED — existing classic AcroForm /Tx
 F12.4       CLOSED — Compare core + minimal existing-panel UI
 F12.5       CLOSED — sequential TextWatermark Batch MVP
 F12.6       CLOSED — QR PNG MVP, existing Labelize owner reused
-F12.7       Audited Conversions — current next, capability/scope gate first
+F12.7       IN PROGRESS — capability gate PASS; PDF→PNG selected
 Release     Integration + manual/private/physical QA — pending
 ```
 
-Current F12.6 implementation checkpoint before documentation-only closure commits:
-- exact implementation HEAD `5387e705098b448c7eb0aab87831c48acc3a9060` on `feat/f12-6-qr-generator`;
-- exact-head Release build PASS / 0 errors;
-- build exposes 2 pre-existing NuGet vulnerability warnings for test dependency `System.Security.Cryptography.Pkcs 8.0.1` (`NU1902`, `NU1903`), deferred to stabilization because F12.6 did not introduce them;
+Current closed F12.6 baseline:
+- exact final HEAD `6e82e18d60c6c3e8eee74b4e96769a2cb8892e08` on `feat/f12-6-qr-generator`;
+- exact-head Release build **PASS / 0 warnings / 0 errors**;
 - exact-head tests **1197/1197 PASS**, 0 failed, 0 skipped;
-- exact-head CI run `38534493694`, job `115753962287`;
+- exact-head CI run `38534984770`, job `115755569827`;
 - no merge to `main`.
+
+An earlier implementation run surfaced `NU1902`/`NU1903` for the test-only `System.Security.Cryptography.Pkcs 8.0.1`; the final exact-head locked restore/build did not reproduce them. Advisory/package review remains stabilization work, not part of the conversion MVP.
 
 ## Remaining development sequence
 
-### 1. F12.7 Audited Conversions — current next
+### 1. F12.7 Audited Conversions — PDF→PNG next
 
-Each conversion is its own narrow capability/quality gate. Do not assume a universal converter.
+Capability/scope gate result: **GO for PDF→PNG as the first and only currently approved conversion MVP**.
 
-Required decision order:
-1. identify the smallest conversion with real product value;
-2. check whether an existing local owner can do it safely;
-3. define accepted fidelity limits before implementation;
-4. RED → minimal GREEN → exact-head CI;
-5. defer any conversion that requires a second engine or disproportionate runtime unless separately approved.
+Why this direction wins:
+- it extends an existing owner instead of adding a new engine: `PdfDocumentSession` already owns PDFium rendering;
+- it is local/offline;
+- fidelity claim is narrow and auditable: render each PDF page to PNG;
+- page count, output validity, dimensions, deterministic naming and overwrite behavior are straightforward to test;
+- no Office runtime, cloud service or generalized conversion architecture is required.
 
-KISS guardrails:
-- no universal conversion framework;
-- no plugin architecture for formats;
-- no LibreOffice runtime, Office automation, cloud conversion or second PDF engine without explicit value + approval;
-- no universal-fidelity claim;
-- one direction/format at a time;
-- local/offline behavior preferred.
+Frozen next flow:
+`current PDF open → PDF→PNG export action → choose output folder → existing PdfDocumentSession/PDFium → render all pages → one PNG/page`.
+
+Frozen contract:
+- current/open PDF only;
+- all pages only;
+- deterministic file names, e.g. `<basename>-pagina-001.png`;
+- never silently overwrite an existing output;
+- source PDF remains untouched;
+- cancel is a no-op;
+- controlled errors;
+- cancellation propagated;
+- reuse the existing PDFium owner rather than duplicating P/Invoke/render abstractions.
+
+Explicitly outside the first MVP:
+- JPEG/WebP/TIFF or generic image format selector;
+- page ranges;
+- custom DPI/quality studio;
+- OCR/content interpretation;
+- image→PDF in the same slice;
+- DOCX/XLSX/PPTX↔PDF;
+- PDF→Office;
+- LibreOffice runtime;
+- Microsoft Office automation;
+- cloud conversion;
+- second PDF/document engine;
+- generic `Converter`, registry, plugin system, workflow designer or queue.
+
+Gate classification:
+- **GO — PDF→PNG:** implement next with TDD from the clean F12.6 lineage.
+- **DEFER — image→PDF:** potentially valuable but belongs to a separate capability gate because it constructs/assembles a PDF from raster input rather than exporting an existing PDF render. Do not couple the two directions.
+- **NO-GO baseline — Office/document conversions:** any path that requires LibreOffice, Office automation, cloud, another document engine or broad fidelity promises needs explicit product value and approval before architecture expands.
+
+Branch hygiene:
+- authoritative continuation: `feat/f12-7-conversions-gate`, created directly from exact F12.6 closure `6e82e18d60c6c3e8eee74b4e96769a2cb8892e08`;
+- existing `feat/f12-7-pdf-to-png` is a **divergent/non-authoritative prototype**; it carries unrelated ancestry/work and is evidence only, not a merge or implementation base;
+- no cleanup/rebase/merge of that prototype is authorized here.
+
+Next bounded implementation task:
+1. add RED contract for PDF→PNG core;
+2. verify intended RED;
+3. minimal GREEN reusing `PdfDocumentSession`;
+4. test multiple pages, PNG signature/dimensions, deterministic naming, overwrite refusal, original preservation and cancellation/error behavior;
+5. full exact-head CI;
+6. only then expose minimal UI/export if the core is clean.
 
 ### 2. Real QA packs
 
@@ -82,7 +121,7 @@ After functional F12, group the accumulated physical/manual/private work into bo
 - Reader/Organize/Editing;
 - ZPL + physical print/scan;
 - visual + cryptographic signatures;
-- OCR/Forms/Compare/Batch/QR.
+- OCR/Forms/Compare/Batch/QR/Conversions.
 
 ### 3. Documentation consolidation
 
@@ -102,7 +141,7 @@ Before release:
 - bring `main` forward only with explicit user approval;
 - run complete exact-head CI;
 - execute prioritized real/private/manual/physical QA;
-- resolve current NuGet advisories and close installer/license provenance items.
+- review dependency advisories and close installer/license provenance items.
 
 ### 5. Release candidate / final
 
@@ -166,11 +205,14 @@ These require separate approval and do not block the current baseline roadmap:
 - advanced form types (`/Btn`, `/Ch`, XFA, designer);
 - advanced signing (Windows store, smartcard/HSM, TSA, legal qualification);
 - universal PDF preservation/compatibility promises;
-- AI/cloud/backend features.
+- AI/cloud/backend features;
+- Office/document conversion engines.
 
 ## Operating cadence
 
-> **1 `continua` = 1 meaningful bounded product task closed**, with RED → GREEN → focused verification → full CI → KISS/noise audit executed internally.
+> **1 `continua` = 1 meaningful bounded product task closed**, with RED → GREEN → focused verification → full CI → KISS/noise audit executed internally for implementation tasks.
+
+Capability gates intentionally stop after evidence + frozen scope, before production implementation.
 
 Separate user stops remain only for decisions, architecture changes, new dependencies, capability NO-GO or irreversible Git integration.
 
@@ -185,5 +227,6 @@ Separate user stops remain only for decisions, architecture changes, new depende
 - F12.4 UI closure: `docs/history/2026-10-14-F12-4-compare-ui-closure.md`
 - F12.5: operational closure recorded in `.planning/STATE.md` + this roadmap; no extra history Markdown added to avoid documentation noise.
 - F12.6: operational closure recorded in `.planning/STATE.md` + this roadmap; no extra history Markdown added to avoid documentation noise.
+- F12.7 capability gate: operational decision recorded in `.planning/STATE.md` + this roadmap; no extra history Markdown added.
 
 No merge to `main` without explicit user approval.
