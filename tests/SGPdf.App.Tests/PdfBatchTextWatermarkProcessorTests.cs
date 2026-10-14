@@ -47,6 +47,64 @@ public sealed class PdfBatchTextWatermarkProcessorTests
         Assert.NotEqual(originalBefore, SHA256.HashData(File.ReadAllBytes(outputPath)));
     }
 
+    [Fact]
+    public void Process_TextWatermark_ContinuesAfterIndependentFileFailure()
+    {
+        using var temp = new TempDirectory();
+        string validInput = Path.Combine(temp.Path, "valido.pdf");
+        string missingInput = Path.Combine(temp.Path, "faltante.pdf");
+        string outputDirectory = Path.Combine(temp.Path, "salida");
+        CreateSinglePagePdf(validInput);
+
+        Assembly appAssembly = typeof(PdfDocumentSession).Assembly;
+        Type processorType = appAssembly.GetType(
+            "SGPdf.App.Features.Batch.PdfBatchTextWatermarkProcessor",
+            throwOnError: true)!;
+        object processor = Activator.CreateInstance(processorType, nonPublic: true)!;
+        MethodInfo? process = processorType.GetMethod(
+            "Process",
+            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+        Assert.NotNull(process);
+
+        object batchRequest = CreateBatchRequest(
+            appAssembly,
+            [validInput, missingInput],
+            outputDirectory);
+        object watermarkRequest = CreateWatermarkRequest(appAssembly);
+
+        object? rawResults = process!.Invoke(
+            processor,
+            [batchRequest, watermarkRequest, CancellationToken.None]);
+        Assert.NotNull(rawResults);
+
+        object[] results = ((System.Collections.IEnumerable)rawResults!).Cast<object>().ToArray();
+        Assert.Equal(2, results.Length);
+        Assert.True((bool)results[0].GetType().GetProperty("Success")!.GetValue(results[0])!);
+        Assert.False((bool)results[1].GetType().GetProperty("Success")!.GetValue(results[1])!);
+        Assert.True(File.Exists(Path.Combine(outputDirectory, "valido-marca-agua.pdf")));
+        Assert.False(File.Exists(Path.Combine(outputDirectory, "faltante-marca-agua.pdf")));
+    }
+
+    private static object CreateBatchRequest(
+        Assembly appAssembly,
+        IReadOnlyList<string> inputPaths,
+        string outputDirectory)
+    {
+        Type operationType = appAssembly.GetType(
+            "SGPdf.App.Features.Batch.PdfBatchOperation",
+            throwOnError: true)!;
+        object operation = Enum.Parse(operationType, "TextWatermark");
+        Type requestType = appAssembly.GetType(
+            "SGPdf.App.Features.Batch.PdfBatchRequest",
+            throwOnError: true)!;
+        return Activator.CreateInstance(
+            requestType,
+            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
+            binder: null,
+            args: [inputPaths, outputDirectory, operation],
+            culture: null)!;
+    }
+
     private static object CreateWatermarkRequest(Assembly appAssembly)
     {
         Type requestType = appAssembly.GetType(
