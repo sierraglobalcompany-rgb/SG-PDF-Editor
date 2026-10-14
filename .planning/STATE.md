@@ -1,6 +1,6 @@
 ---
 gsd_state_version: '1.1'
-status: f12-5-batch-closed-professional-in-progress
+status: f12-6-code-generator-capability-gated
 progress:
   total_phases: 13
   completed_phases: 12
@@ -34,16 +34,16 @@ Current functional branch: `feat/f12-5-batch-contract`.
 | F12.3 Existing AcroForm `/Tx` | CLOSED / AUTO PASS |
 | F12.4 Compare | CLOSED / AUTO PASS — core + minimal UI |
 | F12.5 Batch | **CLOSED / AUTO PASS — TextWatermark MVP** |
-| F12.6 Code Generator | PLANNED / NOT STARTED |
+| F12.6 Code Generator | **CAPABILITY GATE COMPLETE / IMPLEMENTATION BLOCKED ON DEPENDENCY APPROVAL** |
 | F12.7 Audited Conversions | PLANNED / NOT STARTED |
 | Release integration/stabilization | OPEN |
 
-Current exact implementation baseline before this documentation-closure commit:
+Current exact implementation baseline before the F12.6 capability-gate documentation commit:
 - branch: `feat/f12-5-batch-contract`;
-- exact HEAD: `2dd9a502965e3a2158b2f86c09e00a7eb917f8c7`;
+- exact HEAD: `ea8486ec2aaf6ebe26dd8947c925f32eef092e2d`;
 - Windows Release build: **0 warnings / 0 errors**;
 - tests: **1192/1192 PASS**, 0 failed, 0 skipped;
-- exact-head CI run: `38509616735`, job `115674867232`;
+- exact-head CI run: `38509929841`, job `115675852458`;
 - no merge to `main`.
 
 ## Engineering progress estimates
@@ -143,6 +143,27 @@ Explicitly not introduced:
 
 Further batch operations such as Bates/page numbering, OCR, protection or organize actions require a separate value/capability decision; they are not implicitly part of the closed F12.5 MVP.
 
+## F12.6 Code Generator capability gate
+
+**Capability gate: COMPLETE. Implementation: BLOCKED pending explicit dependency approval.**
+
+Repository evidence at `ea8486ec2aaf6ebe26dd8947c925f32eef092e2d`:
+- `SGPdf.App.csproj` has no QR/barcode generation dependency;
+- `packages.lock.json` contains no ZXing, QRCoder, SkiaSharp or ImageSharp package;
+- repository search found no existing QR, Code128 or generic barcode generator owner to reuse;
+- existing PDF/text rendering owners do not supply the missing symbol/matrix generation capability.
+
+Frozen KISS decision:
+1. do not hand-roll QR/Code128 encoding;
+2. do not create a generic barcode studio or symbology plugin architecture;
+3. do not add a dependency without explicit approval;
+4. if dependency addition is approved, first MVP should be **QR only + standalone PNG export**, local/offline and deterministic;
+5. Code128 is deferred to a separate value/capability decision after QR;
+6. EAN/UPC/DataMatrix/PDF417 and bulk generation remain deferred;
+7. PDF insertion is deferred until the standalone QR asset path is proven, avoiding two concerns in the first slice.
+
+No production code, package reference or new runtime was added by this gate.
+
 ## Operational audit
 
 ### Architecture
@@ -155,7 +176,7 @@ Further batch operations such as Bates/page numbering, OCR, protection or organi
 
 ### Documentation drift
 
-**CORRECTED through F12.5.** Operational sources now advance Batch from planned to closed TextWatermark MVP.
+**CORRECTED through F12.6 capability gate.** Operational sources record that Code Generator cannot enter implementation until its new dependency is explicitly approved.
 
 ### Integration drift
 
@@ -200,10 +221,10 @@ Operational docs update once per meaningful closed task/slice, not after every t
 ## Next
 
 ```text
-F12.6 Code Generator — capability/scope gate
-→ determine the smallest useful code format(s) actually required
-→ prefer reuse of existing export paths
-→ reject a generic barcode studio or dependency expansion without demonstrated need
+F12.6 Code Generator — dependency approval gate
+→ recommended first slice if approved: QR only + standalone PNG export
+→ keep Code128 and PDF insertion deferred
+→ no generic barcode studio, plugin architecture or cloud/backend
 ```
 
 No merge to `main` without explicit user approval.
