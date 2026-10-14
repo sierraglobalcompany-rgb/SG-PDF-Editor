@@ -19,41 +19,6 @@ internal sealed class WatermarkUtilityRequest
         byte red,
         byte green,
         byte blue)
-        : this(
-            text,
-            fontSize,
-            opacity,
-            rotationDegrees,
-            offsetXPoints,
-            offsetYPoints,
-            startPageNumber,
-            endPageNumber,
-            useCurrentPage,
-            background,
-            anchorName,
-            red,
-            green,
-            blue,
-            useAllPages: false)
-    {
-    }
-
-    internal WatermarkUtilityRequest(
-        string text,
-        double fontSize,
-        double opacity,
-        double rotationDegrees,
-        double offsetXPoints,
-        double offsetYPoints,
-        int startPageNumber,
-        int endPageNumber,
-        bool useCurrentPage,
-        bool background,
-        string anchorName,
-        byte red,
-        byte green,
-        byte blue,
-        bool useAllPages)
     {
         Text = text;
         FontSize = fontSize;
@@ -69,7 +34,6 @@ internal sealed class WatermarkUtilityRequest
         Red = red;
         Green = green;
         Blue = blue;
-        UseAllPages = useAllPages;
     }
 
     internal string Text { get; }
@@ -86,7 +50,39 @@ internal sealed class WatermarkUtilityRequest
     internal byte Red { get; }
     internal byte Green { get; }
     internal byte Blue { get; }
-    internal bool UseAllPages { get; }
+    internal bool UseAllPages { get; private set; }
+
+    internal static WatermarkUtilityRequest CreateAllPages(
+        string text,
+        double fontSize,
+        double opacity,
+        double rotationDegrees,
+        double offsetXPoints,
+        double offsetYPoints,
+        bool background,
+        string anchorName,
+        byte red,
+        byte green,
+        byte blue)
+    {
+        var request = new WatermarkUtilityRequest(
+            text,
+            fontSize,
+            opacity,
+            rotationDegrees,
+            offsetXPoints,
+            offsetYPoints,
+            startPageNumber: 1,
+            endPageNumber: 1,
+            useCurrentPage: false,
+            background,
+            anchorName,
+            red,
+            green,
+            blue);
+        request.UseAllPages = true;
+        return request;
+    }
 
     internal bool TryBuild(
         int pageCount,
