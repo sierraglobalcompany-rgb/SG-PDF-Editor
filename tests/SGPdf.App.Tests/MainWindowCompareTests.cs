@@ -42,6 +42,37 @@ public sealed class MainWindowCompareTests
         Assert.Equal(expectedConclusion, ReadProperty<string>(presentation, "Conclusion"));
     }
 
+    [Fact]
+    public void BuildComparePanelText_FormatsExistingPresentationForRightPanel()
+    {
+        object presentation = BuildPresentation(
+            "contrato-a.pdf",
+            "contrato-b.pdf",
+            leftPageCount: 2,
+            rightPageCount: 3,
+            textChanged: true,
+            visualChanged: false);
+
+        Assembly appAssembly = typeof(PdfDocumentSession).Assembly;
+        Type? mainWindowType = appAssembly.GetType("SGPdf.App.MainWindow", throwOnError: false);
+        Assert.NotNull(mainWindowType);
+
+        MethodInfo? method = mainWindowType.GetMethod(
+            "BuildComparePanelText",
+            BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+        Assert.NotNull(method);
+
+        object? value = method.Invoke(null, [presentation]);
+        string text = Assert.IsType<string>(value);
+
+        Assert.Contains("PDF A: contrato-a.pdf (2 páginas)", text, StringComparison.Ordinal);
+        Assert.Contains("PDF B: contrato-b.pdf (3 páginas)", text, StringComparison.Ordinal);
+        Assert.Contains("Texto: Cambios detectados", text, StringComparison.Ordinal);
+        Assert.Contains("Cambio visual independiente del texto: Sin cambios", text, StringComparison.Ordinal);
+        Assert.Contains("Estructura: Cantidad de páginas diferente", text, StringComparison.Ordinal);
+        Assert.Contains("Resultado: Se encontraron diferencias", text, StringComparison.Ordinal);
+    }
+
     private static object BuildPresentation(
         string leftDisplayName,
         string rightDisplayName,
