@@ -1,12 +1,12 @@
 ---
 gsd_state_version: '1.1'
-status: f12-functional-baseline-closed-release-open
+status: f12-functional-baseline-closed-release-ui-polish-open
 progress:
   total_phases: 13
   completed_phases: 13
   functional_percent_estimate: 100
-  release_readiness_percent_estimate: 90
-  overall_percent_estimate: 95
+  release_readiness_percent_estimate: 87
+  overall_percent_estimate: 94
 ---
 
 # Project State
@@ -19,14 +19,17 @@ Operational order:
 3. `.planning/ROADMAP.md`;
 4. `.planning/REQUIREMENTS.md`;
 5. approved slice/release record;
-6. `docs/MASTER_CONTEXT.md` for durable architecture;
-7. `docs/MASTER_PLAN.md` + `docs/history/**` as historical/architectural context only.
+6. `docs/MASTER_CONTEXT.md`;
+7. historical/master snapshots only as context.
 
-**Core value:** resolver PDF + ZPL diario de forma rápida, privada, estable y offline.
+Two laws remain mandatory:
+- **KISS:** simple, efficient, optimized, effective; A→B.
+- **Anti-noise:** `DELETE → SIMPLIFY → REUSE → MERGE → EXTEND → ADD`.
 
-## Current baseline — 2026-10-14
+Operational anti-patch guardrail:
+`REPRODUCE → CLASSIFY → ROOT CAUSE → OWNER → MINIMAL CHANGE → CAUSE TEST → FULL SUITE → EXACT-HEAD CI → REMOVE REDUNDANT WORKAROUND`.
 
-F0–F12 automated functional baseline: **CLOSED / FEATURE-FROZEN**.
+## Functional baseline — CLOSED / FEATURE-FROZEN
 
 Authoritative functional branch:
 `feat/f12-7-pdf-to-png-mvp-green3`
@@ -37,11 +40,8 @@ Functional HEAD:
 Functional exact-head CI:
 - run `38555829715`;
 - job `115824598759`;
-- repository hygiene PASS;
-- Labelize/qpdf/Tesseract staging PASS;
-- locked restore PASS;
-- Release build **0 warnings / 0 errors**;
-- tests **1202/1202 PASS**, 0 failed, 0 skipped.
+- Release build 0 warnings / 0 errors;
+- tests 1202/1202 PASS.
 
 `main` remains read-only at:
 `31c0594758a83ec555d73ecdd7c597cdf8791fd7`
@@ -50,184 +50,160 @@ No merge/rebase/force-push to `main` without explicit user approval.
 
 ## Conservative integration candidate — SELECTED
 
-Canonical candidate:
+Branch:
 `integration/release-candidate-20261014`
 
-Candidate HEAD:
+HEAD:
 `01d4adc3972ed939c5a2723a75d1833e61825d63`
 
-Why this candidate:
-- direct descendant of functional HEAD;
-- functional HEAD → candidate: documentation/planning lineage only;
-- no replay of stacked historical PRs;
-- no product-code/dependency/architecture delta from the closed functional baseline;
-- old `integration/release-candidate` is divergent/stale and must not be reused.
+This is a direct descendant of the functional baseline with documentation/planning lineage only. Old stacked PRs are historical evidence, not a merge queue. Old `integration/release-candidate` is stale/divergent and must not be reused.
 
-The candidate SHA is the same exact SHA verified on `plan/release-routing-audit`:
+Verification anchor:
 - run `38593351241`;
 - job `115953668459`;
-- hygiene, staging, locked restore, Release build and full test step PASS.
-
-`integration/**` does not currently trigger push CI; the exact SHA evidence above is therefore the candidate verification anchor.
-
-## Branch / PR ancestry audit — RESULT
-
-The old open PRs are stacked historical slice PRs. They are evidence, **not a merge queue**.
-
-Classification:
-- prior F0–F11/F12 slice heads that are ancestors of `green3`: **CONTAINED**;
-- `feat/f12-7-pdf-to-png-mvp`, `...-green`, `...-green2`: **SUPERSEDED / no unique release value**;
-- divergent `feat/f12-7-pdf-to-png`: **HISTORICAL ALTERNATIVE / DO NOT BASE**;
-- old `integration/release-candidate`: **STALE / DIVERGENT / DO NOT REUSE**;
-- old `plan/release-integration-audit*`: **HISTORICAL EVIDENCE ONLY**;
-- `chore/release-prep-qa-docs`: **SEMANTIC CHECKLIST SOURCE ONLY / NO WHOLESALE MERGE**.
-
-No destructive branch cleanup is required for release correctness.
+- hygiene/staging/restore/build/tests PASS.
 
 ## Release QA Packs
 
-Automated preflights exist and PASS; real/manual/private/physical execution remains open.
+Automated preflight PASS; real/manual/private/physical gates remain open:
+- Pack A — Reader / Organize / Editing;
+- Pack B — ZPL / QR / print-scan;
+- Pack C — visual + PFX/P12 signatures;
+- Pack D — OCR / Forms / Compare / Batch / PDF→PNG.
 
-| Pack | Canonical record | Automated preflight | Real gate |
-|---|---|---|---|
-| A — Reader / Organize / Editing | `docs/release/2026-10-14-pack-a-reader-organize-editing.md` | PASS | NOT RUN — ENVIRONMENT |
-| B — ZPL / QR / print-scan | `docs/release/2026-10-14-pack-b-zpl-qr-physical.md` | PASS | NOT RUN — ENVIRONMENT |
-| C — visual + PFX/P12 signatures | `docs/release/2026-10-14-pack-c-signatures.md` | PASS | NOT RUN — ENVIRONMENT |
-| D — OCR / Forms / Compare / Batch / PDF→PNG | `docs/release/2026-10-14-pack-d-ocr-forms-compare-batch-convert.md` | PASS | NOT RUN — ENVIRONMENT |
+Canonical records remain under `docs/release/2026-10-14-pack-*.md`.
 
-Synthetic/CI PASS never upgrades a manual/physical/private gate to PASS.
-
-## Routing consolidation — CLOSED
-
-Current routing documents (`AGENTS`, ROADMAP, MASTER_PLAN header and README) are aligned with the closed F0–F12 baseline and release sequence.
-
-Routing branch:
-`plan/release-routing-audit`
-
-Latest routing SHA used for candidate cut:
-`01d4adc3972ed939c5a2723a75d1833e61825d63`
-
-No stale master/history snapshot may reopen a closed phase.
+Synthetic/CI PASS never upgrades real/manual/physical/private QA to PASS.
 
 ## Runtime / installer / license audit
 
 Canonical record:
 `docs/release/2026-10-14-runtime-installer-license-audit.md`
 
-Audit branch:
-`plan/release-runtime-installer-audit`
+Audit checkpoint:
+`25ac6e163662207bbc40157d1bed3811d1974e62`
 
-Audit commit:
-`2a5d0b25368bdec56fff54deb9041a0bb804fce7`
+Runtime/license audit CI:
+- run `38595250869` / job `115960181338` — SUCCESS.
 
-Exact-head CI:
-- run `38595250869`;
-- job `115960181338`;
-- hygiene PASS;
-- Labelize/qpdf/Tesseract staging PASS;
+KISS release order remains:
+`visual polish → deterministic publish → runtime inventory → clean/offline smoke → minimal installer → installer smoke → RC`.
+
+Labelize `ZplGSCustom.ttf` provenance re-audit is complete with supportive redistribution evidence and documented residual original-author provenance risk. Do not claim legal certainty.
+
+## Windows development environment — VERIFIED BY CODEX
+
+Reported on 2026-10-14:
+- Windows 11 x64;
+- Git + PowerShell 7;
+- .NET SDK 10.0.402 x64 installed per-user;
+- Labelize 1.7.0, qpdf 12.4.2, Tesseract 5.5.3.20260724 staged successfully;
 - locked restore PASS;
 - Release build PASS;
-- full test step PASS.
+- local tests reported 1178/1178 PASS on the older audit checkout used by Codex;
+- application startup smoke PASS.
 
-### Installer infrastructure
+Codex used an older audit branch, so those counts are **environment evidence only**, not the current release-head verification anchor.
 
-Repository audit found no existing WiX/Inno/MSIX/publish-profile framework.
+Open dependency hygiene item:
+- `System.Security.Cryptography.Pkcs 8.0.1` transitively reports NU1902 + NU1903;
+- resolve separately by root cause before public release;
+- do not patch `main` directly.
 
-This is **not a product defect**.
+## UI/UX release modernization — OPEN
 
-KISS release order is frozen as:
+Canonical record:
+`docs/release/2026-10-14-ui-modernization.md`
 
-`deterministic publish → runtime inventory → clean/offline smoke → minimal installer → installer smoke → RC`
+Implementation plan:
+`docs/superpowers/plans/2026-10-14-release-ui-modernization.md`
 
-Do not add installer architecture before the published folder is proven.
+Branch:
+`feat/release-ui-modernization`
 
-### Labelize font provenance
+Base:
+`25ac6e163662207bbc40157d1bed3811d1974e62`
 
-`ZplGSCustom.ttf` re-audit: **COMPLETE**.
+Reference guidance:
+- Microsoft WPF Fluent System theme;
+- `nextlevelbuilder/ui-ux-pro-max-skill` MIT, **design/development guidance only**, not runtime dependency.
 
-Verified:
-- SG PDF stages the exact pinned official Labelize v1.7.0 Windows release ZIP; it does not separately download the font;
-- Labelize embeds the GS font internally and documents it in upstream `THIRD_PARTY_LICENSES.md`;
-- upstream states it was received from MIT-licensed `ingridhq/zebrash`;
-- zebrash is MIT and contains the same-named GS font asset;
-- upstream also states that the original provenance before zebrash is not fully documented.
+### UI-1 Foundation — GREEN
 
-Upstream notice retained at:
-`third_party/licenses/Labelize-THIRD-PARTY-NOTICES.md`
+Implementation HEAD:
+`198b278605d33bff61be0ee5a9097d359239b324`
 
-Status:
-- provenance review: **COMPLETE**;
-- engineering redistribution evidence: **SUPPORTIVE**;
-- original-author provenance certainty: **RESIDUAL RISK OPEN**;
-- legal certainty is **not claimed**.
+Implemented:
+- `App.xaml` → `ThemeMode="System"`;
+- one shared `Themes/Modern.xaml` resource dictionary;
+- no third-party UI framework/package.
 
-Before a public installer, resolve explicitly:
-- **A:** accept the documented residual risk and ship pinned Labelize + required notices; or
-- **B:** replace/redraw the tiny GS glyph asset through a controlled path and rerun affected ZPL automated + real/private/physical QA.
+Exact-head CI:
+- run `38599058194`;
+- job `115973245330`;
+- hygiene/staging/restore/build/tests SUCCESS.
 
-Do not silently modify Labelize or add a second ZPL renderer.
+### UI-2 Main shell — OPEN / RED CONTRACT IN PROGRESS
 
-## Runtime components to prove in publish
+Contract commit before checkpoint:
+`383413bff2cdf6dca130ccb6bd1379f2ad89cc06`
 
-Approved runtime baseline:
-- .NET 10 / WPF / Windows x64;
-- PDFium `156.0.8076`;
-- PDFsharp `6.2.4` narrow approved uses;
-- Labelize `1.7.0`;
-- qpdf `12.4.2`;
-- Tesseract `5.5.3.20260724` + pinned `spa`/`eng` data;
-- DejaVu Sans `2.37` fallback asset.
+Contract protects:
+- root `DockPanel`;
+- three-column reader grid;
+- left navigation host used structurally by thumbnail code;
+- behavior-owned control names/event wiring;
+- modern surface resources for window/navigation/canvas/right panel.
 
-No backend, DB, cloud service, second viewer, second PDF engine, second ZPL renderer, generic BatchEngine or generic conversion framework.
+Workflow run:
+`38599600200`
 
-## Next authoritative work
+At checkpoint request, build had not yet completed the test result. **Do not call UI-2 GREEN without reading final exact-head evidence.**
 
-Functional F12 remains frozen.
+## Official icon — USER APPROVED REFERENCE
 
-### Immediate next gate — Windows publish validation
+On 2026-10-14 the user supplied the official visual reference for:
+1. SG PDF Editor application/executable icon;
+2. Windows PDF file-association icon;
+3. future installer/start-menu/shortcut icon.
 
-On the prepared Windows x64 development PC:
-1. verify Codex environment audit result;
-2. stage pinned Labelize/qpdf/Tesseract with existing scripts;
-3. locked restore;
-4. Release build + full tests;
-5. create one deterministic **self-contained `win-x64` publish** output;
-6. inventory the output and prove required runtimes/assets/notices are present;
-7. launch directly from the published folder;
-8. run offline smoke with network disabled;
-9. prove no runtime download, PATH, registry or global-install dependency;
-10. record failures by root cause — no installer work until publish is GREEN.
+Visual identity:
+- stylized red PDF/document silhouette;
+- white negative-space page/fold forms;
+- simple high-contrast mark.
 
-### After publish GREEN
+The user-provided image in chat is the visual master reference. The binary `.ico` asset is **not yet committed**. When work resumes, derive the required Windows multi-resolution icon from that reference without redesigning its identity.
 
-1. choose one minimal Windows installer technology;
-2. package the already-proven publish payload rather than creating a second build pipeline;
-3. include required third-party notices;
-4. install/launch/uninstall smoke;
-5. execute remaining representative Packs A–D where environment/hardware allows;
-6. RC clean-clone / locked restore / build / tests / packaged runtime / offline / no P0-P1;
-7. only then consider `main`, with explicit user approval.
+## Current checkpoint / STOP POINT
 
-## Engineering laws
+Checkpoint branch:
+`feat/release-ui-modernization`
 
-### KISS
-Simple, efficient, optimized, effective. Prefer A→B.
+Checkpoint sequence:
+- UI-1: GREEN and CI verified;
+- UI-2: RED contract written; final RED evidence must be checked first on resume;
+- icon identity: approved and documented; asset integration pending;
+- dialogs: not started;
+- screenshot QA: not started;
+- portable publish: intentionally paused until visual gate;
+- installer: intentionally not started.
 
-### Anti-noise
-Before ADD: `DELETE → SIMPLIFY → REUSE → MERGE → EXTEND → ADD`.
+## Resume order
 
-### Anti-patch guardrail
-`REPRODUCE → CLASSIFY → ROOT CAUSE → OWNER → MINIMAL CHANGE → CAUSE TEST → FULL SUITE → EXACT-HEAD CI → REMOVE REDUNDANT WORKAROUND`.
+1. Read final result/log of UI-2 run `38599600200`.
+2. If RED is valid, implement minimal main-shell visual GREEN only.
+3. Exact-head CI.
+4. Modernize dialogs using the same shared resources.
+5. Integrate the approved app/PDF icon asset.
+6. Run real Windows screenshot QA at 1366×768+ and system scaling.
+7. Resolve the transitive `System.Security.Cryptography.Pkcs` vulnerability cleanly.
+8. Resume deterministic self-contained `win-x64` publish.
+9. Only after publish/offline smoke GREEN, add one minimal installer technology.
+10. RC + remaining representative Packs A–D; `main` only with explicit approval.
 
 ## Planning estimates
 
 Planning estimates, not telemetry:
 - automated functional implementation: **~100%**;
-- release readiness: **~90%**;
-- weighted overall: **~95%**.
-
-They remain unchanged because publish, installer, real QA and RC are not yet complete.
-
-## Recommended next bounded task
-
-`Windows self-contained publish gate on integration/release-candidate-20261014 after Codex environment audit is GREEN; prove runtime payload and offline launch before adding installer technology.`
+- release readiness: **~87%** because visual modernization is now a real release gate;
+- weighted overall: **~94%**.
