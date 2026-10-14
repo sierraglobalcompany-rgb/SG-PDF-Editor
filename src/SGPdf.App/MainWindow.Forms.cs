@@ -112,6 +112,7 @@ public partial class MainWindow
             return;
         }
 
+        ResetCompareUi();
         _signatureModeActive = false;
         if (_signatureOverlayCanvas is not null)
             _signatureOverlayCanvas.Visibility = Visibility.Collapsed;
@@ -194,6 +195,7 @@ public partial class MainWindow
 
     private void ResetAcroFormUi()
     {
+        ResetCompareUi();
         _acroFormEditors.Clear();
         _acroFormOriginalValues.Clear();
         _acroFormFieldsPanel?.Children.Clear();
