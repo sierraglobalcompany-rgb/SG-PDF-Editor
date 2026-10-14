@@ -1,6 +1,6 @@
 ---
 gsd_state_version: '1.1'
-status: f12-5-batch-closed-professional-in-progress
+status: f12-6-qr-core-green-professional-in-progress
 progress:
   total_phases: 13
   completed_phases: 12
@@ -24,7 +24,7 @@ progress:
 
 F12 Professional is **IN PROGRESS**.
 
-Current functional branch: `feat/f12-5-batch-contract`.
+Current functional branch: `feat/f12-6-qr-generator`.
 
 | Slice | Status |
 |---|---|
@@ -33,17 +33,17 @@ Current functional branch: `feat/f12-5-batch-contract`.
 | F12.2 Cryptographic Signature PFX/P12 MVP | CLOSED / AUTO PASS |
 | F12.3 Existing AcroForm `/Tx` | CLOSED / AUTO PASS |
 | F12.4 Compare | CLOSED / AUTO PASS — core + minimal UI |
-| F12.5 Batch | **CLOSED / AUTO PASS — TextWatermark MVP** |
-| F12.6 Code Generator | PLANNED / NOT STARTED |
+| F12.5 Batch | CLOSED / AUTO PASS — TextWatermark MVP |
+| F12.6 Code Generator | **IN PROGRESS / AUTO PASS — QR core MVP; minimal UI/export pending** |
 | F12.7 Audited Conversions | PLANNED / NOT STARTED |
 | Release integration/stabilization | OPEN |
 
-Current exact implementation baseline before this documentation-closure commit:
-- branch: `feat/f12-5-batch-contract`;
-- exact HEAD: `2dd9a502965e3a2158b2f86c09e00a7eb917f8c7`;
-- Windows Release build: **0 warnings / 0 errors**;
-- tests: **1192/1192 PASS**, 0 failed, 0 skipped;
-- exact-head CI run: `38509616735`, job `115674867232`;
+Current exact F12.6 core baseline before this documentation update:
+- branch: `feat/f12-6-qr-generator`;
+- exact HEAD: `c532d9d4b8c5b1fab07ad3174e57ad5d7ebf2dc6`;
+- Windows Release build step: **PASS**;
+- full test step: **PASS** (baseline 1192 plus 4 QR contract cases = 1196 cases);
+- exact-head CI run: `38511920615`, job `115682120833`;
 - no merge to `main`.
 
 ## Engineering progress estimates
@@ -143,6 +143,29 @@ Explicitly not introduced:
 
 Further batch operations such as Bates/page numbering, OCR, protection or organize actions require a separate value/capability decision; they are not implicitly part of the closed F12.5 MVP.
 
+## F12.6 Code Generator — current scope
+
+Capability gate: **PASS for QR using the existing Labels owner**.
+
+Current core MVP flow:
+`text/URL → UTF-8 field-data encoding → minimal ZPL ^BQ → existing ZplDocumentParser → existing LabelizeProcessRenderer → PNG bytes`.
+
+Automated evidence currently proves:
+- local/offline QR generation through already-approved Labelize 1.7.0;
+- PNG output decodes back to the exact original value;
+- UTF-8 content is preserved;
+- ZPL-looking payload text such as `^XZ` and `~JA` remains data rather than becoming commands;
+- blank values are rejected;
+- payload is bounded to 512 UTF-8 bytes.
+
+KISS / anti-noise result:
+- **0 new runtime dependencies**;
+- no ZXing production dependency was added; existing test-only decode infrastructure is reused only for verification;
+- no generic barcode studio, symbology factory, plugin architecture, cloud/backend or second renderer;
+- Code128 remains outside this MVP until value is demonstrated.
+
+F12.6 is **not closed yet**. Remaining user-facing step is deliberately small: expose QR value entry and `Guardar PNG` through existing WPF/menu/dialog patterns without creating a new generalized generator framework.
+
 ## Operational audit
 
 ### Architecture
@@ -150,12 +173,13 @@ Further batch operations such as Bates/page numbering, OCR, protection or organi
 **PASS.** The product architecture remains narrow and local-first:
 - PDFium remains primary PDF inspection/render owner;
 - PDFsharp/qpdf/Tesseract remain narrow, already-approved tools;
+- Labelize remains the single approved ZPL renderer and is reused for QR generation;
 - WPF partials/features remain focused;
 - no generalized enterprise architecture was introduced.
 
 ### Documentation drift
 
-**CORRECTED through F12.5.** Operational sources now advance Batch from planned to closed TextWatermark MVP.
+**CORRECTED through the F12.6 QR core checkpoint.** F12.6 is now accurately IN PROGRESS rather than NOT STARTED.
 
 ### Integration drift
 
@@ -200,10 +224,11 @@ Operational docs update once per meaningful closed task/slice, not after every t
 ## Next
 
 ```text
-F12.6 Code Generator — capability/scope gate
-→ determine the smallest useful code format(s) actually required
-→ prefer reuse of existing export paths
-→ reject a generic barcode studio or dependency expansion without demonstrated need
+F12.6 Code Generator — minimal QR UI/export
+→ reuse QrCodeGenerator and existing menu/dialog patterns
+→ value entry + Guardar PNG only
+→ no Code128, generic symbology selector or new dependency
+→ exact-head CI, then close F12.6 if acceptance stays green
 ```
 
 No merge to `main` without explicit user approval.
