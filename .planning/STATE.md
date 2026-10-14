@@ -1,6 +1,6 @@
 ---
 gsd_state_version: '1.1'
-status: integration-candidate-created-ci-verification
+status: integration-candidate-auto-green-pack-a-preflight-pass
 progress:
   total_phases: 13
   completed_phases: 13
@@ -26,15 +26,17 @@ Authority on conflict:
 
 ## Current position — 2026-10-14
 
-The automated functional baseline **F0–F12 is CLOSED**. Release ancestry/PR audit is closed and one dedicated integration candidate now exists.
+The automated functional baseline **F0–F12 is CLOSED**. Release ancestry/PR audit is closed, the dedicated integration candidate is automated-green, and Pack A has completed an automated readiness preflight only.
 
 | Area | Status |
 |---|---|
 | F0–F12 functional baseline | CLOSED / AUTO PASS |
-| Real QA packs | DEFINED / NOT RUN |
 | Documentation consolidation | BASELINE PASS |
 | Release ancestry / PR audit | CLOSED / PASS FOR INTEGRATION PLANNING |
-| Dedicated integration candidate | **CREATED / CI VERIFICATION** |
+| Dedicated integration candidate | **AUTO GREEN** |
+| Pack A automated readiness preflight | **PASS** |
+| Pack A real/manual QA | **NOT RUN — ENVIRONMENT** |
+| Packs B–D real QA | **NOT RUN** |
 | Release candidate approval | OPEN |
 
 ## Integration candidate
@@ -45,13 +47,25 @@ Canonical branch:
 - no PR replay, merge, rebase or force-push was used;
 - `main` remains read-only.
 
-The branch carries the complete audited functional lineage plus release-prep documentation. Live exact-head CI is required before the candidate is considered automated-green.
+During candidate validation one release-infrastructure gap was found: the build workflow listened to `main`, `feat/**` and `plan/**` but not `integration/**`. Root cause was the branch filter itself. The minimal fix added `integration/**`; no workaround, second workflow or product architecture was introduced.
+
+Candidate exact-head automated evidence before the Pack A preflight note:
+- SHA `2a0269635cfaa2ca87983f0c579d689ae8fa05ad`;
+- workflow run `38516169305`, Windows job `115695345151`;
+- exact checkout SHA verified;
+- repository hygiene PASS;
+- pinned Labelize 1.7.0, qpdf 12.4.2 and Tesseract 5.5.3 staging PASS;
+- locked restore PASS;
+- Release build: 0 warnings / 0 errors;
+- tests: 1201/1201 PASS, 0 failed, 0 skipped.
+
+The current documentation HEAD must also pass exact-head CI before this checkpoint is final.
 
 ## Canonical release lineage
 
 Functional release source:
 - `feat/f12-7-pdf-to-png` @ `6e9240fbb8bb16947d64514ded56d548c638c1c6`;
-- exact-head Release build at F12.7 closure: 0 warnings / 0 errors;
+- F12.7 closure build: 0 warnings / 0 errors;
 - tests: 1201/1201 PASS.
 
 Ancestry audit evidence:
@@ -74,13 +88,24 @@ No PR closing, retargeting or branch deletion is authorized at this stage.
 
 Canonical checklist: `docs/release/2026-10-14-real-qa-packs.md`.
 
-Four packs remain **NOT RUN** until real evidence exists:
-- A — Reader / Organize / Editing;
-- B — ZPL / QR / physical print-scan;
-- C — visual + cryptographic signatures;
-- D — OCR / Forms / Compare / Batch / PDF→PNG.
+Pack A preflight evidence: `docs/release/2026-10-14-pack-a-preflight.md`.
 
-Automated PASS does not upgrade manual/private/physical gates.
+The automated Pack A preflight mapped existing coverage for reader layout, organize operations, image-edit preservation and conservative text reflow. It found no automated regression and is **PASS for readiness only**.
+
+The canonical Pack A itself remains **NOT RUN — ENVIRONMENT** because this execution environment cannot prove:
+- interactive Windows UI behavior;
+- Microsoft Print to PDF;
+- representative real-document UI flows;
+- Adobe/Foxit/Edge external-reader checks;
+- a network-disabled desktop session.
+
+Automated PASS never upgrades those manual/private/physical items to PASS.
+
+Current real-QA status:
+- Pack A — **NOT RUN — ENVIRONMENT**;
+- Pack B — **NOT RUN**;
+- Pack C — **NOT RUN**;
+- Pack D — **NOT RUN**.
 
 ## Engineering estimates
 
@@ -89,7 +114,7 @@ Planning estimates, not telemetry:
 - release readiness: **~90%**;
 - headline weighted state: **~95%**.
 
-Creating the candidate does not raise the percentages by itself.
+The percentages remain unchanged because integration CI and automated preflight reduce uncertainty but do not substitute for real/manual/private/physical QA.
 
 ## KISS / anti-noise audit
 
@@ -101,9 +126,9 @@ The repository has historical branch/PR clutter, but cleanup remains deferred un
 ## Next
 
 ```text
-integration/release-candidate created
-→ exact-head Windows CI
-→ prioritized real-QA execution/preflight with honest PASS/FAIL/NOT RUN
+integration candidate automated-green
+→ real Pack A on interactive Windows when available
+→ Packs B/C/D according to hardware/private-fixture availability
 → installer/license/offline gates
 → stop for explicit approval before any merge to main
 ```
