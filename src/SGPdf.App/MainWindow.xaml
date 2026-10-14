@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="SG PDF Editor" Height="760" Width="1200"
         MinHeight="640" MinWidth="960"
-        Background="{StaticResource SgSurfaceBrush}"
+        Background="{DynamicResource SgSurfaceBrush}"
         FontFamily="Segoe UI"
         UseLayoutRounding="True"
         SnapsToDevicePixels="True"
@@ -11,7 +11,7 @@
         Closed="Window_Closed">
     <DockPanel>
         <Menu DockPanel.Dock="Top"
-              Background="{StaticResource SgSurfaceBrush}">
+              Background="{DynamicResource SgSurfaceBrush}">
             <MenuItem Header="_Archivo">
                 <MenuItem x:Name="OpenPdfMenuItem" Header="_Abrir..." Click="OpenPdf_Click" />
                 <MenuItem x:Name="OpenZplMenuItem"
@@ -37,7 +37,7 @@
 
         <Border x:Name="NavigationBar"
                 DockPanel.Dock="Top"
-                Style="{StaticResource SgToolbarBorderStyle}"
+                Style="{DynamicResource SgToolbarBorderStyle}"
                 Visibility="Collapsed"
                 IsVisibleChanged="NavigationBar_IsVisibleChanged">
             <StackPanel Orientation="Horizontal"
@@ -46,7 +46,7 @@
                 <Button x:Name="PreviousPageButton"
                         Content="← Anterior"
                         MinWidth="96"
-                        Style="{StaticResource SgToolbarButtonStyle}"
+                        Style="{DynamicResource SgToolbarButtonStyle}"
                         Click="PreviousPage_Click"
                         IsEnabled="False" />
 
@@ -76,31 +76,31 @@
                 <Button x:Name="NextPageButton"
                         Content="Siguiente →"
                         MinWidth="96"
-                        Style="{StaticResource SgToolbarButtonStyle}"
+                        Style="{DynamicResource SgToolbarButtonStyle}"
                         Click="NextPage_Click"
                         IsEnabled="False" />
 
                 <Border Width="1"
                         Height="24"
                         Margin="14,0"
-                        Background="{StaticResource SgBorderBrush}" />
+                        Background="{DynamicResource SgBorderBrush}" />
 
                 <Button x:Name="ZoomOutButton"
                         Content="−"
-                        Style="{StaticResource SgIconButtonStyle}"
+                        Style="{DynamicResource SgIconButtonStyle}"
                         ToolTip="Reducir"
                         Click="ZoomOut_Click"
                         IsEnabled="False" />
                 <Button x:Name="ZoomPercentButton"
                         Content="100%"
                         MinWidth="62"
-                        Style="{StaticResource SgToolbarButtonStyle}"
+                        Style="{DynamicResource SgToolbarButtonStyle}"
                         ToolTip="Tamaño real (100%)"
                         Click="ActualSize_Click"
                         IsEnabled="False" />
                 <Button x:Name="ZoomInButton"
                         Content="+"
-                        Style="{StaticResource SgIconButtonStyle}"
+                        Style="{DynamicResource SgIconButtonStyle}"
                         ToolTip="Ampliar"
                         Click="ZoomIn_Click"
                         IsEnabled="False" />
@@ -108,13 +108,13 @@
                 <Button x:Name="FitPageButton"
                         Content="Ajustar página"
                         Margin="12,0,2,0"
-                        Style="{StaticResource SgToolbarButtonStyle}"
+                        Style="{DynamicResource SgToolbarButtonStyle}"
                         ToolTip="Mostrar la página completa"
                         Click="FitPage_Click"
                         IsEnabled="False" />
                 <Button x:Name="FitWidthButton"
                         Content="Ajustar ancho"
-                        Style="{StaticResource SgToolbarButtonStyle}"
+                        Style="{DynamicResource SgToolbarButtonStyle}"
                         ToolTip="Ajustar al ancho del visor"
                         Click="FitWidth_Click"
                         IsEnabled="False" />
@@ -123,7 +123,7 @@
 
         <Border x:Name="LabelNavigationBar"
                 DockPanel.Dock="Top"
-                Style="{StaticResource SgToolbarBorderStyle}"
+                Style="{DynamicResource SgToolbarBorderStyle}"
                 Visibility="Collapsed"
                 IsEnabled="{Binding IsEnabled, ElementName=OpenPdfMenuItem}">
             <StackPanel Orientation="Horizontal"
@@ -132,7 +132,7 @@
                 <Button x:Name="PreviousLabelButton"
                         Content="← Anterior"
                         MinWidth="96"
-                        Style="{StaticResource SgToolbarButtonStyle}"
+                        Style="{DynamicResource SgToolbarButtonStyle}"
                         Click="PreviousLabel_Click"
                         IsEnabled="False" />
                 <TextBlock x:Name="LabelCountText"
@@ -143,14 +143,14 @@
                 <Button x:Name="NextLabelButton"
                         Content="Siguiente →"
                         MinWidth="96"
-                        Style="{StaticResource SgToolbarButtonStyle}"
+                        Style="{DynamicResource SgToolbarButtonStyle}"
                         Click="NextLabel_Click"
                         IsEnabled="False" />
             </StackPanel>
         </Border>
 
         <StatusBar DockPanel.Dock="Bottom"
-                   Background="{StaticResource SgSurfaceBrush}">
+                   Background="{DynamicResource SgSurfaceBrush}">
             <TextBlock x:Name="StatusText" Text="Listo" />
         </StatusBar>
 
@@ -162,15 +162,15 @@
             </Grid.ColumnDefinitions>
 
             <Border Grid.Column="0"
-                    Background="{StaticResource SgPanelBrush}"
+                    Background="{DynamicResource SgPanelBrush}"
                     BorderThickness="0,0,1,0"
-                    BorderBrush="{StaticResource SgBorderBrush}">
+                    BorderBrush="{DynamicResource SgBorderBrush}">
                 <TextBlock Margin="16,18"
                            Text="Páginas"
-                           Style="{StaticResource SgSectionHeaderStyle}" />
+                           Style="{DynamicResource SgSectionHeaderStyle}" />
             </Border>
 
-            <Grid Grid.Column="1" Background="{StaticResource SgCanvasBrush}">
+            <Grid Grid.Column="1" Background="{DynamicResource SgCanvasBrush}">
                 <ScrollViewer x:Name="PdfScrollViewer"
                               HorizontalScrollBarVisibility="Auto"
                               VerticalScrollBarVisibility="Auto"
@@ -198,19 +198,19 @@
                            Text="Abre un PDF para empezar"
                            FontSize="22"
                            FontWeight="SemiBold"
-                           Style="{StaticResource SgMutedTextStyle}" />
+                           Style="{DynamicResource SgMutedTextStyle}" />
             </Grid>
 
             <Border Grid.Column="2"
-                    Background="{StaticResource SgPanelBrush}"
+                    Background="{DynamicResource SgPanelBrush}"
                     BorderThickness="1,0,0,0"
-                    BorderBrush="{StaticResource SgBorderBrush}"
+                    BorderBrush="{DynamicResource SgBorderBrush}"
                     IsEnabled="{Binding IsEnabled, ElementName=OpenPdfMenuItem}">
                 <Grid>
                     <TextBlock x:Name="PropertiesPlaceholderText"
                                Margin="16,18"
                                Text="Propiedades"
-                               Style="{StaticResource SgSectionHeaderStyle}" />
+                               Style="{DynamicResource SgSectionHeaderStyle}" />
 
                     <ScrollViewer VerticalScrollBarVisibility="Auto">
                         <StackPanel x:Name="LabelPropertiesPanel"
@@ -218,11 +218,11 @@
                                     Visibility="Collapsed">
                             <TextBlock Text="Propiedades de etiqueta"
                                        FontSize="16"
-                                       Style="{StaticResource SgSectionHeaderStyle}"
+                                       Style="{DynamicResource SgSectionHeaderStyle}"
                                        Margin="0,0,0,16" />
 
                             <TextBlock Text="Vista previa"
-                                       Style="{StaticResource SgSectionHeaderStyle}" />
+                                       Style="{DynamicResource SgSectionHeaderStyle}" />
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                                 <RadioButton x:Name="PreviewLabelRadio"
                                              GroupName="LabelPreviewMode"
@@ -240,7 +240,7 @@
                             <Separator Margin="0,12,0,14" />
 
                             <TextBlock Text="Cantidad"
-                                       Style="{StaticResource SgSectionHeaderStyle}" />
+                                       Style="{DynamicResource SgSectionHeaderStyle}" />
                             <RadioButton x:Name="QuantityFromFileRadio"
                                          GroupName="LabelQuantity"
                                          Content="Del archivo"
@@ -265,12 +265,12 @@
                                      IsEnabled="False" />
                             <TextBlock x:Name="OutputQuantityText"
                                        Text="Cantidad de salida: 0"
-                                       Style="{StaticResource SgMutedTextStyle}" />
+                                       Style="{DynamicResource SgMutedTextStyle}" />
 
                             <Separator Margin="0,16,0,14" />
 
                             <TextBlock Text="Tamaño de etiqueta"
-                                       Style="{StaticResource SgSectionHeaderStyle}" />
+                                       Style="{DynamicResource SgSectionHeaderStyle}" />
                             <ComboBox x:Name="LabelSizeComboBox"
                                       SelectedIndex="0"
                                       SelectionChanged="LabelSizeComboBox_SelectionChanged"
@@ -299,12 +299,12 @@
                                 <Button x:Name="ApplyCustomSizeButton"
                                         Content="Aplicar tamaño"
                                         HorizontalAlignment="Left"
-                                        Style="{StaticResource SgToolbarButtonStyle}"
+                                        Style="{DynamicResource SgToolbarButtonStyle}"
                                         Click="ApplyCustomSize_Click" />
                             </StackPanel>
 
                             <TextBlock Text="Resolución"
-                                       Style="{StaticResource SgSectionHeaderStyle}"
+                                       Style="{DynamicResource SgSectionHeaderStyle}"
                                        Margin="0,4,0,8" />
                             <ComboBox x:Name="LabelDpmmComboBox"
                                       SelectedIndex="1"
@@ -318,12 +318,12 @@
 
                             <TextBlock x:Name="RenderSettingsText"
                                        Text="102 × 152 mm · 8 dpmm (~203 dpi)"
-                                       Style="{StaticResource SgMutedTextStyle}" />
+                                       Style="{DynamicResource SgMutedTextStyle}" />
 
                             <Separator Margin="0,16,0,14" />
 
                             <TextBlock Text="Hoja / salida"
-                                       Style="{StaticResource SgSectionHeaderStyle}" />
+                                       Style="{DynamicResource SgSectionHeaderStyle}" />
                             <TextBlock Text="Medio" Margin="0,0,0,4" />
                             <ComboBox x:Name="SheetMediaComboBox"
                                       SelectedIndex="0"
@@ -419,7 +419,7 @@
                             <Button x:Name="ApplySheetLayoutButton"
                                     Content="Aplicar layout"
                                     HorizontalAlignment="Left"
-                                    Style="{StaticResource SgToolbarButtonStyle}"
+                                    Style="{DynamicResource SgToolbarButtonStyle}"
                                     Click="ApplySheetLayout_Click" />
 
                             <TextBlock x:Name="LayoutValidationText"
@@ -432,7 +432,7 @@
                                     Content="Guardar como PDF..."
                                     HorizontalAlignment="Left"
                                     Margin="0,12,0,0"
-                                    Style="{StaticResource SgPrimaryButtonStyle}"
+                                    Style="{DynamicResource SgPrimaryButtonStyle}"
                                     IsEnabled="False"
                                     Click="ExportLabelPdf_Click" />
 
@@ -440,7 +440,7 @@
                                     Content="Imprimir etiquetas..."
                                     HorizontalAlignment="Left"
                                     Margin="0,8,0,0"
-                                    Style="{StaticResource SgToolbarButtonStyle}"
+                                    Style="{DynamicResource SgToolbarButtonStyle}"
                                     IsEnabled="False"
                                     Click="PrintLabels_Click" />
                         </StackPanel>
