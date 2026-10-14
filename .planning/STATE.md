@@ -24,6 +24,8 @@ progress:
 
 F12 Professional is **IN PROGRESS**.
 
+Checkpoint branch for this audit: `audit/f12-4-state-plan-20261014`.
+
 | Slice | Status |
 |---|---|
 | F0–F11 | CLOSED / AUTO PASS, with manual/private/physical gates still open where documented |
