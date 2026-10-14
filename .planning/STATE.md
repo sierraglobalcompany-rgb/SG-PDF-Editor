@@ -111,6 +111,42 @@ Pack B status:
 
 This is an honest environment endpoint, not a physical PASS. Pack B remains an open release gate until representative private/physical evidence is actually executed.
 
+### Release QA checkpoint — Pack C
+
+Canonical Pack C record:
+`docs/release/2026-10-14-pack-c-signatures.md`
+
+Release-QA branch:
+`plan/release-pack-c-qa`
+
+Pack C record commit:
+`c94bff6dad91f3e9c22ecad2a8ab2cf869e991e0`
+
+Exact-head CI for that record:
+- run `38586356772`;
+- job `115929288257`;
+- repository hygiene PASS;
+- pinned Labelize/qpdf/Tesseract staging PASS;
+- locked restore PASS;
+- Release build PASS;
+- full test step PASS.
+
+Pack C status:
+- automated visual-signature + PFX/P12 evidence preflight: **PASS**;
+- real Windows visual-signature UX: **NOT RUN — ENVIRONMENT**;
+- real photo/scan cleanup quality: **NOT RUN — ENVIRONMENT**;
+- mouse/stylus/touch representative QA: **NOT RUN — ENVIRONMENT**;
+- representative local PFX/P12 signing QA: **NOT RUN — ENVIRONMENT**;
+- external-reader signature interoperability: **NOT RUN — ENVIRONMENT**;
+- password/cancel/failure/destination-preservation manual checks: **NOT RUN — ENVIRONMENT**;
+- physical offline signature smoke: **NOT RUN — ENVIRONMENT**;
+- final Pack C gate: **NOT RUN**;
+- no product code, tests, dependencies, signing engine or runtime architecture changed.
+
+Pack C does not claim Windows Certificate Store, smartcard/HSM, TSA/timestamping, revocation policy, legal/regulatory qualification, universal-reader compatibility or cloud signing. Those remain outside the approved baseline.
+
+This is an honest environment endpoint, not a manual signature PASS. Pack C remains an open release gate until representative real/manual evidence is executed.
+
 ## Phase status
 
 | Slice | Automated status |
@@ -198,7 +234,8 @@ Authoritative functional continuation remains `feat/f12-7-pdf-to-png-mvp-green3`
 
 Release QA/preflight progression is recorded through:
 - `plan/release-pack-a-qa` — Pack A preflight checkpoint;
-- `plan/release-pack-b-qa` — current Pack B preflight checkpoint.
+- `plan/release-pack-b-qa` — Pack B preflight checkpoint;
+- `plan/release-pack-c-qa` — current Pack C preflight checkpoint.
 
 These release-QA planning branches do not replace the functional baseline branch.
 
@@ -235,7 +272,7 @@ These are planning estimates, not telemetry:
 
 Release readiness remains below 100% because real/private/manual/physical QA, integration/hygiene, installer/runtime smoke and release-candidate validation remain open.
 
-Pack A and Pack B preflight documentation/CI do not increase these percentages because their required real/manual/private/physical gates remain NOT RUN.
+Pack A, Pack B and Pack C preflight documentation/CI do not increase these percentages because their required real/manual/private/physical gates remain NOT RUN.
 
 ## Next authoritative work
 
@@ -245,14 +282,14 @@ Next sequence:
 1. continue bounded QA preparation/execution without converting automated PASS into physical/manual PASS;
 2. keep Pack A manual A01–A15 open until a suitable Windows/manual environment executes them;
 3. keep Pack B private/physical B01–B11 open until suitable corpus/hardware executes them;
-4. prepare **Pack C — visual + cryptographic signatures** automated evidence map + executable manual checklist, reusing existing evidence and adding no tests unless a real gap is demonstrated;
-5. then Pack D under the same honest-status rule;
+4. keep Pack C real/manual C01–C14 open until suitable Windows/photo/stylus/PFX/external-reader environment executes them;
+5. prepare **Pack D — OCR / Forms / Compare / Batch / PDF→PNG** automated evidence map + executable manual checklist, reusing existing evidence and adding no tests unless a real gap is demonstrated;
 6. consolidate stale operational docs only where they can misroute work;
 7. audit branch/PR ancestry and build one conservative integration candidate;
 8. keep `main` read-only until explicit approval;
 9. release-candidate gate: clean clone, locked restore, Release build/tests, packaged runtime/installer smoke, offline smoke, no P0/P1 blockers.
 
 Recommended next bounded task:
-`Pack C — visual + cryptographic signatures representative QA preflight + executable manual checklist`.
+`Pack D — OCR / Forms / Compare / Batch / PDF→PNG representative QA preflight + executable manual checklist`.
 
 No merge to `main` without explicit user approval.
