@@ -72,6 +72,11 @@ public partial class MainWindow
             Name = "OcrMenuItem",
             Header = "OCR / Hacer PDF buscable…"
         };
+        var qrCode = new MenuItem
+        {
+            Name = "QrCodeMenuItem",
+            Header = "Generar código _QR..."
+        };
 
         watermark.SetBinding(
             IsEnabledProperty,
@@ -93,11 +98,13 @@ public partial class MainWindow
         numbering.Click += PageNumbering_Click;
         protection.Click += Protection_Click;
         ocr.Click += Ocr_Click;
+        qrCode.Click += QrCode_Click;
         utilities.Items.Add(watermark);
         utilities.Items.Add(batchWatermark);
         utilities.Items.Add(numbering);
         utilities.Items.Add(protection);
         utilities.Items.Add(ocr);
+        utilities.Items.Add(qrCode);
         menu.Items.Add(utilities);
 
         RegisterName(utilities.Name, utilities);
@@ -106,6 +113,7 @@ public partial class MainWindow
         RegisterName(numbering.Name, numbering);
         RegisterName(protection.Name, protection);
         RegisterName(ocr.Name, ocr);
+        RegisterName(qrCode.Name, qrCode);
     }
 
     private void WatermarkText_Click(object sender, RoutedEventArgs e)
