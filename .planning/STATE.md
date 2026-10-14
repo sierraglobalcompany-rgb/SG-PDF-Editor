@@ -1,6 +1,6 @@
 ---
 gsd_state_version: '1.1'
-status: f12-functional-baseline-closed-release-ui-polish-open
+status: f12-functional-baseline-closed-release-ui-qa-open
 progress:
   total_phases: 13
   completed_phases: 13
@@ -41,7 +41,7 @@ Functional exact-head CI:
 - run `38555829715`;
 - job `115824598759`;
 - Release build 0 warnings / 0 errors;
-- tests 1202/1202 PASS.
+- tests `1202/1202 PASS`.
 
 `main` remains read-only at:
 `31c0594758a83ec555d73ecdd7c597cdf8791fd7`
@@ -56,7 +56,7 @@ Branch:
 HEAD:
 `01d4adc3972ed939c5a2723a75d1833e61825d63`
 
-This is a direct descendant of the functional baseline with documentation/planning lineage only. Old stacked PRs are historical evidence, not a merge queue. Old `integration/release-candidate` is stale/divergent and must not be reused.
+This is a direct descendant of the functional baseline with documentation/planning lineage only. Historical stacked PRs are evidence, not a merge queue. Old `integration/release-candidate` is stale/divergent and must not be reused.
 
 Verification anchor:
 - run `38593351241`;
@@ -72,7 +72,6 @@ Automated preflight PASS; real/manual/private/physical gates remain open:
 - Pack D — OCR / Forms / Compare / Batch / PDF→PNG.
 
 Canonical records remain under `docs/release/2026-10-14-pack-*.md`.
-
 Synthetic/CI PASS never upgrades real/manual/physical/private QA to PASS.
 
 ## Runtime / installer / license audit
@@ -80,37 +79,30 @@ Synthetic/CI PASS never upgrades real/manual/physical/private QA to PASS.
 Canonical record:
 `docs/release/2026-10-14-runtime-installer-license-audit.md`
 
-Audit checkpoint:
-`25ac6e163662207bbc40157d1bed3811d1974e62`
+KISS release order:
+`visual QA → dependency hygiene → deterministic publish → runtime inventory → clean/offline smoke → minimal installer → installer smoke → RC`.
 
-Runtime/license audit CI:
-- run `38595250869` / job `115960181338` — SUCCESS.
-
-KISS release order remains:
-`visual polish → deterministic publish → runtime inventory → clean/offline smoke → minimal installer → installer smoke → RC`.
-
-Labelize `ZplGSCustom.ttf` provenance re-audit is complete with supportive redistribution evidence and documented residual original-author provenance risk. Do not claim legal certainty.
+Labelize `ZplGSCustom.ttf` provenance re-audit has supportive redistribution evidence with residual original-author provenance risk; do not claim legal certainty.
 
 ## Windows development environment — VERIFIED BY CODEX
 
-Reported on 2026-10-14:
+Reported 2026-10-14:
 - Windows 11 x64;
 - Git + PowerShell 7;
-- .NET SDK 10.0.402 x64 installed per-user;
-- Labelize 1.7.0, qpdf 12.4.2, Tesseract 5.5.3.20260724 staged successfully;
+- .NET SDK 10.0.402 x64;
+- Labelize 1.7.0, qpdf 12.4.2, Tesseract 5.5.3.20260724 staged;
 - locked restore PASS;
 - Release build PASS;
-- local tests reported 1178/1178 PASS on the older audit checkout used by Codex;
 - application startup smoke PASS.
 
-Codex used an older audit branch, so those counts are **environment evidence only**, not the current release-head verification anchor.
+That run used an older audit checkout, so it is environment evidence only, not the current release-head verification anchor.
 
 Open dependency hygiene item:
-- `System.Security.Cryptography.Pkcs 8.0.1` transitively reports NU1902 + NU1903;
+- `System.Security.Cryptography.Pkcs 8.0.1` reports NU1902 + NU1903 in current restore/build;
 - resolve separately by root cause before public release;
 - do not patch `main` directly.
 
-## UI/UX release modernization — OPEN
+## UI/UX release modernization
 
 Canonical record:
 `docs/release/2026-10-14-ui-modernization.md`
@@ -124,13 +116,9 @@ Branch:
 Base:
 `25ac6e163662207bbc40157d1bed3811d1974e62`
 
-Reference guidance:
-- Microsoft WPF Fluent System theme;
-- `nextlevelbuilder/ui-ux-pro-max-skill` MIT, **design/development guidance only**, not runtime dependency.
-
 ### UI-1 Foundation — GREEN
 
-Implementation HEAD:
+Implementation anchor:
 `198b278605d33bff61be0ee5a9097d359239b324`
 
 Implemented:
@@ -139,118 +127,110 @@ Implemented:
 - no third-party UI framework/package.
 
 Exact-head CI:
-- run `38599058194`;
-- job `115973245330`;
-- hygiene/staging/restore/build/tests SUCCESS.
+- run `38599058194` — SUCCESS.
 
-### UI-2 Main shell — BLOCKED / ROOT CAUSE IDENTIFIED / FIX NOT APPLIED
+### UI-2 Main shell — GREEN
 
-RED contract commit:
-`383413bff2cdf6dca130ccb6bd1379f2ad89cc06`
+Final correction HEAD:
+`fb5413d84fb5e2e733a791a44c6688b6d01a7acd`
 
-RED exact-head evidence:
-- run `38599600200`;
-- job `115975105472`;
-- Release build PASS;
-- tests: 1207 PASS, exactly 1 FAIL as expected because `MainWindow` had not yet adopted the modern shell surfaces;
-- 7 `xUnit2031` analyzer warnings came from the test contract itself, not production code.
+Resolved root cause:
+- eager app-level `StaticResource` lookup failed when tests constructed `MainWindow` without `App.xaml` resources;
+- shell now defers SG resource lookup with `DynamicResource` where required;
+- shared SG resources, shell structure, names and handlers preserved;
+- no duplicate dictionary, test bootstrap, framework or functional rewrite added.
 
-Analyzer-noise cleanup commit:
-`e70a5aada42f4181328e3f55dcc92ebf2e957d2d`
+Exact-head CI:
+- run `38630414847` — SUCCESS.
 
-GREEN implementation attempt:
-`4a83e7ac48f7fbbcc716274236192285d91c8062`
+### UI-3 Dialog consistency — GREEN
 
-Attempted scope only:
-- apply shared modern surfaces/styles to the existing `MainWindow` shell;
-- preserve root `DockPanel`, three-column reader layout, behavior-owned control names and event wiring;
-- no dialogs, icon, installer, publish or new package work.
+RED contract HEAD:
+`494115e0e84fe9d923c3503da21a0be9ab83540f`
 
-Exact-head CI for GREEN attempt:
-- run `38600360434`;
-- job `115977718873`;
-- Release build **SUCCEEDED** with 0 errors; the two reported warnings are the already-open transitive `System.Security.Cryptography.Pkcs 8.0.1` NU1902/NU1903 item;
-- tests executed: **995 PASS / 213 FAIL / 0 skipped / 1208 total**;
-- the repeated failure is `System.Windows.Markup.XamlParseException` from `StaticResourceExtension` with `Cannot find resource named 'SgSurfaceBrush'`;
-- this corrects the earlier checkpoint wording that described the failure as XAML compilation/build failure.
+RED evidence:
+- build PASS;
+- 1209 existing tests PASS;
+- exactly 5 expected new failures, one per dialog before shared styles were applied.
 
-Root cause diagnosis completed on 2026-10-14:
-- `Themes/Modern.xaml` does define `SgSurfaceBrush` and the other SG resources;
-- `App.xaml` merges `Themes/Modern.xaml` at application scope;
-- many existing tests instantiate `new MainWindow()` directly in STA without bootstrapping the real `App.xaml` application resources;
-- UI-2 introduced eager `StaticResource` consumption on `MainWindow` itself, beginning with `Background="{StaticResource SgSurfaceBrush}"`;
-- therefore direct `MainWindow` construction in tests fails before functional behavior can run, producing the 213 shared failures;
-- this is one shared resource-resolution defect, not 213 independent product failures;
-- names, handlers, three-column shell structure, SG resource keys and style target types were inspected and are not the identified cause.
+GREEN product HEAD:
+`60bb0f73090cd4d3e24d5eab5c69ee707432f823`
 
-Approved-plan check:
-- Task 2 requires the shell to **consume shared surface/canvas/panel styles** and preserve existing names/handlers;
-- the approved plan does **not** require `StaticResource` specifically;
-- the RED test currently over-specifies `StaticResource`, so that implementation detail may be relaxed while retaining the actual architectural contract.
+Changed only approved dialog XAML:
+- PDF password;
+- signature draw;
+- signature library;
+- signature name;
+- signature photo.
 
-Next minimal correction candidate — **NOT YET IMPLEMENTED OR VERIFIED**:
-1. add/adjust one causal contract proving `MainWindow` can be constructed in the existing standalone test context;
-2. change only SG resource references in `MainWindow.xaml` from eager static lookup to deferred resource lookup where required;
-3. adjust the UI contract to assert consumption of the same SG resource keys without coupling the contract to `StaticResource` syntax;
-4. run focused UI contract + representative `MainWindow` constructor test, then full suite and exact-head CI;
-5. call UI-2 GREEN only if those checks pass.
+No C# behavior/package/handler/control-name changes.
 
-Do **not** add a test bootstrap, duplicate the theme dictionary, modify 213 tests, introduce a new UI framework, or start UI-3 before UI-2 is GREEN.
+Exact-head CI:
+- run `38632179198` — SUCCESS;
+- full suite `1214/1214 PASS`, 0 failed, 0 skipped.
 
-## Official icon — USER APPROVED REFERENCE
+### UI-4 Windows visual QA — READY / NOT RUN
 
-On 2026-10-14 the user supplied the official visual reference for:
-1. SG PDF Editor application/executable icon;
-2. Windows PDF file-association icon;
-3. future installer/start-menu/shortcut icon.
+Canonical matrix:
+`docs/release/2026-10-14-ui-visual-qa.md`
 
-Visual identity:
-- stylized red PDF/document silhouette;
+Required real evidence includes:
+- light + dark system theme;
+- 1366×768 at 100% scaling;
+- one higher-resolution/scaled profile;
+- keyboard focus;
+- disabled states;
+- empty shell, loaded PDF, label workflow, password dialog and signature dialogs;
+- functional smoke without detached handlers/crash.
+
+All UI-4 manual cases are currently **NOT RUN**. Do not infer PASS from CI.
+
+## Official icon — PENDING BINARY MATERIALIZATION
+
+User-approved visual identity is documented:
+- stylized red PDF/document mark;
 - white negative-space page/fold forms;
-- simple high-contrast mark.
+- high-contrast silhouette.
 
-The user-provided image in chat is the visual master reference. The binary `.ico` asset is **not yet committed**. When work resumes, derive the required Windows multi-resolution icon from that reference without redesigning its identity.
+The binary `.ico` asset is not committed. Materialize only from the approved source image when that source is actually available; do not silently redesign or substitute it.
 
-## Current checkpoint / STOP POINT — 2026-10-14
+## Current checkpoint — 2026-10-14
 
-Checkpoint branch:
+Current release/UI branch:
 `feat/release-ui-modernization`
 
-Last product-code HEAD:
-`4a83e7ac48f7fbbcc716274236192285d91c8062`
+Latest product-code HEAD:
+`60bb0f73090cd4d3e24d5eab5c69ee707432f823`
 
-Latest diagnosis before this checkpoint:
-- UI-1: GREEN and CI verified;
-- UI-2 RED: valid at the architectural level, but one assertion over-specified `StaticResource` syntax;
-- UI-2 GREEN attempt: visual shell written, build succeeds, full tests fail 213 times from one missing application resource lookup;
-- UI-2 root cause: **IDENTIFIED** as eager `StaticResource` lookup when tests instantiate `MainWindow` without application-level resources;
-- minimal correction: defined but **not applied**;
-- icon identity: approved/documented; binary asset integration pending;
-- dialogs: not started;
-- screenshot QA: not started;
-- portable publish: intentionally paused until visual gate;
-- installer: intentionally not started;
+Truth at checkpoint:
+- F0–F12 functional baseline: CLOSED / frozen;
+- UI-1: GREEN;
+- UI-2: GREEN;
+- UI-3: GREEN;
+- UI-4: READY but real Windows evidence NOT RUN;
+- official icon binary: pending source-image materialization;
+- `System.Security.Cryptography.Pkcs` dependency hygiene: open separate task;
+- deterministic portable publish: not started after visual gate;
+- installer: not started;
+- Packs A–D real/manual/private/physical evidence remains open;
 - `main`: unchanged/read-only.
-
-User explicitly requested a checkpoint and stop here. No UI-2 correction was applied after diagnosis.
 
 ## Resume order
 
-1. Start from `feat/release-ui-modernization` and this checkpoint; do not re-diagnose the 213 failures from scratch.
-2. Preserve the demonstrated cause: direct `MainWindow` construction + eager SG `StaticResource` lookup without `App.xaml` resources.
-3. Implement the smallest causal UI-2 correction only: causal constructor contract + deferred SG resource lookup + contract syntax decoupling as needed.
-4. Run focused contract + representative constructor test + full suite + exact-head CI; UI-2 may be called GREEN only after all succeed.
-5. Modernize dialogs using the same shared resources.
-6. Integrate the approved app/PDF icon asset.
-7. Run real Windows screenshot QA at 1366×768+ and system scaling.
-8. Resolve the transitive `System.Security.Cryptography.Pkcs` vulnerability cleanly.
-9. Resume deterministic self-contained `win-x64` publish.
-10. Only after publish/offline smoke GREEN, add one minimal installer technology.
-11. RC + remaining representative Packs A–D; `main` only with explicit approval.
+1. Execute `docs/release/2026-10-14-ui-visual-qa.md` on the real Windows environment and capture evidence locally.
+2. Fix only reproduced P0/P1 visual usability defects; each fix returns through full suite + exact-head CI.
+3. Update the visual QA record and this STATE with actual PASS/FAIL evidence.
+4. Materialize/integrate the approved app/PDF icon when its source image is available.
+5. Resolve `System.Security.Cryptography.Pkcs 8.0.1` NU1902/NU1903 by root cause.
+6. Build deterministic self-contained `win-x64` publish.
+7. Runtime inventory + clean/offline smoke.
+8. Add one minimal installer technology only after publish smoke is GREEN.
+9. Installer smoke → RC → remaining representative Packs A–D.
+10. `main` only with explicit approval.
 
 ## Planning estimates
 
 Planning estimates, not telemetry:
 - automated functional implementation: **~100%**;
-- release readiness: **~87%** because visual modernization is now a real release gate;
+- release readiness: **~87%** while real visual/dependency/publish/installer gates remain open;
 - weighted overall: **~94%**.
