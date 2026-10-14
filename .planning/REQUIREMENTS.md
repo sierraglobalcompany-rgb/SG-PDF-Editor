@@ -166,17 +166,21 @@ Real/private/manual Compare QA remains **NOT RUN** and belongs to the later OCR/
 
 ### F12.5 Batch
 
-- [ ] **PRO-BATCH-01** Local/offline batch processing with explicit inputs and outputs.
-- [ ] **PRO-BATCH-02** Preserve originals; no silent overwrite.
-- [ ] **PRO-BATCH-03** Report per-item success/failure.
-- [ ] **PRO-BATCH-04** Reuse existing operations instead of duplicating writers/pipelines.
-- [ ] Exact supported batch operations require a narrow product/capability gate before implementation.
+- [x] **PRO-BATCH-01 — AUTO PASS** Local/offline TextWatermark batch with explicit local PDF inputs and output folder.
+- [x] **PRO-BATCH-02 — AUTO PASS** Preserve originals and refuse silent output overwrite.
+- [x] **PRO-BATCH-03 — AUTO PASS** Report per-item success/failure and continue remaining items after one item fails.
+- [x] **PRO-BATCH-04 — AUTO PASS** Reuse existing watermark request/planner/writer rather than duplicate a PDF pipeline.
+- [x] Exact baseline batch operation is deliberately **TextWatermark only**; additional operations require a separate value/capability decision.
 
 ### F12.6 Code Generator
 
-- [ ] **PRO-CODEGEN-01** Local/offline generator slice without paid/cloud dependency.
-- [ ] **PRO-CODEGEN-02** Exact code types/symbologies require explicit scope/capability approval before implementation.
-- [ ] **PRO-CODEGEN-03** Reuse existing output/export paths where appropriate rather than introduce a parallel rendering stack.
+- [x] **PRO-CODEGEN-01 — AUTO PASS** Local/offline QR PNG generator without paid/cloud dependency.
+- [x] **PRO-CODEGEN-02 — AUTO PASS** Baseline symbology explicitly scoped to QR after capability gate; Code128/other formats remain separate approval.
+- [x] **PRO-CODEGEN-03 — AUTO PASS** Reuse existing `ZplDocumentParser` + `LabelizeProcessRenderer`; no parallel rendering stack or new runtime dependency.
+- [x] **PRO-CODEGEN-04 — AUTO PASS** Real generated PNG decodes back to the exact payload, including UTF-8 and ZPL-looking input.
+- [x] **PRO-CODEGEN-05 — AUTO PASS** Existing `Herramientas` menu owner exposes focused value-entry → explicit PNG Save As with overwrite prompt.
+
+Physical phone/scanner QR verification remains **NOT RUN** and belongs to later representative QA. Not baseline: Code128, generic barcode studio, style/logo templates, batch QR, PDF insertion or additional symbologies.
 
 ### F12.7 Audited Conversions
 
@@ -189,11 +193,11 @@ Real/private/manual Compare QA remains **NOT RUN** and belongs to the later OCR/
 ## Cross-cutting
 
 - [ ] **OFFLINE** Normal functions require no Internet; full physical/offline smoke remains pending where noted.
-- [x] **LICENSE** Runtime dependencies/assets audited through current automated implementation; no new dependency added by F12.3/F12.4. Labelize font provenance re-audit remains required before public installer.
+- [x] **LICENSE** Runtime dependencies/assets audited through current automated implementation; F12.5/F12.6 add no runtime dependency. Labelize font provenance re-audit remains required before public installer.
 - [x] **PRIVACY** Private fixtures ignored and CI hygiene rejects tracked `tests/PrivateFixtures/**`.
-- [x] **ORIGINAL** Existing writer flows protect source and use Save As semantics where modification occurs; Compare is read-only and keeps A active.
-- [x] **CI** Functional automated baseline through F12.4 Compare UI: implementation HEAD `488d59f7a9e47ae0ccaafe474e7215cdc4cdc1d2`, Release build `0` warnings / `0` errors, `1186/1186` PASS, `0` failed, `0` skipped.
-- [x] **KISS** Compare UI added no second viewer/sidebar, generalized ModeManager, new PDF engine/runtime dependency or global XAML architecture; lifecycle reset reuses the existing shared workspace-reset owner.
+- [x] **ORIGINAL** Existing writer flows protect source and use Save As semantics where modification occurs; Compare is read-only; QR generation is independent of PDF document state.
+- [x] **CI** Functional automated baseline through F12.6 QR PNG UI: implementation HEAD `2be0fc5345160e500d78102d99a833c9b9729bae`; repository hygiene, locked restore/runtime staging, Release Build and full Test steps PASS; exact-head CI run `38513237239`, job `115686247754`.
+- [x] **KISS** Batch remains one-operation sequential reuse; QR reuses the existing Labels/Labelize owner and existing Utilities menu, with no generic batch engine, barcode studio, second renderer, cloud/backend or new runtime dependency.
 - [x] **NO-AUTOMERGE** `main` remains at the previously audited baseline and merges require explicit user approval.
 - [ ] **INTEGRATION** Active implementation lineage remains far ahead of `main`; controlled consolidation is required before release and is not authorized by this requirements update.
 - [ ] **REAL-QA** Representative manual/private/physical/external-reader QA remains open where phase sections say NOT RUN.
