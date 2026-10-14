@@ -1,3 +1,4 @@
+using System.IO;
 using System.Reflection;
 using SGPdf.App.Pdf;
 using Xunit;
@@ -73,6 +74,48 @@ public sealed class MainWindowCompareTests
         Assert.Contains("Resultado: Se encontraron diferencias", text, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void CompareUi_HasFocusedResetAndCloseWithoutGlobalModeManager()
+    {
+        string root = FindRepositoryRoot();
+        string compare = File.ReadAllText(Path.Combine(root, "src", "SGPdf.App", "MainWindow.Compare.cs"));
+
+        Assert.Contains("ResetCompareUi", compare, StringComparison.Ordinal);
+        Assert.Contains("Cerrar comparación", compare, StringComparison.Ordinal);
+        Assert.Contains("PropertiesPlaceholderText.Text = \"Propiedades\"", compare, StringComparison.Ordinal);
+        Assert.DoesNotContain("ModeManager", compare, StringComparison.Ordinal);
+        Assert.DoesNotContain("new Window", compare, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void CompareUi_ResetsWhenDocumentOrIncompatibleWorkspaceChanges()
+    {
+        string root = FindRepositoryRoot();
+        string reader = File.ReadAllText(Path.Combine(root, "src", "SGPdf.App", "MainWindow.Reader.cs"));
+        string edit = File.ReadAllText(Path.Combine(root, "src", "SGPdf.App", "MainWindow.Edit.cs"));
+        string organize = File.ReadAllText(Path.Combine(root, "src", "SGPdf.App", "MainWindow.Organize.cs"));
+        string sign = File.ReadAllText(Path.Combine(root, "src", "SGPdf.App", "MainWindow.Sign.cs"));
+        string forms = File.ReadAllText(Path.Combine(root, "src", "SGPdf.App", "MainWindow.Forms.cs"));
+
+        Assert.Contains("ResetCompareUi();", reader, StringComparison.Ordinal);
+        Assert.Contains("ResetCompareUi();", edit, StringComparison.Ordinal);
+        Assert.Contains("ResetCompareUi();", organize, StringComparison.Ordinal);
+        Assert.Contains("ResetCompareUi();", sign, StringComparison.Ordinal);
+        Assert.Contains("ResetCompareUi();", forms, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void CompareStart_HonorsExistingDirtyModeGuardsBeforeOpeningB()
+    {
+        string root = FindRepositoryRoot();
+        string compare = File.ReadAllText(Path.Combine(root, "src", "SGPdf.App", "MainWindow.Compare.cs"));
+
+        Assert.Contains("TryLeaveEditModeWithGuard", compare, StringComparison.Ordinal);
+        Assert.Contains("TryLeaveOrganizeModeWithGuard", compare, StringComparison.Ordinal);
+        Assert.Contains("TryResolvePendingSignatureEdits", compare, StringComparison.Ordinal);
+        Assert.Contains("PdfCompareService.Compare(leftPath, rightPath)", compare, StringComparison.Ordinal);
+    }
+
     private static object BuildPresentation(
         string leftDisplayName,
         string rightDisplayName,
@@ -115,5 +158,18 @@ public sealed class MainWindowCompareTests
 
         object? value = property.GetValue(instance);
         return Assert.IsType<T>(value);
+    }
+
+    private static string FindRepositoryRoot()
+    {
+        DirectoryInfo? directory = new(AppContext.BaseDirectory);
+        while (directory is not null)
+        {
+            if (File.Exists(Path.Combine(directory.FullName, "SGPdf.slnx")))
+                return directory.FullName;
+            directory = directory.Parent;
+        }
+
+        throw new DirectoryNotFoundException("No se encontró la raíz del repositorio.");
     }
 }
