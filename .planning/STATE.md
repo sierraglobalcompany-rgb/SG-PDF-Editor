@@ -1,6 +1,6 @@
 ---
 gsd_state_version: '1.1'
-status: f12-functional-baseline-closed-release-stabilization-next
+status: functional-baseline-closed-release-preparation
 progress:
   total_phases: 13
   completed_phases: 13
@@ -13,102 +13,93 @@ progress:
 
 ## Source of truth
 
-- Architecture/product scope: `docs/MASTER_CONTEXT.md` + `docs/MASTER_PLAN.md`.
-- Operational state: this file + `.planning/ROADMAP.md`.
-- Detailed acceptance: `.planning/REQUIREMENTS.md` + approved slice specs/plans.
-- Reality check: GitHub exact heads and CI override stale snapshots.
+Authority on conflict:
+1. live GitHub + exact-head CI;
+2. this file;
+3. `.planning/ROADMAP.md`;
+4. `.planning/REQUIREMENTS.md`;
+5. approved slice spec/plan;
+6. master architecture docs;
+7. historical handoffs.
 
 **Core value:** Resolver PDF + ZPL diario de forma rápida, privada, estable y offline.
 
 ## Current position — 2026-10-14
 
-The **automated functional baseline F0–F12 is CLOSED**. Manual/private/physical QA, documentation consolidation and release integration remain open.
+The automated functional baseline **F0–F12 is CLOSED**. Work has moved to release preparation.
 
-Current functional branch: `feat/f12-7-pdf-to-png`.
+Current release-prep branch: `chore/release-prep-qa-docs`, cut from F12.7 closure HEAD `6e9240fbb8bb16947d64514ded56d548c638c1c6`.
 
-| Slice | Status |
+| Area | Status |
 |---|---|
-| F0–F11 | CLOSED / AUTO PASS, with manual/private/physical gates still open where documented |
-| F12.1 Safe Redaction | CLOSED / AUTO PASS |
-| F12.2 Cryptographic Signature PFX/P12 MVP | CLOSED / AUTO PASS |
-| F12.3 Existing AcroForm `/Tx` | CLOSED / AUTO PASS |
-| F12.4 Compare | CLOSED / AUTO PASS — core + minimal UI |
-| F12.5 Batch | CLOSED / AUTO PASS — TextWatermark MVP |
-| F12.6 Code Generator | CLOSED / AUTO PASS — QR PNG MVP |
-| F12.7 Audited Conversions | **CLOSED / AUTO PASS — PDF→PNG MVP** |
+| F0–F11 | CLOSED / AUTO PASS; manual/private/physical gates remain where documented |
+| F12.1–F12.6 | CLOSED / AUTO PASS |
+| F12.7 PDF→PNG MVP | CLOSED / AUTO PASS |
+| Real QA packs | **DEFINED / NOT RUN** |
+| Documentation consolidation | **IN PROGRESS — AGENTS operational drift corrected** |
 | Release integration/stabilization | OPEN |
+| Release candidate | OPEN |
 
-## F12.7 Audited Conversions — closed baseline
+## Functional baseline evidence
 
-Capability gate approved exactly one conversion: **PDF → PNG, one PNG per page**.
-
-Closed KISS flow:
-`PDF already open → Herramientas → Convertir PDF a PNG... → explicit output folder → sequential PDFium render at 150 DPI → page-0001.png, page-0002.png, ...`.
-
-Automated evidence proves:
-- existing `PdfDocumentSession.RenderPage` / PDFium is reused;
-- WPF `PngBitmapEncoder` is reused; no new package/runtime;
-- all pages are exported sequentially at fixed 150 DPI;
-- deterministic zero-padded output names;
-- representative 2-page PDF produces exactly two decodable PNGs with expected 300×150 and 150×300 dimensions;
-- all target names are preflighted before the first write;
-- `FileMode.CreateNew` adds a second fail-closed overwrite barrier;
-- if conversion fails after writing starts, newly written outputs are cleaned up best-effort;
-- original PDF is read-only and never modified;
-- existing `Herramientas` owner and `CanRunUtility()` lifecycle are reused.
-
-Honest limits:
-- raster output only; PDF text/searchability, links, forms, annotations and vector semantics do not remain interactive in PNG;
-- fixed 150 DPI baseline; no universal print/color/fidelity claim;
-- no DOCX/PPTX/XLSX conversion, Office automation, LibreOffice runtime, cloud conversion or second PDF engine;
-- no generic `ConversionEngine`, format registry, plugin architecture, batch converter or multi-format selector.
-
-Scope: `docs/superpowers/specs/2026-10-14-f12-7-pdf-to-png-scope.md`.  
-Plan: `docs/superpowers/plans/2026-10-14-f12-7-pdf-to-png.md`.
-
-Functional implementation exact-head evidence before this documentation closure:
-- branch: `feat/f12-7-pdf-to-png`;
-- HEAD: `521f0974b4b8a6b5ae7138a51cf11e61d572a998`;
-- RED: `d127b9aa06350d4ad92399ef66b82736ab038e4e`, expected missing `Features.Conversions` only;
-- RED CI: run `38514104282`, job `115688906599`;
-- GREEN CI: run `38514284225`, job `115689481722`;
-- repository hygiene/runtime staging/locked restore: PASS;
-- Release build: **0 warnings / 0 errors**;
-- tests: **1201/1201 PASS, 0 failed, 0 skipped**;
+F12.7 functional implementation baseline before release-prep docs:
+- branch `feat/f12-7-pdf-to-png`;
+- final closure HEAD `6e9240fbb8bb16947d64514ded56d548c638c1c6`;
+- functional GREEN head `521f0974b4b8a6b5ae7138a51cf11e61d572a998`;
+- Release build: 0 warnings / 0 errors;
+- full tests: 1201/1201 PASS;
 - no merge to `main`.
 
-## Engineering progress estimates
+Baseline remains local/offline and narrow: PDFium primary PDF owner; PDFsharp/qpdf/Tesseract only in approved scopes; Labelize 1.7.0 for ZPL/QR; no generic conversion/batch/plugin architecture introduced.
 
-These are planning estimates, not telemetry.
+## Release QA
 
-- **Automated functional implementation: ~100%.**
-- **Release readiness including manual/private/physical QA and integration: ~90%.**
-- **Headline weighted project state: ~95%.**
+Canonical checklist: `docs/release/2026-10-14-real-qa-packs.md`.
 
-Release readiness is lower because representative real/private/manual/physical QA, interoperability/device checks, documentation consolidation and controlled branch integration remain open.
+Four bounded packs are frozen:
+- A — Reader / Organize / Editing;
+- B — ZPL / QR / physical print-scan;
+- C — visual + cryptographic signatures;
+- D — OCR / Forms / Compare / Batch / PDF→PNG.
+
+All four remain **NOT RUN** until real evidence exists. Defining the checklist does not increase release readiness by itself.
+
+## Documentation consolidation
+
+`AGENTS.md` was stale at F3.3/F3.4 despite F12 closure. It is now consolidated around current authority, KISS, anti-noise, owners and release-prep cadence. Fine-grained historical phase contracts remain in `.planning/phases/`, `docs/superpowers/` and `docs/history/` instead of being duplicated in an evergreen agent file.
+
+Do not create additional handoffs/docs unless they change source-of-truth, record a material release decision/evidence, or are genuinely needed for recovery.
+
+## Engineering estimates
+
+Planning estimates, not telemetry:
+- automated functional implementation: **~100%**;
+- release readiness: **~90%**;
+- headline weighted state: **~95%**.
+
+No increase is claimed from checklist/document cleanup because real QA and integration are still open.
 
 ## KISS / anti-noise audit
 
-**PASS.** F12.7 added one focused converter and one existing-menu command. New runtime dependencies: **0**. New PDF engines: **0**. Cloud/backend: **0**. Generic conversion framework: **0**.
+Release preparation follows:
+`DELETE → SIMPLIFY → REUSE → MERGE → EXTEND → ADD`.
 
-The final F12 baseline continues to use narrow existing owners: PDFium for PDF inspection/rendering, PDFsharp/qpdf/Tesseract only where already approved, and Labelize for ZPL/QR.
+No feature expansion is allowed opportunistically. New conversions, symbologies, batch operations, form types, signing modes or PDF capabilities require a separate value/capability gate.
 
 ## Integration drift
 
-**OPEN / HIGH PRIORITY BEFORE RELEASE.** `main` remains intentionally untouched. No merge/rebase/destructive branch cleanup is authorized by this document.
-
-## Manual/private/physical QA
-
-**OPEN.** Automated PASS does not replace representative private corpora, Windows UX smoke, physical printer/scanner/stylus checks, external-reader interoperability, certificate/signing corpus, physical QR scanning or representative PDF→PNG visual review where applicable.
+**OPEN / HIGH PRIORITY.** `main` remains intentionally untouched. No merge/rebase/force-push/destructive branch cleanup is authorized.
 
 ## Next
 
 ```text
-Functional F12 baseline CLOSED
-→ bounded real QA packs
-→ documentation consolidation
-→ controlled release integration/stabilization
-→ release candidate gates
+Release-prep docs + QA packs frozen
+→ audit branch/PR ancestry and unique commits
+→ choose conservative integration strategy
+→ create dedicated integration branch only after audit
+→ exact-head CI + prioritized real QA
+→ installer/license/offline smoke
+→ release candidate
 ```
 
 No merge to `main` without explicit user approval.
