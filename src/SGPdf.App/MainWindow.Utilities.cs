@@ -62,6 +62,11 @@ public partial class MainWindow
             Name = "QrCodeMenuItem",
             Header = "Generar código _QR..."
         };
+        var pdfToPng = new MenuItem
+        {
+            Name = "ConvertPdfToPngMenuItem",
+            Header = "Convertir PDF a _PNG..."
+        };
         var numbering = new MenuItem
         {
             Name = "PageNumberingMenuItem",
@@ -84,6 +89,9 @@ public partial class MainWindow
         batchWatermark.SetBinding(
             IsEnabledProperty,
             new Binding(nameof(IsEnabled)) { Source = OpenPdfMenuItem });
+        pdfToPng.SetBinding(
+            IsEnabledProperty,
+            new Binding(nameof(IsEnabled)) { Source = PrintPdfMenuItem });
         numbering.SetBinding(
             IsEnabledProperty,
             new Binding(nameof(IsEnabled)) { Source = PrintPdfMenuItem });
@@ -96,12 +104,14 @@ public partial class MainWindow
         watermark.Click += WatermarkText_Click;
         batchWatermark.Click += BatchWatermark_Click;
         qrCode.Click += QrCode_Click;
+        pdfToPng.Click += ConvertPdfToPng_Click;
         numbering.Click += PageNumbering_Click;
         protection.Click += Protection_Click;
         ocr.Click += Ocr_Click;
         utilities.Items.Add(watermark);
         utilities.Items.Add(batchWatermark);
         utilities.Items.Add(qrCode);
+        utilities.Items.Add(pdfToPng);
         utilities.Items.Add(numbering);
         utilities.Items.Add(protection);
         utilities.Items.Add(ocr);
@@ -111,6 +121,7 @@ public partial class MainWindow
         RegisterName(watermark.Name, watermark);
         RegisterName(batchWatermark.Name, batchWatermark);
         RegisterName(qrCode.Name, qrCode);
+        RegisterName(pdfToPng.Name, pdfToPng);
         RegisterName(numbering.Name, numbering);
         RegisterName(protection.Name, protection);
         RegisterName(ocr.Name, ocr);
