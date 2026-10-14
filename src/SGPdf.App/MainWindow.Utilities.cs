@@ -57,6 +57,11 @@ public partial class MainWindow
             Name = "BatchWatermarkMenuItem",
             Header = "Marca de agua por _lotes..."
         };
+        var qrCode = new MenuItem
+        {
+            Name = "QrCodeMenuItem",
+            Header = "Generar código _QR..."
+        };
         var numbering = new MenuItem
         {
             Name = "PageNumberingMenuItem",
@@ -90,11 +95,13 @@ public partial class MainWindow
             new Binding(nameof(IsEnabled)) { Source = PrintPdfMenuItem });
         watermark.Click += WatermarkText_Click;
         batchWatermark.Click += BatchWatermark_Click;
+        qrCode.Click += QrCode_Click;
         numbering.Click += PageNumbering_Click;
         protection.Click += Protection_Click;
         ocr.Click += Ocr_Click;
         utilities.Items.Add(watermark);
         utilities.Items.Add(batchWatermark);
+        utilities.Items.Add(qrCode);
         utilities.Items.Add(numbering);
         utilities.Items.Add(protection);
         utilities.Items.Add(ocr);
@@ -103,6 +110,7 @@ public partial class MainWindow
         RegisterName(utilities.Name, utilities);
         RegisterName(watermark.Name, watermark);
         RegisterName(batchWatermark.Name, batchWatermark);
+        RegisterName(qrCode.Name, qrCode);
         RegisterName(numbering.Name, numbering);
         RegisterName(protection.Name, protection);
         RegisterName(ocr.Name, ocr);
