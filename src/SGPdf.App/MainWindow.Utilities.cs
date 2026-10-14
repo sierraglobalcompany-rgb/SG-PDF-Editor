@@ -52,6 +52,11 @@ public partial class MainWindow
             Name = "WatermarkTextMenuItem",
             Header = "Marca de agua de _texto..."
         };
+        var batchWatermark = new MenuItem
+        {
+            Name = "BatchWatermarkMenuItem",
+            Header = "Marca de agua por _lotes..."
+        };
         var numbering = new MenuItem
         {
             Name = "PageNumberingMenuItem",
@@ -71,6 +76,9 @@ public partial class MainWindow
         watermark.SetBinding(
             IsEnabledProperty,
             new Binding(nameof(IsEnabled)) { Source = PrintPdfMenuItem });
+        batchWatermark.SetBinding(
+            IsEnabledProperty,
+            new Binding(nameof(IsEnabled)) { Source = OpenPdfMenuItem });
         numbering.SetBinding(
             IsEnabledProperty,
             new Binding(nameof(IsEnabled)) { Source = PrintPdfMenuItem });
@@ -81,10 +89,12 @@ public partial class MainWindow
             IsEnabledProperty,
             new Binding(nameof(IsEnabled)) { Source = PrintPdfMenuItem });
         watermark.Click += WatermarkText_Click;
+        batchWatermark.Click += BatchWatermark_Click;
         numbering.Click += PageNumbering_Click;
         protection.Click += Protection_Click;
         ocr.Click += Ocr_Click;
         utilities.Items.Add(watermark);
+        utilities.Items.Add(batchWatermark);
         utilities.Items.Add(numbering);
         utilities.Items.Add(protection);
         utilities.Items.Add(ocr);
@@ -92,6 +102,7 @@ public partial class MainWindow
 
         RegisterName(utilities.Name, utilities);
         RegisterName(watermark.Name, watermark);
+        RegisterName(batchWatermark.Name, batchWatermark);
         RegisterName(numbering.Name, numbering);
         RegisterName(protection.Name, protection);
         RegisterName(ocr.Name, ocr);
