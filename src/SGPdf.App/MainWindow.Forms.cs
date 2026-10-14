@@ -19,6 +19,7 @@ public partial class MainWindow
     {
         base.OnContentRendered(e);
         InitializeFormsUi();
+        InitializeCompareUi();
     }
 
     private void InitializeFormsUi()
