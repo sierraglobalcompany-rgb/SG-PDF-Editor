@@ -1,6 +1,6 @@
 ---
 gsd_state_version: '1.1'
-status: release-integration-audit-closed-candidate-next
+status: integration-candidate-created-ci-verification
 progress:
   total_phases: 13
   completed_phases: 13
@@ -26,27 +26,33 @@ Authority on conflict:
 
 ## Current position — 2026-10-14
 
-The automated functional baseline **F0–F12 is CLOSED**. Release ancestry/PR audit is now recorded on `plan/release-integration-audit`.
+The automated functional baseline **F0–F12 is CLOSED**. Release ancestry/PR audit is closed and one dedicated integration candidate now exists.
 
 | Area | Status |
 |---|---|
 | F0–F12 functional baseline | CLOSED / AUTO PASS |
 | Real QA packs | DEFINED / NOT RUN |
 | Documentation consolidation | BASELINE PASS |
-| Release ancestry / PR audit | **CLOSED / PASS FOR INTEGRATION PLANNING** |
-| Dedicated integration candidate | NEXT / NOT CREATED |
-| Release candidate | OPEN |
+| Release ancestry / PR audit | CLOSED / PASS FOR INTEGRATION PLANNING |
+| Dedicated integration candidate | **CREATED / CI VERIFICATION** |
+| Release candidate approval | OPEN |
+
+## Integration candidate
+
+Canonical branch:
+- `integration/release-candidate`;
+- cut directly from audited head `74c27e14567aaaf635e4059971e2fb223704ae02`;
+- no PR replay, merge, rebase or force-push was used;
+- `main` remains read-only.
+
+The branch carries the complete audited functional lineage plus release-prep documentation. Live exact-head CI is required before the candidate is considered automated-green.
 
 ## Canonical release lineage
 
 Functional release source:
 - `feat/f12-7-pdf-to-png` @ `6e9240fbb8bb16947d64514ded56d548c638c1c6`;
-- exact-head Release build: 0 warnings / 0 errors;
-- tests: 1201/1201 PASS;
-- no merge to `main`.
-
-Release-prep docs baseline:
-- `chore/release-prep-qa-docs` @ `36aa4c7cddd738e82abf9b863cde08e8279e1307`.
+- exact-head Release build at F12.7 closure: 0 warnings / 0 errors;
+- tests: 1201/1201 PASS.
 
 Ancestry audit evidence:
 - final functional head is **1217 commits ahead / 0 behind `main`**; merge-base is exactly `main`;
@@ -60,7 +66,7 @@ Canonical audit artifact: `docs/release/2026-10-14-integration-audit.md`.
 
 Historical stacked draft PRs remain open from A0 through F11. The observed chain includes PR #2 and #5–#30 and terminates at F11.
 
-F12 has no equivalent PR chain even though F12 branches and CI evidence exist. Therefore release integration must use the canonical exact-head lineage, **not** replay/merge every historical PR into `main`.
+F12 has no equivalent PR chain even though F12 branches and CI evidence exist. Release integration therefore uses the canonical exact-head lineage, **not** replay/merge of historical PRs.
 
 No PR closing, retargeting or branch deletion is authorized at this stage.
 
@@ -68,7 +74,7 @@ No PR closing, retargeting or branch deletion is authorized at this stage.
 
 Canonical checklist: `docs/release/2026-10-14-real-qa-packs.md`.
 
-Four packs remain **NOT RUN**:
+Four packs remain **NOT RUN** until real evidence exists:
 - A — Reader / Organize / Editing;
 - B — ZPL / QR / physical print-scan;
 - C — visual + cryptographic signatures;
@@ -83,22 +89,21 @@ Planning estimates, not telemetry:
 - release readiness: **~90%**;
 - headline weighted state: **~95%**.
 
-The ancestry audit reduces uncertainty but does not itself count as real QA or release integration, so percentages are unchanged.
+Creating the candidate does not raise the percentages by itself.
 
 ## KISS / anti-noise audit
 
 Release preparation follows:
 `DELETE → SIMPLIFY → REUSE → MERGE → EXTEND → ADD`.
 
-The repository has substantial historical branch/PR clutter, but cleanup is deferred until after integration because history is still useful recovery evidence. Do not solve repository noise by feature changes, rebases or destructive cleanup.
+The repository has historical branch/PR clutter, but cleanup remains deferred until after integration because history is still useful recovery evidence. Do not solve history noise with feature changes, rebases or destructive cleanup.
 
 ## Next
 
 ```text
-Ancestry/PR audit CLOSED
-→ create one dedicated integration candidate from the latest audited release-prep head
-→ run full exact-head Windows CI
-→ execute prioritized real QA packs
+integration/release-candidate created
+→ exact-head Windows CI
+→ prioritized real-QA execution/preflight with honest PASS/FAIL/NOT RUN
 → installer/license/offline gates
 → stop for explicit approval before any merge to main
 ```
