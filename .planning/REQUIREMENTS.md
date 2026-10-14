@@ -148,18 +148,21 @@ Evidence: `docs/history/2026-10-14-F12-4-compare-core-closure.md`.
 
 #### Minimal UI
 
-- [ ] **PRO-COMPARE-UI-01** With PDF A open, expose `Archivo → Comparar con otro PDF...`.
-- [ ] **PRO-COMPARE-UI-02** Select local PDF B; cancel is no-op.
-- [ ] **PRO-COMPARE-UI-03** Call existing `PdfCompareService.Compare(A,B)`.
-- [ ] **PRO-COMPARE-UI-04** Show A/B names, page counts, text signal, visual-only signal, structural status and overall conclusion in the existing right panel.
-- [ ] **PRO-COMPARE-UI-05** Close/reset comparison without replacing or reloading A unnecessarily.
-- [ ] **PRO-COMPARE-UI-06** Respect existing Edit/Organize/Sign/Form guards/lifecycle.
-- [ ] **PRO-COMPARE-UI-07** Invalid/unreadable/protected B fails in a controlled way and does not destroy A.
+- [x] **PRO-COMPARE-UI-01 — AUTO PASS** With PDF A open, expose `Archivo → Comparar con otro PDF...`.
+- [x] **PRO-COMPARE-UI-02 — AUTO PASS** Select local PDF B; cancel is no-op.
+- [x] **PRO-COMPARE-UI-03 — AUTO PASS** Call existing `PdfCompareService.Compare(A,B)`.
+- [x] **PRO-COMPARE-UI-04 — AUTO PASS** Show A/B names, page counts, text signal, visual-only signal, structural status and overall conclusion in the existing right panel.
+- [x] **PRO-COMPARE-UI-05 — AUTO PASS** Close/reset comparison without replacing or reloading A unnecessarily.
+- [x] **PRO-COMPARE-UI-06 — AUTO PASS** Respect existing Edit/Organize/Sign/Form guards/lifecycle.
+- [x] **PRO-COMPARE-UI-07 — AUTO PASS** Invalid/unreadable/protected B fails in a controlled way and does not destroy A.
 
 Design: `docs/superpowers/specs/2026-10-14-f12-4-compare-ui-design.md`.  
-Plan: `docs/superpowers/plans/2026-10-14-f12-4-compare-ui.md`.
+Plan: `docs/superpowers/plans/2026-10-14-f12-4-compare-ui.md`.  
+Closure: `docs/history/2026-10-14-F12-4-compare-ui-closure.md`.
 
 Not baseline: side-by-side viewers, A/B toggling, per-page results, overlay/heatmap, OCR, semantic diff, page matching/reordering, deep signature/metadata comparison or report export.
+
+Real/private/manual Compare QA remains **NOT RUN** and belongs to the later OCR/Forms/Compare QA pack. Automated closure is not a universal-fidelity claim.
 
 ### F12.5 Batch
 
@@ -186,13 +189,13 @@ Not baseline: side-by-side viewers, A/B toggling, per-page results, overlay/heat
 ## Cross-cutting
 
 - [ ] **OFFLINE** Normal functions require no Internet; full physical/offline smoke remains pending where noted.
-- [x] **LICENSE** Runtime dependencies/assets audited through current automated implementation; no new dependency added by F12.3/F12.4 core. Labelize font provenance re-audit remains required before public installer.
+- [x] **LICENSE** Runtime dependencies/assets audited through current automated implementation; no new dependency added by F12.3/F12.4. Labelize font provenance re-audit remains required before public installer.
 - [x] **PRIVACY** Private fixtures ignored and CI hygiene rejects tracked `tests/PrivateFixtures/**`.
-- [x] **ORIGINAL** Existing writer flows protect source and use Save As semantics where modification occurs; Compare is read-only.
-- [x] **CI** Functional automated baseline through F12.4 core: exact implementation HEAD `149f716b704c43ea43bf94fa517fa5922920237b`, Release build `0` warnings / `0` errors, `1178/1178` PASS, `0` skipped.
-- [x] **KISS** No preventive enterprise architecture, generic PDF graph, second viewer architecture or generalized ModeManager. PDFium remains primary PDF inspector/render owner; existing narrow dependencies retain their bounded roles.
-- [x] **NO-AUTOMERGE** `main` remains at `31c0594758a83ec555d73ecdd7c597cdf8791fd7`; merges require explicit user approval.
-- [ ] **INTEGRATION** Active implementation lineage is roughly 1155 commits ahead of `main`; controlled consolidation is required before release and is not authorized by this requirements update.
+- [x] **ORIGINAL** Existing writer flows protect source and use Save As semantics where modification occurs; Compare is read-only and keeps A active.
+- [x] **CI** Functional automated baseline through F12.4 Compare UI: implementation HEAD `488d59f7a9e47ae0ccaafe474e7215cdc4cdc1d2`, Release build `0` warnings / `0` errors, `1186/1186` PASS, `0` failed, `0` skipped.
+- [x] **KISS** Compare UI added no second viewer/sidebar, generalized ModeManager, new PDF engine/runtime dependency or global XAML architecture; lifecycle reset reuses the existing shared workspace-reset owner.
+- [x] **NO-AUTOMERGE** `main` remains at the previously audited baseline and merges require explicit user approval.
+- [ ] **INTEGRATION** Active implementation lineage remains far ahead of `main`; controlled consolidation is required before release and is not authorized by this requirements update.
 - [ ] **REAL-QA** Representative manual/private/physical/external-reader QA remains open where phase sections say NOT RUN.
 
 ## Traceability
