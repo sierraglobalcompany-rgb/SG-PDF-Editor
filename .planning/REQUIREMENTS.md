@@ -184,20 +184,25 @@ Physical phone/scanner QR verification remains **NOT RUN** and belongs to later 
 
 ### F12.7 Audited Conversions
 
-- [ ] **PRO-CONVERT-01** Each conversion must be separately scoped and capability-gated.
-- [ ] **PRO-CONVERT-02** Keep local/offline operation where feasible and protect originals.
-- [ ] **PRO-CONVERT-03** Validate output with representative, conversion-specific evidence.
-- [ ] **PRO-CONVERT-04** Declare limitations honestly; no universal-fidelity claim.
-- [ ] No second PDF engine/cloud service without explicit approval.
+- [x] **PRO-CONVERT-01 — AUTO PASS** Baseline conversion separately capability-gated and explicitly scoped to **PDF→PNG only**.
+- [x] **PRO-CONVERT-02 — AUTO PASS** Local/offline conversion reuses existing PDFium render owner, writes to an explicit folder and never modifies the source PDF.
+- [x] **PRO-CONVERT-03 — AUTO PASS** Representative 2-page PDF evidence validates exact output count, deterministic names, PNG decode and expected 150-DPI dimensions; overwrite preflight is independently tested.
+- [x] **PRO-CONVERT-04 — AUTO PASS** Limitations are explicit: raster output only, fixed 150 DPI baseline, no universal color/print/fidelity claim.
+- [x] **PRO-CONVERT-05 — AUTO PASS** No second PDF engine, cloud service, LibreOffice/Office automation, generic conversion framework or new runtime dependency.
+
+Scope: `docs/superpowers/specs/2026-10-14-f12-7-pdf-to-png-scope.md`.  
+Plan: `docs/superpowers/plans/2026-10-14-f12-7-pdf-to-png.md`.
+
+Real Windows/private PDF→PNG visual review remains **NOT RUN**. Not baseline: DOCX/PPTX/XLSX conversion, PDF semantic reconstruction to Office formats, JPEG/WebP/TIFF selection, DPI presets, batch conversion or universal-fidelity guarantees.
 
 ## Cross-cutting
 
 - [ ] **OFFLINE** Normal functions require no Internet; full physical/offline smoke remains pending where noted.
-- [x] **LICENSE** Runtime dependencies/assets audited through current automated implementation; F12.5/F12.6 add no runtime dependency. Labelize font provenance re-audit remains required before public installer.
+- [x] **LICENSE** Runtime dependencies/assets audited through current automated implementation; F12.5/F12.6/F12.7 add no runtime dependency. Labelize font provenance re-audit remains required before public installer.
 - [x] **PRIVACY** Private fixtures ignored and CI hygiene rejects tracked `tests/PrivateFixtures/**`.
-- [x] **ORIGINAL** Existing writer flows protect source and use Save As semantics where modification occurs; Compare is read-only; QR generation is independent of PDF document state.
-- [x] **CI** Functional automated baseline through F12.6 QR PNG UI: implementation HEAD `2be0fc5345160e500d78102d99a833c9b9729bae`; repository hygiene, locked restore/runtime staging, Release Build and full Test steps PASS; exact-head CI run `38513237239`, job `115686247754`.
-- [x] **KISS** Batch remains one-operation sequential reuse; QR reuses the existing Labels/Labelize owner and existing Utilities menu, with no generic batch engine, barcode studio, second renderer, cloud/backend or new runtime dependency.
+- [x] **ORIGINAL** Existing writer flows protect source and use Save As semantics where modification occurs; Compare is read-only; QR is independent of PDF state; PDF→PNG reads the source and writes separate image files only.
+- [x] **CI** Functional automated baseline through F12.7 PDF→PNG: implementation HEAD `521f0974b4b8a6b5ae7138a51cf11e61d572a998`; repository hygiene, locked restore/runtime staging, Release Build and full Test steps PASS; build `0` warnings / `0` errors; `1201/1201` PASS, `0` failed, `0` skipped; exact-head CI run `38514284225`, job `115689481722`.
+- [x] **KISS** F12.7 adds one focused `PdfToPngConverter` and one existing-Utilities menu action; no `ConversionEngine`, registry/plugins, second PDF engine, cloud/backend, Office/LibreOffice dependency or new runtime package.
 - [x] **NO-AUTOMERGE** `main` remains at the previously audited baseline and merges require explicit user approval.
 - [ ] **INTEGRATION** Active implementation lineage remains far ahead of `main`; controlled consolidation is required before release and is not authorized by this requirements update.
 - [ ] **REAL-QA** Representative manual/private/physical/external-reader QA remains open where phase sections say NOT RUN.
