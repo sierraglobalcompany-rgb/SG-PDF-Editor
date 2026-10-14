@@ -15,25 +15,16 @@ public sealed class MainWindowBatchTests
             "SGPdf.App.Features.Utilities.WatermarkUtilityRequest",
             throwOnError: true)!;
 
-        ConstructorInfo? constructor = requestType.GetConstructor(
-            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
-            binder: null,
-            types:
+        MethodInfo? factory = requestType.GetMethod(
+            "CreateAllPages",
+            BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+        Assert.NotNull(factory);
+        object request = factory!.Invoke(
+            null,
             [
-                typeof(string), typeof(double), typeof(double), typeof(double),
-                typeof(double), typeof(double), typeof(int), typeof(int),
-                typeof(bool), typeof(bool), typeof(string), typeof(byte),
-                typeof(byte), typeof(byte), typeof(bool)
-            ],
-            modifiers: null);
-        Assert.NotNull(constructor);
-
-        object request = constructor!.Invoke(
-        [
-            "LOTE", 24d, 0.5d, 0d, 0d, 0d,
-            1, 1, false, false, "Center",
-            (byte)128, (byte)128, (byte)128, true
-        ]);
+                "LOTE", 24d, 0.5d, 0d, 0d, 0d,
+                false, "Center", (byte)128, (byte)128, (byte)128
+            ])!;
 
         MethodInfo tryBuild = requestType.GetMethod(
             "TryBuild",
