@@ -1,10 +1,10 @@
 # Roadmap — SG PDF Editor
 
-> Operational authority: exact GitHub head/CI → `.planning/STATE.md` → this roadmap → `.planning/REQUIREMENTS.md` → approved slice specs/plans. Historical handoffs are secondary.
+> Operational authority: exact GitHub head/CI → `.planning/STATE.md` → this roadmap → `.planning/REQUIREMENTS.md` → approved slice specs/plans. `docs/MASTER_PLAN.md` is an architectural/historical plan and must not override newer operational state.
 
 ## Current baseline — 2026-10-14
 
-**F0–F12 functional automated baseline is CLOSED.**
+**F0–F12 functional automated baseline is CLOSED and feature-frozen.**
 
 Authoritative functional branch:
 `feat/f12-7-pdf-to-png-mvp-green3`
@@ -12,7 +12,7 @@ Authoritative functional branch:
 Exact functional HEAD:
 `8e1845d6d8fe72374d7a80994d8500b6d36077cc`
 
-Exact-head CI:
+Exact-head functional CI:
 - run `38555829715`;
 - job `115824598759`;
 - Release build: **0 warnings / 0 errors**;
@@ -50,7 +50,7 @@ Exact-head CI:
 | F12.6 Code Generator | CLOSED / AUTO PASS — QR PNG only |
 | F12.7 Audited Conversions | **CLOSED / AUTO PASS — PDF→PNG only** |
 
-Baseline F12 is now feature-frozen. Any additional batch operation, symbology, conversion, form type or signing technology requires a new explicit value/capability decision and does not silently extend F12.
+Any additional batch operation, symbology, conversion, form type or signing technology requires a new explicit value/capability decision and does not silently extend F12.
 
 ## F12.7 closed MVP — PDF→PNG
 
@@ -82,56 +82,41 @@ Not baseline:
 - second PDF/document engine;
 - generalized conversion framework/registry/plugins/queue.
 
+## Release QA packs
+
+All four packs now have a canonical automated-evidence preflight plus an executable real/manual checklist. **This does not mean the real QA was executed.**
+
+| Pack | Canonical record | Automated preflight | Real/manual gate |
+|---|---|---|---|
+| A — Reader / Organize / Editing | `docs/release/2026-10-14-pack-a-reader-organize-editing.md` | PASS | NOT RUN — ENVIRONMENT |
+| B — ZPL / QR / physical print-scan | `docs/release/2026-10-14-pack-b-zpl-qr-physical.md` | PASS | NOT RUN — ENVIRONMENT |
+| C — visual + cryptographic signatures | `docs/release/2026-10-14-pack-c-signatures.md` | PASS | NOT RUN — ENVIRONMENT |
+| D — OCR / Forms / Compare / Batch / PDF→PNG | `docs/release/2026-10-14-pack-d-ocr-forms-compare-batch-convert.md` | PASS | NOT RUN — ENVIRONMENT |
+
+Exit for each real pack remains: representative evidence actually executed, no open P0/P1, limitations documented, and no synthetic/CI PASS promoted into a physical/manual PASS.
+
 ## Remaining sequence
 
-### 1. Real QA packs
+### 1. Real QA execution — OPEN / environment-gated
 
-Execute bounded packs. Automated PASS does not become physical/manual PASS automatically.
+Execute Packs A–D on suitable Windows/hardware/private-fixture environments. Until then their final gates remain NOT RUN.
 
-**Pack A — Reader / Organize / Editing**
-- open representative PDFs in Windows;
-- navigation/zoom/continuous reader;
-- print path including Microsoft Print to PDF;
-- organize operations + saved-output reopen;
-- text/image/comment editing representative smoke;
-- external-reader check where relevant;
-- offline smoke.
+### 2. Documentation routing consolidation — CURRENT BLOCK
 
-**Pack B — ZPL / QR / physical print-scan**
-- representative/private ZPL corpus;
-- label dimensions;
-- thermal print;
-- barcode/QR real scanner;
-- generated QR real phone/scanner.
+Only fix documents that can materially misroute execution:
+- `.planning/STATE.md` remains the daily operational router;
+- this roadmap reflects Pack A–D preflight completion;
+- `AGENTS.md` must reflect the closed F0–F12 baseline and current rules;
+- `docs/MASTER_PLAN.md` remains useful for architectural/history detail but must be explicitly marked non-authoritative for current execution order;
+- avoid Markdown-per-commit noise and do not rewrite historical evidence merely because it is old.
 
-**Pack C — visual + cryptographic signatures**
-- imported/drawn/photo signature UX;
-- representative PFX/P12 corpus;
-- external reader validation;
-- password handling and failure/cancel paths.
-
-**Pack D — OCR / Forms / Compare / Batch / PDF→PNG**
-- representative/private scans;
-- `/Tx` field editing and reopen;
-- compare representative PDFs;
-- batch watermark real files;
-- QR UX;
-- PDF→PNG visual/export smoke and collision behavior.
-
-### 2. Documentation consolidation
-
-Only fix docs that can misroute execution:
-- `AGENTS.md` current operational rules;
-- stale master-plan wording marked historical when appropriate;
-- one operational source of truth;
-- avoid Markdown-per-commit noise.
-
-### 3. Integration audit
+### 3. Integration audit — NEXT
 
 Before touching `main`:
 - map branch and PR ancestry;
 - identify unique/product commits;
 - classify historical/noise branches;
+- verify that Pack A–D planning branches form only documentation lineage over the closed functional baseline;
 - choose one conservative integration candidate;
 - verify candidate exact-head CI;
 - no destructive cleanup during audit.
@@ -169,15 +154,21 @@ Simple, efficient, optimized, effective. Prefer A→B over generalized architect
 ### Anti-noise
 Before ADD: DELETE → SIMPLIFY → REUSE → MERGE → EXTEND → ADD.
 
-### Anti-patch
-`REPRODUCE → CLASSIFY → ROOT CAUSE → OWNER → MINIMAL CHANGE → CAUSE TEST → FULL SUITE → EXACT-HEAD CI`.
+### Anti-patch operational guardrail
+`REPRODUCE → CLASSIFY → ROOT CAUSE → OWNER → MINIMAL CHANGE → CAUSE TEST → FULL SUITE → EXACT-HEAD CI → REMOVE REDUNDANT WORKAROUND`.
 
 ## Branch hygiene notes
 
-Authoritative closed F12 head:
+Authoritative closed functional F12 head:
 `feat/f12-7-pdf-to-png-mvp-green3` @ `8e1845d6d8fe72374d7a80994d8500b6d36077cc`.
 
-Do not treat these as authoritative:
+Release-QA preflight lineage:
+- `plan/release-pack-a-qa`;
+- `plan/release-pack-b-qa`;
+- `plan/release-pack-c-qa`;
+- `plan/release-pack-d-qa`.
+
+Do not treat these as authoritative functional bases:
 - divergent historical `feat/f12-7-pdf-to-png`;
 - old RED/checkpoint `feat/f12-7-pdf-to-png-mvp`;
 - accidental empty aliases `...-green` and `...-green2`.
@@ -186,6 +177,6 @@ They are release-hygiene items, not functional blockers.
 
 ## Next bounded task
 
-Start **Pack A automated preflight + executable manual checklist**, unless a newer exact-head release checkpoint already supersedes this roadmap.
+Run the **integration ancestry / PR audit** from the latest audited release-routing checkpoint, then select one conservative integration candidate. Do not merge to `main` and do not clean branches destructively during the audit.
 
 No merge to `main` without explicit user approval.

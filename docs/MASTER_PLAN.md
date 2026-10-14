@@ -1,8 +1,10 @@
 # SG PDF Editor — Plan maestro de ejecución
 
-**Versión:** 2.2 operativa  
-**Fecha:** 2026-10-07  
-**Autoridad:** este archivo define el orden de trabajo. `docs/MASTER_CONTEXT.md` contiene el contexto completo y las decisiones arquitectónicas. `.planning/STATE.md` contiene el estado operativo diario.
+**Versión:** 2.2 — baseline histórica/arquitectónica  
+**Fecha original:** 2026-10-07  
+**Estado de este documento:** conserva el plan y decisiones de diseño originales, pero **ya no define el orden operativo vigente ni el estado actual de las fases**. Los estados por fase que aparecen abajo son snapshots históricos y no deben usarse para reabrir trabajo cerrado.
+
+**Autoridad operativa vigente:** GitHub live exact HEAD/CI → `.planning/STATE.md` → `.planning/ROADMAP.md` → `.planning/REQUIREMENTS.md` → specs/plans aprobados del slice. `docs/MASTER_CONTEXT.md` + este archivo siguen siendo referencia de arquitectura y decisiones durables cuando no contradicen una decisión operacional posterior aprobada.
 
 ## Principios de ejecución
 
@@ -16,15 +18,15 @@
 8. CI, pruebas y QA son parte del feature, no una fase posterior.
 9. No merge automático a `main`.
 10. Datos reales privados nunca se versionan ni se indexan en herramientas de desarrollo.
-11. Cada sesión importante cierra con estado/resumen + Markdown histórico portable.
+11. Cada sesión importante cierra con estado/resumen; crear Markdown histórico solo cuando aporte evidencia durable y no ruido.
 12. GSD Core + Graphify son dev-only y nunca requisitos para compilar o usar SG PDF Editor.
-13. El contexto diario debe ser mínimo: `STATE` + plan de fase + Graphify cuando aporte valor + archivos concretos.
+13. El contexto diario debe ser mínimo: `STATE` + ROADMAP/requisitos del bloque + archivos concretos; este plan completo se consulta ante arquitectura, historia o contradicción.
 
 ---
 
 # A0 — Higiene, trazabilidad y reproducibilidad
 
-**Estado:** ✅ COMPLETADA.  
+**Estado histórico del snapshot:** ✅ COMPLETADA.  
 **Rama:** `feat/kiss-vertical-slice`.  
 **Commit de cierre:** `4333674`.  
 **PR:** #2 draft, sin merge.
@@ -35,7 +37,7 @@ Resultado: fuentes de verdad, solución App + Tests, third-party manifest/licenc
 
 # A1 — Development Intelligence
 
-**Estado:** ✅ COMPLETADA.  
+**Estado histórico del snapshot:** ✅ COMPLETADA.  
 **Rama:** `feat/a1-dev-intelligence`.  
 **PR:** #6 draft, sin merge.
 
@@ -49,27 +51,32 @@ Tooling validado:
 
 Evidencia final A1: run `37530638793` success.
 
-Jerarquía operativa:
+Jerarquía operativa actual:
 
 ```text
-Arquitectura → docs/MASTER_CONTEXT.md + docs/MASTER_PLAN.md
-Estado       → .planning/STATE.md
-Roadmap      → .planning/ROADMAP.md
-Requisitos   → .planning/REQUIREMENTS.md
-Fase         → .planning/phases/<fase>/...
-Código       → Git/GitHub
-Relaciones   → Graphify local
-Histórico    → docs/history
+GitHub live exact HEAD/CI
+  ↓
+.planning/STATE.md
+  ↓
+.planning/ROADMAP.md
+  ↓
+.planning/REQUIREMENTS.md
+  ↓
+spec/plan aprobado del slice
+  ↓
+docs/MASTER_CONTEXT.md + este MASTER_PLAN para arquitectura/historia
+  ↓
+docs/history/** para evidencia histórica
 ```
 
-Flujo normal de contexto: `STATE → plan de fase → Graphify si aporta → archivos concretos`.
+Flujo normal de contexto: `STATE → ROADMAP/REQUIREMENTS del bloque → archivos concretos → MASTER/history solo si hace falta`.
 
 ---
 
 # F0 — PDF base
 
-**Estado automatizado:** ✅ F0.1–F0.6 PASS.  
-**Estado físico:** ⏳ smoke Windows/impresión/offline todavía NOT RUN.
+**Estado automatizado en este snapshot:** ✅ F0.1–F0.6 PASS.  
+**Estado físico en este snapshot:** ⏳ smoke Windows/impresión/offline todavía NOT RUN.
 
 ## Resultado implementado
 
@@ -92,7 +99,7 @@ Flujo normal de contexto: `STATE → plan de fase → Graphify si aporta → arc
 - Microsoft Print to PDF usa el mismo flujo;
 - no auto-ajustar orientación ni escala física silenciosamente.
 
-## Pendiente físico
+## Pendiente físico del snapshot
 
 PDFs reales/heavy, UI rápida, Microsoft Print to PDF, impresora física cuando exista, red deshabilitada y medición de DPI/memoria/latencia.
 
@@ -101,7 +108,7 @@ PDFs reales/heavy, UI rápida, Microsoft Print to PDF, impresora física cuando 
 # F1 — Gate ZPL-A
 
 **Estado del motor:** ✅ decisión aprobada.  
-**Cierre formal F1:** ⏳ falta corpus real privado de Mercado Libre.
+**Cierre formal en este snapshot:** ⏳ faltaba corpus real privado de Mercado Libre.
 
 ## Motores evaluados
 
@@ -163,7 +170,7 @@ Los ZPL reales privados no entran al repo/CI/Graphify.
 
 # F2 — Etiquetas ZPL
 
-**Objetivo:** reemplazar el flujo manual de Labelary de forma totalmente local/offline.
+**Objetivo histórico:** reemplazar el flujo manual de Labelary de forma totalmente local/offline.
 
 ## Arquitectura congelada
 
@@ -177,7 +184,7 @@ Los ZPL reales privados no entran al repo/CI/Graphify.
 
 ## F2.1 — Parse + Open
 
-**Estado:** implementación funcional automatizada PASS; cierre documental/final CI en curso.
+**Estado en este snapshot:** implementación funcional automatizada PASS; cierre documental/final CI estaba en curso.
 
 - `.zpl/.txt/.prn` local;
 - `ZplDocument` / `ZplDesign`;
@@ -249,7 +256,7 @@ PR: #13 draft, sin merge.
 - `Guardar como`;
 - reabrir/verificar.
 
-Después: biblioteca local, firma predeterminada, iniciales, fecha/nombre, sellos y varias páginas.
+Después, según el plan original: biblioteca local, firma predeterminada, iniciales, fecha/nombre, sellos y varias páginas.
 
 ---
 
@@ -320,21 +327,23 @@ Reading order, líneas, párrafos, columnas y reflow limitado. PdfPig solo si re
 
 Slices independientes: firma criptográfica, formularios, redacción real, compare, batch, generador de códigos y conversiones auditadas.
 
+> Nota operativa posterior: el baseline automatizado F0–F12 quedó cerrado. Consultar `.planning/STATE.md`, `.planning/ROADMAP.md` y `.planning/REQUIREMENTS.md` para alcance exacto y estado actual antes de implementar cualquier punto de esta lista histórica.
+
 ---
 
 # Flujo de ejecución por slice
 
-1. consultar GitHub + `.planning/STATE.md`;
-2. revisar roadmap/requisitos/plan de fase;
+1. consultar GitHub exact HEAD/CI + `.planning/STATE.md`;
+2. revisar roadmap/requisitos/plan del bloque vigente;
 3. rama/worktree aislado;
 4. usar Graphify si reduce lectura/impacto;
-5. test/reproducción primero para comportamiento nuevo;
+5. test/reproducción primero para comportamiento nuevo o fix;
 6. implementar mínimo;
 7. build/tests/CI;
 8. QA manual/real cuando aplique;
-9. actualizar docs/licencias;
-10. actualizar `STATE`/histórico;
-11. actualizar PR;
+9. actualizar docs/licencias solo donde cambie la autoridad o exista evidencia durable;
+10. actualizar `STATE`; roadmap solo cuando cambie el ruteo;
+11. actualizar PR cuando corresponda;
 12. no merge sin aprobación.
 
 # Definition of Done global
@@ -348,11 +357,11 @@ Una función está terminada solo si:
 - tiene pruebas/fixtures representativos;
 - dependencias/licencias están registradas cuando entran al runtime;
 - temporales/recursos se limpian;
-- documentación/STATE/histórico queda alineado.
+- documentación/STATE queda alineada.
 
 Para etiquetas además:
 
 - `^PQ` no multiplica renders;
 - barcode/QR decode automático cuando entra el renderer;
-- corpus privado real antes del cierre formal del Gate;
-- QA física de tamaño/códigos antes de cerrar F2.
+- corpus privado real antes del cierre formal del Gate cuando el gate lo requiera;
+- QA física de tamaño/códigos antes de afirmar cierre físico de F2.
