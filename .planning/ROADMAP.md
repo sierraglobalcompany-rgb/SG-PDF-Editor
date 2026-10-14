@@ -1,232 +1,191 @@
 # Roadmap — SG PDF Editor
 
-> Arquitectura: `docs/MASTER_CONTEXT.md` + `docs/MASTER_PLAN.md`. Estado operativo: `.planning/STATE.md`. GitHub exact heads/CI mandan sobre snapshots históricos.
+> Operational authority: exact GitHub head/CI → `.planning/STATE.md` → this roadmap → `.planning/REQUIREMENTS.md` → approved slice specs/plans. Historical handoffs are secondary.
 
-## Estado por fase
+## Current baseline — 2026-10-14
 
-| Fase | Estado automatizado | QA manual/privado/físico |
+**F0–F12 functional automated baseline is CLOSED.**
+
+Authoritative functional branch:
+`feat/f12-7-pdf-to-png-mvp-green3`
+
+Exact functional HEAD:
+`8e1845d6d8fe72374d7a80994d8500b6d36077cc`
+
+Exact-head CI:
+- run `38555829715`;
+- job `115824598759`;
+- Release build: **0 warnings / 0 errors**;
+- tests: **1202/1202 PASS**, 0 failed, 0 skipped.
+
+`main` remains read-only at `31c0594758a83ec555d73ecdd7c597cdf8791fd7` until explicit user approval.
+
+## Phase table
+
+| Phase | Automated status | Real/manual/private/physical status |
 |---|---|---|
-| F0 PDF Base | CLOSED / AUTO PASS | NOT RUN completo |
-| F1 Gate ZPL-A | synthetic PASS | private corpus NOT RUN |
-| F2 ZPL Workspace | CLOSED / AUTO PASS | private + thermal/ruler/scanner NOT RUN |
-| F3 Firma Visual | CLOSED / AUTO PASS | Windows/photo/stylus/library NOT RUN |
-| F4 Lector Completo | CLOSED / AUTO PASS | Windows real NOT RUN |
-| F5 Organizar | CLOSED / AUTO PASS | Windows real NOT RUN |
-| F6 Imágenes | CLOSED / AUTO PASS | Windows real NOT RUN |
-| F7 Texto V1 | CLOSED / AUTO PASS | Windows real NOT RUN |
-| F8 Comentarios | CLOSED / AUTO PASS | stylus/touch/external readers NOT RUN |
-| F9 Utilidades | CLOSED / AUTO PASS | Windows/external/private repair corpus NOT RUN |
-| F10 OCR Local | CLOSED / AUTO PASS | Windows OCR/external readers/private corpus NOT RUN |
-| F11 Texto V2 | CLOSED / AUTO PASS | Windows reflow/private layouts/external readers NOT RUN |
-| **F12 Profesional** | **IN PROGRESS** | **real/private/manual gates remain open** |
+| F0 PDF Base | CLOSED / AUTO PASS | open where documented |
+| F1 ZPL Gate | synthetic PASS | private corpus open |
+| F2 ZPL Workspace | CLOSED / AUTO PASS | physical/private open |
+| F3 Visual Signature | CLOSED / AUTO PASS | Windows/photo/stylus open |
+| F4 Reader | CLOSED / AUTO PASS | Windows real open |
+| F5 Organize | CLOSED / AUTO PASS | Windows real open |
+| F6 Images | CLOSED / AUTO PASS | Windows real open |
+| F7 Text V1 | CLOSED / AUTO PASS | Windows/external open |
+| F8 Comments | CLOSED / AUTO PASS | stylus/touch/external open |
+| F9 Utilities | CLOSED / AUTO PASS | Windows/private/external open |
+| F10 OCR | CLOSED / AUTO PASS | private scans/external/offline open |
+| F11 Text V2 | CLOSED / AUTO PASS | representative layouts open |
+| F12 Professional | **CLOSED / AUTO PASS** | representative QA open |
 
-## F12 Professional — authoritative order
+## F12 Professional — frozen baseline
 
-| Slice | State | Next action |
-|---|---|---|
-| F12.1 Safe Redaction | **CLOSED / AUTO PASS** | keep limits honest |
-| F12.2 Cryptographic Signature PFX/P12 MVP | **CLOSED / AUTO PASS** | advanced signing only by separate approval |
-| F12.3 Existing AcroForm text fields | **CLOSED / AUTO PASS** | advanced form types only by separate approval |
-| F12.4 Compare | **CLOSED / AUTO PASS** — core + minimal UI | representative real-PDF/manual QA later |
-| F12.5 Batch | **CLOSED / AUTO PASS — TextWatermark MVP** | additional batch operations only by separate value/capability decision |
-| F12.6 Code Generator | **CLOSED / AUTO PASS — QR PNG MVP** | additional symbologies only by separate value/capability decision |
-| F12.7 Audited Conversions | **IN PROGRESS / GATE PASS — PDF→PNG selected** | **current next: PDF→PNG core MVP** |
-| Release integration/stabilization | **OPEN** | deliberate branch/main consolidation + manual/private QA |
+| Slice | Baseline status |
+|---|---|
+| F12.1 Safe Redaction | CLOSED / AUTO PASS |
+| F12.2 PFX/P12 Cryptographic Signature | CLOSED / AUTO PASS |
+| F12.3 Existing AcroForm `/Tx` | CLOSED / AUTO PASS |
+| F12.4 Compare | CLOSED / AUTO PASS — core + minimal UI |
+| F12.5 Batch | CLOSED / AUTO PASS — TextWatermark only |
+| F12.6 Code Generator | CLOSED / AUTO PASS — QR PNG only |
+| F12.7 Audited Conversions | **CLOSED / AUTO PASS — PDF→PNG only** |
 
-## Current position
+Baseline F12 is now feature-frozen. Any additional batch operation, symbology, conversion, form type or signing technology requires a new explicit value/capability decision and does not silently extend F12.
 
-```text
-F0–F11      CLOSED / automated
-F12.1       CLOSED — safe real redaction
-F12.2       CLOSED — PFX/P12 cryptographic signature MVP
-F12.3       CLOSED — existing classic AcroForm /Tx
-F12.4       CLOSED — Compare core + minimal existing-panel UI
-F12.5       CLOSED — sequential TextWatermark Batch MVP
-F12.6       CLOSED — QR PNG MVP, existing Labelize owner reused
-F12.7       IN PROGRESS — capability gate PASS; PDF→PNG selected
-Release     Integration + manual/private/physical QA — pending
-```
+## F12.7 closed MVP — PDF→PNG
 
-Current closed F12.6 baseline:
-- exact final HEAD `6e82e18d60c6c3e8eee74b4e96769a2cb8892e08` on `feat/f12-6-qr-generator`;
-- exact-head Release build **PASS / 0 warnings / 0 errors**;
-- exact-head tests **1197/1197 PASS**, 0 failed, 0 skipped;
-- exact-head CI run `38534984770`, job `115755569827`;
-- no merge to `main`.
+Flow:
+`open PDF → Herramientas → Exportar PDF a PNG... → choose folder → PdfDocumentSession/PDFium → one PNG/page`.
 
-An earlier implementation run surfaced `NU1902`/`NU1903` for the test-only `System.Security.Cryptography.Pkcs 8.0.1`; the final exact-head locked restore/build did not reproduce them. Advisory/package review remains stabilization work, not part of the conversion MVP.
-
-## Remaining development sequence
-
-### 1. F12.7 Audited Conversions — PDF→PNG next
-
-Capability/scope gate result: **GO for PDF→PNG as the first and only currently approved conversion MVP**.
-
-Why this direction wins:
-- it extends an existing owner instead of adding a new engine: `PdfDocumentSession` already owns PDFium rendering;
-- it is local/offline;
-- fidelity claim is narrow and auditable: render each PDF page to PNG;
-- page count, output validity, dimensions, deterministic naming and overwrite behavior are straightforward to test;
-- no Office runtime, cloud service or generalized conversion architecture is required.
-
-Frozen next flow:
-`current PDF open → PDF→PNG export action → choose output folder → existing PdfDocumentSession/PDFium → render all pages → one PNG/page`.
-
-Frozen contract:
+Contract:
 - current/open PDF only;
 - all pages only;
-- deterministic file names, e.g. `<basename>-pagina-001.png`;
-- never silently overwrite an existing output;
-- source PDF remains untouched;
-- cancel is a no-op;
-- controlled errors;
-- cancellation propagated;
-- reuse the existing PDFium owner rather than duplicating P/Invoke/render abstractions.
+- 144 DPI fixed baseline;
+- deterministic `<basename>-pagina-001.png` naming;
+- originals untouched;
+- target collisions rejected before writing;
+- `FileMode.CreateNew` blocks race-condition overwrite;
+- partial outputs from the current operation are cleaned best-effort on later failure;
+- core cancellation supported;
+- minimal UI with folder selection and controlled status/errors;
+- existing PDFium + WPF encoder only;
+- no runtime/package addition.
 
-Explicitly outside the first MVP:
-- JPEG/WebP/TIFF or generic image format selector;
+Not baseline:
+- JPEG/WebP/TIFF;
 - page ranges;
-- custom DPI/quality studio;
-- OCR/content interpretation;
-- image→PDF in the same slice;
-- DOCX/XLSX/PPTX↔PDF;
-- PDF→Office;
-- LibreOffice runtime;
-- Microsoft Office automation;
+- configurable DPI/quality studio;
+- image→PDF;
+- Office↔PDF / PDF→Office;
+- LibreOffice/Office automation;
 - cloud conversion;
 - second PDF/document engine;
-- generic `Converter`, registry, plugin system, workflow designer or queue.
+- generalized conversion framework/registry/plugins/queue.
 
-Gate classification:
-- **GO — PDF→PNG:** implement next with TDD from the clean F12.6 lineage.
-- **DEFER — image→PDF:** potentially valuable but belongs to a separate capability gate because it constructs/assembles a PDF from raster input rather than exporting an existing PDF render. Do not couple the two directions.
-- **NO-GO baseline — Office/document conversions:** any path that requires LibreOffice, Office automation, cloud, another document engine or broad fidelity promises needs explicit product value and approval before architecture expands.
+## Remaining sequence
 
-Branch hygiene:
-- authoritative continuation: `feat/f12-7-conversions-gate`, created directly from exact F12.6 closure `6e82e18d60c6c3e8eee74b4e96769a2cb8892e08`;
-- existing `feat/f12-7-pdf-to-png` is a **divergent/non-authoritative prototype**; it carries unrelated ancestry/work and is evidence only, not a merge or implementation base;
-- no cleanup/rebase/merge of that prototype is authorized here.
+### 1. Real QA packs
 
-Next bounded implementation task:
-1. add RED contract for PDF→PNG core;
-2. verify intended RED;
-3. minimal GREEN reusing `PdfDocumentSession`;
-4. test multiple pages, PNG signature/dimensions, deterministic naming, overwrite refusal, original preservation and cancellation/error behavior;
-5. full exact-head CI;
-6. only then expose minimal UI/export if the core is clean.
+Execute bounded packs. Automated PASS does not become physical/manual PASS automatically.
 
-### 2. Real QA packs
+**Pack A — Reader / Organize / Editing**
+- open representative PDFs in Windows;
+- navigation/zoom/continuous reader;
+- print path including Microsoft Print to PDF;
+- organize operations + saved-output reopen;
+- text/image/comment editing representative smoke;
+- external-reader check where relevant;
+- offline smoke.
 
-After functional F12, group the accumulated physical/manual/private work into bounded packs instead of one giant final QA block:
-- Reader/Organize/Editing;
-- ZPL + physical print/scan;
-- visual + cryptographic signatures;
-- OCR/Forms/Compare/Batch/QR/Conversions.
+**Pack B — ZPL / QR / physical print-scan**
+- representative/private ZPL corpus;
+- label dimensions;
+- thermal print;
+- barcode/QR real scanner;
+- generated QR real phone/scanner.
 
-### 3. Documentation consolidation
+**Pack C — visual + cryptographic signatures**
+- imported/drawn/photo signature UX;
+- representative PFX/P12 corpus;
+- external reader validation;
+- password handling and failure/cancel paths.
 
-One bounded cleanup after functional F12:
-- reconcile stale `AGENTS.md` / historical master-plan wording where useful;
-- preserve one operational source of truth;
-- mark superseded docs rather than multiplying handoffs;
-- do not create Markdown for every commit.
+**Pack D — OCR / Forms / Compare / Batch / PDF→PNG**
+- representative/private scans;
+- `/Tx` field editing and reopen;
+- compare representative PDFs;
+- batch watermark real files;
+- QR UX;
+- PDF→PNG visual/export smoke and collision behavior.
 
-### 4. Release integration / stabilization
+### 2. Documentation consolidation
 
-Before release:
-- map active branch/PR ancestry and unique commits;
-- choose one conservative integration strategy;
-- use a dedicated integration branch, never experimental work on `main`;
-- reconcile stacked branches/PRs without destructive cleanup;
-- bring `main` forward only with explicit user approval;
-- run complete exact-head CI;
-- execute prioritized real/private/manual/physical QA;
-- review dependency advisories and close installer/license provenance items.
+Only fix docs that can misroute execution:
+- `AGENTS.md` current operational rules;
+- stale master-plan wording marked historical when appropriate;
+- one operational source of truth;
+- avoid Markdown-per-commit noise.
 
-### 5. Release candidate / final
+### 3. Integration audit
 
-Release candidate requires clean-clone reproducibility, locked restore, Release build/tests, packaged runtime/installer smoke, offline smoke and no P0/P1 blockers. Final release adds no feature creep.
+Before touching `main`:
+- map branch and PR ancestry;
+- identify unique/product commits;
+- classify historical/noise branches;
+- choose one conservative integration candidate;
+- verify candidate exact-head CI;
+- no destructive cleanup during audit.
 
-## F12.6 Code Generator — closed MVP
+### 4. Integration candidate
 
-Capability gate result: **reuse the existing Labels/ZPL/Labelize owner; QR only**.
+Use a dedicated integration branch only. Required gates:
+- clean ancestry from authoritative functional head;
+- no replay of historical PRs if already contained;
+- locked restore;
+- Release build/test;
+- representative QA evidence;
+- installer/runtime/license review.
 
-Closed behavior:
-- text/URL value entry from `Herramientas`;
-- explicit `Guardar PNG` destination;
-- UTF-8 bytes encoded safely as ZPL `^FH` field data;
-- minimal `^BQ` source;
-- existing `ZplDocumentParser` + `LabelizeProcessRenderer`;
-- output PNG decodes back to the exact source value in automated tests;
-- blank input rejected;
-- payload bounded to 512 UTF-8 bytes;
-- cancel/error paths are controlled.
+### 5. Release Candidate
 
-Not part of this MVP:
-- Code128 or other symbologies;
-- generic barcode/code studio;
-- preview/scanner/history/catalog;
-- batch QR;
-- PDF insertion;
-- size/color/ECC editor;
-- new runtime QR dependency;
-- cloud/backend or second renderer.
+RC requires:
+- clean-clone reproducibility;
+- locked restore;
+- Release build/tests;
+- packaged runtime/installer smoke;
+- offline smoke;
+- no P0/P1 blockers;
+- no feature creep.
 
-Manual Windows UX and representative scanner interoperability remain later QA, not an automated universal claim.
+### 6. `main`
 
-## F12.5 Batch — closed MVP
+`main` moves only with explicit user approval after integration + RC evidence. No automatic merge.
 
-Closed scope is intentionally one operation: **TextWatermark**.
+## Engineering laws
 
-Behavior:
-- multi-select local PDFs;
-- reuse existing watermark configuration and write owners;
-- explicit output folder;
-- sequential execution;
-- per-item success/error result;
-- one bad item does not stop the others;
-- protect originals and refuse silent output overwrite;
-- all-pages scope resolves independently for each document;
-- empty batch/blank destination rejected;
-- final UI summary of successes/errors.
+### KISS
+Simple, efficient, optimized, effective. Prefer A→B over generalized architecture.
 
-Not part of this MVP:
-- generic `BatchEngine`;
-- workflow designer;
-- queue/workers/scheduler/database;
-- concurrency framework;
-- implicit support for Bates, OCR, protection or organize operations.
+### Anti-noise
+Before ADD: DELETE → SIMPLIFY → REUSE → MERGE → EXTEND → ADD.
 
-Those operations can be evaluated later only if real value justifies extending the same narrow owner.
+### Anti-patch
+`REPRODUCE → CLASSIFY → ROOT CAUSE → OWNER → MINIMAL CHANGE → CAUSE TEST → FULL SUITE → EXACT-HEAD CI`.
 
-## What is not automatically in baseline F12
+## Branch hygiene notes
 
-These require separate approval and do not block the current baseline roadmap:
-- advanced form types (`/Btn`, `/Ch`, XFA, designer);
-- advanced signing (Windows store, smartcard/HSM, TSA, legal qualification);
-- universal PDF preservation/compatibility promises;
-- AI/cloud/backend features;
-- Office/document conversion engines.
+Authoritative closed F12 head:
+`feat/f12-7-pdf-to-png-mvp-green3` @ `8e1845d6d8fe72374d7a80994d8500b6d36077cc`.
 
-## Operating cadence
+Do not treat these as authoritative:
+- divergent historical `feat/f12-7-pdf-to-png`;
+- old RED/checkpoint `feat/f12-7-pdf-to-png-mvp`;
+- accidental empty aliases `...-green` and `...-green2`.
 
-> **1 `continua` = 1 meaningful bounded product task closed**, with RED → GREEN → focused verification → full CI → KISS/noise audit executed internally for implementation tasks.
+They are release-hygiene items, not functional blockers.
 
-Capability gates intentionally stop after evidence + frozen scope, before production implementation.
+## Next bounded task
 
-Separate user stops remain only for decisions, architecture changes, new dependencies, capability NO-GO or irreversible Git integration.
-
-## Closure evidence
-
-- F12.1: `docs/history/2026-10-12-F12-1-safe-redaction-closure.md`
-- F12.2: `docs/history/2026-10-12-F12-2-cryptographic-signature-closure.md`
-- F12.3: `docs/history/2026-10-13-F12-3-exact-head-closure.md`
-- F12.4 core: `docs/history/2026-10-14-F12-4-compare-core-closure.md`
-- F12.4 UI design: `docs/superpowers/specs/2026-10-14-f12-4-compare-ui-design.md`
-- F12.4 UI plan: `docs/superpowers/plans/2026-10-14-f12-4-compare-ui.md`
-- F12.4 UI closure: `docs/history/2026-10-14-F12-4-compare-ui-closure.md`
-- F12.5: operational closure recorded in `.planning/STATE.md` + this roadmap; no extra history Markdown added to avoid documentation noise.
-- F12.6: operational closure recorded in `.planning/STATE.md` + this roadmap; no extra history Markdown added to avoid documentation noise.
-- F12.7 capability gate: operational decision recorded in `.planning/STATE.md` + this roadmap; no extra history Markdown added.
+Start **Pack A automated preflight + executable manual checklist**, unless a newer exact-head release checkpoint already supersedes this roadmap.
 
 No merge to `main` without explicit user approval.
