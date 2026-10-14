@@ -154,6 +154,31 @@ public sealed class UiThemeContractTests
             Assert.Contains(requiredName, names);
     }
 
+    [Theory]
+    [InlineData("PdfPasswordDialog.xaml", "PdfPasswordOkButton")]
+    [InlineData("SignatureDrawDialog.xaml", "SignatureDrawApplyButton")]
+    [InlineData("SignatureLibraryDialog.xaml", "SignatureLibraryUseButton")]
+    [InlineData("SignatureNameDialog.xaml", "SignatureNameAcceptButton")]
+    [InlineData("SignaturePhotoDialog.xaml", "SignaturePhotoApplyButton")]
+    public void Dialog_UsesSharedSurfaceAndButtonHierarchy(string fileName, string primaryButtonName)
+    {
+        var document = XDocument.Load(ProjectPath("src", "SGPdf.App", fileName));
+        var root = Assert.IsType<XElement>(document.Root);
+        AssertDeferredResource(root, "Background", "SgSurfaceBrush");
+
+        var buttons = document.Descendants().Where(element => element.Name.LocalName == "Button").ToList();
+        Assert.NotEmpty(buttons);
+
+        foreach (var button in buttons)
+        {
+            var name = (string?)button.Attribute(Xaml + "Name");
+            var expectedStyle = string.Equals(name, primaryButtonName, StringComparison.Ordinal)
+                ? "SgPrimaryButtonStyle"
+                : "SgToolbarButtonStyle";
+            AssertDeferredResource(button, "Style", expectedStyle);
+        }
+    }
+
     private static XDocument LoadMainWindow()
         => XDocument.Load(ProjectPath("src", "SGPdf.App", "MainWindow.xaml"));
 
