@@ -7,6 +7,32 @@ namespace SGPdf.App.Features.Batch;
 
 internal sealed class PdfBatchTextWatermarkProcessor
 {
+    internal IReadOnlyList<PdfBatchItemResult> Process(
+        PdfBatchRequest request,
+        WatermarkUtilityRequest watermarkRequest,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(request.InputPaths);
+        ArgumentNullException.ThrowIfNull(watermarkRequest);
+
+        if (request.Operation != PdfBatchOperation.TextWatermark)
+            throw new ArgumentOutOfRangeException(nameof(request), "La operación por lotes no es compatible.");
+
+        var results = new PdfBatchItemResult[request.InputPaths.Count];
+        for (int index = 0; index < request.InputPaths.Count; index++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            results[index] = ProcessOne(
+                request.InputPaths[index],
+                request.OutputDirectory,
+                watermarkRequest,
+                cancellationToken);
+        }
+
+        return Array.AsReadOnly(results);
+    }
+
     internal PdfBatchItemResult ProcessOne(
         string inputPath,
         string outputDirectory,
