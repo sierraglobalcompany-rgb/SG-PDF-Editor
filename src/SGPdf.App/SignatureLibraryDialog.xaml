@@ -6,7 +6,8 @@
         MinWidth="600" MinHeight="460"
         WindowStartupLocation="CenterOwner"
         ResizeMode="CanResizeWithGrip"
-        ShowInTaskbar="False">
+        ShowInTaskbar="False"
+        Background="{DynamicResource SgSurfaceBrush}">
     <Window.Resources>
         <DrawingBrush x:Key="SignatureLibraryCheckerboardBrush" Viewport="0,0,12,12" ViewportUnits="Absolute" TileMode="Tile">
             <DrawingBrush.Drawing>
@@ -30,12 +31,13 @@
                    Text="Firmas guardadas en este equipo"
                    FontSize="16"
                    FontWeight="SemiBold"
-                   Margin="0,0,0,12" />
+                   Margin="0,0,0,12"
+                   Style="{DynamicResource SgSectionHeaderStyle}" />
 
         <Grid Grid.Row="1">
             <ListBox x:Name="SignatureLibraryItemsList"
                      HorizontalContentAlignment="Stretch"
-                     BorderBrush="#FFBDBDBD"
+                     BorderBrush="{DynamicResource SgBorderBrush}"
                      BorderThickness="1">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
@@ -49,7 +51,7 @@
                                     Margin="0,0,12,0"
                                     Padding="6"
                                     Background="{StaticResource SignatureLibraryCheckerboardBrush}"
-                                    BorderBrush="#FFD0D0D0"
+                                    BorderBrush="{DynamicResource SgBorderBrush}"
                                     BorderThickness="1"
                                     CornerRadius="3">
                                 <Image Source="{Binding Thumbnail}" Stretch="Uniform" />
@@ -57,7 +59,7 @@
                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                 <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" TextWrapping="Wrap" />
                                 <TextBlock Text="{Binding UnavailableText}"
-                                           Foreground="DimGray"
+                                           Style="{DynamicResource SgMutedTextStyle}"
                                            FontSize="12"
                                            TextWrapping="Wrap"
                                            Margin="0,5,0,0" />
@@ -69,7 +71,7 @@
 
             <TextBlock x:Name="SignatureLibraryEmptyText"
                        Text="No hay firmas guardadas."
-                       Foreground="DimGray"
+                       Style="{DynamicResource SgMutedTextStyle}"
                        HorizontalAlignment="Center"
                        VerticalAlignment="Center"
                        Visibility="Collapsed"
@@ -78,7 +80,7 @@
 
         <TextBlock x:Name="SignatureLibraryStatusText"
                    Grid.Row="2"
-                   Foreground="DimGray"
+                   Style="{DynamicResource SgMutedTextStyle}"
                    TextWrapping="Wrap"
                    MinHeight="22"
                    Margin="0,12,0,8" />
@@ -90,14 +92,14 @@
             </Grid.ColumnDefinitions>
 
             <WrapPanel Grid.Column="0" VerticalAlignment="Center">
-                <Button x:Name="SignatureLibrarySaveSelectedButton" Content="Guardar firma seleccionada..." Padding="10,6" Margin="0,0,8,8" />
-                <Button x:Name="SignatureLibraryRenameButton" Content="Renombrar" Padding="10,6" Margin="0,0,8,8" />
-                <Button x:Name="SignatureLibraryDeleteButton" Content="Eliminar" Padding="10,6" Margin="0,0,8,8" />
+                <Button x:Name="SignatureLibrarySaveSelectedButton" Content="Guardar firma seleccionada..." Padding="10,6" Margin="0,0,8,8" Style="{DynamicResource SgToolbarButtonStyle}" />
+                <Button x:Name="SignatureLibraryRenameButton" Content="Renombrar" Padding="10,6" Margin="0,0,8,8" Style="{DynamicResource SgToolbarButtonStyle}" />
+                <Button x:Name="SignatureLibraryDeleteButton" Content="Eliminar" Padding="10,6" Margin="0,0,8,8" Style="{DynamicResource SgToolbarButtonStyle}" />
             </WrapPanel>
 
             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
-                <Button x:Name="SignatureLibraryCloseButton" Content="Cerrar" Padding="12,6" Margin="0,0,8,0" />
-                <Button x:Name="SignatureLibraryUseButton" Content="Usar" Padding="12,6" IsDefault="True" />
+                <Button x:Name="SignatureLibraryCloseButton" Content="Cerrar" Padding="12,6" Margin="0,0,8,0" Style="{DynamicResource SgToolbarButtonStyle}" />
+                <Button x:Name="SignatureLibraryUseButton" Content="Usar" Padding="12,6" Style="{DynamicResource SgPrimaryButtonStyle}" IsDefault="True" />
             </StackPanel>
         </Grid>
     </Grid>

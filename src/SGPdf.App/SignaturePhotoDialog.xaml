@@ -5,7 +5,8 @@
         Width="760" Height="680"
         MinWidth="620" MinHeight="560"
         WindowStartupLocation="CenterOwner"
-        ResizeMode="CanResizeWithGrip">
+        ResizeMode="CanResizeWithGrip"
+        Background="{DynamicResource SgSurfaceBrush}">
     <Window.Resources>
         <DrawingBrush x:Key="CheckerboardBrush" Viewport="0,0,16,16" ViewportUnits="Absolute" TileMode="Tile">
             <DrawingBrush.Drawing>
@@ -24,7 +25,7 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <Border Grid.Row="0" Background="{StaticResource CheckerboardBrush}" BorderBrush="#FFBBBBBB" BorderThickness="1" Padding="12" CornerRadius="4">
+        <Border Grid.Row="0" Background="{StaticResource CheckerboardBrush}" BorderBrush="{DynamicResource SgBorderBrush}" BorderThickness="1" Padding="12" CornerRadius="8">
             <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
                 <Image x:Name="SignaturePhotoPreviewImage" Stretch="Uniform" MaxHeight="350" />
             </ScrollViewer>
@@ -44,7 +45,7 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <Button x:Name="SignaturePhotoAutomaticButton" Grid.Row="0" Grid.Column="0" Content="Automático" Padding="10,5" Margin="0,0,12,8" HorizontalAlignment="Left" />
+            <Button x:Name="SignaturePhotoAutomaticButton" Grid.Row="0" Grid.Column="0" Content="Automático" Padding="10,5" Margin="0,0,12,8" HorizontalAlignment="Left" Style="{DynamicResource SgToolbarButtonStyle}" />
 
             <TextBlock Grid.Row="1" Grid.Column="0" Text="Quitar fondo" VerticalAlignment="Center" Margin="0,0,12,8" />
             <Slider x:Name="SignaturePhotoBackgroundSlider" Grid.Row="1" Grid.Column="1" Minimum="0" Maximum="100" TickFrequency="5" Margin="0,0,0,8" />
@@ -67,12 +68,12 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <StackPanel Grid.Column="0">
-                <TextBlock x:Name="SignaturePhotoStatusText" Foreground="DimGray" TextWrapping="Wrap" Margin="0,0,8,8" />
-                <Button x:Name="SignaturePhotoResetButton" Content="Restablecer" Padding="10,5" HorizontalAlignment="Left" />
+                <TextBlock x:Name="SignaturePhotoStatusText" Style="{DynamicResource SgMutedTextStyle}" TextWrapping="Wrap" Margin="0,0,8,8" />
+                <Button x:Name="SignaturePhotoResetButton" Content="Restablecer" Padding="10,5" HorizontalAlignment="Left" Style="{DynamicResource SgToolbarButtonStyle}" />
             </StackPanel>
             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Bottom">
-                <Button x:Name="SignaturePhotoCancelButton" Content="Cancelar" Padding="12,6" Margin="0,0,8,0" />
-                <Button x:Name="SignaturePhotoApplyButton" Content="Aplicar" Padding="12,6" IsDefault="True" />
+                <Button x:Name="SignaturePhotoCancelButton" Content="Cancelar" Padding="12,6" Margin="0,0,8,0" Style="{DynamicResource SgToolbarButtonStyle}" />
+                <Button x:Name="SignaturePhotoApplyButton" Content="Aplicar" Padding="12,6" Style="{DynamicResource SgPrimaryButtonStyle}" IsDefault="True" />
             </StackPanel>
         </Grid>
     </Grid>

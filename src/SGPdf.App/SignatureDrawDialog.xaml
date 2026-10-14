@@ -5,7 +5,8 @@
         Width="760" Height="560"
         MinWidth="620" MinHeight="460"
         WindowStartupLocation="CenterOwner"
-        ResizeMode="CanResizeWithGrip">
+        ResizeMode="CanResizeWithGrip"
+        Background="{DynamicResource SgSurfaceBrush}">
     <Grid Margin="18">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -16,13 +17,13 @@
 
         <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,12">
             <TextBlock Text="Color" VerticalAlignment="Center" Margin="0,0,8,0" />
-            <Button x:Name="SignatureDrawBlackButton" Content="Negro" Padding="10,5" Margin="0,0,6,0" />
-            <Button x:Name="SignatureDrawBlueButton" Content="Azul" Padding="10,5" Margin="0,0,18,0" />
+            <Button x:Name="SignatureDrawBlackButton" Content="Negro" Padding="10,5" Margin="0,0,6,0" Style="{DynamicResource SgToolbarButtonStyle}" />
+            <Button x:Name="SignatureDrawBlueButton" Content="Azul" Padding="10,5" Margin="0,0,18,0" Style="{DynamicResource SgToolbarButtonStyle}" />
             <TextBlock Text="Grosor" VerticalAlignment="Center" Margin="0,0,8,0" />
             <ComboBox x:Name="SignatureDrawWidthComboBox" Width="130" />
         </StackPanel>
 
-        <Border Grid.Row="1" BorderBrush="#FFBBBBBB" BorderThickness="1" CornerRadius="4" Background="White">
+        <Border Grid.Row="1" BorderBrush="{DynamicResource SgBorderBrush}" BorderThickness="1" CornerRadius="8" Background="White">
             <InkCanvas x:Name="SignatureDrawInkCanvas"
                        Background="White"
                        EditingMode="Ink"
@@ -32,7 +33,7 @@
         <TextBlock x:Name="SignatureDrawStatusText"
                    Grid.Row="2"
                    Margin="0,10,0,0"
-                   Foreground="DimGray"
+                   Style="{DynamicResource SgMutedTextStyle}"
                    TextWrapping="Wrap" />
 
         <Grid Grid.Row="3" Margin="0,14,0,0">
@@ -41,13 +42,13 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <StackPanel Grid.Column="0" Orientation="Horizontal">
-                <Button x:Name="SignatureDrawUndoButton" Content="Deshacer" Padding="10,5" Margin="0,0,6,0" />
-                <Button x:Name="SignatureDrawRedoButton" Content="Rehacer" Padding="10,5" Margin="0,0,6,0" />
-                <Button x:Name="SignatureDrawClearButton" Content="Limpiar" Padding="10,5" />
+                <Button x:Name="SignatureDrawUndoButton" Content="Deshacer" Padding="10,5" Margin="0,0,6,0" Style="{DynamicResource SgToolbarButtonStyle}" />
+                <Button x:Name="SignatureDrawRedoButton" Content="Rehacer" Padding="10,5" Margin="0,0,6,0" Style="{DynamicResource SgToolbarButtonStyle}" />
+                <Button x:Name="SignatureDrawClearButton" Content="Limpiar" Padding="10,5" Style="{DynamicResource SgToolbarButtonStyle}" />
             </StackPanel>
             <StackPanel Grid.Column="1" Orientation="Horizontal">
-                <Button x:Name="SignatureDrawCancelButton" Content="Cancelar" Padding="12,6" Margin="0,0,8,0" />
-                <Button x:Name="SignatureDrawApplyButton" Content="Aplicar" Padding="12,6" IsDefault="True" />
+                <Button x:Name="SignatureDrawCancelButton" Content="Cancelar" Padding="12,6" Margin="0,0,8,0" Style="{DynamicResource SgToolbarButtonStyle}" />
+                <Button x:Name="SignatureDrawApplyButton" Content="Aplicar" Padding="12,6" Style="{DynamicResource SgPrimaryButtonStyle}" IsDefault="True" />
             </StackPanel>
         </Grid>
     </Grid>
