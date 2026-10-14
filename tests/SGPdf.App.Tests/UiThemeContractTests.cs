@@ -78,14 +78,10 @@ public sealed class UiThemeContractTests
     {
         var document = LoadMainWindow();
         var root = Assert.IsType<XElement>(document.Root);
-        Assert.Equal("{StaticResource SgSurfaceBrush}", (string?)root.Attribute("Background"));
+        AssertSharedResource(root, "Background", "SgSurfaceBrush");
 
-        Assert.Equal(
-            "{StaticResource SgToolbarBorderStyle}",
-            (string?)FindNamed(document, "NavigationBar").Attribute("Style"));
-        Assert.Equal(
-            "{StaticResource SgToolbarBorderStyle}",
-            (string?)FindNamed(document, "LabelNavigationBar").Attribute("Style"));
+        AssertSharedResource(FindNamed(document, "NavigationBar"), "Style", "SgToolbarBorderStyle");
+        AssertSharedResource(FindNamed(document, "LabelNavigationBar"), "Style", "SgToolbarBorderStyle");
 
         var dock = Assert.Single(root.Elements(), element => element.Name.LocalName == "DockPanel");
         var mainGrid = Assert.Single(dock.Elements(), IsThreeColumnGrid);
@@ -94,9 +90,29 @@ public sealed class UiThemeContractTests
         var right = Assert.Single(mainGrid.Elements(), element =>
             element.Name.LocalName == "Border" && GridColumn(element) == 2);
 
-        Assert.Equal("{StaticResource SgCanvasBrush}", (string?)center.Attribute("Background"));
-        Assert.Equal("{StaticResource SgPanelBrush}", (string?)right.Attribute("Background"));
-        Assert.Equal("{StaticResource SgBorderBrush}", (string?)right.Attribute("BorderBrush"));
+        AssertSharedResource(center, "Background", "SgCanvasBrush");
+        AssertSharedResource(right, "Background", "SgPanelBrush");
+        AssertSharedResource(right, "BorderBrush", "SgBorderBrush");
+    }
+
+    [Fact]
+    public void MainWindow_DefersAppLevelThemeResources()
+    {
+        var document = LoadMainWindow();
+        var root = Assert.IsType<XElement>(document.Root);
+        var dock = Assert.Single(root.Elements(), element => element.Name.LocalName == "DockPanel");
+        var mainGrid = Assert.Single(dock.Elements(), IsThreeColumnGrid);
+        var center = Assert.Single(mainGrid.Elements(), element =>
+            element.Name.LocalName == "Grid" && GridColumn(element) == 1);
+        var right = Assert.Single(mainGrid.Elements(), element =>
+            element.Name.LocalName == "Border" && GridColumn(element) == 2);
+
+        AssertDeferredResource(root, "Background", "SgSurfaceBrush");
+        AssertDeferredResource(FindNamed(document, "NavigationBar"), "Style", "SgToolbarBorderStyle");
+        AssertDeferredResource(FindNamed(document, "LabelNavigationBar"), "Style", "SgToolbarBorderStyle");
+        AssertDeferredResource(center, "Background", "SgCanvasBrush");
+        AssertDeferredResource(right, "Background", "SgPanelBrush");
+        AssertDeferredResource(right, "BorderBrush", "SgBorderBrush");
     }
 
     [Fact]
@@ -144,6 +160,16 @@ public sealed class UiThemeContractTests
     private static XElement FindNamed(XDocument document, string name)
         => Assert.Single(document.Descendants(), element =>
             string.Equals((string?)element.Attribute(Xaml + "Name"), name, StringComparison.Ordinal));
+
+    private static void AssertSharedResource(XElement element, string attributeName, string resourceKey)
+    {
+        var value = (string?)element.Attribute(attributeName);
+        Assert.Contains(value, candidate => candidate is
+            $"{{StaticResource {resourceKey}}}" or $"{{DynamicResource {resourceKey}}}");
+    }
+
+    private static void AssertDeferredResource(XElement element, string attributeName, string resourceKey)
+        => Assert.Equal($"{{DynamicResource {resourceKey}}}", (string?)element.Attribute(attributeName));
 
     private static bool IsThreeColumnGrid(XElement element)
         => element.Name.LocalName == "Grid" &&
