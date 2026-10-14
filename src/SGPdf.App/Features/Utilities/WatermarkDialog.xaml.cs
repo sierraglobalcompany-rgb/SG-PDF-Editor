@@ -10,6 +10,11 @@ public partial class WatermarkDialog : Window
     private readonly int _currentPageNumber;
 
     internal WatermarkDialog(int pageCount, int currentPageNumber)
+        : this(pageCount, currentPageNumber, allowCurrentPage: true)
+    {
+    }
+
+    internal WatermarkDialog(int pageCount, int currentPageNumber, bool allowCurrentPage)
     {
         if (pageCount <= 0)
             throw new ArgumentOutOfRangeException(nameof(pageCount));
@@ -20,6 +25,18 @@ public partial class WatermarkDialog : Window
         _currentPageNumber = currentPageNumber;
         InitializeComponent();
         EndPageTextBox.Text = pageCount.ToString(CultureInfo.CurrentCulture);
+
+        if (!allowCurrentPage)
+        {
+            var currentPageItem = ScopeComboBox.Items
+                .OfType<ComboBoxItem>()
+                .FirstOrDefault(item => string.Equals(
+                    item.Tag as string,
+                    "Current",
+                    StringComparison.Ordinal));
+            if (currentPageItem is not null)
+                ScopeComboBox.Items.Remove(currentPageItem);
+        }
     }
 
     internal WatermarkUtilityRequest? Request { get; private set; }
@@ -49,8 +66,9 @@ public partial class WatermarkDialog : Window
 
         var scope = SelectedTag(ScopeComboBox);
         var useCurrent = scope == "Current";
-        var startPage = scope == "All" ? 1 : _currentPageNumber;
-        var endPage = scope == "All" ? _pageCount : _currentPageNumber;
+        var useAll = scope == "All";
+        var startPage = useAll ? 1 : _currentPageNumber;
+        var endPage = useAll ? _pageCount : _currentPageNumber;
         if (scope == "Range" &&
             (!int.TryParse(StartPageTextBox.Text, out startPage) ||
              !int.TryParse(EndPageTextBox.Text, out endPage)))
@@ -73,7 +91,8 @@ public partial class WatermarkDialog : Window
             SelectedTag(AnchorComboBox) ?? string.Empty,
             red,
             green,
-            blue);
+            blue,
+            useAll);
 
         if (!request.TryBuild(_pageCount, _currentPageNumber - 1, out _, out _, out _, out var error))
         {
