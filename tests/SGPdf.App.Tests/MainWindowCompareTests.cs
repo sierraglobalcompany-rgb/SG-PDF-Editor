@@ -88,7 +88,7 @@ public sealed class MainWindowCompareTests
     }
 
     [Fact]
-    public void CompareUi_ResetsWhenDocumentOrIncompatibleWorkspaceChanges()
+    public void CompareUi_ReusesExistingWorkspaceResetOwner()
     {
         string root = FindRepositoryRoot();
         string reader = File.ReadAllText(Path.Combine(root, "src", "SGPdf.App", "MainWindow.Reader.cs"));
@@ -97,15 +97,15 @@ public sealed class MainWindowCompareTests
         string sign = File.ReadAllText(Path.Combine(root, "src", "SGPdf.App", "MainWindow.Sign.cs"));
         string forms = File.ReadAllText(Path.Combine(root, "src", "SGPdf.App", "MainWindow.Forms.cs"));
 
-        Assert.Contains("ResetCompareUi();", reader, StringComparison.Ordinal);
-        Assert.Contains("ResetCompareUi();", edit, StringComparison.Ordinal);
-        Assert.Contains("ResetCompareUi();", organize, StringComparison.Ordinal);
-        Assert.Contains("ResetCompareUi();", sign, StringComparison.Ordinal);
+        Assert.Contains("ResetAcroFormUi();", reader, StringComparison.Ordinal);
+        Assert.Contains("ResetAcroFormUi();", edit, StringComparison.Ordinal);
+        Assert.Contains("ResetAcroFormUi();", organize, StringComparison.Ordinal);
+        Assert.Contains("ResetAcroFormUi();", sign, StringComparison.Ordinal);
         Assert.Contains("ResetCompareUi();", forms, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void CompareStart_HonorsExistingDirtyModeGuardsBeforeOpeningB()
+    public void CompareStart_HonorsExistingDirtyModeGuardsBeforeComparison()
     {
         string root = FindRepositoryRoot();
         string compare = File.ReadAllText(Path.Combine(root, "src", "SGPdf.App", "MainWindow.Compare.cs"));
