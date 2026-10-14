@@ -78,6 +78,39 @@ Pack A status:
 
 This is an honest environment endpoint, not a manual PASS. Pack A real QA remains an open release gate and must be executed on a suitable Windows/manual environment before release closure.
 
+### Release QA checkpoint — Pack B
+
+Canonical Pack B record:
+`docs/release/2026-10-14-pack-b-zpl-qr-physical.md`
+
+Release-QA branch:
+`plan/release-pack-b-qa`
+
+Pack B record commit:
+`48a5f79bfc804b833bfbb2091995dcd2dc3061a0`
+
+Exact-head CI for that record:
+- run `38585443538`;
+- job `115926082976`;
+- repository hygiene PASS;
+- pinned Labelize/qpdf/Tesseract staging PASS;
+- locked restore PASS;
+- Release build PASS;
+- full test step PASS.
+
+Pack B status:
+- automated ZPL/QR evidence preflight: **PASS**;
+- private Mercado Libre corpus QA: **NOT RUN — ENVIRONMENT**;
+- thermal printer / physical-size / ruler QA: **NOT RUN — ENVIRONMENT**;
+- real barcode/QR scanner or phone interoperability: **NOT RUN — ENVIRONMENT**;
+- physical offline smoke: **NOT RUN — ENVIRONMENT**;
+- final Pack B gate: **NOT RUN**;
+- no product code, tests, dependencies, renderer or runtime architecture changed.
+
+`ZplGSCustom.ttf` provenance/license remains a separate installer/release gate; Pack B preflight does not close it.
+
+This is an honest environment endpoint, not a physical PASS. Pack B remains an open release gate until representative private/physical evidence is actually executed.
+
 ## Phase status
 
 | Slice | Automated status |
@@ -163,7 +196,11 @@ Root-cause correction and final GREEN:
 
 Authoritative functional continuation remains `feat/f12-7-pdf-to-png-mvp-green3`.
 
-Release QA/preflight work is currently recorded on `plan/release-pack-a-qa`; this does not replace the functional baseline branch.
+Release QA/preflight progression is recorded through:
+- `plan/release-pack-a-qa` — Pack A preflight checkpoint;
+- `plan/release-pack-b-qa` — current Pack B preflight checkpoint.
+
+These release-QA planning branches do not replace the functional baseline branch.
 
 Do not use as operational bases:
 - divergent historical `feat/f12-7-pdf-to-png`;
@@ -198,7 +235,7 @@ These are planning estimates, not telemetry:
 
 Release readiness remains below 100% because real/private/manual/physical QA, integration/hygiene, installer/runtime smoke and release-candidate validation remain open.
 
-Pack A preflight documentation/CI does not increase these percentages because the required manual gate remains NOT RUN.
+Pack A and Pack B preflight documentation/CI do not increase these percentages because their required real/manual/private/physical gates remain NOT RUN.
 
 ## Next authoritative work
 
@@ -207,14 +244,15 @@ Functional F12 is frozen. Do **not** add new features opportunistically.
 Next sequence:
 1. continue bounded QA preparation/execution without converting automated PASS into physical/manual PASS;
 2. keep Pack A manual A01–A15 open until a suitable Windows/manual environment executes them;
-3. prepare **Pack B — ZPL / QR / physical print-scan** automated evidence map + executable manual checklist, reusing existing evidence and adding no tests unless a real gap is demonstrated;
-4. then Pack C and Pack D under the same honest-status rule;
-5. consolidate stale operational docs only where they can misroute work;
-6. audit branch/PR ancestry and build one conservative integration candidate;
-7. keep `main` read-only until explicit approval;
-8. release-candidate gate: clean clone, locked restore, Release build/tests, packaged runtime/installer smoke, offline smoke, no P0/P1 blockers.
+3. keep Pack B private/physical B01–B11 open until suitable corpus/hardware executes them;
+4. prepare **Pack C — visual + cryptographic signatures** automated evidence map + executable manual checklist, reusing existing evidence and adding no tests unless a real gap is demonstrated;
+5. then Pack D under the same honest-status rule;
+6. consolidate stale operational docs only where they can misroute work;
+7. audit branch/PR ancestry and build one conservative integration candidate;
+8. keep `main` read-only until explicit approval;
+9. release-candidate gate: clean clone, locked restore, Release build/tests, packaged runtime/installer smoke, offline smoke, no P0/P1 blockers.
 
 Recommended next bounded task:
-`Pack B — ZPL / QR / physical print-scan representative QA preflight + executable manual checklist`.
+`Pack C — visual + cryptographic signatures representative QA preflight + executable manual checklist`.
 
 No merge to `main` without explicit user approval.
