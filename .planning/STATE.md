@@ -1,12 +1,12 @@
 ---
 gsd_state_version: '1.1'
-status: f12-6-qr-core-green-professional-in-progress
+status: f12-6-qr-closed-professional-in-progress
 progress:
   total_phases: 13
   completed_phases: 12
-  functional_percent_estimate: 98
+  functional_percent_estimate: 99
   release_readiness_percent_estimate: 88
-  overall_percent_estimate: 93
+  overall_percent_estimate: 94
 ---
 
 # Project State
@@ -34,31 +34,33 @@ Current functional branch: `feat/f12-6-qr-generator`.
 | F12.3 Existing AcroForm `/Tx` | CLOSED / AUTO PASS |
 | F12.4 Compare | CLOSED / AUTO PASS — core + minimal UI |
 | F12.5 Batch | CLOSED / AUTO PASS — TextWatermark MVP |
-| F12.6 Code Generator | **IN PROGRESS / AUTO PASS — QR core MVP; minimal UI/export pending** |
+| F12.6 Code Generator | **CLOSED / AUTO PASS — QR PNG MVP** |
 | F12.7 Audited Conversions | PLANNED / NOT STARTED |
 | Release integration/stabilization | OPEN |
 
-Current exact F12.6 core baseline before this documentation update:
+Current exact F12.6 implementation baseline before this documentation-closure commit:
 - branch: `feat/f12-6-qr-generator`;
-- exact HEAD: `c532d9d4b8c5b1fab07ad3174e57ad5d7ebf2dc6`;
-- Windows Release build step: **PASS**;
-- full test step: **PASS** (baseline 1192 plus 4 QR contract cases = 1196 cases);
-- exact-head CI run: `38511920615`, job `115682120833`;
+- exact implementation HEAD: `5387e705098b448c7eb0aab87831c48acc3a9060`;
+- Windows Release build: **PASS / 0 errors**;
+- build reports **2 pre-existing NuGet vulnerability warnings** for test dependency `System.Security.Cryptography.Pkcs 8.0.1` (`NU1902`, `NU1903`); they were not introduced by F12.6 and remain release/stabilization debt;
+- tests: **1197/1197 PASS**, 0 failed, 0 skipped;
+- exact-head CI run: `38534493694`, job `115753962287`;
 - no merge to `main`.
 
 ## Engineering progress estimates
 
 These are planning estimates, not telemetry.
 
-- **Automated functional implementation: ~98%.**
+- **Automated functional implementation: ~99%.**
 - **Release readiness including manual/private/physical QA and integration: ~88%.**
-- **Headline weighted project state: ~93%.**
+- **Headline weighted project state: ~94%.**
 
 Why release readiness is lower than functional completion:
 1. representative real/private/manual/physical QA remains open across several slices;
 2. interoperability/real-device checks remain open where documented;
 3. the active development lineage remains far ahead of `main`;
-4. stacked branches/PRs need deliberate release integration/hygiene.
+4. stacked branches/PRs need deliberate release integration/hygiene;
+5. the current CI exposes NuGet advisories on `System.Security.Cryptography.Pkcs 8.0.1`, to be handled in stabilization rather than hidden inside the QR slice.
 
 ## F12.3 Forms closed scope
 
@@ -143,28 +145,31 @@ Explicitly not introduced:
 
 Further batch operations such as Bates/page numbering, OCR, protection or organize actions require a separate value/capability decision; they are not implicitly part of the closed F12.5 MVP.
 
-## F12.6 Code Generator — current scope
+## F12.6 Code Generator — closed scope
 
-Capability gate: **PASS for QR using the existing Labels owner**.
+Capability gate: **PASS for QR by reusing the existing Labels/ZPL/Labelize owner**.
 
-Current core MVP flow:
-`text/URL → UTF-8 field-data encoding → minimal ZPL ^BQ → existing ZplDocumentParser → existing LabelizeProcessRenderer → PNG bytes`.
+Closed KISS flow:
+`Herramientas → Generar código QR... → enter text/URL → Guardar PNG → QrCodeGenerator → existing Labelize renderer → local PNG`.
 
-Automated evidence currently proves:
+Automated evidence proves:
 - local/offline QR generation through already-approved Labelize 1.7.0;
 - PNG output decodes back to the exact original value;
 - UTF-8 content is preserved;
 - ZPL-looking payload text such as `^XZ` and `~JA` remains data rather than becoming commands;
 - blank values are rejected;
-- payload is bounded to 512 UTF-8 bytes.
+- payload is bounded to 512 UTF-8 bytes;
+- minimal WPF surface exposes value entry, explicit PNG destination and the existing QR owner;
+- cancel and controlled errors do not create hidden output.
 
 KISS / anti-noise result:
 - **0 new runtime dependencies**;
-- no ZXing production dependency was added; existing test-only decode infrastructure is reused only for verification;
+- no QRCoder or ZXing production dependency was added; existing test-only decode infrastructure remains verification-only;
 - no generic barcode studio, symbology factory, plugin architecture, cloud/backend or second renderer;
-- Code128 remains outside this MVP until value is demonstrated.
+- no preview, scanner, batch QR, PDF insertion, size/color/ECC studio or history/catalog;
+- Code128 and other symbologies remain outside this MVP until value is demonstrated.
 
-F12.6 is **not closed yet**. Remaining user-facing step is deliberately small: expose QR value entry and `Guardar PNG` through existing WPF/menu/dialog patterns without creating a new generalized generator framework.
+Manual Windows end-to-end UX smoke remains part of the later representative QA packs; automated closure is not a physical/mobile scanner interoperability claim.
 
 ## Operational audit
 
@@ -179,7 +184,7 @@ F12.6 is **not closed yet**. Remaining user-facing step is deliberately small: e
 
 ### Documentation drift
 
-**CORRECTED through the F12.6 QR core checkpoint.** F12.6 is now accurately IN PROGRESS rather than NOT STARTED.
+**CORRECTED through F12.6.** Operational sources now mark the QR PNG MVP closed and advance the functional sequence to F12.7.
 
 ### Integration drift
 
@@ -196,7 +201,7 @@ F12.6 is **not closed yet**. Remaining user-facing step is deliberately small: e
 - external reader interoperability where applicable;
 - real certificates/signing corpus where applicable.
 
-Compare and Batch still belong in later representative real-PDF/manual QA packs; automated closure is not a claim of universal PDF compatibility or throughput.
+Compare, Batch and QR still belong in later representative real/manual QA packs; automated closure is not a universal compatibility claim.
 
 ## Operating cadence
 
@@ -224,11 +229,10 @@ Operational docs update once per meaningful closed task/slice, not after every t
 ## Next
 
 ```text
-F12.6 Code Generator — minimal QR UI/export
-→ reuse QrCodeGenerator and existing menu/dialog patterns
-→ value entry + Guardar PNG only
-→ no Code128, generic symbology selector or new dependency
-→ exact-head CI, then close F12.6 if acceptance stays green
+F12.7 Audited Conversions — capability/scope gate
+→ evaluate conversions one by one
+→ no universal-fidelity claim
+→ reject LibreOffice/Office automation/cloud/second-engine expansion without explicit value + approval
 ```
 
 No merge to `main` without explicit user approval.
