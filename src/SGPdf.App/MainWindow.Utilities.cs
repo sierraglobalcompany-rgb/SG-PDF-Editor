@@ -77,6 +77,11 @@ public partial class MainWindow
             Name = "QrCodeMenuItem",
             Header = "Generar código _QR..."
         };
+        var pdfToPng = new MenuItem
+        {
+            Name = "PdfToPngMenuItem",
+            Header = "Exportar PDF a _PNG..."
+        };
 
         watermark.SetBinding(
             IsEnabledProperty,
@@ -93,18 +98,23 @@ public partial class MainWindow
         ocr.SetBinding(
             IsEnabledProperty,
             new Binding(nameof(IsEnabled)) { Source = PrintPdfMenuItem });
+        pdfToPng.SetBinding(
+            IsEnabledProperty,
+            new Binding(nameof(IsEnabled)) { Source = PrintPdfMenuItem });
         watermark.Click += WatermarkText_Click;
         batchWatermark.Click += BatchWatermark_Click;
         numbering.Click += PageNumbering_Click;
         protection.Click += Protection_Click;
         ocr.Click += Ocr_Click;
         qrCode.Click += QrCode_Click;
+        pdfToPng.Click += ExportPdfToPng_Click;
         utilities.Items.Add(watermark);
         utilities.Items.Add(batchWatermark);
         utilities.Items.Add(numbering);
         utilities.Items.Add(protection);
         utilities.Items.Add(ocr);
         utilities.Items.Add(qrCode);
+        utilities.Items.Add(pdfToPng);
         menu.Items.Add(utilities);
 
         RegisterName(utilities.Name, utilities);
@@ -114,6 +124,7 @@ public partial class MainWindow
         RegisterName(protection.Name, protection);
         RegisterName(ocr.Name, ocr);
         RegisterName(qrCode.Name, qrCode);
+        RegisterName(pdfToPng.Name, pdfToPng);
     }
 
     private void WatermarkText_Click(object sender, RoutedEventArgs e)
