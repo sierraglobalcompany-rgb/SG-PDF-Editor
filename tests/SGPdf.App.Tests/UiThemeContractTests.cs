@@ -57,9 +57,7 @@ public sealed class UiThemeContractTests
         };
 
         foreach (var requiredKey in requiredKeys)
-        {
             Assert.Contains(requiredKey, keys);
-        }
     }
 
     [Fact]
@@ -67,8 +65,8 @@ public sealed class UiThemeContractTests
     {
         var document = LoadMainWindow();
         var root = Assert.IsType<XElement>(document.Root);
-        var dock = Assert.Single(root.Elements().Where(element => element.Name.LocalName == "DockPanel"));
-        var mainGrid = Assert.Single(dock.Elements().Where(IsThreeColumnGrid));
+        var dock = Assert.Single(root.Elements(), element => element.Name.LocalName == "DockPanel");
+        var mainGrid = Assert.Single(dock.Elements(), IsThreeColumnGrid);
 
         var directBorders = mainGrid.Elements().Where(element => element.Name.LocalName == "Border").ToList();
         Assert.Contains(directBorders, border => GridColumn(border) == 0);
@@ -89,12 +87,12 @@ public sealed class UiThemeContractTests
             "{StaticResource SgToolbarBorderStyle}",
             (string?)FindNamed(document, "LabelNavigationBar").Attribute("Style"));
 
-        var dock = Assert.Single(root.Elements().Where(element => element.Name.LocalName == "DockPanel"));
-        var mainGrid = Assert.Single(dock.Elements().Where(IsThreeColumnGrid));
-        var center = Assert.Single(mainGrid.Elements().Where(element =>
-            element.Name.LocalName == "Grid" && GridColumn(element) == 1));
-        var right = Assert.Single(mainGrid.Elements().Where(element =>
-            element.Name.LocalName == "Border" && GridColumn(element) == 2));
+        var dock = Assert.Single(root.Elements(), element => element.Name.LocalName == "DockPanel");
+        var mainGrid = Assert.Single(dock.Elements(), IsThreeColumnGrid);
+        var center = Assert.Single(mainGrid.Elements(), element =>
+            element.Name.LocalName == "Grid" && GridColumn(element) == 1);
+        var right = Assert.Single(mainGrid.Elements(), element =>
+            element.Name.LocalName == "Border" && GridColumn(element) == 2);
 
         Assert.Equal("{StaticResource SgCanvasBrush}", (string?)center.Attribute("Background"));
         Assert.Equal("{StaticResource SgPanelBrush}", (string?)right.Attribute("Background"));
@@ -144,8 +142,8 @@ public sealed class UiThemeContractTests
         => XDocument.Load(ProjectPath("src", "SGPdf.App", "MainWindow.xaml"));
 
     private static XElement FindNamed(XDocument document, string name)
-        => Assert.Single(document.Descendants().Where(element =>
-            string.Equals((string?)element.Attribute(Xaml + "Name"), name, StringComparison.Ordinal)));
+        => Assert.Single(document.Descendants(), element =>
+            string.Equals((string?)element.Attribute(Xaml + "Name"), name, StringComparison.Ordinal));
 
     private static bool IsThreeColumnGrid(XElement element)
         => element.Name.LocalName == "Grid" &&
@@ -164,9 +162,7 @@ public sealed class UiThemeContractTests
     {
         var current = new DirectoryInfo(AppContext.BaseDirectory);
         while (current is not null && !File.Exists(Path.Combine(current.FullName, "SGPdf.slnx")))
-        {
             current = current.Parent;
-        }
 
         Assert.NotNull(current);
         return Path.Combine(new[] { current.FullName }.Concat(segments).ToArray());
