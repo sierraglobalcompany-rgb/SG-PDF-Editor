@@ -85,6 +85,31 @@ public sealed class PdfBatchTextWatermarkProcessorTests
         Assert.False(File.Exists(Path.Combine(outputDirectory, "faltante-marca-agua.pdf")));
     }
 
+    [Fact]
+    public void Process_EmptyInputList_IsRejected()
+    {
+        using var temp = new TempDirectory();
+        Assembly appAssembly = typeof(PdfDocumentSession).Assembly;
+        Type processorType = appAssembly.GetType(
+            "SGPdf.App.Features.Batch.PdfBatchTextWatermarkProcessor",
+            throwOnError: true)!;
+        object processor = Activator.CreateInstance(processorType, nonPublic: true)!;
+        MethodInfo process = processorType.GetMethod(
+            "Process",
+            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!;
+        object batchRequest = CreateBatchRequest(
+            appAssembly,
+            Array.Empty<string>(),
+            Path.Combine(temp.Path, "salida"));
+        object watermarkRequest = CreateWatermarkRequest(appAssembly);
+
+        TargetInvocationException exception = Assert.Throws<TargetInvocationException>(() =>
+            process.Invoke(processor, [batchRequest, watermarkRequest, CancellationToken.None]));
+
+        ArgumentException argumentException = Assert.IsType<ArgumentException>(exception.InnerException);
+        Assert.Contains("al menos un PDF", argumentException.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
     private static object CreateBatchRequest(
         Assembly appAssembly,
         IReadOnlyList<string> inputPaths,
