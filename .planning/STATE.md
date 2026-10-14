@@ -19,15 +19,14 @@ Operational authority order:
 3. `.planning/ROADMAP.md`;
 4. `.planning/REQUIREMENTS.md`;
 5. approved slice specs/plans;
-6. historical handoffs/checkpoints.
-
-Architecture/product scope remains `docs/MASTER_CONTEXT.md` + `docs/MASTER_PLAN.md`, except where newer operational decisions explicitly narrow a slice.
+6. `docs/MASTER_CONTEXT.md` for architecture and durable decisions;
+7. `docs/MASTER_PLAN.md` + historical handoffs/checkpoints as architectural/history context only when they do not conflict with newer authority.
 
 **Core value:** resolver PDF + ZPL diario de forma rápida, privada, estable y offline.
 
 ## Current position — 2026-10-14
 
-**F0–F12 automated functional baseline: CLOSED.**
+**F0–F12 automated functional baseline: CLOSED / FEATURE-FROZEN.**
 
 Current authoritative functional branch:
 `feat/f12-7-pdf-to-png-mvp-green3`
@@ -183,6 +182,33 @@ Pack D does not claim universal OCR/form/compare/conversion fidelity. Forms rema
 
 This is an honest environment endpoint, not a manual/private PASS. Pack D remains an open release gate until representative real/manual/private evidence is executed.
 
+### Release routing checkpoint — operational sources aligned
+
+Canonical routing branch:
+`plan/release-routing-audit`
+
+Routing consolidation commit:
+`c6624f66ad0076412502ccdbbbca626c46c002ad`
+
+Exact-head CI for that commit:
+- run `38590689258`;
+- job `115944451320`;
+- repository hygiene PASS;
+- pinned Labelize/qpdf/Tesseract staging PASS;
+- locked restore PASS;
+- Release build PASS;
+- full test step PASS.
+
+Routing corrections completed:
+- `.planning/ROADMAP.md` no longer routes to Pack A and now reflects Pack A–D preflight completion;
+- `AGENTS.md` no longer routes development back to F3/F4 and now reflects F0–F12 closed/frozen state;
+- `AGENTS.md` now records the approved narrow PDFsharp 6.2.4 uses instead of the obsolete blanket signing prohibition;
+- `docs/MASTER_PLAN.md` is explicitly marked architectural/historical for current execution order, preserving its design/history detail without allowing stale phase snapshots to override STATE/ROADMAP;
+- no new historical branch was merged and no Markdown-per-commit consolidation file was added;
+- no product code, tests, packages, workflow or runtime architecture changed.
+
+Routing consolidation status: **PASS**.
+
 ## Phase status
 
 | Slice | Automated status |
@@ -272,9 +298,10 @@ Release QA/preflight progression is recorded through:
 - `plan/release-pack-a-qa` — Pack A preflight checkpoint;
 - `plan/release-pack-b-qa` — Pack B preflight checkpoint;
 - `plan/release-pack-c-qa` — Pack C preflight checkpoint;
-- `plan/release-pack-d-qa` — current Pack D preflight checkpoint.
+- `plan/release-pack-d-qa` — Pack D preflight checkpoint;
+- `plan/release-routing-audit` — current operational routing checkpoint and next integration-audit base.
 
-These release-QA planning branches do not replace the functional baseline branch.
+These planning branches do not replace the functional baseline branch.
 
 Do not use as operational bases:
 - divergent historical `feat/f12-7-pdf-to-png`;
@@ -296,7 +323,7 @@ Before ADD: DELETE → SIMPLIFY → REUSE → MERGE → EXTEND → ADD. Never st
 
 ### Git safety
 - no merge to `main` without explicit user approval;
-- no destructive branch cleanup during feature work;
+- no destructive branch cleanup during feature work/audit;
 - no force-push/rebase as a convenience;
 - preserve exact-head evidence.
 
@@ -309,7 +336,7 @@ These are planning estimates, not telemetry:
 
 Release readiness remains below 100% because real/private/manual/physical QA, integration/hygiene, installer/runtime smoke and release-candidate validation remain open.
 
-Pack A, Pack B, Pack C and Pack D preflight documentation/CI do not increase these percentages because their required real/manual/private/physical gates remain NOT RUN.
+Pack A–D preflight and routing-document consolidation do not increase these percentages because the real QA and integration/release gates remain open.
 
 ## Next authoritative work
 
@@ -320,12 +347,13 @@ Next sequence:
 2. keep Pack B private/physical B01–B11 open until suitable corpus/hardware executes them;
 3. keep Pack C real/manual C01–C14 open until suitable Windows/photo/stylus/PFX/external-reader environment executes them;
 4. keep Pack D real/manual/private D01–D15 open until suitable Windows/private-document/external-reader environment executes them;
-5. consolidate stale operational/release docs only where they can misroute continuation work; do not merge historical branches wholesale;
-6. audit branch/PR ancestry and build one conservative integration candidate from the latest audited canonical head;
-7. keep `main` read-only until explicit approval;
-8. release-candidate gate: clean clone, locked restore, Release build/tests, packaged runtime/installer smoke, offline smoke, Labelize font provenance/license closure and no P0/P1 blockers.
+5. **routing/documentation consolidation is CLOSED** at `c6624f66ad0076412502ccdbbbca626c46c002ad` with CI PASS;
+6. **next: audit branch + PR ancestry**, identify unique product commits vs contained/history/noise, and choose one conservative integration candidate from the latest audited canonical lineage;
+7. do not replay old PRs/branches wholesale and do not perform destructive cleanup during the audit;
+8. keep `main` read-only until explicit approval;
+9. release-candidate gate after integration audit/candidate: clean clone, locked restore, Release build/tests, packaged runtime/installer smoke, offline smoke, Labelize font provenance/license closure and no P0/P1 blockers.
 
 Recommended next bounded task:
-`Release operational-doc consolidation / routing audit — identify stale documents that can misroute work, then minimally neutralize or consolidate them without changing product code.`
+`Integration ancestry / PR audit — map current branches and open PRs against the authoritative functional and routing heads, classify unique vs contained/history/noise, and select one conservative integration candidate without merging main.`
 
 No merge to `main` without explicit user approval.
