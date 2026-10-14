@@ -6,16 +6,7 @@
 
 F0–F12 baseline: **CLOSED / AUTO PASS**.
 
-F12 Professional cerrado en baseline:
-- F12.1 Safe Redaction;
-- F12.2 Cryptographic Signature PFX/P12 MVP;
-- F12.3 Existing AcroForm `/Tx`;
-- F12.4 Compare;
-- F12.5 Batch — TextWatermark MVP;
-- F12.6 Code Generator — QR PNG MVP;
-- F12.7 Audited Conversions — PDF→PNG MVP.
-
-Los gates manuales/privados/físicos permanecen abiertos donde `.planning/REQUIREMENTS.md` lo indique.
+Los gates manuales/privados/físicos permanecen abiertos donde `.planning/REQUIREMENTS.md` y el checklist de release lo indiquen.
 
 ## Release path — estado actual
 
@@ -23,31 +14,46 @@ Los gates manuales/privados/físicos permanecen abiertos donde `.planning/REQUIR
 
 Checklist canónico: `docs/release/2026-10-14-real-qa-packs.md`.
 
-Packs congelados:
+Packs:
 - A — Reader / Organize / Editing;
 - B — ZPL / QR / physical print-scan;
 - C — visual + cryptographic signatures;
 - D — OCR / Forms / Compare / Batch / PDF→PNG.
 
-Definirlos no equivale a ejecutarlos. Todos siguen **NOT RUN** hasta que exista evidencia real.
+Todos siguen **NOT RUN** hasta que exista evidencia real.
 
 ### R2. Documentation consolidation — BASELINE PASS
 
-`AGENTS.md` dejó de duplicar estado histórico F3 y ahora contiene únicamente autoridad, leyes, owners, guardrails y cadencia de release vigentes.
+`AGENTS.md` ya no duplica el estado histórico F3. La autoridad operativa vive en GitHub exact heads + `STATE` + `ROADMAP` + `REQUIREMENTS`.
 
-Los detalles finos se conservan en `.planning/phases/`, `docs/superpowers/`, `docs/history/` y requisitos. No crear handoffs/documentos por commit.
+### R3. Release integration / stabilization
 
-### R3. Release integration / stabilization — NEXT
+#### R3.1 Ancestry + PR forensic audit — CLOSED
 
-Ejecutar como bloques separados y auditables:
-1. mapear branches/PRs activos, ancestry y commits únicos;
-2. clasificar cada branch/PR: required / superseded / historical / unknown;
-3. comprobar que la línea funcional F0–F12 es íntegra y no depende de commits laterales perdidos;
-4. elegir estrategia KISS de integración;
-5. crear rama dedicada de integración solo después de la auditoría;
-6. no rebase/force-push/merge destructivo durante la auditoría;
-7. mantener `main` read-only hasta aprobación explícita;
-8. correr CI exact-head y luego QA real priorizada.
+Artifact: `docs/release/2026-10-14-integration-audit.md`.
+
+Hallazgos cerrados:
+- `feat/f12-7-pdf-to-png` @ `6e9240f...` es descendiente lineal de `main`: **1217 ahead / 0 behind**;
+- F11 closure → final F12: **229 ahead / 0 behind**;
+- muestras representativas de ramas F12, audit, design y temp/review inspeccionadas están contenidas en la línea final;
+- no se detectó una segunda línea de producto en las ramas representativas auditadas;
+- la cadena de PRs históricos llega hasta F11; F12 no tiene PRs equivalentes;
+- por tanto, no se debe reconstruir release mergeando PRs históricos uno por uno.
+
+No se ejecutó merge, rebase, force-push, branch deletion ni PR cleanup.
+
+#### R3.2 Dedicated integration candidate — NEXT
+
+Siguiente bloque:
+1. crear una sola rama candidata desde el último head auditado de release-prep;
+2. no modificar `main`;
+3. ejecutar full exact-head Windows CI;
+4. comprobar diff/ancestry antes de cualquier QA/release labeling;
+5. mantener los PR/branches históricos intactos hasta decisión posterior.
+
+#### R3.3 Real QA on candidate — OPEN
+
+Ejecutar los packs A–D con PASS/FAIL/NOT RUN honestos. Priorizar P0/P1 e integridad de datos.
 
 ### R4. Installer / license / offline stabilization — OPEN
 
