@@ -1,6 +1,6 @@
 ---
 gsd_state_version: '1.1'
-status: ui4-fail-p1-gate0-source-audited-f13-ab-approved-f15-spec-ready
+status: ui4-fail-p1-gate0-source-audited-f13-ab-approved-preflight-corrected-f15-spec-ready
 progress:
   closed_baseline_phases: 13
   expanded_roadmap_phases: 19
@@ -143,7 +143,7 @@ PKCS 8.0.2 is pinned only in the test dependency graph. App/runtime unchanged.
 
 Contains planning/documentation only; no product implementation.
 
-### F13 — Product Shell / Dashboard — A+B APPROVED / READY AFTER GATE 0
+### F13 — Product Shell / Dashboard — A+B APPROVED / PREFLIGHT CORRECTED / READY AFTER GATE 0
 
 The user explicitly approved **A+B** on 2026-10-15:
 - **A:** visual/functional mockup specification;
@@ -156,6 +156,16 @@ Authoritative visual spec:
 
 Authoritative technical plan:
 `docs/superpowers/plans/2026-10-15-f13-approved-mockup-shell.md`
+
+Preflight correction commit:
+`320f183d2f489ead40e1877cd545453f1f1a61f1`
+
+The correction does not change the approved visual goal. It removes implementation noise found by source audit:
+- F13 routes only core shell modes (`read/edit/comment/sign/organize`); F14 owns full capability productization/routing.
+- invalid planned `EventHandler<string>` was replaced by a valid minimal local event contract (`Action` or tiny EventArgs only if needed).
+- F13 preserves current Edit Save availability semantics; `dirty` gating remains F15.
+- Task 7 must decouple `FindModePanel()` dependencies in Sign/Organize/Edit/Comments before deleting the centered legacy strip.
+- existing automation/control names should be preserved on replacement controls where safe instead of generating broad test churn.
 
 Approved mockup identity/reference:
 `docs/design/2026-10-15-f13-approved-mockup-reference.md`
@@ -176,7 +186,7 @@ Frozen F13 decisions:
 - `PDF a PNG` is the honest F13 conversion label; JPG remains F16;
 - `Imagen a PDF` may be shown only disabled/`Próximamente` before F16;
 - current feature owners remain single owners; shell implements no PDF business logic;
-- centered legacy mode strip is deleted only after automated equivalence + real Windows proof;
+- centered legacy mode strip is deleted only after automated equivalence + real Windows proof and after its init dependencies are removed;
 - mockup red `SG` is placeholder only and does not authorize the official app icon.
 
 **Implementation Gate 0:** do not execute F13 product code until UI-4 no longer has P0/P1.
@@ -188,7 +198,7 @@ Frozen F13 decisions:
 Plan:
 `docs/superpowers/plans/2026-10-14-f14-productize-existing-capabilities.md`
 
-Principle: expose existing owners through the new shell before building parallel features.
+Principle: F14 is the single owner for connecting the complete existing capability inventory to the F13 shell. Do not pre-duplicate that routing in F13.
 
 Owner/entrypoint inventory:
 `docs/product/2026-10-14-existing-tool-entrypoint-inventory.md`
@@ -246,9 +256,9 @@ Never synthesize official icon from mockup placeholder or textual description.
 4. Rerun V10–V14 plus V04/V05/V08/V09.
 5. Close UI-4 only with no P0/P1.
 6. Conservatively consolidate release truth + PKCS.
-7. Execute approved F13 A+B Tasks 1–9 natively, respecting Gate 0.
+7. Execute corrected approved F13 A+B Tasks 1–9 natively, respecting Gate 0.
 8. Use Codex only for F13 Windows equivalence/final visual QA or Windows-only defects.
-9. Execute F14 by routing existing owners, not rewrites.
+9. Execute F14 as the single full-capability shell-routing/productization phase.
 10. Convert F15 spec into implementation plan when F13 shell is sufficiently stable, then execute only after approval.
 11. Reassess publish/installer after the intended product baseline is stable.
 12. `main` only with explicit user approval.
