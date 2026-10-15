@@ -1,10 +1,10 @@
 ---
 gsd_state_version: '1.1'
-status: ui4-signature-root-cause-proven-local-fix-pending-remote-audit-ci-v08-open-f13-ab-approved
+status: ui4-final-windows-qa-pending-f13-ab-approved
 progress:
   closed_baseline_phases: 13
   expanded_roadmap_phases: 19
-  current_phase: UI-4 Gate 0 stabilization before F13
+  current_phase: UI-4 Gate 0 final Windows verification before F13
 ---
 
 # Project State — SG PDF Editor
@@ -15,164 +15,143 @@ progress:
 
 1. **KISS:** simple, efficient, optimized, effective; A→B.
 2. **Anti-noise:** `DELETE → SIMPLIFY → REUSE → MERGE → EXTEND → ADD`.
-3. **Anti-patch:** `REPRODUCE → TRACE/CLASSIFY → ROOT CAUSE → OWNER → MINIMAL CHANGE → CAUSE TEST → FULL SUITE → EXACT-HEAD CI → REMOVE REDUNDANT WORKAROUND`.
+3. **Anti-patch:** `REPRODUCE → TRACE/CLASSIFY → ROOT CAUSE → OWNER → MINIMAL CHANGE → CAUSE TEST → FULL SUITE → CI → REMOVE REDUNDANT WORKAROUND`.
 
-`main` is read-only at `31c0594758a83ec555d73ecdd7c597cdf8791fd7`. No merge without explicit user approval.
+`main` remains read-only at `31c0594758a83ec555d73ecdd7c597cdf8791fd7`. No merge without explicit user approval.
 
 ## 2. Functional baseline F0–F12 — CLOSED
 
-Functional anchor: `8e1845d6d8fe72374d7a80994d8500b6d36077cc`.  
-Historical CI: run `38555829715`, job `115824598759`, tests `1202/1202 PASS`.
+Functional anchor: `8e1845d6d8fe72374d7a80994d8500b6d36077cc`.
+Historical CI: `1202/1202 PASS`.
+Do not reopen F0–F12 without reproducible regression/new explicit requirement.
 
-Do not reopen F0–F12 without a reproducible regression/new explicit requirement.
+## 3. UI-4 Gate 0 — AUTOMATED FIXES GREEN / FINAL WINDOWS QA PENDING
 
-## 3. Release/UI branch — Gate 0 OPEN
+Original tested UI base: `abd52d05279e3e656723ad4ff5a21d36de91508e`.
 
-UI branch: `feat/release-ui-modernization`  
-UI-4 tested base HEAD: `abd52d05279e3e656723ad4ff5a21d36de91508e`  
-Pre-manual suite: `1214/1214 PASS`.
+### Signature / Dark Mode
 
-### Signature P1 — ROOT CAUSE PROVEN LOCALLY
+Root cause proven: AcroForm `ScrollViewer` remained visible over shared properties and intercepted signature hit-testing.
 
-Authoritative checkpoint:
-`docs/history/2026-10-15-ui4-signature-root-cause-proven-local-fix-pending-remote-ci.md`
+Remote reconstructed fix branch:
+`feat/fix-ui4-signature-remote`
 
-Proven cause:
-- the AcroForm `ScrollViewer` remained visible in the shared right-properties `Grid` after its inner panel was collapsed;
-- it intercepted hit-testing above the visual-signature controls;
-- before fix, `InputHitTest` returned that `ScrollViewer` at the control centers.
+Accepted remote fix head:
+`8c4a0f2619ca0a4835f6160ce4958d2d1b981435`
 
-Reported minimal local fix:
-- AcroForm `ScrollViewer` starts collapsed;
-- becomes visible only when AcroForm editor is active;
-- collapses again on AcroForm reset.
+Automated result: `1215/1215 PASS`.
+Windows reverify already confirmed V10–V12 dialogs reopen.
 
-Reported local changed files:
-- `src/SGPdf.App/MainWindow.Forms.cs`
-- `src/SGPdf.App/MainWindow.Sign.cs` — preserves prior Dark Mode strip correction
-- `tests/SGPdf.App.Tests/MainWindowSignatureTests.cs` — causal test
+### V08 Labels
 
-Reported verification:
-- causal test RED→GREEN;
+Root cause proven: ZPL action state depended on `_isBusy`, but `SetBusy()` refreshed only viewer controls; after ZPL load completed, Export/Print retained stale disabled state.
+
+Branch:
+`feat/fix-ui4-v08-label-actions`
+
+Current head:
+`b4f19fcd5f2854c9025e60385e3b7819bd798a29`
+
+GREEN change: when ZPL workspace exists, `SetBusy()` also refreshes label properties/actions.
+
+Cause test: `MainWindowZplBusyCompletionUiTests.EndingBusyState_RefreshesValidThermalLabelActions`.
+
+CI run `38681417442`, job `116246600509`:
 - locked restore PASS;
-- Release build PASS;
-- full suite `1215/1215 PASS`;
-- `git diff --check` PASS;
-- PNG/photo/draw/library dialogs physically reopen in Windows;
-- no push/main/PKCS changes yet.
+- Release build PASS, 0 errors;
+- suite `1216/1216 PASS`;
+- only known PKCS 8.0.1 warnings remain on this branch;
+- PR workflow checked merge-ref `2bff61420498287b1025c3346c705fa36d01cbf4` built from current branch head + base.
 
-**Important:** this fix is accepted as root-cause-correct locally, but is not yet release truth. Exact diff audit + exact-head CI on a remote isolated branch are mandatory first.
+Checkpoint:
+`docs/history/2026-10-15-ui4-v08-green-checkpoint.md`.
 
-### V08 — separate PRODUCT BUG
+### Remaining Gate 0 work — Windows only
 
-Windows state after signature fix:
-- `MediaKind = Thermal`;
-- label layout plan exists;
-- not busy;
-- Export PDF disabled;
-- Print disabled;
-- validation text empty.
+Run on exact branch head `b4f19fcd5f2854c9025e60385e3b7819bd798a29`:
+- V04 1366×768;
+- V05 Windows scaling;
+- V08 manual Thermal actions;
+- V09 password dialog visual if practical;
+- V10–V12 final confirmation;
+- V13 name/library path;
+- V14 signature overlay + Save As + reopen;
+- representative Edit/Save + reopen classification.
 
-This contradicts the existing UI contract and must be investigated as a separate root cause. Do not mix the V08 fix into the signature commit.
+Prompt prepared:
+`SG_PDF_CODEX_UI4_FINAL_WINDOWS_GATE_2026-10-15.md` (conversation artifact).
 
-### Remaining Windows evidence
-
-- V04 1366×768: NOT RUN
-- V05 scaled profile: NOT RUN
-- V09 password dialog visual: NOT RUN; source functional tests already cover protected-PDF logic
-- V13: reachable, not fully persisted
-- V14: PARTIAL; stable overlay + save/reopen not fully verified
-
-### Gate 0 exit
-
-Gate 0 becomes GREEN only after:
-1. signature three-file diff is committed/pushed to an isolated branch;
-2. GitHub diff audit accepts it;
-3. exact-head CI GREEN;
-4. V08 root cause + minimal fix + cause test + CI;
-5. V04/V05/V08/V09/V10–V14 completed on the accepted exact head;
-6. no P0/P1 remains.
+Gate 0 becomes GREEN only with no remaining P0/P1.
 
 ## 4. PKCS hygiene — GREEN isolated
 
-Branch: `feat/fix-pkcs-hygiene`  
-HEAD: `781cd6060121367f4d51efbe2724d820d1dfb842`  
-CI run `38645380308`, job `116130807039`, tests `1214/1214 PASS`.
-
-PKCS 8.0.2 is test-graph-only. App/runtime unchanged. Not integrated into UI/release branch.
+Branch `feat/fix-pkcs-hygiene`, HEAD `781cd6060121367f4d51efbe2724d820d1dfb842`.
+CI `1214/1214 PASS`.
+PKCS 8.0.2 is test-graph-only; app/runtime unchanged. Integrate conservatively after UI stabilization.
 
 ## 5. F13 — Product Shell / Dashboard — A+B APPROVED
 
-Planning branch: `plan/post-ui4-f13-f18-expansion-20261014`.
-
-A — visual spec:
+A visual spec:
 `docs/superpowers/specs/2026-10-15-f13-approved-mockup-shell-design.md`
 
-B — technical plan:
+B technical plan:
 `docs/superpowers/plans/2026-10-15-f13-approved-mockup-shell.md`
 
 Mockup reference:
 `docs/design/2026-10-15-f13-approved-mockup-reference.md`
 
-A+B are cumulative. No further design approval required.
+F13 starts immediately after Gate 0 GREEN + release-truth consolidation.
 
-Frozen constraints:
-- 96 px rail;
-- 24 px Home padding;
-- left rail + center workspace + 320 px right context pane;
-- local/offline; no login/ads/cloud/AI;
-- Light/Dark baseline;
-- no second PDF engine/writer/UI framework;
-- F13 owns shell/core modes only; F14 owns full productization;
-- legacy mode strip removed only after safe de-coupling/equivalence.
+Key outputs:
+- approved Home dashboard;
+- 96 px left rail;
+- compact document workspace;
+- 320 px contextual right panel;
+- Light/Dark;
+- native vector icons;
+- safe removal of redundant legacy mode strip after equivalence.
 
-**Do not start F13 product code before Gate 0 GREEN.**
+### Official application icon
 
-## 6. F14 — Productize existing capabilities
+F13.4. Required on window/exe/taskbar/Alt+Tab and later shortcut/installer.
+Still source-gated: must use actual user-approved logo/icon source, not mockup placeholder.
 
-Plan:
-`docs/superpowers/plans/2026-10-14-f14-productize-existing-capabilities.md`
+## 6. F14 — Productize existing F0–F12 capabilities
 
-Inventory:
-`docs/product/2026-10-14-existing-tool-entrypoint-inventory.md`
+After F13 shell is stable.
+Expose current owners through the new UI without duplicating logic:
+- Organize/page operations;
+- OCR/Redact/Protect/watermark/numbering;
+- Comment/Sign/Forms;
+- Compare/Convert/Batch/QR/ZPL;
+- safe-transition guards preserved.
 
-Preflight finding:
-- some dirty/safe-transition guards are attached to legacy UI rather than fully contained in owner entrypoints;
-- new shell must invoke existing guards through one minimal explicit safe-transition path;
-- do not duplicate business logic or create a command bus/state machine.
+## 7. F15 — Edit V3
 
-No F14 product code while Gate 0 is open.
+Approved design/spec ready.
+Goal: direct object selection, contextual properties, honest editable/limited/read-only states, improved image/text editing UX, reliable `Guardar como...`, reopen verification.
+Preserve current workspaces/writer; no second engine.
 
-## 7. F15 — Edit V3 — DESIGN APPROVED / SPEC READY
+## 8. F16–F18 expansion
 
-Spec:
-`docs/superpowers/specs/2026-10-15-f15-edit-v3-design.md`
+**F16 new local utilities:** PDF→JPG/export studio, Image→PDF, Crop, authorized Unlock, safe Optimize, image watermark after capability gate.
 
-Preserve current workspaces/writer. Direct object selection + contextual right pane + honest limitations. F15 target save semantics: visible in Edit, no dirty→disabled, dirty→enabled. Image Undo/Redo reused; no fake universal history.
+**F17 professional UX:** Compare V2, more AcroForm types/simple designer, signature UX completion.
 
-Implementation plan waits for F13 shell stability.
+**F18 optional integrations:** detected local LibreOffice→PDF, scanner, local HTML→PDF after separate gates.
 
-## 8. F16–F18
+## 9. Release sequence
 
-- **F16:** PDF→JPG, Image→PDF, Crop, authorized Unlock, safe Optimize, image watermark after capability gate.
-- **F17:** Compare V2, more AcroForm types/simple designer, signature UX completion.
-- **F18:** optional LibreOffice→PDF, scanner, local HTML→PDF after separate gates.
+1. Finish final UI-4 Windows gate.
+2. Consolidate accepted UI fixes + isolated PKCS release truth.
+3. F13 approved redesign + official icon.
+4. F14 expose/productize all existing capabilities.
+5. F15 Edit V3.
+6. Reassess first public release after F15.
+7. F16–F18 may continue after that release or be included only by explicit scope decision.
+8. Publish/installer on the intended stable baseline.
+9. `main` only with explicit user approval.
 
-## 9. Official icon — REQUIRED / SOURCE-GATED
+## 10. Immediate next action
 
-Do not synthesize from the mockup placeholder or text description. Required later on window, exe, Alt+Tab/taskbar, shortcut and installer.
-
-## 10. Immediate resume order
-
-1. Commit/push only the current three-file signature + Dark Mode + causal-test diff to the isolated branch; no V08 changes in that commit.
-2. Audit that exact remote diff from GitHub.
-3. Exact-head CI GREEN.
-4. Investigate V08 separately by root cause; cause test + minimal fix + suite + CI.
-5. Complete Windows V04/V05/V08/V09/V10–V14 on the accepted exact head.
-6. Close UI-4 only with no P0/P1.
-7. Consolidate release truth + isolated PKCS cleanly.
-8. Execute approved F13 A+B natively.
-9. Execute F14 through existing owners/guards.
-10. F15 after F13 stability and implementation-plan approval.
-11. Publish/installer only after intended product baseline is stable.
-12. `main` only with explicit user approval.
+Run the final Windows QA prompt on `b4f19fcd...`; audit result; if no P0/P1, close Gate 0 and start F13 implementation natively.
