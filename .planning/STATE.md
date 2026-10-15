@@ -1,11 +1,11 @@
 ---
 gsd_state_version: '1.1'
-status: f13-task5-paused-pre-red
+status: f13-design-audit-correction-required-task5-open
 progress:
   closed_baseline_phases: 13
   expanded_roadmap_phases: 19
   current_phase: F13 Product Shell
-  current_task: Task 5 additive document rail — paused before RED
+  current_task: Task 5 visual alignment correction before GREEN
 ---
 
 # Project State — SG PDF Editor
@@ -33,92 +33,112 @@ Accepted F13 base after test-only PKCS 8.0.2 consolidation:
 
 ## 3. F13 A+B — IN PROGRESS
 
-Authoritative spec:
-`docs/superpowers/specs/2026-10-15-f13-approved-mockup-shell-design.md`
+Authoritative visual/spec sources:
+- `docs/superpowers/specs/2026-10-15-f13-approved-mockup-shell-design.md`
+- `docs/superpowers/plans/2026-10-15-f13-approved-mockup-shell.md`
+- approved `sg_pdf_f13_approved_mockup.jpg`
 
-Authoritative implementation plan:
-`docs/superpowers/plans/2026-10-15-f13-approved-mockup-shell.md`
+Current mockup-alignment override:
+`docs/history/2026-10-15-f13-mockup-alignment-audit-and-correction.md`
 
-### Task 1 — shell visual primitives — GREEN
+### Task 1 — shell visual primitives — STRUCTURALLY GREEN
 
 - branch `feat/f13-shell-primitives`
 - head `5a8e13f88175fe7469c18a1769fe86a96e001f10`
 - draft PR `#34`
 - CI `38686210087` GREEN
-- build 0/0
 - tests `1218/1218 PASS`.
+
+Audit note: primitives remain valid, but icon geometries/consumption were not completed to mockup fidelity.
 
 ### Task 2 — phase-honest ToolCatalog — GREEN
 
 - branch `feat/f13-tool-catalog`
 - head `8c40cc98e102e75a3bd550f8ef3e9e58c599df32`
 - draft PR `#35`
-- valid RED CI `38686564150`
 - GREEN CI `38686853745`
-- build 0/0
 - tests `1221/1221 PASS`.
 
 Boundary remains frozen: F13 document ActionIds only `read/edit/comment/sign/organize`; full utility routing belongs to F14.
 
-### Task 3 — HomeDashboard — GREEN
+### Task 3 — HomeDashboard — STRUCTURALLY GREEN / VISUAL DEBT OPEN
 
 - branch `feat/f13-home-dashboard`
-- functional GREEN head `b9905be21b3131ccf0c63e11dc4b170329c72017`
+- functional head `b9905be21b3131ccf0c63e11dc4b170329c72017`
 - draft PR `#36`
-- valid RED head `434eacfd9ec09bdb44cdd32aea17b36e9c3c4aab`
-- GREEN CI `38687569030`
-- build 0/0
+- CI `38687569030` GREEN
 - tests `1224/1224 PASS`.
 
-Dashboard is intent-only: Open PDF, Open ZPL, recent PDF, and ToolRequested. It reuses `RecentPdfEntry`; no second recent store or business logic.
-
-A later accidental `_probe.tmp` add/delete produced no final tree delta. Current branch tree remains equivalent to the proven GREEN tree; do not rewrite branch history destructively.
+Home structure/ownership is valid, but design audit found a material fidelity gap: all tool cards render the same literal `PDF` instead of consuming their distinct `IconKey`; Home rail is text-only. Correct this without creating a second dashboard or navigation owner.
 
 ### Task 4 — MainWindow Home/PDF/ZPL shell state — GREEN
 
 - branch `feat/f13-shell-workspace-state`
 - functional GREEN head `21bf03e0d303bc888639e74ad523de793f986e66`
-- current tree-equivalent head `d267cbc0425c5e4243432145d9b60c522a9ae331`
+- tree-equivalent head `d267cbc0425c5e4243432145d9b60c522a9ae331`
 - draft PR `#37`
-- valid RED CI `38688722593`: 3 new shell-state tests failed only because shell state did not exist; prior 1224 stayed GREEN.
-- first GREEN CI `38689293686`: build 0/0, tests `1227/1227 PASS`.
-- fresh tree-equivalent verification CI `38753602191`: build 0 warnings / 0 errors, tests `1227/1227 PASS`.
+- fresh verification CI `38753602191`
+- build 0 warnings / 0 errors
+- tests `1227/1227 PASS`.
 
-Product delta remains only:
-- `src/SGPdf.App/MainWindow.Shell.cs`
-- minimal recent-open reuse in `MainWindow.ReaderShortcuts.cs`
-- shell-state tests.
+State owner remains valid and reusable.
 
-A temporary structural test attempting to forbid the existing Title-property trigger was proven RED, then classified as over-specified because it mandated an implementation detail not required by the approved plan. It was deleted before advancing; compare `21bf03e...` → `d267cbc...` has zero file delta.
+## 4. F13 Task 5 — OPEN / NOT GREEN
 
-## 4. F13 Task 5 — PAUSED PRE-RED
-
-Branch already created:
+Branch:
 - `feat/f13-document-tool-rail`
-- exact head `d267cbc0425c5e4243432145d9b60c522a9ae331`
-- no Task 5 product commit
-- no Task 5 RED test committed yet.
+- current product head `eb0be24071a9b205a6386e57e54912b3600ab3b1`
+- draft PR `#38`
+- base `d267cbc0425c5e4243432145d9b60c522a9ae331`.
 
-Read-only owner/guard tracing has started across Edit, Sign, Comments and Organize so the rail cannot bypass existing pending-change guards. That trace is not complete yet.
+TDD evidence:
+- valid RED: prior 1227 tests stayed GREEN and exactly 4 new rail/router tests failed as intended;
+- first GREEN build passed;
+- workflow run `38758303793` FAILED in tests;
+- result `1229/1231 PASS`, exactly 2 failures still unresolved/classification pending.
 
-Authoritative pause checkpoint:
-`docs/history/2026-10-15-f13-task5-pre-red-pause-checkpoint.md`
+Do not patch either test or product before classification.
+
+### Design audit findings that now gate Task 5
+
+1. Document rail is 96 px/order-correct but text-only; approved mockup requires icon + text.
+2. `ToolCatalog.Document` already has `IconKey`; UI must consume it rather than invent a parallel mapping.
+3. Home cards similarly ignore their existing `IconKey` and show generic `PDF`.
+4. Home rail is text-only and must converge to icon + text.
+5. Selected/disabled state must be visually explicit and accessible; selected cannot rely only on color.
+6. No Forms/OCR/Redact/Compare/Convert/Protect routing may be activated before F14.
 
 ### Exact resume
 
-1. Verify branch head/state.
-2. Finish owner/guard trace for `read/edit/comment/sign/organize`.
-3. Add focused RED rail structure + routing/equivalence contract.
-4. Prove RED.
-5. Implement minimum additive ~96 px document rail and local `HandleToolAction(string actionId)` switch.
-6. Preserve legacy centered strip during Task 5.
-7. Focused PASS → full Release suite PASS → exact-head CI GREEN.
-8. Only then Task 6.
+1. Preserve current Task 5 branch/head; no destructive rewind.
+2. Classify the 2 current failures.
+3. Extend/correct focused visual contract for actual `IconKey` consumption and icon+text rails.
+4. Make the minimum visual remediation across existing owners/resources only.
+5. Focused PASS → full Release suite PASS → exact-head CI GREEN.
+6. Only then advance to Task 6.
 
-Do not route Forms/OCR/Redact/Compare/Convert/Protect until F14. Do not touch F15 Edit V3, official icon, engines, packages, `main`, or merge policy.
+## 5. Remaining F13 visual convergence
 
-## 5. Later sequence
+### Task 6
+Strengthened gate: contextual toolbar + right frame ~320 px + global command hierarchy coherent with mockup. Preserve owner semantics and do not pull in F15 business changes.
 
-F13 Tasks 5–9 → F14 productize existing capabilities → F15 Edit V3 → reassess first public release → F16 new utilities → F17 professional UX → F18 optional local integrations.
+### Task 7
+Prove equivalence, decouple legacy initialization and remove only proven redundant centered navigation. Final F13 must not leave visually competing old/new navigation.
 
-Official application icon remains source-gated until the user supplies/approves the real source asset; the mockup SG tile is not authoritative.
+### Task 8 — official application icon — SOURCE CONFIRMED
+
+Approved source already exists in the project Library:
+`Icono PDF con lápiz azul y logo SG(1).png`.
+
+The previous wording “waiting for user to supply/approve source” is obsolete. If bytes cannot be materialized by the current tool surface, classify that as a technical transfer/tooling issue, not a missing design decision. Do not invent or reapprove another icon.
+
+F13 must wire this approved identity to window/exe/taskbar/Alt+Tab before final visual QA. Installer/file-association work later reuses the same asset.
+
+### Task 9
+Windows QA must include side-by-side comparison against the approved Dashboard and Document mockup, plus large/1366/scaled/light/dark/keyboard/disabled/right-scroll checks. F13 closes only with no P0/P1.
+
+## 6. Later sequence
+
+Close corrected F13 → F14 productize existing capabilities → F15 Edit V3 → reassess first public release → F16 new utilities → F17 professional UX → F18 optional local integrations.
+
+No product code was changed by this design audit itself.
