@@ -210,9 +210,9 @@ public sealed class MainWindowShellStateTests
 
         internal static PdfFixture Create()
         {
-            var root = Path.Combine(Path.GetTempPath(), $"sgpdf-shell-{Guid.NewGuid():N}");
+            var root = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"sgpdf-shell-{Guid.NewGuid():N}");
             Directory.CreateDirectory(root);
-            var path = Path.Combine(root, "sample.pdf");
+            var path = System.IO.Path.Combine(root, "sample.pdf");
             using var document = new PdfDocument();
             document.AddPage();
             document.Save(path);
