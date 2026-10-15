@@ -1,17 +1,25 @@
-name: build
+name: diagnose-f13-task5-bisection
 
 on:
   push:
-    branches: [ main, 'feat/**', 'plan/**' ]
-  pull_request:
+    branches: [ 'feat/diag-f13-task5-parallelism-20261015' ]
 
 permissions:
   contents: read
 
 jobs:
   windows:
+    name: ${{ matrix.group }}
     runs-on: windows-latest
     timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - group: task5-only
+            filter: FullyQualifiedName~SGPdf.App.Tests.MainWindowToolRailTests
+          - group: everything-except-task5
+            filter: FullyQualifiedName!~SGPdf.App.Tests.MainWindowToolRailTests
     steps:
       - uses: actions/checkout@v4
 
@@ -53,5 +61,5 @@ jobs:
       - name: Build
         run: dotnet build SGPdf.slnx --configuration Release --no-restore
 
-      - name: Test
-        run: dotnet test SGPdf.slnx --configuration Release --no-build
+      - name: Test ${{ matrix.group }}
+        run: dotnet test SGPdf.slnx --configuration Release --no-build --no-restore --filter "${{ matrix.filter }}"
