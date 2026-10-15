@@ -1,6 +1,6 @@
 ---
 gsd_state_version: '1.1'
-status: ui4-fail-p1-expansion-planned
+status: ui4-fail-p1-expansion-planned-f15-spec-ready
 progress:
   closed_baseline_phases: 13
   expanded_roadmap_phases: 19
@@ -9,7 +9,7 @@ progress:
 
 # Project State — SG PDF Editor
 
-**Updated:** 2026-10-14
+**Updated:** 2026-10-15
 
 ## Authority
 
@@ -18,9 +18,9 @@ Operational order for the post-UI4 transition:
 2. `docs/history/2026-10-14-post-ui4-expansion-checkpoint.md`;
 3. this `STATE.md`;
 4. `.planning/ROADMAP.md`;
-5. `docs/product/2026-10-14-local-suite-expansion.md`;
-6. focused slice plans/requirements;
-7. older master/history documents only when not superseded.
+5. focused specs/plans in `docs/superpowers/`;
+6. `docs/product/2026-10-14-local-suite-expansion.md`;
+7. older master/history only when not superseded.
 
 ## Mandatory laws
 
@@ -46,9 +46,9 @@ Historical functional exact-head CI:
 - Release build 0 warnings / 0 errors;
 - tests `1202/1202 PASS`.
 
-F0–F12 remains a closed evidence baseline. The newly approved F13–F18 roadmap extends product scope; it does not invalidate the F0–F12 closure.
+F0–F12 remains closed evidence baseline. F13–F18 extends scope without invalidating that closure.
 
-## Release/UI modernization branch
+## Release/UI branch
 
 Remote branch:
 `feat/release-ui-modernization`
@@ -56,62 +56,53 @@ Remote branch:
 Exact UI-4 tested HEAD:
 `abd52d05279e3e656723ad4ff5a21d36de91508e`
 
-Automated suite at the pre-UI4 head had reached `1214/1214 PASS`.
+Automated suite before manual UI-4: `1214/1214 PASS`.
 
-### UI-4 real Windows QA — FAIL-P1
+### UI-4 Windows QA — FAIL-P1
 
-Environment reported:
+Environment:
 - Windows 11 Home Single Language x64 build `10.0.26300`;
 - 1920×1200 @100%, 96 DPI;
 - .NET SDK 10.0.402.
 
 Results:
-- V01 light shell PASS;
-- V02 dark shell PASS after a local uncommitted mode-strip contrast fix;
-- V03 PDF render/navigation/zoom PASS;
-- V04 exact 1366×768 NOT RUN;
-- V05 scaled Windows profile NOT RUN;
-- V06 keyboard traversal PASS;
-- V07 disabled states PASS;
-- V08 first run FAIL-P2 / classification pending because label export/print stayed disabled;
-- V09 protected-PDF flow NOT RUN;
-- V10 Draw Signature FAIL-P1;
-- V11 Signature from Photo FAIL-P1;
-- V12 Signature Library FAIL-P1;
-- V13 NOT RUN because name-dialog path was unreachable;
-- V14 FAIL-P1 because signature workflows did not respond.
+- V01 PASS;
+- V02 PASS after local uncommitted dark-mode strip fix;
+- V03 PASS;
+- V04 NOT RUN;
+- V05 NOT RUN;
+- V06 PASS;
+- V07 PASS;
+- V08 FAIL-P2 / classification pending;
+- V09 NOT RUN;
+- V10 FAIL-P1;
+- V11 FAIL-P1;
+- V12 FAIL-P1;
+- V13 NOT RUN;
+- V14 FAIL-P1.
 
 **Do not close UI-4 until real rerun evidence shows no P0/P1.**
 
 ## Local Codex diff — not committed/pushed
 
-Codex reported one local change in:
+Reported local change:
 `src/SGPdf.App/MainWindow.Sign.cs`
 
-Purpose: replace hard-coded light strip visuals with existing shared toolbar styles for dark-mode contrast.
+Purpose: replace hard-coded light strip visuals with shared toolbar styles for dark-mode contrast.
 
-This diff is not part of the remote branch. Audit/preserve it before deciding whether to commit.
+Preserve/audit before any local branch manipulation.
 
-## Current P1 diagnostic
+## Current Windows-only diagnostic
 
-Windows-only diagnostic scope already prepared:
+Codex scope already prepared:
 - trace V10–V12 runtime path;
 - reproduce Edit/Save and reopen output;
 - classify V08 expected state vs product bug;
-- execute V09 with existing qpdf fixture generation if quickly viable.
+- execute V09 with existing qpdf if quickly viable.
 
-Codex may prepare only a small local fix after demonstrated root cause. No redesign/publish/installer/push/main.
+Codex may prepare only a small local fix after demonstrated root cause. No redesign, publish, installer, push or main.
 
-## Edit/Save audit finding
-
-Remote code already proves:
-- signature buttons have handlers and real dialog calls, so duplicate Click wiring is not an acceptable blind fix;
-- Edit creates conservative image/text workspaces;
-- some text is intentionally read-only when unsupported;
-- Edit `Guardar como...` should be visible/enabled when a valid workspace exists;
-- user-reported inability to edit/save therefore requires focused runtime classification as product bug vs expected limitation vs UX/discoverability.
-
-## PKCS hygiene — GREEN on isolated branch
+## PKCS hygiene — GREEN isolated
 
 Branch:
 `feat/fix-pkcs-hygiene`
@@ -119,78 +110,105 @@ Branch:
 HEAD:
 `781cd6060121367f4d51efbe2724d820d1dfb842`
 
-Exact-head normal CI:
+Exact-head CI:
 - run `38645380308`;
 - job `116130807039`;
 - locked restore PASS;
 - Release build 0 warnings / 0 errors;
 - tests `1214/1214 PASS`.
 
-Change is limited to the **test dependency graph**, pinning `System.Security.Cryptography.Pkcs 8.0.2` in test csproj/lock. App/runtime project is unchanged.
+PKCS 8.0.2 is pinned only in the test dependency graph. App/runtime unchanged.
 
-**PKCS is not yet integrated into the UI/release branch.**
+**Not yet integrated into UI/release branch.**
 
-## New approved product direction
+## Expansion planning branch
 
-Product spec:
-`docs/product/2026-10-14-local-suite-expansion.md`
-
-Execution roadmap:
-`docs/superpowers/plans/2026-10-14-f13-f18-local-suite-expansion-roadmap.md`
-
-Planning/checkpoint branch:
 `plan/post-ui4-f13-f18-expansion-20261014`
 
+Contains only planning/documentation, not product implementation.
+
 ### F13 — Product Shell / Dashboard
-- local Home/dashboard;
-- tool cards;
-- left document tool rail;
-- right contextual properties;
-- compact top bar;
-- official app icon from approved source only.
+Plan:
+`docs/superpowers/plans/2026-10-14-f13-product-shell.md`
 
-### F14 — Productize existing F0–F12 capabilities
-Expose existing features coherently before adding parallel functionality.
+Target:
+- Home/dashboard;
+- left document rail;
+- contextual right panel;
+- compact toolbar;
+- iconography;
+- official app icon from approved source.
 
-### F15 — Edit V3
-Make conservative text/image editing discoverable, explicit, reliably saveable and honest about limitations.
+### F14 — Productize existing capabilities
+Plan:
+`docs/superpowers/plans/2026-10-15-f14-productize-existing-tools.md`
+
+Principle: expose existing owners through the new shell before building parallel features.
+
+Owner/entrypoint inventory:
+`docs/product/2026-10-14-existing-tool-entrypoint-inventory.md`
+
+### F15 — Edit V3 — DESIGN APPROVED / SPEC READY
+
+Approved approach: **A — unified UX over existing engine**.
+
+Spec:
+`docs/superpowers/specs/2026-10-15-f15-edit-v3-design.md`
+
+Key frozen decisions:
+- preserve `ImageEditWorkspace`, `TextEditWorkspace`, `RedactionWorkspace`, `PdfEditWriter`;
+- direct object selection: text/image detected automatically;
+- contextual right panel;
+- `Guardar como...` always visible in Edit mode;
+- no dirty → save disabled;
+- any dirty → save enabled;
+- save always creates copy; original stays active;
+- no automatic reopen of saved copy;
+- image Undo/Redo reused;
+- text/redaction do not currently have history, so no fake/universal Undo stack;
+- any future history extension must remain inside the owning workspace;
+- no second engine/writer, plugin framework, command bus, DI rewrite, cloud or AI.
+
+**Next process gate:** user review/acceptance of the written F15 spec before implementation plan is authored.
 
 ### F16 — New local utilities
 Independent capability-gated slices: PDF→JPG, Image→PDF, Crop, authorized unlock, safe Optimize, image watermark if proven safe.
 
 ### F17 — Professional UX
-Compare V2, additional existing AcroForm types, possible simple form designer, signature UX completion.
+Compare V2, additional AcroForm types, possible simple form designer, signature UX completion.
 
 ### F18 — Optional local integrations
-LibreOffice Office→PDF, scanner, local HTML only after separate gates. Never mandatory for core runtime.
+LibreOffice Office→PDF, scanner, local HTML only after separate gates; never mandatory core runtime.
 
 ## Official app icon — REQUIRED
 
 Pending actual approved source image materialization.
 
-Required final surfaces:
+Required surfaces:
 - WPF window;
 - executable;
 - Alt+Tab/taskbar;
 - shortcut;
 - installer.
 
-Never synthesize the official icon from a textual description alone.
+Never synthesize official icon from text alone.
 
 ## Immediate resume order
 
-1. Audit the Windows P1 diagnostic result when Codex returns it.
-2. Resolve only demonstrated P1 root causes.
+1. Audit Windows P1 diagnostic when Codex returns it.
+2. Resolve only demonstrated root causes.
 3. Full suite + exact-head CI after each accepted code fix.
-4. Rerun V10–V14 and remaining V04/V05/V08/V09 evidence.
-5. Close UI-4 only when no P0/P1 remain.
-6. Consolidate release docs and integrate PKCS conservatively.
-7. Start F13.1/F13.2 planning/implementation; do not jump directly to later utilities.
-8. Re-evaluate publish/installer only after the newly approved shell/product baseline is stable.
-9. `main` only with explicit user approval.
+4. Rerun V10–V14 plus V04/V05/V08/V09.
+5. Close UI-4 only with no P0/P1.
+6. Consolidate release docs + PKCS conservatively.
+7. Execute F13 in bounded tasks.
+8. Execute F14 by routing existing owners, not rewrites.
+9. F15 implementation only after written spec review + implementation plan approval.
+10. Publish/installer only after the newly approved product baseline is stable.
+11. `main` only with explicit user approval.
 
 ## Codex usage rule
 
-ChatGPT should do repository research, architecture, plans, code changes, tests, GitHub audit/integration and documentation whenever possible.
+ChatGPT handles repository research, architecture, plans, code changes, tests, GitHub audit/integration and docs whenever possible.
 
-Use Codex only for tasks that materially require the user's Windows PC, real GUI interaction, hardware/private fixtures or locally installed application behavior. Avoid duplicated work/token spend.
+Codex only for work that materially requires the user's Windows PC, real GUI interaction, hardware/private fixtures or locally installed application behavior. Avoid duplicated work/token spend.
