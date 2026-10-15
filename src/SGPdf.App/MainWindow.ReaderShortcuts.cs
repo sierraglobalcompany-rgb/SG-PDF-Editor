@@ -244,6 +244,11 @@ public partial class MainWindow
         if (sender is not MenuItem { Tag: string path })
             return;
 
+        await OpenRecentPdfPathAsync(path);
+    }
+
+    private async Task OpenRecentPdfPathAsync(string path)
+    {
         var opened = await TryOpenPdfPathAsync(path);
         if (!opened)
         {
@@ -259,6 +264,7 @@ public partial class MainWindow
         }
 
         RebuildRecentFilesMenu();
+        RefreshHomeRecentFiles();
     }
 
     private void ClearRecentFilesMenuItem_Click(object sender, RoutedEventArgs e)
@@ -273,6 +279,7 @@ public partial class MainWindow
         }
 
         RebuildRecentFilesMenu();
+        RefreshHomeRecentFiles();
     }
 
     private void TryRecordRecentPdf(string path)
