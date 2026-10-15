@@ -22,6 +22,7 @@ public sealed class MainWindowShellStateTests
             var window = new MainWindow();
             try
             {
+                RaiseLoaded(window);
                 Assert.Equal("Home", GetShellKind(window));
                 var dashboard = GetHomeDashboard(window);
                 Assert.Equal(Visibility.Visible, dashboard.Visibility);
@@ -46,6 +47,7 @@ public sealed class MainWindowShellStateTests
             var window = new MainWindow();
             try
             {
+                RaiseLoaded(window);
                 ConfigureReader(window);
 
                 Assert.True(await InvokeTask<bool>(window, "TryOpenPdfPathAsync", pdf.Path, null));
@@ -65,6 +67,7 @@ public sealed class MainWindowShellStateTests
             var window = new MainWindow();
             try
             {
+                RaiseLoaded(window);
                 var document = ZplDocumentParser.Parse(
                     @"C:\labels\orders.zpl",
                     "^XA^FO10,10^FDOne^FS^XZ");
@@ -82,6 +85,9 @@ public sealed class MainWindowShellStateTests
             finally { CloseClean(window); }
         });
     }
+
+    private static void RaiseLoaded(MainWindow window)
+        => window.RaiseEvent(new RoutedEventArgs(FrameworkElement.LoadedEvent));
 
     private static string GetShellKind(MainWindow window)
     {
