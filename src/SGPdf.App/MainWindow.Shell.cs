@@ -1,5 +1,6 @@
 using System.IO;
 using System.Windows;
+using System.Windows.Automation;
 using System.Windows.Controls;
 using SGPdf.App.Shell;
 
@@ -18,6 +19,8 @@ public partial class MainWindow
 
     private ShellWorkspaceKind _shellWorkspaceKind = ShellWorkspaceKind.Home;
     private HomeDashboard? _homeDashboard;
+    private Border? _documentToolRail;
+    private ColumnDefinition? _documentToolRailColumn;
     private bool _shellUiInitialized;
 
     private static bool RegisterShellLoadedHandler()
@@ -55,6 +58,8 @@ public partial class MainWindow
         var workspace = center.Parent as Grid
             ?? throw new InvalidOperationException("No se encontró el contenedor principal del workspace.");
 
+        InitializeDocumentToolRail(workspace);
+
         var dashboard = new HomeDashboard
         {
             Name = "HomeDashboard",
@@ -76,6 +81,68 @@ public partial class MainWindow
 
         RefreshHomeRecentFiles();
         SyncShellWorkspaceFromActiveDocument();
+    }
+
+    private void InitializeDocumentToolRail(Grid workspace)
+    {
+        var railColumn = new ColumnDefinition { Width = new GridLength(0d) };
+        workspace.ColumnDefinitions.Insert(0, railColumn);
+        _documentToolRailColumn = railColumn;
+
+        foreach (UIElement child in workspace.Children.Cast<UIElement>().ToArray())
+            Grid.SetColumn(child, Grid.GetColumn(child) + 1);
+
+        var items = new StackPanel
+        {
+            Name = "DocumentToolRailItems",
+            Margin = new Thickness(0, 6, 0, 6)
+        };
+        RegisterName(items.Name, items);
+
+        foreach (var descriptor in ToolCatalog.Document)
+        {
+            var button = new Button
+            {
+                Content = descriptor.Title,
+                Tag = descriptor.Id,
+                Focusable = true,
+                IsEnabled = descriptor.ActionId is not null,
+                ToolTip = descriptor.DisabledReason ?? descriptor.Description,
+                Style = (Style)FindResource(
+                    string.Equals(descriptor.Id, "read", StringComparison.Ordinal)
+                        ? "SgRailItemSelectedStyle"
+                        : "SgRailItemStyle")
+            };
+            AutomationProperties.SetName(button, descriptor.Title);
+            AutomationProperties.SetHelpText(button, descriptor.DisabledReason ?? descriptor.Description);
+
+            if (descriptor.ActionId is string actionId)
+                button.Click += (_, _) => HandleToolAction(actionId);
+
+            items.Children.Add(button);
+        }
+
+        var scroller = new ScrollViewer
+        {
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+            Content = items
+        };
+
+        var rail = new Border
+        {
+            Name = "DocumentToolRail",
+            Width = 96d,
+            BorderThickness = new Thickness(0, 0, 1, 0),
+            Child = scroller,
+            Visibility = Visibility.Collapsed
+        };
+        rail.SetResourceReference(BackgroundProperty, "SgPanelBrush");
+        rail.SetResourceReference(BorderBrushProperty, "SgBorderBrush");
+        RegisterName(rail.Name, rail);
+        Grid.SetColumn(rail, 0);
+        workspace.Children.Add(rail);
+        _documentToolRail = rail;
     }
 
     private void SyncShellWorkspaceFromActiveDocument()
@@ -101,9 +168,110 @@ public partial class MainWindow
         if (_homeDashboard is null)
             return;
 
+        var documentVisible = _shellWorkspaceKind == ShellWorkspaceKind.Pdf;
         _homeDashboard.Visibility = _shellWorkspaceKind == ShellWorkspaceKind.Home
             ? Visibility.Visible
             : Visibility.Collapsed;
+
+        if (_documentToolRail is not null)
+            _documentToolRail.Visibility = documentVisible ? Visibility.Visible : Visibility.Collapsed;
+        if (_documentToolRailColumn is not null)
+            _documentToolRailColumn.Width = new GridLength(documentVisible ? 96d : 0d);
+
+        if (documentVisible)
+            UpdateDocumentToolRailSelection();
+    }
+
+    private async void HandleToolAction(string actionId)
+    {
+        if (actionId is not ("read" or "edit" or "comment" or "sign" or "organize"))
+            return;
+
+        if (!TryPrepareCoreToolTransition(actionId))
+        {
+            UpdateDocumentToolRailSelection();
+            return;
+        }
+
+        switch (actionId)
+        {
+            case "read":
+                ReadMode_Click(this, new RoutedEventArgs());
+                break;
+            case "edit":
+                await TryEnterEditModeAsync();
+                break;
+            case "comment":
+                TryEnterCommentMode();
+                break;
+            case "sign":
+                SignMode_Click(this, new RoutedEventArgs());
+                break;
+            case "organize":
+                if (TryEnterOrganizeMode())
+                    await RefreshOrganizeThumbnailRenderWindowAsync();
+                break;
+        }
+
+        UpdateDocumentToolRailSelection();
+    }
+
+    private bool TryPrepareCoreToolTransition(string actionId)
+    {
+        if (!string.Equals(actionId, "comment", StringComparison.Ordinal) &&
+            _commentModeActive &&
+            !TryLeaveCommentModeWithGuard())
+        {
+            return false;
+        }
+
+        if (!string.Equals(actionId, "edit", StringComparison.Ordinal) &&
+            _editModeActive &&
+            !TryLeaveEditModeWithGuard())
+        {
+            return false;
+        }
+
+        if (!string.Equals(actionId, "organize", StringComparison.Ordinal) &&
+            _organizeModeActive &&
+            !TryLeaveOrganizeModeWithGuard())
+        {
+            return false;
+        }
+
+        if (!string.Equals(actionId, "sign", StringComparison.Ordinal) &&
+            _signatureEditState?.IsDirty == true &&
+            !TryResolvePendingSignatureEdits(SignatureGuardReason.LeaveSignMode))
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    private void UpdateDocumentToolRailSelection()
+    {
+        if (FindName("DocumentToolRailItems") is not StackPanel items)
+            return;
+
+        var selected = _commentModeActive
+            ? "comment"
+            : _editModeActive
+                ? "edit"
+                : _organizeModeActive
+                    ? "organize"
+                    : _signatureModeActive
+                        ? "sign"
+                        : "read";
+
+        var normalStyle = (Style)FindResource("SgRailItemStyle");
+        var selectedStyle = (Style)FindResource("SgRailItemSelectedStyle");
+        foreach (var button in items.Children.OfType<Button>())
+        {
+            button.Style = string.Equals(button.Tag as string, selected, StringComparison.Ordinal)
+                ? selectedStyle
+                : normalStyle;
+        }
     }
 
     private void RefreshHomeRecentFiles()
