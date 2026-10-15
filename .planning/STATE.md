@@ -166,7 +166,7 @@ Frozen F13 decisions:
 ### F14 — Productize existing capabilities
 
 Plan:
-`docs/superpowers/plans/2026-10-15-f14-productize-existing-tools.md`
+`docs/superpowers/plans/2026-10-14-f14-productize-existing-capabilities.md`
 
 Principle: expose existing owners through the new shell before building parallel features.
 
