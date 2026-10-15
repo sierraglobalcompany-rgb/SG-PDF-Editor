@@ -7,6 +7,8 @@ using System.Windows.Controls;
 using System.Windows.Threading;
 using Xunit;
 
+[assembly: CollectionBehavior(DisableTestParallelization = true)]
+
 namespace SGPdf.App.Tests;
 
 public sealed class MainWindowToolRailTests
