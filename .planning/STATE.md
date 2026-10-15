@@ -1,10 +1,10 @@
 ---
 gsd_state_version: '1.1'
-status: ui4-final-windows-qa-pending-f13-ab-approved
+status: ui4-green-release-truth-consolidation-before-f13
 progress:
   closed_baseline_phases: 13
   expanded_roadmap_phases: 19
-  current_phase: UI-4 Gate 0 final Windows verification before F13
+  current_phase: release-truth consolidation before F13
 ---
 
 # Project State — SG PDF Editor
@@ -25,69 +25,40 @@ Functional anchor: `8e1845d6d8fe72374d7a80994d8500b6d36077cc`.
 Historical CI: `1202/1202 PASS`.
 Do not reopen F0–F12 without reproducible regression/new explicit requirement.
 
-## 3. UI-4 Gate 0 — AUTOMATED FIXES GREEN / FINAL WINDOWS QA PENDING
+## 3. UI-4 Gate 0 — GREEN
 
-Original tested UI base: `abd52d05279e3e656723ad4ff5a21d36de91508e`.
-
-### Signature / Dark Mode
-
-Root cause proven: AcroForm `ScrollViewer` remained visible over shared properties and intercepted signature hit-testing.
-
-Remote reconstructed fix branch:
-`feat/fix-ui4-signature-remote`
-
-Accepted remote fix head:
-`8c4a0f2619ca0a4835f6160ce4958d2d1b981435`
-
-Automated result: `1215/1215 PASS`.
-Windows reverify already confirmed V10–V12 dialogs reopen.
-
-### V08 Labels
-
-Root cause proven: ZPL action state depended on `_isBusy`, but `SetBusy()` refreshed only viewer controls; after ZPL load completed, Export/Print retained stale disabled state.
-
-Branch:
-`feat/fix-ui4-v08-label-actions`
-
-Current head:
+Accepted UI head:
 `b4f19fcd5f2854c9025e60385e3b7819bd798a29`
 
-GREEN change: when ZPL workspace exists, `SetBusy()` also refreshes label properties/actions.
-
-Cause test: `MainWindowZplBusyCompletionUiTests.EndingBusyState_RefreshesValidThermalLabelActions`.
-
-CI run `38681417442`, job `116246600509`:
+Automated:
 - locked restore PASS;
-- Release build PASS, 0 errors;
+- Release build PASS;
 - suite `1216/1216 PASS`;
-- only known PKCS 8.0.1 warnings remain on this branch;
-- PR workflow checked merge-ref `2bff61420498287b1025c3346c705fa36d01cbf4` built from current branch head + base.
+- CI run `38681417442` SUCCESS.
 
-Checkpoint:
-`docs/history/2026-10-15-ui4-v08-green-checkpoint.md`.
+Windows final QA:
+- V04 1366×768 PASS;
+- V05 125% scaling PASS;
+- V08 Thermal actions + PDF export PASS;
+- V10 Draw Signature PASS;
+- V11 Signature from Photo PASS;
+- V12 Signature Library PASS;
+- V13 signature-name dialog PASS;
+- V14 signature overlay + Save As + reopen PASS;
+- representative Edit/Save + reopen PASS;
+- no P0/P1/P2 reproduced.
 
-### Remaining Gate 0 work — Windows only
+V09 manual password entry was NOT RUN because the local computer-use workflow would not type authentication credentials. This is non-blocking because the accepted head contains automated password-path coverage for wrong+cancel preserving workspace, wrong→correct retry and password non-persistence.
 
-Run on exact branch head `b4f19fcd5f2854c9025e60385e3b7819bd798a29`:
-- V04 1366×768;
-- V05 Windows scaling;
-- V08 manual Thermal actions;
-- V09 password dialog visual if practical;
-- V10–V12 final confirmation;
-- V13 name/library path;
-- V14 signature overlay + Save As + reopen;
-- representative Edit/Save + reopen classification.
+UI-4 is therefore closed GREEN. Do not reopen without a reproducible regression.
 
-Prompt prepared:
-`SG_PDF_CODEX_UI4_FINAL_WINDOWS_GATE_2026-10-15.md` (conversation artifact).
-
-Gate 0 becomes GREEN only with no remaining P0/P1.
-
-## 4. PKCS hygiene — GREEN isolated
+## 4. PKCS hygiene — GREEN isolated / consolidation next
 
 Branch `feat/fix-pkcs-hygiene`, HEAD `781cd6060121367f4d51efbe2724d820d1dfb842`.
 CI `1214/1214 PASS`.
-PKCS 8.0.2 is test-graph-only; app/runtime unchanged. Integrate conservatively after UI stabilization.
+PKCS 8.0.2 is test-graph-only; app/runtime unchanged.
+
+Immediate next task: consolidate accepted UI head + isolated PKCS hygiene into one release-truth branch, audit diff, run CI, then use that accepted head as F13 base.
 
 ## 5. F13 — Product Shell / Dashboard — A+B APPROVED
 
@@ -100,7 +71,7 @@ B technical plan:
 Mockup reference:
 `docs/design/2026-10-15-f13-approved-mockup-reference.md`
 
-F13 starts immediately after Gate 0 GREEN + release-truth consolidation.
+F13 begins immediately after release-truth consolidation.
 
 Key outputs:
 - approved Home dashboard;
@@ -142,7 +113,7 @@ Preserve current workspaces/writer; no second engine.
 
 ## 9. Release sequence
 
-1. Finish final UI-4 Windows gate.
+1. UI-4 GREEN — CLOSED.
 2. Consolidate accepted UI fixes + isolated PKCS release truth.
 3. F13 approved redesign + official icon.
 4. F14 expose/productize all existing capabilities.
@@ -154,4 +125,4 @@ Preserve current workspaces/writer; no second engine.
 
 ## 10. Immediate next action
 
-Run the final Windows QA prompt on `b4f19fcd...`; audit result; if no P0/P1, close Gate 0 and start F13 implementation natively.
+Create/audit release-truth branch from `b4f19fcd...`, apply only the previously proven PKCS 8.0.2 test-graph hygiene delta, run CI, then start F13 Task 1 from that accepted head.
