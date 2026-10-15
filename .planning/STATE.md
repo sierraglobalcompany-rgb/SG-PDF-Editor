@@ -1,11 +1,11 @@
 ---
 gsd_state_version: '1.1'
-status: f13-task2-green-task3-next
+status: f13-task4-green-task5-next
 progress:
   closed_baseline_phases: 13
   expanded_roadmap_phases: 19
   current_phase: F13 Product Shell
-  current_task: Task 3 HomeDashboard — ready for RED
+  current_task: Task 5 additive document rail — ready for RED
 ---
 
 # Project State — SG PDF Editor
@@ -20,108 +20,102 @@ progress:
 
 `main` remains read-only at `31c0594758a83ec555d73ecdd7c597cdf8791fd7`. No merge without explicit user approval.
 
-## 2. F0–F12 — CLOSED
+## 2. Closed foundation
 
-Functional anchor: `8e1845d6d8fe72374d7a80994d8500b6d36077cc`.
-Do not reopen without reproducible regression/new explicit requirement.
+F0–F12 remain CLOSED. UI-4/Gate 0 is GREEN/CLOSED at accepted UI head `b4f19fcd5f2854c9025e60385e3b7819bd798a29`.
 
-## 3. UI-4 / Gate 0 — GREEN / CLOSED
+Accepted F13 base after test-only PKCS 8.0.2 consolidation:
+- branch `integration/ui4-pkcs-release-truth-20261015`
+- head `12406d9e31b566c50174b4c9d7cb15cfb8f4b412`
+- CI `38685414773` GREEN
+- build 0 warnings / 0 errors
+- tests `1216/1216 PASS`.
 
-Accepted UI head: `b4f19fcd5f2854c9025e60385e3b7819bd798a29`.
-CI run `38681417442`: SUCCESS, suite `1216/1216 PASS`.
-Windows final evidence: V04/V05/V08/V10–V14 and representative Edit/Save PASS; no P0/P1/P2 reproduced.
-V09 manual credential entry was not run, but password-path behavior is covered automatically on the accepted head.
+## 3. F13 A+B — IN PROGRESS
 
-Durable closure:
-`docs/history/2026-10-15-ui4-green-gate-closed.md`
-
-## 4. Release-truth consolidation — GREEN
-
-Branch: `integration/ui4-pkcs-release-truth-20261015`
-Head: `12406d9e31b566c50174b4c9d7cb15cfb8f4b412`
-Draft PR: `#33`
-CI run `38685414773`: SUCCESS.
-- locked restore PASS
-- Release build PASS, 0 warnings / 0 errors
-- tests `1216/1216 PASS`
-
-This is the accepted base for F13 development.
-
-## 5. F13 — Product Shell / Dashboard — IN PROGRESS
-
-A+B approved.
-
-Spec:
+Authoritative spec:
 `docs/superpowers/specs/2026-10-15-f13-approved-mockup-shell-design.md`
 
-Implementation plan:
+Authoritative implementation plan:
 `docs/superpowers/plans/2026-10-15-f13-approved-mockup-shell.md`
 
 ### Task 1 — shell visual primitives — GREEN
 
-Branch: `feat/f13-shell-primitives`
-Head: `5a8e13f88175fe7469c18a1769fe86a96e001f10`
-Draft PR: `#34`
-CI run `38686210087`: SUCCESS.
-- Release build PASS, 0 warnings / 0 errors
-- tests `1218/1218 PASS`
+- branch `feat/f13-shell-primitives`
+- head `5a8e13f88175fe7469c18a1769fe86a96e001f10`
+- draft PR `#34`
+- CI `38686210087` GREEN
+- build 0/0
+- tests `1218/1218 PASS`.
 
 ### Task 2 — phase-honest ToolCatalog — GREEN
 
-Branch: `feat/f13-tool-catalog`
-Base: Task 1 head `5a8e13f88175fe7469c18a1769fe86a96e001f10`
-Head: `8c40cc98e102e75a3bd550f8ef3e9e58c599df32`
-Draft PR: `#35`
+- branch `feat/f13-tool-catalog`
+- head `8c40cc98e102e75a3bd550f8ef3e9e58c599df32`
+- draft PR `#35`
+- valid RED CI `38686564150`
+- GREEN CI `38686853745`
+- build 0/0
+- tests `1221/1221 PASS`.
 
-RED head: `b92e29dc07b3f7d42952e0214e336237f25d661b`
-RED CI run `38686564150`:
-- build PASS;
-- prior `1218` tests PASS;
-- exactly 3 new ToolCatalog tests FAIL because the production catalog is absent.
+Boundary remains frozen: F13 document ActionIds only `read/edit/comment/sign/organize`; full utility routing belongs to F14.
 
-GREEN product delta only:
-- `src/SGPdf.App/Shell/ToolDescriptor.cs`
-- `src/SGPdf.App/Shell/ToolCatalog.cs`
+### Task 3 — HomeDashboard — GREEN
 
-Contract:
-- approved document rail order;
-- F13 executable document actions limited to Read/Edit/Comment/Sign/Organize;
-- Forms/OCR/Redact/Compare/Convert/Protect held for F14;
-- Home catalog capability-honest;
-- `PDF a PNG` label honest;
-- `Imagen a PDF` explicitly `Próximamente`;
-- only ZPL has a Home ActionId in F13;
-- no product reflection, MainWindow references, delegates, command bus or routing.
+- branch `feat/f13-home-dashboard`
+- functional GREEN head `b9905be21b3131ccf0c63e11dc4b170329c72017`
+- draft PR `#36`
+- valid RED head `434eacfd9ec09bdb44cdd32aea17b36e9c3c4aab`
+- GREEN CI `38687569030`
+- build 0/0
+- tests `1224/1224 PASS`.
 
-GREEN CI run `38686853745`: SUCCESS.
-- locked restore PASS
-- Release build PASS, 0 warnings / 0 errors
-- tests `1221/1221 PASS`
+Dashboard is intent-only: Open PDF, Open ZPL, recent PDF, and ToolRequested. It reuses `RecentPdfEntry`; no second recent store or business logic.
 
-### Task 3 — HomeDashboard — NEXT
+A later accidental `_probe.tmp` add/delete produced no final tree delta. Current branch tree remains equivalent to the proven GREEN tree; do not rewrite branch history destructively.
 
-Start from Task 2 head `8c40cc98e102e75a3bd550f8ef3e9e58c599df32` in a new stacked branch.
-RED first.
+### Task 4 — MainWindow Home/PDF/ZPL shell state — GREEN
 
-Scope only:
-- `Shell/HomeDashboard.xaml`
-- `Shell/HomeDashboard.xaml.cs`
-- tests for structure, catalog-driven cards, honest disabled states, open-PDF/open-ZPL events and lightweight recent-file presentation.
+- branch `feat/f13-shell-workspace-state`
+- functional GREEN head `21bf03e0d303bc888639e74ad523de793f986e66`
+- current tree-equivalent head `d267cbc0425c5e4243432145d9b60c522a9ae331`
+- draft PR `#37`
+- valid RED CI `38688722593`: 3 new shell-state tests failed only because shell state did not exist; prior 1224 stayed GREEN.
+- first GREEN CI `38689293686`: build 0/0, tests `1227/1227 PASS`.
+- fresh tree-equivalent verification CI `38753602191`: build 0 warnings / 0 errors, tests `1227/1227 PASS`.
 
-Do not route business logic into the dashboard. No PDF engine, RecentPdfStore duplication, F14 wiring, F15 Edit V3, icon asset, packages or framework changes.
+Product delta remains only:
+- `src/SGPdf.App/MainWindow.Shell.cs`
+- minimal recent-open reuse in `MainWindow.ReaderShortcuts.cs`
+- shell-state tests.
 
-## 6. Exact resume point
+A temporary structural test attempting to forbid the existing Title-property trigger was proven RED, then classified as over-specified because it mandated an implementation detail not required by the approved plan. It was deleted before advancing; compare `21bf03e...` → `d267cbc...` has zero file delta.
 
-1. Create Task 3 stacked branch from `8c40cc98e102e75a3bd550f8ef3e9e58c599df32`.
-2. Read the approved Task 3 plan/spec before writing tests.
-3. Add the smallest RED contract for HomeDashboard.
-4. Prove RED in CI.
-5. Implement only enough HomeDashboard to turn it GREEN.
-6. Full suite + CI before Task 4.
-7. No merge of PR #33/#34/#35 or `main` without explicit user approval.
+## 4. Exact resume point — F13 Task 5
 
-## 7. Later sequence
+Create a new stacked branch from `d267cbc0425c5e4243432145d9b60c522a9ae331`.
 
-F13 shell → F14 productize existing capabilities → F15 Edit V3 → reassess public release → F16 new utilities → F17 professional UX → F18 optional local integrations.
+Task 5 scope only:
+- additive 96 px document rail;
+- approved order from `ToolCatalog.Document`;
+- visible text + accessible/focusable buttons;
+- only five F13 routes executable: `read`, `edit`, `comment`, `sign`, `organize`;
+- explicit local `HandleToolAction(string actionId)` switch;
+- preserve existing owners and dirty-state guards;
+- keep legacy centered mode strip during this task because Sign/Edit/Organize/Comments initialization still depends on it;
+- do not route Forms/OCR/Redact/Compare/Convert/Protect until F14;
+- do not touch official icon, F15 Edit V3, engines, packages or `main`.
 
-Official application icon remains source-gated until the user supplies/approves the actual source asset; the mockup SG tile is not authoritative.
+Required sequence:
+1. RED rail structure + routing/equivalence contract.
+2. Prove RED.
+3. Minimal additive implementation.
+4. Focused PASS.
+5. Full suite PASS.
+6. CI GREEN before Task 6.
+
+## 5. Later sequence
+
+F13 Tasks 5–9 → F14 productize existing capabilities → F15 Edit V3 → reassess first public release → F16 new utilities → F17 professional UX → F18 optional local integrations.
+
+Official application icon remains source-gated until the user supplies/approves the real source asset; the mockup SG tile is not authoritative.
