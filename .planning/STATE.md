@@ -1,10 +1,11 @@
 ---
 gsd_state_version: '1.1'
-status: ui4-green-release-truth-consolidation-before-f13
+status: f13-task1-red-checkpoint
 progress:
   closed_baseline_phases: 13
   expanded_roadmap_phases: 19
-  current_phase: release-truth consolidation before F13
+  current_phase: F13 Product Shell
+  current_task: Task 1 shell visual primitives — RED proven
 ---
 
 # Project State — SG PDF Editor
@@ -19,110 +20,88 @@ progress:
 
 `main` remains read-only at `31c0594758a83ec555d73ecdd7c597cdf8791fd7`. No merge without explicit user approval.
 
-## 2. Functional baseline F0–F12 — CLOSED
+## 2. F0–F12 — CLOSED
 
 Functional anchor: `8e1845d6d8fe72374d7a80994d8500b6d36077cc`.
-Historical CI: `1202/1202 PASS`.
-Do not reopen F0–F12 without reproducible regression/new explicit requirement.
+Do not reopen without reproducible regression/new explicit requirement.
 
-## 3. UI-4 Gate 0 — GREEN
+## 3. UI-4 / Gate 0 — GREEN / CLOSED
 
-Accepted UI head:
-`b4f19fcd5f2854c9025e60385e3b7819bd798a29`
+Accepted UI head: `b4f19fcd5f2854c9025e60385e3b7819bd798a29`.
+CI run `38681417442`: SUCCESS, suite `1216/1216 PASS`.
+Windows final evidence: V04/V05/V08/V10–V14 and representative Edit/Save PASS; no P0/P1/P2 reproduced.
+V09 manual credential entry was not run, but password-path behavior is covered automatically on the accepted head.
 
-Automated:
-- locked restore PASS;
-- Release build PASS;
-- suite `1216/1216 PASS`;
-- CI run `38681417442` SUCCESS.
+Durable closure:
+`docs/history/2026-10-15-ui4-green-gate-closed.md`
 
-Windows final QA:
-- V04 1366×768 PASS;
-- V05 125% scaling PASS;
-- V08 Thermal actions + PDF export PASS;
-- V10 Draw Signature PASS;
-- V11 Signature from Photo PASS;
-- V12 Signature Library PASS;
-- V13 signature-name dialog PASS;
-- V14 signature overlay + Save As + reopen PASS;
-- representative Edit/Save + reopen PASS;
-- no P0/P1/P2 reproduced.
+## 4. Release-truth consolidation — GREEN
 
-V09 manual password entry was NOT RUN because the local computer-use workflow would not type authentication credentials. This is non-blocking because the accepted head contains automated password-path coverage for wrong+cancel preserving workspace, wrong→correct retry and password non-persistence.
+Branch: `integration/ui4-pkcs-release-truth-20261015`
+Head: `12406d9e31b566c50174b4c9d7cb15cfb8f4b412`
+Draft PR: `#33`
 
-UI-4 is therefore closed GREEN. Do not reopen without a reproducible regression.
+Delta from accepted UI head is only:
+- `tests/SGPdf.App.Tests/SGPdf.App.Tests.csproj`
+- `tests/SGPdf.App.Tests/packages.lock.json`
 
-## 4. PKCS hygiene — GREEN isolated / consolidation next
+Purpose: test-only direct pin `System.Security.Cryptography.Pkcs 8.0.2`; app/runtime unchanged.
+CI run `38685414773`: SUCCESS.
+- locked restore PASS
+- Release build PASS, 0 warnings / 0 errors
+- tests `1216/1216 PASS`
 
-Branch `feat/fix-pkcs-hygiene`, HEAD `781cd6060121367f4d51efbe2724d820d1dfb842`.
-CI `1214/1214 PASS`.
-PKCS 8.0.2 is test-graph-only; app/runtime unchanged.
+This is the accepted base for F13 development.
 
-Immediate next task: consolidate accepted UI head + isolated PKCS hygiene into one release-truth branch, audit diff, run CI, then use that accepted head as F13 base.
+## 5. F13 — Product Shell / Dashboard — IN PROGRESS
 
-## 5. F13 — Product Shell / Dashboard — A+B APPROVED
+A+B approved.
 
-A visual spec:
+Spec:
 `docs/superpowers/specs/2026-10-15-f13-approved-mockup-shell-design.md`
 
-B technical plan:
+Implementation plan:
 `docs/superpowers/plans/2026-10-15-f13-approved-mockup-shell.md`
 
 Mockup reference:
 `docs/design/2026-10-15-f13-approved-mockup-reference.md`
 
-F13 begins immediately after release-truth consolidation.
+### Current Task 1 — SG shell visual primitives
 
-Key outputs:
-- approved Home dashboard;
-- 96 px left rail;
-- compact document workspace;
-- 320 px contextual right panel;
-- Light/Dark;
-- native vector icons;
-- safe removal of redundant legacy mode strip after equivalence.
+Branch: `feat/f13-shell-primitives`
+Base: `12406d9e31b566c50174b4c9d7cb15cfb8f4b412`
+Current head: `97876802fa6326051a185858b18e5c4a0943e4b2`
+Draft PR: `#34`
 
-### Official application icon
+RED contract added:
+`tests/SGPdf.App.Tests/ShellThemeContractTests.cs`
 
-F13.4. Required on window/exe/taskbar/Alt+Tab and later shortcut/installer.
-Still source-gated: must use actual user-approved logo/icon source, not mockup placeholder.
+Expected RED was demonstrated in CI run `38685764535`:
+- restore PASS
+- build PASS, 0 warnings / 0 errors
+- tests: `1217 PASS / 1 FAIL / 1218 total`
+- failing test: `ShellThemeContractTests.ModernTheme_DeclaresApprovedShellPrimitives`
+- first missing key: `SgHomeCardStyle`
 
-## 6. F14 — Productize existing F0–F12 capabilities
+This failure is intentional and proves Task 1 RED before product implementation.
+No Dashboard, routing, icon, Home state, F14 utility wiring or F15 Edit V3 code has been started in this branch.
 
-After F13 shell is stable.
-Expose current owners through the new UI without duplicating logic:
-- Organize/page operations;
-- OCR/Redact/Protect/watermark/numbering;
-- Comment/Sign/Forms;
-- Compare/Convert/Batch/QR/ZPL;
-- safe-transition guards preserved.
+## 6. Exact resume point
 
-## 7. F15 — Edit V3
+Resume F13 Task 1 from head `97876802fa6326051a185858b18e5c4a0943e4b2`.
 
-Approved design/spec ready.
-Goal: direct object selection, contextual properties, honest editable/limited/read-only states, improved image/text editing UX, reliable `Guardar como...`, reopen verification.
-Preserve current workspaces/writer; no second engine.
+Next action only:
+1. Extend `src/SGPdf.App/Themes/Modern.xaml` minimally with the required approved shell primitive keys.
+2. Reuse existing dynamic SG/Fluent resources; no hard-coded light-only hex colors, no package/icon framework.
+3. Run focused contract tests.
+4. Run full suite.
+5. Require exact-head CI GREEN.
+6. Only then close Task 1 and advance to Task 2 static phase-honest ToolCatalog.
 
-## 8. F16–F18 expansion
+Do not skip RED evidence, do not touch `main`, do not merge PR #33/#34 without explicit user approval.
 
-**F16 new local utilities:** PDF→JPG/export studio, Image→PDF, Crop, authorized Unlock, safe Optimize, image watermark after capability gate.
+## 7. Later sequence
 
-**F17 professional UX:** Compare V2, more AcroForm types/simple designer, signature UX completion.
+F13 shell → F14 productize existing capabilities → F15 Edit V3 → reassess public release → F16 new utilities → F17 professional UX → F18 optional local integrations.
 
-**F18 optional integrations:** detected local LibreOffice→PDF, scanner, local HTML→PDF after separate gates.
-
-## 9. Release sequence
-
-1. UI-4 GREEN — CLOSED.
-2. Consolidate accepted UI fixes + isolated PKCS release truth.
-3. F13 approved redesign + official icon.
-4. F14 expose/productize all existing capabilities.
-5. F15 Edit V3.
-6. Reassess first public release after F15.
-7. F16–F18 may continue after that release or be included only by explicit scope decision.
-8. Publish/installer on the intended stable baseline.
-9. `main` only with explicit user approval.
-
-## 10. Immediate next action
-
-Create/audit release-truth branch from `b4f19fcd...`, apply only the previously proven PKCS 8.0.2 test-graph hygiene delta, run CI, then start F13 Task 1 from that accepted head.
+Official application icon remains source-gated until the user supplies/approves the actual source asset; the mockup SG tile is not authoritative.
