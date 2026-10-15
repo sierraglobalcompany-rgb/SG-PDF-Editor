@@ -77,7 +77,7 @@ Results:
 - V06 PASS;
 - V07 PASS;
 - V08 FAIL-P2 / classification pending;
-- V09 NOT RUN;
+- V09 NOT RUN visually, source/functional path covered by protected-PDF tests;
 - V10 FAIL-P1;
 - V11 FAIL-P1;
 - V12 FAIL-P1;
@@ -104,7 +104,7 @@ Exact source/test conclusions on UI head `abd52d...`:
 - V10–V12 signature entrypoints/delegates/default dialog constructors and `ShowDialog()` exist; existing tests cover buttons/seams/dialog construction but not the physical modal visibility chain. Windows trace remains mandatory before any signature fix.
 - V08 Export is expected enabled only with valid `LabelLayoutPlan` and not-busy; Print additionally requires `Thermal`. Existing exact UI tests enforce this. Manual classification needs `MediaKind`, plan/null, busy state and validation text.
 - Edit `Guardar como...` is already tested visible/enabled after successful Edit entry independent of selection; save/preflight/combined writer paths are covered. User dissatisfaction still needs classification as product bug vs safe limitation vs UX/discoverability.
-- V09 remains a Windows evidence item; no source change is justified first.
+- V09 source/functional path is already covered by `MainWindowReaderPasswordTests` using a genuinely protected PDF: wrong/cancel preserves the prior workspace, retry with the correct password succeeds, and the password is not persisted. Only Windows visual/dialog evidence remains.
 
 **Anti-patch decision:** no product-code modification is accepted from source inspection alone. The next code change must be tied to a demonstrated Windows root cause.
 
@@ -114,7 +114,7 @@ Codex scope already prepared and remains the next external evidence source:
 - trace V10–V12 runtime path down to actual modal visibility;
 - reproduce Edit/Save and reopen output;
 - classify V08 using real media/plan/busy state;
-- execute V09 with existing qpdf if quickly viable.
+- visually verify V09 password-dialog behavior using an existing protected fixture where possible.
 
 Codex may prepare only a small local fix after demonstrated root cause. No redesign, publish, installer, push or main.
 
