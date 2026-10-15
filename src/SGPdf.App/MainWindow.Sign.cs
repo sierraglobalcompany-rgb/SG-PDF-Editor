@@ -173,6 +173,8 @@ public partial class MainWindow
         };
         _readModeButton = new Button { Name = "ReadModeButton", Content = "LEER", Padding = new Thickness(14, 4, 14, 4), Margin = new Thickness(0, 0, 4, 0) };
         _signModeButton = new Button { Name = "SignModeButton", Content = "FIRMAR", Padding = new Thickness(14, 4, 14, 4), IsEnabled = false };
+        _readModeButton.SetResourceReference(StyleProperty, "SgToolbarButtonStyle");
+        _signModeButton.SetResourceReference(StyleProperty, "SgToolbarButtonStyle");
         RegisterName(_readModeButton.Name, _readModeButton);
         RegisterName(_signModeButton.Name, _signModeButton);
         _signModeButton.SetBinding(IsEnabledProperty, new Binding(nameof(IsEnabled)) { Source = PrintPdfMenuItem });
@@ -180,7 +182,8 @@ public partial class MainWindow
         _signModeButton.Click += SignMode_Click;
         modePanel.Children.Add(_readModeButton);
         modePanel.Children.Add(_signModeButton);
-        var modeBorder = new Border { BorderThickness = new Thickness(0, 0, 0, 1), BorderBrush = Brushes.LightGray, Background = Brushes.White, Child = modePanel };
+        var modeBorder = new Border { Child = modePanel };
+        modeBorder.SetResourceReference(StyleProperty, "SgToolbarBorderStyle");
         DockPanel.SetDock(modeBorder, Dock.Top);
         root.Children.Insert(Math.Min(1, root.Children.Count), modeBorder);
 

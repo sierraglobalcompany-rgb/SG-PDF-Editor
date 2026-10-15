@@ -13,6 +13,7 @@ public partial class MainWindow
     private MenuItem? _editAcroFormMenuItem;
     private StackPanel? _acroFormPropertiesPanel;
     private StackPanel? _acroFormFieldsPanel;
+    private ScrollViewer? _acroFormPropertiesScrollViewer;
     private Button? _saveAcroFormButton;
 
     protected override void OnContentRendered(EventArgs e)
@@ -84,13 +85,14 @@ public partial class MainWindow
         {
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
             Content = propertiesPanel,
-            Visibility = Visibility.Visible
+            Visibility = Visibility.Collapsed
         };
         propertiesHost.Children.Add(scrollViewer);
 
         _editAcroFormMenuItem = editAcroFormMenuItem;
         _acroFormPropertiesPanel = propertiesPanel;
         _acroFormFieldsPanel = fieldsPanel;
+        _acroFormPropertiesScrollViewer = scrollViewer;
         _saveAcroFormButton = saveButton;
     }
 
@@ -158,6 +160,7 @@ public partial class MainWindow
             LabelPropertiesPanel.Visibility = Visibility.Collapsed;
             PropertiesPlaceholderText.Visibility = Visibility.Collapsed;
             _acroFormPropertiesPanel.Visibility = Visibility.Visible;
+            _acroFormPropertiesScrollViewer!.Visibility = Visibility.Visible;
             _saveAcroFormButton.IsEnabled = fields.Count > 0;
             StatusText.Text = fields.Count == 0
                 ? "El PDF no contiene campos de texto AcroForm compatibles."
@@ -202,6 +205,8 @@ public partial class MainWindow
 
         if (_acroFormPropertiesPanel is not null)
             _acroFormPropertiesPanel.Visibility = Visibility.Collapsed;
+        if (_acroFormPropertiesScrollViewer is not null)
+            _acroFormPropertiesScrollViewer.Visibility = Visibility.Collapsed;
         if (_saveAcroFormButton is not null)
             _saveAcroFormButton.IsEnabled = false;
 
