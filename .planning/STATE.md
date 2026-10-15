@@ -1,11 +1,11 @@
 ---
 gsd_state_version: '1.1'
-status: f13-task4-green-task5-next
+status: f13-task5-paused-pre-red
 progress:
   closed_baseline_phases: 13
   expanded_roadmap_phases: 19
   current_phase: F13 Product Shell
-  current_task: Task 5 additive document rail — ready for RED
+  current_task: Task 5 additive document rail — paused before RED
 ---
 
 # Project State — SG PDF Editor
@@ -91,28 +91,31 @@ Product delta remains only:
 
 A temporary structural test attempting to forbid the existing Title-property trigger was proven RED, then classified as over-specified because it mandated an implementation detail not required by the approved plan. It was deleted before advancing; compare `21bf03e...` → `d267cbc...` has zero file delta.
 
-## 4. Exact resume point — F13 Task 5
+## 4. F13 Task 5 — PAUSED PRE-RED
 
-Create a new stacked branch from `d267cbc0425c5e4243432145d9b60c522a9ae331`.
+Branch already created:
+- `feat/f13-document-tool-rail`
+- exact head `d267cbc0425c5e4243432145d9b60c522a9ae331`
+- no Task 5 product commit
+- no Task 5 RED test committed yet.
 
-Task 5 scope only:
-- additive 96 px document rail;
-- approved order from `ToolCatalog.Document`;
-- visible text + accessible/focusable buttons;
-- only five F13 routes executable: `read`, `edit`, `comment`, `sign`, `organize`;
-- explicit local `HandleToolAction(string actionId)` switch;
-- preserve existing owners and dirty-state guards;
-- keep legacy centered mode strip during this task because Sign/Edit/Organize/Comments initialization still depends on it;
-- do not route Forms/OCR/Redact/Compare/Convert/Protect until F14;
-- do not touch official icon, F15 Edit V3, engines, packages or `main`.
+Read-only owner/guard tracing has started across Edit, Sign, Comments and Organize so the rail cannot bypass existing pending-change guards. That trace is not complete yet.
 
-Required sequence:
-1. RED rail structure + routing/equivalence contract.
-2. Prove RED.
-3. Minimal additive implementation.
-4. Focused PASS.
-5. Full suite PASS.
-6. CI GREEN before Task 6.
+Authoritative pause checkpoint:
+`docs/history/2026-10-15-f13-task5-pre-red-pause-checkpoint.md`
+
+### Exact resume
+
+1. Verify branch head/state.
+2. Finish owner/guard trace for `read/edit/comment/sign/organize`.
+3. Add focused RED rail structure + routing/equivalence contract.
+4. Prove RED.
+5. Implement minimum additive ~96 px document rail and local `HandleToolAction(string actionId)` switch.
+6. Preserve legacy centered strip during Task 5.
+7. Focused PASS → full Release suite PASS → exact-head CI GREEN.
+8. Only then Task 6.
+
+Do not route Forms/OCR/Redact/Compare/Convert/Protect until F14. Do not touch F15 Edit V3, official icon, engines, packages, `main`, or merge policy.
 
 ## 5. Later sequence
 
