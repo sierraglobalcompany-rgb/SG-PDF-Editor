@@ -47,6 +47,40 @@ public sealed class MainWindowSignatureTests
     }
 
     [Fact]
+    public void SignMode_DoesNotLeaveAcroFormScrollViewerAsHitTestOverlay()
+    {
+        RunInSta(() =>
+        {
+            var window = new MainWindow();
+            using var fixture = PdfFixture.Create();
+            try
+            {
+                Invoke(window, "InitializeFormsUi");
+                var propertiesGrid = Assert.IsType<Grid>(Assert.IsType<TextBlock>(window.FindName("PropertiesPlaceholderText")).Parent);
+                var acroFormScrollViewer = Assert.Single(propertiesGrid.Children.OfType<ScrollViewer>(),
+                    scrollViewer => scrollViewer.Content is StackPanel { Name: "AcroFormPropertiesPanel" });
+
+                AttachPdfWorkspace(window, fixture.SourcePath);
+                Click(window, "SignModeButton");
+
+                Assert.Equal(Visibility.Collapsed, acroFormScrollViewer.Visibility);
+                Assert.Equal(Visibility.Visible, Assert.IsType<StackPanel>(window.FindName("SignaturePropertiesPanel")).Visibility);
+
+                Invoke(window, "EditAcroForm_Click", window, new RoutedEventArgs());
+                Assert.Equal(Visibility.Visible, acroFormScrollViewer.Visibility);
+
+                Invoke(window, "ResetAcroFormUi");
+                Assert.Equal(Visibility.Collapsed, acroFormScrollViewer.Visibility);
+            }
+            finally
+            {
+                ClearDirtyState(window);
+                window.Close();
+            }
+        });
+    }
+
+    [Fact]
     public void AddSignature_CreatesCenteredDirtyPlacement_AndZoomReprojectsWithoutChangingPdfBounds()
     {
         RunInSta(() =>
