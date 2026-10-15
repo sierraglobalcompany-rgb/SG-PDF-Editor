@@ -1,11 +1,11 @@
 ---
 gsd_state_version: '1.1'
-status: f13-task1-red-checkpoint
+status: f13-task2-green-implemented-ci-running
 progress:
   closed_baseline_phases: 13
   expanded_roadmap_phases: 19
   current_phase: F13 Product Shell
-  current_task: Task 1 shell visual primitives — RED proven
+  current_task: Task 2 phase-honest ToolCatalog — GREEN implemented, CI running
 ---
 
 # Project State — SG PDF Editor
@@ -40,12 +40,6 @@ Durable closure:
 Branch: `integration/ui4-pkcs-release-truth-20261015`
 Head: `12406d9e31b566c50174b4c9d7cb15cfb8f4b412`
 Draft PR: `#33`
-
-Delta from accepted UI head is only:
-- `tests/SGPdf.App.Tests/SGPdf.App.Tests.csproj`
-- `tests/SGPdf.App.Tests/packages.lock.json`
-
-Purpose: test-only direct pin `System.Security.Cryptography.Pkcs 8.0.2`; app/runtime unchanged.
 CI run `38685414773`: SUCCESS.
 - locked restore PASS
 - Release build PASS, 0 warnings / 0 errors
@@ -63,42 +57,59 @@ Spec:
 Implementation plan:
 `docs/superpowers/plans/2026-10-15-f13-approved-mockup-shell.md`
 
-Mockup reference:
-`docs/design/2026-10-15-f13-approved-mockup-reference.md`
-
-### Current Task 1 — SG shell visual primitives
+### Task 1 — shell visual primitives — GREEN
 
 Branch: `feat/f13-shell-primitives`
 Base: `12406d9e31b566c50174b4c9d7cb15cfb8f4b412`
-Current head: `97876802fa6326051a185858b18e5c4a0943e4b2`
+Head: `5a8e13f88175fe7469c18a1769fe86a96e001f10`
 Draft PR: `#34`
 
-RED contract added:
-`tests/SGPdf.App.Tests/ShellThemeContractTests.cs`
+TDD:
+- RED head `97876802fa6326051a185858b18e5c4a0943e4b2` proved missing approved shell resource keys.
+- GREEN adds only native WPF primitives in `Themes/Modern.xaml`.
+- no Dashboard, routing, packages or feature-owner changes.
 
-Expected RED was demonstrated in CI run `38685764535`:
-- restore PASS
+CI run `38686210087`: SUCCESS.
+- locked restore PASS
+- Release build PASS, 0 warnings / 0 errors
+- tests `1218/1218 PASS`
+
+### Task 2 — phase-honest ToolCatalog — GREEN IMPLEMENTED / CI RUNNING
+
+Branch: `feat/f13-tool-catalog`
+Base: Task 1 head `5a8e13f88175fe7469c18a1769fe86a96e001f10`
+Draft PR: `#35`
+
+RED head: `b92e29dc07b3f7d42952e0214e336237f25d661b`
+RED CI run `38686564150`:
 - build PASS, 0 warnings / 0 errors
-- tests: `1217 PASS / 1 FAIL / 1218 total`
-- failing test: `ShellThemeContractTests.ModernTheme_DeclaresApprovedShellPrimitives`
-- first missing key: `SgHomeCardStyle`
+- prior `1218` tests PASS
+- exactly 3 new ToolCatalog contract tests FAIL because `SGPdf.App.Shell.ToolCatalog` does not exist
+- RED therefore valid and isolated.
 
-This failure is intentional and proves Task 1 RED before product implementation.
-No Dashboard, routing, icon, Home state, F14 utility wiring or F15 Edit V3 code has been started in this branch.
+GREEN implementation head: `8c40cc98e102e75a3bd550f8ef3e9e58c599df32`
+Product delta only:
+- `src/SGPdf.App/Shell/ToolDescriptor.cs`
+- `src/SGPdf.App/Shell/ToolCatalog.cs`
+
+Contract:
+- document rail order matches approved spec;
+- only `read/edit/comment/sign/organize` have F13 ActionIds;
+- Forms/OCR/Redact/Compare/Convert/Protect remain disabled for F14 wiring;
+- Home catalog is capability-honest;
+- `PDF a PNG` is not mislabeled JPG;
+- `Imagen a PDF` is explicitly `Próximamente`;
+- only ZPL has a Home ActionId in F13;
+- no reflection, MainWindow reference, delegate, command bus or routing in product.
+
+GREEN CI run `38686853745` is currently RUNNING. Do not declare Task 2 closed until it passes full suite.
 
 ## 6. Exact resume point
 
-Resume F13 Task 1 from head `97876802fa6326051a185858b18e5c4a0943e4b2`.
-
-Next action only:
-1. Extend `src/SGPdf.App/Themes/Modern.xaml` minimally with the required approved shell primitive keys.
-2. Reuse existing dynamic SG/Fluent resources; no hard-coded light-only hex colors, no package/icon framework.
-3. Run focused contract tests.
-4. Run full suite.
-5. Require exact-head CI GREEN.
-6. Only then close Task 1 and advance to Task 2 static phase-honest ToolCatalog.
-
-Do not skip RED evidence, do not touch `main`, do not merge PR #33/#34 without explicit user approval.
+1. Read CI run `38686853745` for head `8c40cc98e102e75a3bd550f8ef3e9e58c599df32`.
+2. If full suite GREEN, close Task 2.
+3. Only then begin F13 Task 3 HomeDashboard in a new stacked branch with RED first.
+4. Do not merge PR #33/#34/#35 or touch `main` without explicit user approval.
 
 ## 7. Later sequence
 
