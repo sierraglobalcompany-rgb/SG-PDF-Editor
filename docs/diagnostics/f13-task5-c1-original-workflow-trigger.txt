@@ -1,0 +1,1 @@
+Temporary CI trigger for F13 Task 5 C1 reproduction. Product code and workflow remain identical to eb0be24071a9b205a6386e57e54912b3600ab3b1. This branch will be reset to the exact product SHA after evidence is captured.
