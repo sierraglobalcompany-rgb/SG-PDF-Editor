@@ -1,6 +1,6 @@
 ---
 gsd_state_version: '1.1'
-status: ui4-fail-p1-f13-mockup-spec-ready-f15-spec-ready
+status: ui4-fail-p1-f13-mockup-plan-ready-f15-spec-ready
 progress:
   closed_baseline_phases: 13
   expanded_roadmap_phases: 19
@@ -17,11 +17,12 @@ Operational order for the post-UI4 transition:
 1. live GitHub exact refs + exact-head CI;
 2. this `STATE.md`;
 3. `docs/superpowers/specs/2026-10-15-f13-approved-mockup-shell-design.md`;
-4. `docs/history/2026-10-14-post-ui4-expansion-checkpoint.md`;
-5. `.planning/ROADMAP.md`;
-6. focused specs/plans in `docs/superpowers/`;
-7. `docs/product/2026-10-14-local-suite-expansion.md`;
-8. older master/history only when not superseded.
+4. `docs/superpowers/plans/2026-10-15-f13-approved-mockup-shell.md`;
+5. `docs/design/2026-10-15-f13-approved-mockup-reference.md`;
+6. `.planning/ROADMAP.md`;
+7. focused specs/plans in `docs/superpowers/`;
+8. `docs/product/2026-10-14-local-suite-expansion.md`;
+9. older master/history only when not superseded.
 
 ## Mandatory laws
 
@@ -126,32 +127,41 @@ PKCS 8.0.2 is pinned only in the test dependency graph. App/runtime unchanged.
 
 `plan/post-ui4-f13-f18-expansion-20261014`
 
-Contains only planning/documentation, not product implementation.
+Contains planning/documentation only; no product implementation.
 
-### F13 — Product Shell / Dashboard — MOCKUP APPROVED / SPEC READY
+### F13 — Product Shell / Dashboard — MOCKUP + SPEC APPROVED / IMPLEMENTATION PLAN READY
 
-Original shell spec:
-`docs/superpowers/specs/2026-10-14-f13-product-shell-design.md`
-
-Approved visual contract:
+Authoritative visual spec:
 `docs/superpowers/specs/2026-10-15-f13-approved-mockup-shell-design.md`
 
-Existing preliminary plan:
+Authoritative technical plan:
+`docs/superpowers/plans/2026-10-15-f13-approved-mockup-shell.md`
+
+Approved mockup identity/reference:
+`docs/design/2026-10-15-f13-approved-mockup-reference.md`
+
+Old preliminary plan:
 `docs/superpowers/plans/2026-10-14-f13-product-shell.md`
 
-Visual direction now frozen:
-- Home/dashboard inspired by utility-suite discoverability;
-- 96 px Home/document navigation rail;
+The old plan is now explicitly **SUPERSEDED / DO NOT EXECUTE**.
+
+Frozen F13 decisions:
+- 96 px Home/document rail;
+- 24 px Home content padding;
 - tool cards with icon + title + short description;
 - local/offline identity; no login, ads, cloud or AI;
-- document workspace with left primary rail, center canvas and 320 px contextual right panel;
+- document workspace with left rail, center canvas and 320 px contextual right panel;
 - contextual toolbar per active owner;
-- SG dynamic theme resources, light/dark baseline;
-- current owners are reused; shell does not implement PDF business logic;
-- centered legacy mode strip is deleted only after equivalence + Windows QA;
-- placeholder `SG` shown in mockup does NOT authorize inventing the official app icon.
+- SG dynamic theme resources; Light/Dark baseline;
+- `PDF a PNG` is the honest F13 conversion label; JPG remains F16;
+- `Imagen a PDF` may be shown only disabled/`Próximamente` before F16;
+- current feature owners remain single owners; shell implements no PDF business logic;
+- centered legacy mode strip is deleted only after automated equivalence + real Windows proof;
+- mockup red `SG` is placeholder only and does not authorize the official app icon.
 
-**Next process gate:** user review/acceptance of the written F13 mockup spec before the exact per-file implementation plan is authored.
+**Implementation Gate 0:** do not execute F13 product code until UI-4 no longer has P0/P1.
+
+**Process gate:** implementation plan is ready for user review. After approval, execution method remains ChatGPT/native; Codex is used only for Windows/manual gates.
 
 ### F14 — Productize existing capabilities
 
@@ -184,7 +194,7 @@ Key frozen decisions:
 - any future history extension must remain inside the owning workspace;
 - no second engine/writer, plugin framework, command bus, DI rewrite, cloud or AI.
 
-**Next process gate:** written F15 spec review before its implementation plan.
+F15 implementation plan remains pending until its written spec is separately reviewed/approved and F13 shell is sufficiently stable.
 
 ### F16 — New local utilities
 Independent capability-gated slices: PDF→JPG, Image→PDF, Crop, authorized unlock, safe Optimize, image watermark if proven safe.
@@ -206,7 +216,7 @@ Required surfaces:
 - shortcut;
 - installer.
 
-Never synthesize official icon from text alone.
+Never synthesize official icon from mockup placeholder or textual description.
 
 ## Immediate resume order
 
@@ -215,12 +225,12 @@ Never synthesize official icon from text alone.
 3. Full suite + exact-head CI after each accepted code fix.
 4. Rerun V10–V14 plus V04/V05/V08/V09.
 5. Close UI-4 only with no P0/P1.
-6. Consolidate release docs + PKCS conservatively.
-7. After F13 written-spec approval, rewrite the F13 implementation plan against the approved mockup contract.
-8. Execute F13 in bounded tasks.
+6. Conservatively consolidate release truth + PKCS.
+7. After user review of the F13 implementation plan, execute F13 Tasks 1–9 natively, respecting Gate 0.
+8. Use Codex only for F13 Windows equivalence/final visual QA or Windows-only defects.
 9. Execute F14 by routing existing owners, not rewrites.
-10. F15 implementation only after written spec + implementation plan approval.
-11. Publish/installer only after the newly approved product baseline is stable.
+10. F15 implementation only after its written spec + implementation plan approval.
+11. Reassess publish/installer after the intended product baseline is stable.
 12. `main` only with explicit user approval.
 
 ## Codex usage rule
