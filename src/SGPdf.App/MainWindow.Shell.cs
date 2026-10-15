@@ -107,12 +107,13 @@ public partial class MainWindow
                 Tag = descriptor.Id,
                 Focusable = true,
                 IsEnabled = descriptor.ActionId is not null,
-                ToolTip = descriptor.DisabledReason ?? descriptor.Description,
-                Style = (Style)FindResource(
-                    string.Equals(descriptor.Id, "read", StringComparison.Ordinal)
-                        ? "SgRailItemSelectedStyle"
-                        : "SgRailItemStyle")
+                ToolTip = descriptor.DisabledReason ?? descriptor.Description
             };
+            button.SetResourceReference(
+                FrameworkElement.StyleProperty,
+                string.Equals(descriptor.Id, "read", StringComparison.Ordinal)
+                    ? "SgRailItemSelectedStyle"
+                    : "SgRailItemStyle");
             AutomationProperties.SetName(button, descriptor.Title);
             AutomationProperties.SetHelpText(button, descriptor.DisabledReason ?? descriptor.Description);
 
@@ -264,13 +265,13 @@ public partial class MainWindow
                         ? "sign"
                         : "read";
 
-        var normalStyle = (Style)FindResource("SgRailItemStyle");
-        var selectedStyle = (Style)FindResource("SgRailItemSelectedStyle");
         foreach (var button in items.Children.OfType<Button>())
         {
-            button.Style = string.Equals(button.Tag as string, selected, StringComparison.Ordinal)
-                ? selectedStyle
-                : normalStyle;
+            button.SetResourceReference(
+                FrameworkElement.StyleProperty,
+                string.Equals(button.Tag as string, selected, StringComparison.Ordinal)
+                    ? "SgRailItemSelectedStyle"
+                    : "SgRailItemStyle");
         }
     }
 
