@@ -1,11 +1,11 @@
 ---
 gsd_state_version: '1.1'
-status: f13-task2-green-implemented-ci-running
+status: f13-task2-green-task3-next
 progress:
   closed_baseline_phases: 13
   expanded_roadmap_phases: 19
   current_phase: F13 Product Shell
-  current_task: Task 2 phase-honest ToolCatalog — GREEN implemented, CI running
+  current_task: Task 3 HomeDashboard — ready for RED
 ---
 
 # Project State — SG PDF Editor
@@ -60,56 +60,65 @@ Implementation plan:
 ### Task 1 — shell visual primitives — GREEN
 
 Branch: `feat/f13-shell-primitives`
-Base: `12406d9e31b566c50174b4c9d7cb15cfb8f4b412`
 Head: `5a8e13f88175fe7469c18a1769fe86a96e001f10`
 Draft PR: `#34`
-
-TDD:
-- RED head `97876802fa6326051a185858b18e5c4a0943e4b2` proved missing approved shell resource keys.
-- GREEN adds only native WPF primitives in `Themes/Modern.xaml`.
-- no Dashboard, routing, packages or feature-owner changes.
-
 CI run `38686210087`: SUCCESS.
-- locked restore PASS
 - Release build PASS, 0 warnings / 0 errors
 - tests `1218/1218 PASS`
 
-### Task 2 — phase-honest ToolCatalog — GREEN IMPLEMENTED / CI RUNNING
+### Task 2 — phase-honest ToolCatalog — GREEN
 
 Branch: `feat/f13-tool-catalog`
 Base: Task 1 head `5a8e13f88175fe7469c18a1769fe86a96e001f10`
+Head: `8c40cc98e102e75a3bd550f8ef3e9e58c599df32`
 Draft PR: `#35`
 
 RED head: `b92e29dc07b3f7d42952e0214e336237f25d661b`
 RED CI run `38686564150`:
-- build PASS, 0 warnings / 0 errors
-- prior `1218` tests PASS
-- exactly 3 new ToolCatalog contract tests FAIL because `SGPdf.App.Shell.ToolCatalog` does not exist
-- RED therefore valid and isolated.
+- build PASS;
+- prior `1218` tests PASS;
+- exactly 3 new ToolCatalog tests FAIL because the production catalog is absent.
 
-GREEN implementation head: `8c40cc98e102e75a3bd550f8ef3e9e58c599df32`
-Product delta only:
+GREEN product delta only:
 - `src/SGPdf.App/Shell/ToolDescriptor.cs`
 - `src/SGPdf.App/Shell/ToolCatalog.cs`
 
 Contract:
-- document rail order matches approved spec;
-- only `read/edit/comment/sign/organize` have F13 ActionIds;
-- Forms/OCR/Redact/Compare/Convert/Protect remain disabled for F14 wiring;
-- Home catalog is capability-honest;
-- `PDF a PNG` is not mislabeled JPG;
-- `Imagen a PDF` is explicitly `Próximamente`;
+- approved document rail order;
+- F13 executable document actions limited to Read/Edit/Comment/Sign/Organize;
+- Forms/OCR/Redact/Compare/Convert/Protect held for F14;
+- Home catalog capability-honest;
+- `PDF a PNG` label honest;
+- `Imagen a PDF` explicitly `Próximamente`;
 - only ZPL has a Home ActionId in F13;
-- no reflection, MainWindow reference, delegate, command bus or routing in product.
+- no product reflection, MainWindow references, delegates, command bus or routing.
 
-GREEN CI run `38686853745` is currently RUNNING. Do not declare Task 2 closed until it passes full suite.
+GREEN CI run `38686853745`: SUCCESS.
+- locked restore PASS
+- Release build PASS, 0 warnings / 0 errors
+- tests `1221/1221 PASS`
+
+### Task 3 — HomeDashboard — NEXT
+
+Start from Task 2 head `8c40cc98e102e75a3bd550f8ef3e9e58c599df32` in a new stacked branch.
+RED first.
+
+Scope only:
+- `Shell/HomeDashboard.xaml`
+- `Shell/HomeDashboard.xaml.cs`
+- tests for structure, catalog-driven cards, honest disabled states, open-PDF/open-ZPL events and lightweight recent-file presentation.
+
+Do not route business logic into the dashboard. No PDF engine, RecentPdfStore duplication, F14 wiring, F15 Edit V3, icon asset, packages or framework changes.
 
 ## 6. Exact resume point
 
-1. Read CI run `38686853745` for head `8c40cc98e102e75a3bd550f8ef3e9e58c599df32`.
-2. If full suite GREEN, close Task 2.
-3. Only then begin F13 Task 3 HomeDashboard in a new stacked branch with RED first.
-4. Do not merge PR #33/#34/#35 or touch `main` without explicit user approval.
+1. Create Task 3 stacked branch from `8c40cc98e102e75a3bd550f8ef3e9e58c599df32`.
+2. Read the approved Task 3 plan/spec before writing tests.
+3. Add the smallest RED contract for HomeDashboard.
+4. Prove RED in CI.
+5. Implement only enough HomeDashboard to turn it GREEN.
+6. Full suite + CI before Task 4.
+7. No merge of PR #33/#34/#35 or `main` without explicit user approval.
 
 ## 7. Later sequence
 
