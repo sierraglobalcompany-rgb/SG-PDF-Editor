@@ -7,12 +7,12 @@
 
 ## Resultado ejecutivo
 
-No se justifica todavía ningún cambio de código productivo para V08, V10, V11 o V12.
+No se justifica todavía ningún cambio de código productivo para V08, V09, V10, V11 o V12.
 
 - **V10–V12 Firma:** los entrypoints, delegates y `ShowDialog()` existen. Los tests cubren botones, seams, estado y construcción de diálogos, pero no validan de extremo a extremo el modal real abierto desde el botón principal. Sigue siendo necesario localizar en Windows el punto exacto donde se corta el flujo.
 - **V08 ZPL/Labels:** el comportamiento de habilitación está definido y probado. `Exportar PDF` requiere un `LabelLayoutPlan` válido y no-busy. `Imprimir` además requiere medio `Thermal`. El FAIL-P2 manual no puede clasificarse como bug sin conocer `MediaKind`, `_labelLayoutPlan` e `IsViewerBusy` en ese momento.
 - **Editar / Guardar:** el comando `Guardar como...` existe, queda visible/habilitado al entrar correctamente a Editar y el writer combinado está cubierto. El reporte del usuario requiere reproducir si falló la entrada al modo, la selección/edición de objetos, una limitación segura de texto, el diálogo de destino o el guardado/reapertura. No hay evidencia de un comando ausente.
-- **V09:** sigue pendiente prueba Windows con PDF protegido. No requiere un cambio fuente previo.
+- **V09 PDF protegido:** el flujo funcional ya tiene cobertura automatizada con un PDF realmente protegido: contraseña incorrecta/cancelación preservan el workspace, reintento correcto abre el documento y la contraseña no queda persistida. Lo único pendiente es evidencia visual real del diálogo en Windows.
 
 ## 1. Firma — V10/V11/V12
 
@@ -161,10 +161,28 @@ Sobre PDF sintético conocido con texto editable + imagen:
 
 ## 4. V09 — PDF protegido
 
-Pendiente únicamente evidencia Windows.
+### Cobertura automatizada existente
+`MainWindowReaderPasswordTests.cs` ya crea un PDF realmente protegido y prueba:
 
-Usar qpdf 12.4.2 ya existente si está disponible localmente para crear fixture temporal protegido.  
-No añadir paquete, herramienta o fixture permanente solo para esta prueba.
+- contraseña incorrecta + cancelación → preserva el workspace existente;
+- contraseña incorrecta + contraseña correcta (`secret`) → publica el nuevo documento una sola vez;
+- la contraseña no se guarda en título, estado ni campos string persistentes de la sesión.
+
+### Clasificación actual
+**SOURCE/FUNCTIONAL PATH COVERED.**
+
+No hay un bug fuente conocido en V09.
+
+### Evidencia pendiente
+Solo falta la verificación visual real en Windows de que:
+
+- aparece el diálogo de contraseña;
+- el foco/teclado funcionan;
+- cancelación y reintento son entendibles;
+- el diálogo no queda oculto/detrás/fuera de pantalla.
+
+No es necesario generar otro fixture con qpdf salvo que el fixture automatizado no pueda reutilizarse en la prueba manual.  
+No añadir paquete, herramienta ni fixture permanente solo para V09.
 
 ## 5. Gate 0
 
@@ -177,7 +195,7 @@ No iniciar código F13 todavía.
 1. V10–V12 raíz demostrada y corregida/reclasificada.
 2. Edit/Save reproducido y clasificado.
 3. V08 clasificado con estado real.
-4. V09 ejecutado o documentado con razón concreta.
+4. V09 verificado visualmente en Windows.
 5. V04 1366×768 ejecutado.
 6. V05 scaling ejecutado.
 7. V13/V14 ejecutados después de desbloquear Firma.
