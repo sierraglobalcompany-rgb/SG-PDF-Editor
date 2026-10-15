@@ -1,6 +1,6 @@
 ---
 gsd_state_version: '1.1'
-status: ui4-fail-p1-f13-mockup-plan-ready-f15-spec-ready
+status: ui4-fail-p1-gate0-source-audited-f13-ab-approved-f15-spec-ready
 progress:
   closed_baseline_phases: 13
   expanded_roadmap_phases: 19
@@ -16,13 +16,14 @@ progress:
 Operational order for the post-UI4 transition:
 1. live GitHub exact refs + exact-head CI;
 2. this `STATE.md`;
-3. `docs/superpowers/specs/2026-10-15-f13-approved-mockup-shell-design.md`;
-4. `docs/superpowers/plans/2026-10-15-f13-approved-mockup-shell.md`;
-5. `docs/design/2026-10-15-f13-approved-mockup-reference.md`;
-6. `.planning/ROADMAP.md`;
-7. focused specs/plans in `docs/superpowers/`;
-8. `docs/product/2026-10-14-local-suite-expansion.md`;
-9. older master/history only when not superseded.
+3. `docs/history/2026-10-15-gate0-source-test-audit-before-f13.md`;
+4. `docs/superpowers/specs/2026-10-15-f13-approved-mockup-shell-design.md`;
+5. `docs/superpowers/plans/2026-10-15-f13-approved-mockup-shell.md`;
+6. `docs/design/2026-10-15-f13-approved-mockup-reference.md`;
+7. `.planning/ROADMAP.md`;
+8. focused specs/plans in `docs/superpowers/`;
+9. `docs/product/2026-10-14-local-suite-expansion.md`;
+10. older master/history only when not superseded.
 
 ## Mandatory laws
 
@@ -94,12 +95,25 @@ Purpose: replace hard-coded light strip visuals with shared toolbar styles for d
 
 Preserve/audit before any local branch manipulation.
 
+## Gate 0 source/test audit — COMPLETE, no code change justified
+
+Authoritative checkpoint:
+`docs/history/2026-10-15-gate0-source-test-audit-before-f13.md`
+
+Exact source/test conclusions on UI head `abd52d...`:
+- V10–V12 signature entrypoints/delegates/default dialog constructors and `ShowDialog()` exist; existing tests cover buttons/seams/dialog construction but not the physical modal visibility chain. Windows trace remains mandatory before any signature fix.
+- V08 Export is expected enabled only with valid `LabelLayoutPlan` and not-busy; Print additionally requires `Thermal`. Existing exact UI tests enforce this. Manual classification needs `MediaKind`, plan/null, busy state and validation text.
+- Edit `Guardar como...` is already tested visible/enabled after successful Edit entry independent of selection; save/preflight/combined writer paths are covered. User dissatisfaction still needs classification as product bug vs safe limitation vs UX/discoverability.
+- V09 remains a Windows evidence item; no source change is justified first.
+
+**Anti-patch decision:** no product-code modification is accepted from source inspection alone. The next code change must be tied to a demonstrated Windows root cause.
+
 ## Current Windows-only diagnostic
 
-Codex scope already prepared:
-- trace V10–V12 runtime path;
+Codex scope already prepared and remains the next external evidence source:
+- trace V10–V12 runtime path down to actual modal visibility;
 - reproduce Edit/Save and reopen output;
-- classify V08 expected state vs product bug;
+- classify V08 using real media/plan/busy state;
 - execute V09 with existing qpdf if quickly viable.
 
 Codex may prepare only a small local fix after demonstrated root cause. No redesign, publish, installer, push or main.
@@ -129,7 +143,13 @@ PKCS 8.0.2 is pinned only in the test dependency graph. App/runtime unchanged.
 
 Contains planning/documentation only; no product implementation.
 
-### F13 — Product Shell / Dashboard — MOCKUP + SPEC APPROVED / IMPLEMENTATION PLAN READY
+### F13 — Product Shell / Dashboard — A+B APPROVED / READY AFTER GATE 0
+
+The user explicitly approved **A+B** on 2026-10-15:
+- **A:** visual/functional mockup specification;
+- **B:** exact technical F13 implementation plan.
+
+These are cumulative, not alternatives.
 
 Authoritative visual spec:
 `docs/superpowers/specs/2026-10-15-f13-approved-mockup-shell-design.md`
@@ -143,7 +163,7 @@ Approved mockup identity/reference:
 Old preliminary plan:
 `docs/superpowers/plans/2026-10-14-f13-product-shell.md`
 
-The old plan is now explicitly **SUPERSEDED / DO NOT EXECUTE**.
+The old plan is explicitly **SUPERSEDED / DO NOT EXECUTE**.
 
 Frozen F13 decisions:
 - 96 px Home/document rail;
@@ -161,7 +181,7 @@ Frozen F13 decisions:
 
 **Implementation Gate 0:** do not execute F13 product code until UI-4 no longer has P0/P1.
 
-**Process gate:** implementation plan is ready for user review. After approval, execution method remains ChatGPT/native; Codex is used only for Windows/manual gates.
+**Process gate:** A+B is approved. No further design approval is required before F13 implementation once Gate 0 is GREEN.
 
 ### F14 — Productize existing capabilities
 
@@ -194,7 +214,7 @@ Key frozen decisions:
 - any future history extension must remain inside the owning workspace;
 - no second engine/writer, plugin framework, command bus, DI rewrite, cloud or AI.
 
-F15 implementation plan remains pending until its written spec is separately reviewed/approved and F13 shell is sufficiently stable.
+F15 implementation plan remains pending until F13 shell is sufficiently stable and the written F15 spec is converted into its approved implementation plan.
 
 ### F16 — New local utilities
 Independent capability-gated slices: PDF→JPG, Image→PDF, Crop, authorized unlock, safe Optimize, image watermark if proven safe.
@@ -220,16 +240,16 @@ Never synthesize official icon from mockup placeholder or textual description.
 
 ## Immediate resume order
 
-1. Audit Windows P1 diagnostic when Codex returns it.
+1. Consume/audit the already-prepared Windows P1 diagnostic result when Codex returns it; do not send a second broad prompt in parallel.
 2. Resolve only demonstrated root causes.
 3. Full suite + exact-head CI after each accepted code fix.
 4. Rerun V10–V14 plus V04/V05/V08/V09.
 5. Close UI-4 only with no P0/P1.
 6. Conservatively consolidate release truth + PKCS.
-7. After user review of the F13 implementation plan, execute F13 Tasks 1–9 natively, respecting Gate 0.
+7. Execute approved F13 A+B Tasks 1–9 natively, respecting Gate 0.
 8. Use Codex only for F13 Windows equivalence/final visual QA or Windows-only defects.
 9. Execute F14 by routing existing owners, not rewrites.
-10. F15 implementation only after its written spec + implementation plan approval.
+10. Convert F15 spec into implementation plan when F13 shell is sufficiently stable, then execute only after approval.
 11. Reassess publish/installer after the intended product baseline is stable.
 12. `main` only with explicit user approval.
 
