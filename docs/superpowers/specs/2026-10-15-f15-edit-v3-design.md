@@ -7,39 +7,34 @@
 
 ## 1. Objetivo
 
-Convertir el modo `EDITAR` actual en una experiencia clara, directa y profesional sin reemplazar los motores existentes ni añadir una arquitectura paralela.
+Convertir `EDITAR` en una experiencia clara, directa y profesional **sin reemplazar motores existentes ni añadir una arquitectura paralela**.
 
-La meta de F15 no es “editar cualquier PDF del mundo”. La meta es que SG PDF:
+F15 debe lograr que el usuario:
 
-- deje claro qué objeto está seleccionado;
-- deje claro qué puede modificarse y qué no;
-- exponga correctamente capacidades que ya existen;
-- permita editar texto e imágenes de forma predecible;
-- mantenga censura segura integrada;
-- mantenga `Guardar como...` visible y confiable;
-- conserve el original;
-- explique limitaciones en vez de fallar silenciosamente;
-- mantenga el writer transaccional y los workspaces existentes.
+- sepa qué objeto está seleccionado;
+- sepa qué puede modificar y qué no;
+- edite texto e imágenes de forma predecible;
+- use censura segura dentro del mismo flujo;
+- tenga `Guardar como...` siempre visible en Editar;
+- preserve siempre el original;
+- reciba una explicación cuando algo no sea editable.
 
-## 2. Reglas obligatorias
+## 2. Tres reglas obligatorias
 
 ### Regla 1 — KISS
-
 `SIMPLE → EFICIENTE → OPTIMIZADO → EFICAZ → A→B`
 
-No crear un “editor universal” nuevo, un modelo abstracto de documento ni una segunda jerarquía de objetos si el motor actual ya resuelve el caso.
+No crear un editor universal, un segundo modelo de documento ni una jerarquía paralela de objetos.
 
 ### Regla 2 — RUIDO
-
 `DELETE → SIMPLIFY → REUSE → MERGE → EXTEND → ADD`
 
-Antes de agregar lógica, reutilizar los workspaces y writers actuales.
+Reutilizar primero los workspaces, hit-testing, preflight y writers existentes.
 
 ### Regla 3 — ANTI-PARCHE
-
 `REPRODUCE → CLASSIFY → ROOT CAUSE → OWNER → MINIMAL CHANGE → CAUSE TEST → FULL SUITE → EXACT-HEAD CI`
 
-La nueva UI no puede esconder fallos funcionales de Editar/Guardar todavía abiertos en UI-4.
+La nueva UI no puede ocultar fallos funcionales abiertos de Editar/Guardar.
 
 ## 3. Decisión arquitectónica aprobada
 
@@ -51,139 +46,82 @@ Se conservan como owners funcionales:
 - `TextEditWorkspace`
 - `RedactionWorkspace`
 - `PdfEditWriter`
-- preflight/guardas existentes
-- selección y hit-testing existentes
-- extracción/reemplazo de imágenes existentes
-- reflow seguro existente
+- preflight/guardas actuales
+- hit-testing/selección actuales
+- extracción/reemplazo de imágenes
+- reflow seguro
 
-F15 cambia principalmente:
+F15 cambia principalmente presentación, selección, propiedades, comandos visibles y feedback; **no cambia el motor PDF ni crea otro writer**.
 
-- navegación;
-- descubribilidad;
-- selección visual;
-- panel contextual;
-- toolbar contextual;
-- estados de edición;
-- feedback de guardado;
-- comunicación de limitaciones.
+## 4. Problemas actuales
 
-No cambia el motor PDF principal ni crea otro writer.
-
-## 4. Problemas actuales a resolver
-
-### 4.1 Editar no es suficientemente descubrible
-
-El modo existe, pero el usuario no recibe una guía clara sobre:
-
-- qué puede seleccionar;
-- dónde hacer clic;
-- cuándo un objeto es editable;
-- por qué un objeto no puede modificarse;
-- cuándo una edición quedó aplicada;
-- cuándo existe un cambio pendiente;
-- cuándo puede guardar.
-
-### 4.2 `Guardar como...` está demasiado escondido
-
-Hoy aparece como control contextual inyectado en la franja de modos.
-
-En V3 debe ser una acción permanente mientras `EDITAR` esté activo.
-
-### 4.3 Texto e imagen se sienten como subsistemas separados
-
-El usuario no debería escoger primero “editar texto” o “editar imagen”. Debe seleccionar el objeto directamente y SG PDF debe resolver el tipo de objeto.
-
-### 4.4 Las limitaciones de texto no se explican bien
-
-Algunos objetos deben permanecer solo lectura por seguridad/fidelidad. Esa limitación debe mostrarse explícitamente en UI.
-
-### 4.5 Undo/Redo no es suficientemente visible
-
-Existe para imágenes y capacidades internas relacionadas, pero debe convertirse en affordance visible del flujo de edición.
+1. Editar no explica qué puede seleccionarse.
+2. `Guardar como...` está escondido en la franja dinámica de modos.
+3. Texto e imagen se perciben como subsistemas distintos.
+4. Las limitaciones de texto no se explican claramente.
+5. Undo/Redo existe para imágenes, pero no tiene paridad en texto/censura.
+6. El estado dirty/guardado no es suficientemente visible.
 
 ## 5. Experiencia objetivo
 
-### Entrada
-
 Al activar `EDITAR`:
 
-- el rail izquierdo marca `Editar` como activo;
+- el rail izquierdo marca Editar como activo;
 - aparece una toolbar contextual compacta;
-- el canvas muestra affordance de selección;
-- el panel derecho muestra inicialmente:
-  - `Selecciona un texto o imagen para editarlo`;
-- `Guardar como...` queda visible desde el inicio del modo;
-- si no hay cambios, aparece deshabilitado o con estado `Sin cambios` según el patrón final validado en Windows.
+- el canvas permite selección directa;
+- el panel derecho muestra inicialmente `Selecciona un texto o imagen para editarlo`;
+- `Guardar como...` queda **siempre visible**;
+- sin cambios, `Guardar como...` está **deshabilitado** y el estado indica `Sin cambios`;
+- con cambios, se habilita y el estado indica `Cambios pendientes`.
 
-### Selección
+Flujo principal:
 
-Flujo:
+`EDITAR → clic en objeto → detectar tipo → seleccionar → mostrar propiedades → modificar workspace → Guardar como...`
 
-`EDITAR → clic en objeto → detectar tipo → seleccionar → mostrar propiedades aplicables`
+No existe selector previo “editar texto / editar imagen”.
 
-No se introduce un selector de “tipo de edición”.
-
-## 6. Estados visuales de selección
+## 6. Selección visual
 
 ### Texto
-
-Al pasar/seleccionar un objeto de texto compatible:
-
-- hover sutil si es viable sin coste de render excesivo;
-- selección visible inequívoca;
-- borde/overlay sin alterar el PDF;
-- panel derecho cambia a propiedades de texto.
+- selección inequívoca;
+- overlay/borde sin modificar el PDF;
+- hover sutil solo si no penaliza render;
+- panel derecho de texto.
 
 ### Imagen
-
-Al seleccionar imagen:
-
 - borde claro;
-- handles de resize existentes, mejor presentados;
+- handles visibles;
 - cursor adecuado durante mover/resize;
-- panel derecho cambia a propiedades de imagen.
+- panel derecho de imagen.
 
 ### Sin selección
-
-Panel derecho vuelve a ayuda contextual de Editar.
+- limpiar selección;
+- volver a ayuda contextual.
 
 ## 7. Panel derecho — Texto
 
-Debe mostrar solo controles útiles.
+Mostrar solo controles útiles:
 
-### Campos
+- Estado
+- Contenido
+- Fuente
+- Tamaño
+- Color
+- Aplicar
+- Reflow seguro cuando aplique
+- Censura cuando sea elegible
 
-- `Estado`
-- `Contenido`
-- `Fuente`
-- `Tamaño`
-- `Color`
-- `Aplicar`
-- sección `Reflow seguro` solo cuando aplique
-- sección `Censura` como acción sobre selección compatible
-
-### Estado del objeto
-
-Uno de:
+Estado del objeto:
 
 - **Editable**
 - **Editable con limitaciones**
 - **Solo lectura**
 
-Cuando sea solo lectura, mostrar motivo breve en español.
-
-Ejemplos:
-
-- modo de render no soportado;
-- fuente/estructura no representable de forma segura;
-- restricción del preflight;
-- objeto no compatible con la estrategia actual.
-
-No habilitar controles que no pueden ejecutar una acción segura.
+Cuando sea solo lectura, mostrar una razón breve en español. No habilitar controles que no pueden ejecutar una edición segura.
 
 ## 8. Panel derecho — Imagen
 
-Acciones mínimas:
+Acciones mínimas reutilizando el core existente:
 
 - Reemplazar
 - Extraer
@@ -195,117 +133,94 @@ Acciones mínimas:
 - Traer hacia delante
 - Traer al frente
 
-Interacción directa en canvas:
+Canvas:
 
 - mover;
 - redimensionar;
 - preservar relación de aspecto por defecto;
-- modifier existente para comportamiento alternativo si ya está soportado.
+- mantener modifiers existentes.
 
 No duplicar estas operaciones en otro modelo.
 
-## 9. Toolbar contextual de Editar
+## 9. Toolbar contextual
 
-Contenido recomendado:
+Contenido inicial:
 
 - Seleccionar
 - Deshacer
 - Rehacer
 - Guardar como...
+- indicador corto de estado (`Sin cambios`, `Cambios pendientes`, `Guardando`, `Guardado`, `Error`)
 
-Opcional solo si el layout lo requiere y sin duplicar ruido:
+No es otra navegación global.
 
-- indicador `Cambios pendientes`
+## 10. Contrato de Guardar
 
-No convertir la toolbar en otra navegación global.
-
-## 10. Guardado
-
-### Principios
-
-- `Guardar como...` siempre visible mientras Editar está activo.
+- `Guardar como...` siempre visible en Editar.
+- Deshabilitado mientras no haya cambios.
+- Habilitado si **cualquiera** de los workspaces editables está dirty.
 - Nunca sobrescribir silenciosamente el original.
-- Mantener preflight existente.
-- Mantener confirmaciones actuales para casos de riesgo.
-- Mantener `PdfEditWriter` como único owner de materialización.
-
-### Estados UI
-
-- Sin cambios
-- Cambios pendientes
-- Guardando
-- Guardado
-- Error
-
-El error debe mostrar la causa útil disponible sin logs técnicos extensos.
-
-### Éxito
-
-Tras guardar:
-
-- marcar baseline correctamente;
-- mantener el workspace coherente;
-- no perder selección/estado por accidente;
-- mostrar nombre de archivo destino.
-
-La decisión de reabrir automáticamente el archivo guardado debe mantenerse igual al comportamiento más seguro existente, salvo que una prueba específica justifique cambiarlo.
+- Mantener preflight y confirmaciones de riesgo existentes.
+- `PdfEditWriter` sigue siendo el único owner de materialización.
+- Guardar crea una **copia nueva**.
+- Tras éxito, marcar baseline de los workspaces que correspondan.
+- **No reabrir automáticamente la copia guardada en F15.** El documento activo sigue siendo el original hasta que el usuario abra explícitamente la copia.
+- Mostrar nombre/ruta resumida del destino guardado.
+- En fallo, no marcar baseline y mantener los cambios pendientes.
 
 ## 11. Undo / Redo
 
-F15 debe exponer Undo/Redo de forma coherente.
+Estado real auditado:
 
-Regla:
+- imágenes: tienen historial Undo/Redo;
+- texto: no tiene historial Undo/Redo propio;
+- censura: no tiene historial Undo/Redo propio.
 
-- no crear un historial universal nuevo si los workspaces actuales ya tienen historial propio;
-- primero caracterizar qué operaciones ya soportan undo/redo;
-- crear una capa de routing mínima solo si es necesaria para que los botones globales actúen sobre el workspace activo.
+Decisión KISS:
 
-Si texto/reflow/censura no tienen paridad suficiente con imágenes, no simular soporte: documentar y ampliar solo cuando exista un modelo seguro.
+1. No crear historial universal.
+2. La toolbar enruta Undo/Redo solo al owner que realmente lo soporte.
+3. Si la selección/última operación activa no tiene historial compatible, el comando queda deshabilitado.
+4. Antes de añadir Undo/Redo a texto o censura, hacer una caracterización aislada.
+5. Solo extender cada workspace con historial propio si puede hacerse con cambio pequeño, determinista y sin duplicar el writer.
+6. La ausencia de Undo/Redo para un tipo debe ser visible/consistente; nunca simular éxito.
+
+La paridad total de historial **no es requisito para arrancar F15**, pero cualquier extensión aprobada debe quedar dentro del owner correspondiente.
 
 ## 12. Censura segura
 
-La censura permanece dentro del owner de Editar.
-
-Flujo:
+Permanece dentro de Editar:
 
 `seleccionar texto → verificar elegibilidad → preparar censura → Guardar como...`
 
-No crear:
+Prohibido:
 
-- otro writer;
-- otro workspace de censura;
-- una ruta visual que omita `RedactionPolicy`;
-- un botón que simplemente dibuje un rectángulo negro.
+- segundo writer;
+- segundo workspace de censura;
+- bypass de `RedactionPolicy`;
+- “censura” basada solo en dibujar un rectángulo negro.
 
-El UI debe distinguir claramente:
+UI debe distinguir:
 
 - censura preparada;
-- censura no elegible;
+- no elegible;
 - motivo de no elegibilidad.
 
 ## 13. Reflow seguro
 
-Se mantiene como capacidad avanzada del texto seleccionado.
+Capacidad avanzada del texto seleccionado.
 
-No debe mostrarse como opción principal para todo objeto.
-
-Debe aparecer cuando el análisis de layout/preflight lo habilite.
-
-Si el párrafo no puede reflowarse de forma segura, mostrar razón y mantenerlo sin cambios.
+Solo aparece/habilita cuando layout/preflight lo permite. Si no es seguro, mostrar razón y no modificar el objeto.
 
 ## 14. PDFs escaneados
 
-Si la página/documento no presenta texto seleccionable suficiente:
-
-Mostrar sugerencia:
+Si no hay texto seleccionable suficiente:
 
 > Este PDF parece escaneado. Ejecuta OCR para obtener texto seleccionable.
 
-No ejecutar OCR automáticamente.
+No ejecutar OCR automáticamente. La acción reutiliza el owner OCR existente.
 
-La acción puede enrutar al owner OCR existente.
-
-## 15. Guardas de cambio de modo
+## 15. Guardas de salida
 
 Editar V3 debe preservar las guardas actuales al:
 
@@ -317,70 +232,69 @@ Editar V3 debe preservar las guardas actuales al:
 - cambiar a Comentar;
 - cerrar ventana.
 
-El nuevo shell/rail no puede saltarse esas guardas.
+El nuevo shell nunca puede saltarse esas guardas.
 
-## 16. Integración con F13 Shell
+## 16. Integración con F13/F14
 
-F15 asume que F13 proveerá:
+F15 consume del shell:
 
 - rail izquierdo;
-- patrón visual de tool seleccionado;
+- estado de herramienta seleccionada;
 - topbar/toolbar consistente;
 - iconografía reutilizable;
 - panel derecho contextual.
 
-F15 no debe recrear esas piezas.
+F15 no recrea shell temporal ni duplica navegación.
 
-Si F13 todavía no está integrado cuando se implemente F15, F15 se mantiene bloqueado o se ejecuta sobre una rama compatible sin duplicar shell temporal.
+F14 ya habrá mapeado las herramientas a owners existentes. F15 mejora el owner de Editar, no crea un segundo entrypoint funcional.
 
-## 17. Accesibilidad y teclado
-
-Requisitos:
+## 17. Accesibilidad / teclado
 
 - Tab/Shift+Tab predecible;
 - foco visible;
-- tooltips en iconos;
-- nombres accesibles para botones solo-icono;
-- Delete conserva eliminación de imagen seleccionada donde ya aplica;
-- Ctrl+Z / Ctrl+Y mantienen semántica correcta;
-- Enter no debe aplicar accidentalmente cambios en un campo distinto al enfocado.
+- tooltips;
+- nombre accesible en controles solo-icono;
+- Delete conserva semántica de imagen cuando corresponde;
+- Ctrl+Z/Ctrl+Y solo habilitados cuando el owner activo los soporte;
+- Enter no debe aplicar cambios al control equivocado.
 
-## 18. Tema / visual
+## 18. Tema / iconos
 
-- Light/Dark mediante recursos SG existentes.
-- No hard-coded `White`, `LightGray`, `DimGray` nuevos en navegación/estado si existe equivalente temático.
+- Light/Dark con recursos SG existentes.
+- No introducir colores light-only hard-coded en controles F15.
 - Iconos vectoriales propios o símbolos Windows compatibles.
-- No librería UI nueva.
+- Sin librería UI nueva.
 
-## 19. No objetivos de F15
+## 19. No objetivos
 
 F15 NO incluye:
 
 - editor PDF universal;
-- reconstrucción automática estilo Word;
+- reconstrucción tipo Word;
 - OCR automático;
 - PDF→Word;
-- edición arbitraria de paths/vectores;
+- edición arbitraria de vectores/paths;
 - JavaScript PDF;
-- edición XFA;
+- XFA;
 - cambio de motor PDF;
 - nueva librería gráfica;
 - nuevo writer;
 - cloud/backend/API;
 - IA.
 
-## 20. Arquitectura mínima esperada
+## 20. Arquitectura mínima permitida
 
-Cambios permitidos, si realmente son necesarios:
+Permitido si una prueba demuestra necesidad:
 
-- un pequeño `EditCommandRouter` o método equivalente dentro del owner UI actual para dirigir Undo/Redo/Save al workspace correcto;
+- método/router pequeño dentro del owner UI para `Save/Undo/Redo`;
 - helpers de estado visual;
-- XAML/recursos de propiedades;
-- tests de contrato e integración.
+- recursos XAML;
+- extensiones de historial **dentro del workspace propietario**, no globales;
+- tests de contrato/integración.
 
-Cambios NO permitidos:
+Prohibido:
 
-- `DocumentObjectModel` nuevo para representar todo el PDF;
+- `DocumentObjectModel` universal;
 - command bus;
 - event aggregator;
 - DI framework nuevo;
@@ -390,21 +304,18 @@ Cambios NO permitidos:
 ## 21. Tests requeridos
 
 ### Selección
-
-- seleccionar texto enruta a panel texto;
-- seleccionar imagen enruta a panel imagen;
+- texto → panel texto;
+- imagen → panel imagen;
 - clic vacío limpia selección;
-- objeto eliminado no permanece seleccionado.
+- objeto eliminado no queda seleccionado.
 
 ### Texto
-
 - editable habilita controles;
-- read-only deshabilita controles y explica razón;
+- read-only deshabilita y explica razón;
 - aplicar modifica workspace, no archivo fuente;
-- reflow solo se habilita si elegible.
+- reflow solo si es elegible.
 
 ### Imagen
-
 - mover;
 - resize;
 - rotate;
@@ -413,82 +324,81 @@ Cambios NO permitidos:
 - z-order;
 - replace;
 - extract;
-- undo/redo según soporte actual.
+- undo/redo existente.
 
 ### Censura
-
 - no bypass de `RedactionPolicy`;
-- estado `prepared` visible;
-- save materializa a copia.
+- estado prepared visible;
+- materialización solo con Guardar como.
 
 ### Guardado
-
-- visible durante Editar;
-- disabled/sin cambios según decisión final;
-- dirty → save habilitado;
+- visible siempre durante Editar;
+- sin dirty → disabled;
+- cualquier dirty → enabled;
 - cancel no modifica fuente;
 - failure no marca baseline;
 - success marca baseline;
-- output reabre/valida según comportamiento aprobado.
+- output es copia;
+- original continúa como documento activo;
+- reopen manual de copia confirma materialización.
 
 ### Guards
-
-- cambiar de modo con cambios pendientes conserva la decisión existente;
+- cambio de modo con dirty conserva decisiones actuales;
 - abrir otro documento no pierde cambios sin confirmación.
 
-### Theme/UI contract
-
-- no hard-coded light-only resources nuevos en los controles F15;
-- focusable controls y accessible names presentes.
+### Tema/accesibilidad
+- recursos temáticos;
+- focus visible;
+- accessible names.
 
 ## 22. QA real Windows
 
 Después de CI GREEN:
 
-1. PDF con texto editable normal.
+1. PDF con texto editable.
 2. PDF con texto read-only por render mode.
 3. PDF con imagen.
-4. PDF mixto texto+imagen.
-5. edición + Guardar como + reapertura.
-6. Undo/Redo visible.
-7. censura segura + guardar + reapertura.
+4. PDF mixto.
+5. editar + Guardar como + abrir manualmente la copia.
+6. Undo/Redo de imagen.
+7. censura + Guardar como + abrir copia.
 8. escaneado → sugerencia OCR.
 9. light/dark.
 10. 1366×768 @100%.
 11. perfil escalado.
 12. teclado.
 
-## 23. Gate de aceptación F15
+## 23. Gate de aceptación
 
-F15 solo puede cerrar si:
+F15 solo cierra si:
 
-- usuario puede entender cómo empezar a editar sin explicación externa;
-- selección es visualmente inequívoca;
+- el usuario entiende cómo empezar a editar sin explicación externa;
+- selección es inequívoca;
 - texto e imagen comparten una experiencia coherente;
 - limitaciones se explican;
 - `Guardar como...` es visible y fiable;
 - original queda protegido;
-- no se creó segundo writer/motor;
+- no hay segundo writer/motor;
 - full suite GREEN;
 - exact-head CI GREEN;
 - Windows QA GREEN;
 - no hay P0/P1 abiertos.
 
-## 24. Dependencias / orden
+## 24. Orden / dependencias
 
-F15 no se implementa antes de:
+No implementar F15 antes de:
 
 1. resolver P1 actuales de UI-4;
-2. cerrar/rerun UI-4 sin P0/P1;
-3. integrar F13 shell suficiente para no crear navegación temporal duplicada;
-4. productizar entrypoints existentes F14 donde corresponda.
+2. rerun UI-4 sin P0/P1;
+3. integrar F13 shell suficiente;
+4. completar F14 productización necesaria.
 
-## 25. Resumen de decisión
+## 25. Decisión final
 
-F15 es una **mejora profunda de experiencia**, no un reemplazo del motor.
+F15 es una mejora profunda de experiencia, no un reemplazo del motor.
 
 Ruta:
 
-`selección directa → propiedades contextuales → cambios en workspace → feedback claro → Guardar como transaccional`
+`selección directa → propiedades contextuales → cambio en workspace → feedback claro → Guardar como transaccional`
 
-Esto maximiza valor usando el código ya probado y cumple las tres reglas del proyecto.
+Esto maximiza el código ya probado y cumple KISS, Ruido y Anti-parche.
