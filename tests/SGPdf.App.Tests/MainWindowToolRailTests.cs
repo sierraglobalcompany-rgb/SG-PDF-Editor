@@ -7,10 +7,15 @@ using System.Windows.Controls;
 using System.Windows.Threading;
 using Xunit;
 
-[assembly: CollectionBehavior(DisableTestParallelization = true)]
-
 namespace SGPdf.App.Tests;
 
+[CollectionDefinition(Name, DisableParallelization = true)]
+public sealed class Task5WpfUiCollectionDefinition
+{
+    public const string Name = "Task5 WPF UI";
+}
+
+[Collection(Task5WpfUiCollectionDefinition.Name)]
 public sealed class MainWindowToolRailTests
 {
     private static readonly string[] ExpectedActionOrder =
