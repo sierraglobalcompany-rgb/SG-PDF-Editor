@@ -16,9 +16,11 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - group: app-full
+            filter: ""
           - group: task5-only
             filter: FullyQualifiedName~SGPdf.App.Tests.MainWindowToolRailTests
-          - group: everything-except-task5
+          - group: app-except-task5
             filter: FullyQualifiedName!~SGPdf.App.Tests.MainWindowToolRailTests
     steps:
       - uses: actions/checkout@v4
@@ -61,5 +63,10 @@ jobs:
       - name: Build
         run: dotnet build SGPdf.slnx --configuration Release --no-restore
 
-      - name: Test ${{ matrix.group }}
-        run: dotnet test SGPdf.slnx --configuration Release --no-build --no-restore --filter "${{ matrix.filter }}"
+      - name: Test app-full
+        if: matrix.group == 'app-full'
+        run: dotnet test tests/SGPdf.App.Tests/SGPdf.App.Tests.csproj --configuration Release --no-build --no-restore
+
+      - name: Test filtered group
+        if: matrix.group != 'app-full'
+        run: dotnet test tests/SGPdf.App.Tests/SGPdf.App.Tests.csproj --configuration Release --no-build --no-restore --filter "${{ matrix.filter }}"
