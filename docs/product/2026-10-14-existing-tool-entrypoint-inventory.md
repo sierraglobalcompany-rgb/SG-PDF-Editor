@@ -23,6 +23,7 @@ El producto ya tiene muchas capacidades, pero su descubrimiento está fragmentad
 - `MainWindow.Utilities.cs` crea dinámicamente el menú `Herramientas`.
 - `MainWindow.Compare.cs` inyecta `Comparar con otro PDF...` en Archivo.
 - `MainWindow.Forms.cs` inyecta `Campos de formulario...` en Editar.
+- `MainWindow.Signing.cs` inyecta `Firmar digitalmente` en Archivo.
 
 **Decisión F13:** unificar navegación/descubrimiento sin trasladar todavía la lógica funcional de sus owners.
 
@@ -33,6 +34,7 @@ El producto ya tiene muchas capacidades, pero su descubrimiento está fragmentad
 | ToolId propuesto | UI futura | Owner actual | Entry point / ruta actual | Requiere PDF abierto | Estado para F13 |
 |---|---|---|---|---:|---|
 | `open-pdf` | Abrir PDF | `MainWindow.xaml.cs` / reader | `OpenPdf_Click` / `TryOpenPdfPathAsync` | No | REUSE |
+| `open-zpl` | Abrir ZPL | `MainWindow.Labels.cs` | `OpenZpl_Click` | No | REUSE |
 | `recent-pdf` | Recientes | `MainWindow.ReaderShortcuts.cs` + `RecentPdfStore` | `RecentFileMenuItem_Click` | No | REUSE |
 | `print-pdf` | Imprimir | reader/printing | `PrintPdf_Click` | Sí | REUSE |
 | `reader` | Leer | `MainWindow.Sign.cs` | `ReadMode_Click` | Sí | REUSE |
@@ -41,8 +43,10 @@ El producto ya tiene muchas capacidades, pero su descubrimiento está fragmentad
 | `sign-photo` | Firma desde foto | `MainWindow.Sign.cs` | `PrepareSignaturePhoto_Click` | Sí | REUSE, P1 Windows abierto |
 | `sign-draw` | Dibujar firma | `MainWindow.Sign.cs` | `DrawSignature_Click` | Sí | REUSE, P1 Windows abierto |
 | `sign-library` | Biblioteca de firmas | `MainWindow.Sign.cs` | `TryOpenSignatureLibrary()` | Sí | REUSE, P1 Windows abierto |
+| `sign-digital` | Firma digital PFX/P12 | `MainWindow.Signing.cs` | `CryptographicSign_Click` guarded by `CanStartCryptographicSigning()` | Sí | REUSE |
 | `edit-pdf` | Editar PDF | `MainWindow.Edit.cs` | `EditMode_Click` → `TryEnterEditModeAsync()` | Sí | REUSE, UX/P1 revisión abierta |
 | `edit-save-as` | Guardar copia editada | `MainWindow.Edit.cs` | `EditSaveAs_Click` → `TrySaveEditWorkspace()` | Sí | REUSE, UX/P1 revisión abierta |
+| `redact-text` | Censurar texto seleccionado | `MainWindow.Edit.Text.cs` | `TryStageSelectedTextRedaction()` + `TrySaveEditWorkspace()` | Sí | REUSE dentro de EDITAR |
 | `organize` | Organizar páginas | `MainWindow.Organize.cs` | `OrganizeMode_Click` → `TryEnterOrganizeMode()` | Sí | REUSE |
 | `rotate-pages` | Rotar | `MainWindow.Organize.*` | toolbar `OrganizeRotate*` | Sí | REUSE |
 | `delete-pages` | Eliminar páginas | `MainWindow.Organize.*` | `OrganizeDeleteButton` | Sí | REUSE |
@@ -72,11 +76,34 @@ El producto ya tiene muchas capacidades, pero su descubrimiento está fragmentad
 
 ---
 
+## Decisiones cerradas de mapeo
+
+### Firma digital
+
+No se crea un segundo flujo. La tarjeta/rail `Firma digital` debe llegar al owner existente `CryptographicSign_Click`; la autoridad de disponibilidad sigue siendo `CanStartCryptographicSigning()`.
+
+### Censura
+
+La censura segura actual es deliberadamente una operación de selección de texto dentro de EDITAR. No crear writer ni workspace paralelo.
+
+Si F13 muestra `Censurar` como acceso visible, el flujo correcto es:
+
+`Censurar → entrar a EDITAR → indicar seleccionar texto → TryStageSelectedTextRedaction() → Guardar como...`
+
+No prometer censura libre por rectángulo hasta un capability gate separado.
+
+### ZPL
+
+La tarjeta `Etiquetas ZPL` debe reutilizar `OpenZpl_Click`. Ese entrypoint carga `.zpl/.txt/.prn`, renderiza vía `LabelizeProcessRenderer` y conmuta el workspace actual. No backend, no servidor local y no segundo renderer.
+
+---
+
 ## Herramientas ya implementadas que deben aparecer en Home
 
 ### Acceso principal
 - Abrir PDF
 - Recientes
+- Abrir etiquetas ZPL
 
 ### Organizar
 - Unir
@@ -90,13 +117,13 @@ El producto ya tiene muchas capacidades, pero su descubrimiento está fragmentad
 ### Editar
 - Editar PDF
 - Comentar
-- Censurar (dentro de Editar hasta que se justifique entrada propia)
+- Censurar, con copy explícito “selecciona texto en Editar”
 - Marca de agua
 - Numerar páginas / Bates
 
 ### Firmar
 - Firma visual
-- Firma digital PFX/P12 (entrypoint debe mapearse al owner criptográfico existente antes de exponer la tarjeta)
+- Firma digital PFX/P12
 
 ### Seguridad
 - Proteger PDF
@@ -136,18 +163,24 @@ Sigue perteneciendo al owner de cada modo:
 - ZPL → `LabelPropertiesPanel`.
 
 ### Disponibilidad
-El catálogo puede describir disponibilidad, pero la autoridad funcional sigue siendo el guard existente del owner (`CanRunUtility`, `CanStartBatch`, modo activo, sesión, busy, etc.). No duplicar la lógica de guards en el catálogo.
+El catálogo puede describir disponibilidad, pero la autoridad funcional sigue siendo el guard existente del owner (`CanRunUtility`, `CanStartBatch`, `CanStartCryptographicSigning`, modo activo, sesión, busy, etc.). No duplicar la lógica de guards en el catálogo.
 
 ---
 
-## Huecos de mapeo que NO se deben improvisar
+## Funciones futuras: no crear entrypoint falso
 
-Antes de conectar una tarjeta directa, auditar el owner exacto de:
+Todavía no existen como baseline y deben seguir su capability gate antes de aparecer habilitadas:
 
-1. firma digital PFX/P12;
-2. censura segura como entrada independiente vs herramienta de Editar;
-3. ZPL desde Home;
-4. cualquier shortcut futuro de Optimize/Unlock/Image→PDF/Crop porque todavía no existen como baseline.
+- Optimize/Compress UI;
+- Unlock autorizado;
+- Image → PDF;
+- Crop;
+- PDF → JPG studio;
+- watermark de imagen;
+- Forms `/Btn`/`/Ch`;
+- Compare V2.
+
+Se pueden reservar visualmente en diseño solo si quedan claramente fuera del build funcional; preferencia actual: **no mostrar tarjetas que todavía no funcionan**.
 
 ---
 
