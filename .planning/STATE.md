@@ -1,236 +1,196 @@
 ---
 gsd_state_version: '1.1'
-status: f12-functional-baseline-closed-release-ui-qa-open
+status: ui4-fail-p1-expansion-planned
 progress:
-  total_phases: 13
-  completed_phases: 13
-  functional_percent_estimate: 100
-  release_readiness_percent_estimate: 87
-  overall_percent_estimate: 94
+  closed_baseline_phases: 13
+  expanded_roadmap_phases: 19
+  current_phase: UI-4 stabilization before F13
 ---
 
-# Project State
+# Project State — SG PDF Editor
+
+**Updated:** 2026-10-14
 
 ## Authority
 
-Operational order:
-1. live GitHub exact HEAD + exact-head CI;
-2. this file;
-3. `.planning/ROADMAP.md`;
-4. `.planning/REQUIREMENTS.md`;
-5. approved slice/release record;
-6. `docs/MASTER_CONTEXT.md`;
-7. historical/master snapshots only as context.
+Operational order for the post-UI4 transition:
+1. live GitHub exact refs + exact-head CI;
+2. `docs/history/2026-10-14-post-ui4-expansion-checkpoint.md`;
+3. this `STATE.md`;
+4. `.planning/ROADMAP.md`;
+5. `docs/product/2026-10-14-local-suite-expansion.md`;
+6. focused slice plans/requirements;
+7. older master/history documents only when not superseded.
 
-Two laws remain mandatory:
-- **KISS:** simple, efficient, optimized, effective; A→B.
-- **Anti-noise:** `DELETE → SIMPLIFY → REUSE → MERGE → EXTEND → ADD`.
+## Mandatory laws
 
-Operational anti-patch guardrail:
-`REPRODUCE → CLASSIFY → ROOT CAUSE → OWNER → MINIMAL CHANGE → CAUSE TEST → FULL SUITE → EXACT-HEAD CI → REMOVE REDUNDANT WORKAROUND`.
+1. **KISS:** simple, efficient, optimized, effective; A→B.
+2. **Anti-noise:** `DELETE → SIMPLIFY → REUSE → MERGE → EXTEND → ADD`.
+3. **Anti-patch:** `REPRODUCE → CLASSIFY → ROOT CAUSE → OWNER → MINIMAL CHANGE → CAUSE TEST → FULL SUITE → EXACT-HEAD CI → REMOVE REDUNDANT WORKAROUND`.
 
-## Functional baseline — CLOSED / FEATURE-FROZEN
+## Protected `main`
 
-Authoritative functional branch:
-`feat/f12-7-pdf-to-png-mvp-green3`
+`main` remains read-only at:
+`31c0594758a83ec555d73ecdd7c597cdf8791fd7`
 
-Functional HEAD:
+No merge to `main` without explicit user approval.
+
+## Closed functional baseline F0–F12
+
+Historical authoritative functional head:
 `8e1845d6d8fe72374d7a80994d8500b6d36077cc`
 
-Functional exact-head CI:
+Historical functional exact-head CI:
 - run `38555829715`;
 - job `115824598759`;
 - Release build 0 warnings / 0 errors;
 - tests `1202/1202 PASS`.
 
-`main` remains read-only at:
-`31c0594758a83ec555d73ecdd7c597cdf8791fd7`
+F0–F12 remains a closed evidence baseline. The newly approved F13–F18 roadmap extends product scope; it does not invalidate the F0–F12 closure.
 
-No merge/rebase/force-push to `main` without explicit user approval.
+## Release/UI modernization branch
 
-## Conservative integration candidate — SELECTED
+Remote branch:
+`feat/release-ui-modernization`
+
+Exact UI-4 tested HEAD:
+`abd52d05279e3e656723ad4ff5a21d36de91508e`
+
+Automated suite at the pre-UI4 head had reached `1214/1214 PASS`.
+
+### UI-4 real Windows QA — FAIL-P1
+
+Environment reported:
+- Windows 11 Home Single Language x64 build `10.0.26300`;
+- 1920×1200 @100%, 96 DPI;
+- .NET SDK 10.0.402.
+
+Results:
+- V01 light shell PASS;
+- V02 dark shell PASS after a local uncommitted mode-strip contrast fix;
+- V03 PDF render/navigation/zoom PASS;
+- V04 exact 1366×768 NOT RUN;
+- V05 scaled Windows profile NOT RUN;
+- V06 keyboard traversal PASS;
+- V07 disabled states PASS;
+- V08 first run FAIL-P2 / classification pending because label export/print stayed disabled;
+- V09 protected-PDF flow NOT RUN;
+- V10 Draw Signature FAIL-P1;
+- V11 Signature from Photo FAIL-P1;
+- V12 Signature Library FAIL-P1;
+- V13 NOT RUN because name-dialog path was unreachable;
+- V14 FAIL-P1 because signature workflows did not respond.
+
+**Do not close UI-4 until real rerun evidence shows no P0/P1.**
+
+## Local Codex diff — not committed/pushed
+
+Codex reported one local change in:
+`src/SGPdf.App/MainWindow.Sign.cs`
+
+Purpose: replace hard-coded light strip visuals with existing shared toolbar styles for dark-mode contrast.
+
+This diff is not part of the remote branch. Audit/preserve it before deciding whether to commit.
+
+## Current P1 diagnostic
+
+Windows-only diagnostic scope already prepared:
+- trace V10–V12 runtime path;
+- reproduce Edit/Save and reopen output;
+- classify V08 expected state vs product bug;
+- execute V09 with existing qpdf fixture generation if quickly viable.
+
+Codex may prepare only a small local fix after demonstrated root cause. No redesign/publish/installer/push/main.
+
+## Edit/Save audit finding
+
+Remote code already proves:
+- signature buttons have handlers and real dialog calls, so duplicate Click wiring is not an acceptable blind fix;
+- Edit creates conservative image/text workspaces;
+- some text is intentionally read-only when unsupported;
+- Edit `Guardar como...` should be visible/enabled when a valid workspace exists;
+- user-reported inability to edit/save therefore requires focused runtime classification as product bug vs expected limitation vs UX/discoverability.
+
+## PKCS hygiene — GREEN on isolated branch
 
 Branch:
-`integration/release-candidate-20261014`
+`feat/fix-pkcs-hygiene`
 
 HEAD:
-`01d4adc3972ed939c5a2723a75d1833e61825d63`
+`781cd6060121367f4d51efbe2724d820d1dfb842`
 
-This is a direct descendant of the functional baseline with documentation/planning lineage only. Historical stacked PRs are evidence, not a merge queue. Old `integration/release-candidate` is stale/divergent and must not be reused.
-
-Verification anchor:
-- run `38593351241`;
-- job `115953668459`;
-- hygiene/staging/restore/build/tests PASS.
-
-## Release QA Packs
-
-Automated preflight PASS; real/manual/private/physical gates remain open:
-- Pack A — Reader / Organize / Editing;
-- Pack B — ZPL / QR / print-scan;
-- Pack C — visual + PFX/P12 signatures;
-- Pack D — OCR / Forms / Compare / Batch / PDF→PNG.
-
-Canonical records remain under `docs/release/2026-10-14-pack-*.md`.
-Synthetic/CI PASS never upgrades real/manual/physical/private QA to PASS.
-
-## Runtime / installer / license audit
-
-Canonical record:
-`docs/release/2026-10-14-runtime-installer-license-audit.md`
-
-KISS release order:
-`visual QA → dependency hygiene → deterministic publish → runtime inventory → clean/offline smoke → minimal installer → installer smoke → RC`.
-
-Labelize `ZplGSCustom.ttf` provenance re-audit has supportive redistribution evidence with residual original-author provenance risk; do not claim legal certainty.
-
-## Windows development environment — VERIFIED BY CODEX
-
-Reported 2026-10-14:
-- Windows 11 x64;
-- Git + PowerShell 7;
-- .NET SDK 10.0.402 x64;
-- Labelize 1.7.0, qpdf 12.4.2, Tesseract 5.5.3.20260724 staged;
+Exact-head normal CI:
+- run `38645380308`;
+- job `116130807039`;
 - locked restore PASS;
-- Release build PASS;
-- application startup smoke PASS.
+- Release build 0 warnings / 0 errors;
+- tests `1214/1214 PASS`.
 
-That run used an older audit checkout, so it is environment evidence only, not the current release-head verification anchor.
+Change is limited to the **test dependency graph**, pinning `System.Security.Cryptography.Pkcs 8.0.2` in test csproj/lock. App/runtime project is unchanged.
 
-Open dependency hygiene item:
-- `System.Security.Cryptography.Pkcs 8.0.1` reports NU1902 + NU1903 in current restore/build;
-- resolve separately by root cause before public release;
-- do not patch `main` directly.
+**PKCS is not yet integrated into the UI/release branch.**
 
-## UI/UX release modernization
+## New approved product direction
 
-Canonical record:
-`docs/release/2026-10-14-ui-modernization.md`
+Product spec:
+`docs/product/2026-10-14-local-suite-expansion.md`
 
-Implementation plan:
-`docs/superpowers/plans/2026-10-14-release-ui-modernization.md`
+Execution roadmap:
+`docs/superpowers/plans/2026-10-14-f13-f18-local-suite-expansion-roadmap.md`
 
-Branch:
-`feat/release-ui-modernization`
+Planning/checkpoint branch:
+`plan/post-ui4-f13-f18-expansion-20261014`
 
-Base:
-`25ac6e163662207bbc40157d1bed3811d1974e62`
+### F13 — Product Shell / Dashboard
+- local Home/dashboard;
+- tool cards;
+- left document tool rail;
+- right contextual properties;
+- compact top bar;
+- official app icon from approved source only.
 
-### UI-1 Foundation — GREEN
+### F14 — Productize existing F0–F12 capabilities
+Expose existing features coherently before adding parallel functionality.
 
-Implementation anchor:
-`198b278605d33bff61be0ee5a9097d359239b324`
+### F15 — Edit V3
+Make conservative text/image editing discoverable, explicit, reliably saveable and honest about limitations.
 
-Implemented:
-- `App.xaml` → `ThemeMode="System"`;
-- one shared `Themes/Modern.xaml` resource dictionary;
-- no third-party UI framework/package.
+### F16 — New local utilities
+Independent capability-gated slices: PDF→JPG, Image→PDF, Crop, authorized unlock, safe Optimize, image watermark if proven safe.
 
-Exact-head CI:
-- run `38599058194` — SUCCESS.
+### F17 — Professional UX
+Compare V2, additional existing AcroForm types, possible simple form designer, signature UX completion.
 
-### UI-2 Main shell — GREEN
+### F18 — Optional local integrations
+LibreOffice Office→PDF, scanner, local HTML only after separate gates. Never mandatory for core runtime.
 
-Final correction HEAD:
-`fb5413d84fb5e2e733a791a44c6688b6d01a7acd`
+## Official app icon — REQUIRED
 
-Resolved root cause:
-- eager app-level `StaticResource` lookup failed when tests constructed `MainWindow` without `App.xaml` resources;
-- shell now defers SG resource lookup with `DynamicResource` where required;
-- shared SG resources, shell structure, names and handlers preserved;
-- no duplicate dictionary, test bootstrap, framework or functional rewrite added.
+Pending actual approved source image materialization.
 
-Exact-head CI:
-- run `38630414847` — SUCCESS.
+Required final surfaces:
+- WPF window;
+- executable;
+- Alt+Tab/taskbar;
+- shortcut;
+- installer.
 
-### UI-3 Dialog consistency — GREEN
+Never synthesize the official icon from a textual description alone.
 
-RED contract HEAD:
-`494115e0e84fe9d923c3503da21a0be9ab83540f`
+## Immediate resume order
 
-RED evidence:
-- build PASS;
-- 1209 existing tests PASS;
-- exactly 5 expected new failures, one per dialog before shared styles were applied.
+1. Audit the Windows P1 diagnostic result when Codex returns it.
+2. Resolve only demonstrated P1 root causes.
+3. Full suite + exact-head CI after each accepted code fix.
+4. Rerun V10–V14 and remaining V04/V05/V08/V09 evidence.
+5. Close UI-4 only when no P0/P1 remain.
+6. Consolidate release docs and integrate PKCS conservatively.
+7. Start F13.1/F13.2 planning/implementation; do not jump directly to later utilities.
+8. Re-evaluate publish/installer only after the newly approved shell/product baseline is stable.
+9. `main` only with explicit user approval.
 
-GREEN product HEAD:
-`60bb0f73090cd4d3e24d5eab5c69ee707432f823`
+## Codex usage rule
 
-Changed only approved dialog XAML:
-- PDF password;
-- signature draw;
-- signature library;
-- signature name;
-- signature photo.
+ChatGPT should do repository research, architecture, plans, code changes, tests, GitHub audit/integration and documentation whenever possible.
 
-No C# behavior/package/handler/control-name changes.
-
-Exact-head CI:
-- run `38632179198` — SUCCESS;
-- full suite `1214/1214 PASS`, 0 failed, 0 skipped.
-
-### UI-4 Windows visual QA — READY / NOT RUN
-
-Canonical matrix:
-`docs/release/2026-10-14-ui-visual-qa.md`
-
-Required real evidence includes:
-- light + dark system theme;
-- 1366×768 at 100% scaling;
-- one higher-resolution/scaled profile;
-- keyboard focus;
-- disabled states;
-- empty shell, loaded PDF, label workflow, password dialog and signature dialogs;
-- functional smoke without detached handlers/crash.
-
-All UI-4 manual cases are currently **NOT RUN**. Do not infer PASS from CI.
-
-## Official icon — PENDING BINARY MATERIALIZATION
-
-User-approved visual identity is documented:
-- stylized red PDF/document mark;
-- white negative-space page/fold forms;
-- high-contrast silhouette.
-
-The binary `.ico` asset is not committed. Materialize only from the approved source image when that source is actually available; do not silently redesign or substitute it.
-
-## Current checkpoint — 2026-10-14
-
-Current release/UI branch:
-`feat/release-ui-modernization`
-
-Latest product-code HEAD:
-`60bb0f73090cd4d3e24d5eab5c69ee707432f823`
-
-Truth at checkpoint:
-- F0–F12 functional baseline: CLOSED / frozen;
-- UI-1: GREEN;
-- UI-2: GREEN;
-- UI-3: GREEN;
-- UI-4: READY but real Windows evidence NOT RUN;
-- official icon binary: pending source-image materialization;
-- `System.Security.Cryptography.Pkcs` dependency hygiene: open separate task;
-- deterministic portable publish: not started after visual gate;
-- installer: not started;
-- Packs A–D real/manual/private/physical evidence remains open;
-- `main`: unchanged/read-only.
-
-## Resume order
-
-1. Execute `docs/release/2026-10-14-ui-visual-qa.md` on the real Windows environment and capture evidence locally.
-2. Fix only reproduced P0/P1 visual usability defects; each fix returns through full suite + exact-head CI.
-3. Update the visual QA record and this STATE with actual PASS/FAIL evidence.
-4. Materialize/integrate the approved app/PDF icon when its source image is available.
-5. Resolve `System.Security.Cryptography.Pkcs 8.0.1` NU1902/NU1903 by root cause.
-6. Build deterministic self-contained `win-x64` publish.
-7. Runtime inventory + clean/offline smoke.
-8. Add one minimal installer technology only after publish smoke is GREEN.
-9. Installer smoke → RC → remaining representative Packs A–D.
-10. `main` only with explicit approval.
-
-## Planning estimates
-
-Planning estimates, not telemetry:
-- automated functional implementation: **~100%**;
-- release readiness: **~87%** while real visual/dependency/publish/installer gates remain open;
-- weighted overall: **~94%**.
+Use Codex only for tasks that materially require the user's Windows PC, real GUI interaction, hardware/private fixtures or locally installed application behavior. Avoid duplicated work/token spend.
