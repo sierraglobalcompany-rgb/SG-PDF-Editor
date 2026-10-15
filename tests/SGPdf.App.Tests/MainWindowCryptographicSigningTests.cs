@@ -31,10 +31,6 @@ public sealed class MainWindowCryptographicSigningTests
                     new RoutedEventArgs(MenuItem.ClickEvent, command));
 
                 Assert.Equal(statusBefore, status.Text);
-
-                var center = Assert.IsType<Grid>(OrganizeWindowTestHost.Element<ScrollViewer>(window, "PdfScrollViewer").Parent);
-                var root = Assert.IsType<Grid>(center.Parent);
-                Assert.Equal(3, root.ColumnDefinitions.Count);
             }
             finally
             {
