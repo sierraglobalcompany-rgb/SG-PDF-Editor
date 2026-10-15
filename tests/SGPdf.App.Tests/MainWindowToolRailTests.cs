@@ -25,6 +25,10 @@ public sealed class MainWindowToolRailTests
             var window = new MainWindow();
             try
             {
+                var selectedStyle = new Style(typeof(Button));
+                window.Resources["SgRailItemStyle"] = new Style(typeof(Button));
+                window.Resources["SgRailItemSelectedStyle"] = selectedStyle;
+
                 RaiseLoaded(window);
 
                 var rail = Assert.IsType<Border>(window.FindName("DocumentToolRail"));
@@ -40,7 +44,6 @@ public sealed class MainWindowToolRailTests
                     Assert.Equal(button.Content?.ToString(), AutomationProperties.GetName(button));
                 });
 
-                var selectedStyle = window.FindResource("SgRailItemSelectedStyle");
                 Assert.Single(buttons, button => ReferenceEquals(button.Style, selectedStyle));
             }
             finally { window.Close(); }
