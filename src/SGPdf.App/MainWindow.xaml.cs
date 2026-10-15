@@ -356,6 +356,8 @@ public partial class MainWindow : Window
         _isBusy = busy;
         OpenPdfMenuItem.IsEnabled = !busy;
         UpdateViewerControlsUi();
+        if (_zplDocument is not null)
+            UpdateLabelPropertiesUi();
     }
 
     private void UpdateViewerControlsUi()
