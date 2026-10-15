@@ -41,7 +41,7 @@ public sealed class MainWindowToolRailTests
                 });
 
                 var selectedStyle = window.FindResource("SgRailItemSelectedStyle");
-                Assert.Single(buttons.Where(button => ReferenceEquals(button.Style, selectedStyle)));
+                Assert.Single(buttons, button => ReferenceEquals(button.Style, selectedStyle));
             }
             finally { window.Close(); }
         });
