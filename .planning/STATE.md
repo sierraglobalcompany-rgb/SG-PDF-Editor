@@ -1,6 +1,6 @@
 ---
 gsd_state_version: '1.1'
-status: ui4-fail-p1-expansion-planned-f15-spec-ready
+status: ui4-fail-p1-f13-mockup-spec-ready-f15-spec-ready
 progress:
   closed_baseline_phases: 13
   expanded_roadmap_phases: 19
@@ -15,12 +15,13 @@ progress:
 
 Operational order for the post-UI4 transition:
 1. live GitHub exact refs + exact-head CI;
-2. `docs/history/2026-10-14-post-ui4-expansion-checkpoint.md`;
-3. this `STATE.md`;
-4. `.planning/ROADMAP.md`;
-5. focused specs/plans in `docs/superpowers/`;
-6. `docs/product/2026-10-14-local-suite-expansion.md`;
-7. older master/history only when not superseded.
+2. this `STATE.md`;
+3. `docs/superpowers/specs/2026-10-15-f13-approved-mockup-shell-design.md`;
+4. `docs/history/2026-10-14-post-ui4-expansion-checkpoint.md`;
+5. `.planning/ROADMAP.md`;
+6. focused specs/plans in `docs/superpowers/`;
+7. `docs/product/2026-10-14-local-suite-expansion.md`;
+8. older master/history only when not superseded.
 
 ## Mandatory laws
 
@@ -127,19 +128,33 @@ PKCS 8.0.2 is pinned only in the test dependency graph. App/runtime unchanged.
 
 Contains only planning/documentation, not product implementation.
 
-### F13 — Product Shell / Dashboard
-Plan:
+### F13 — Product Shell / Dashboard — MOCKUP APPROVED / SPEC READY
+
+Original shell spec:
+`docs/superpowers/specs/2026-10-14-f13-product-shell-design.md`
+
+Approved visual contract:
+`docs/superpowers/specs/2026-10-15-f13-approved-mockup-shell-design.md`
+
+Existing preliminary plan:
 `docs/superpowers/plans/2026-10-14-f13-product-shell.md`
 
-Target:
-- Home/dashboard;
-- left document rail;
-- contextual right panel;
-- compact toolbar;
-- iconography;
-- official app icon from approved source.
+Visual direction now frozen:
+- Home/dashboard inspired by utility-suite discoverability;
+- 96 px Home/document navigation rail;
+- tool cards with icon + title + short description;
+- local/offline identity; no login, ads, cloud or AI;
+- document workspace with left primary rail, center canvas and 320 px contextual right panel;
+- contextual toolbar per active owner;
+- SG dynamic theme resources, light/dark baseline;
+- current owners are reused; shell does not implement PDF business logic;
+- centered legacy mode strip is deleted only after equivalence + Windows QA;
+- placeholder `SG` shown in mockup does NOT authorize inventing the official app icon.
+
+**Next process gate:** user review/acceptance of the written F13 mockup spec before the exact per-file implementation plan is authored.
 
 ### F14 — Productize existing capabilities
+
 Plan:
 `docs/superpowers/plans/2026-10-15-f14-productize-existing-tools.md`
 
@@ -169,7 +184,7 @@ Key frozen decisions:
 - any future history extension must remain inside the owning workspace;
 - no second engine/writer, plugin framework, command bus, DI rewrite, cloud or AI.
 
-**Next process gate:** user review/acceptance of the written F15 spec before implementation plan is authored.
+**Next process gate:** written F15 spec review before its implementation plan.
 
 ### F16 — New local utilities
 Independent capability-gated slices: PDF→JPG, Image→PDF, Crop, authorized unlock, safe Optimize, image watermark if proven safe.
@@ -201,11 +216,12 @@ Never synthesize official icon from text alone.
 4. Rerun V10–V14 plus V04/V05/V08/V09.
 5. Close UI-4 only with no P0/P1.
 6. Consolidate release docs + PKCS conservatively.
-7. Execute F13 in bounded tasks.
-8. Execute F14 by routing existing owners, not rewrites.
-9. F15 implementation only after written spec review + implementation plan approval.
-10. Publish/installer only after the newly approved product baseline is stable.
-11. `main` only with explicit user approval.
+7. After F13 written-spec approval, rewrite the F13 implementation plan against the approved mockup contract.
+8. Execute F13 in bounded tasks.
+9. Execute F14 by routing existing owners, not rewrites.
+10. F15 implementation only after written spec + implementation plan approval.
+11. Publish/installer only after the newly approved product baseline is stable.
+12. `main` only with explicit user approval.
 
 ## Codex usage rule
 
