@@ -36,6 +36,14 @@ public partial class MainWindow
             window.InitializeShellUi();
     }
 
+    protected override void OnPropertyChanged(DependencyPropertyChangedEventArgs e)
+    {
+        base.OnPropertyChanged(e);
+
+        if (_shellUiInitialized && e.Property == TitleProperty)
+            SyncShellWorkspaceFromActiveDocument();
+    }
+
     private void InitializeShellUi()
     {
         _ = ShellLoadedHandlerRegistered;
@@ -67,7 +75,17 @@ public partial class MainWindow
         _shellUiInitialized = true;
 
         RefreshHomeRecentFiles();
-        ApplyShellWorkspaceVisibility();
+        SyncShellWorkspaceFromActiveDocument();
+    }
+
+    private void SyncShellWorkspaceFromActiveDocument()
+    {
+        var kind = _zplDocument is not null
+            ? ShellWorkspaceKind.Zpl
+            : _session is not null
+                ? ShellWorkspaceKind.Pdf
+                : ShellWorkspaceKind.Home;
+        SetShellWorkspace(kind);
     }
 
     private void SetShellWorkspace(ShellWorkspaceKind kind)
