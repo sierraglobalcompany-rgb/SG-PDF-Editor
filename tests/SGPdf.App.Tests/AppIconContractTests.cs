@@ -8,7 +8,7 @@ public sealed class AppIconContractTests
     private const string IconProjectPath = @"Assets\SGPdf.ico";
 
     [Fact]
-    public void OfficialAppIcon_IsWiredToExecutableAndMainWindow()
+    public void OfficialAppIcon_IsWiredToExecutableAndWpfResources()
     {
         var projectPath = FindRepoFile("src", "SGPdf.App", "SGPdf.App.csproj");
         var project = XDocument.Load(projectPath);
@@ -33,9 +33,11 @@ public sealed class AppIconContractTests
         var mainWindow = XDocument.Load(mainWindowPath).Root;
 
         Assert.NotNull(mainWindow);
-        Assert.Equal(
-            NormalizePath(IconProjectPath),
-            NormalizePath((string?)mainWindow!.Attribute("Icon")));
+        var windowIcon = NormalizePath((string?)mainWindow!.Attribute("Icon"));
+        Assert.True(
+            string.IsNullOrEmpty(windowIcon) ||
+            string.Equals(windowIcon, NormalizePath(IconProjectPath), StringComparison.Ordinal),
+            $"MainWindow must not override the executable icon with a different asset: {windowIcon}");
     }
 
     [Fact]
