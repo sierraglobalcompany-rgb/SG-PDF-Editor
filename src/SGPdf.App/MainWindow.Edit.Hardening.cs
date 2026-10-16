@@ -1,7 +1,6 @@
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Input;
 
 namespace SGPdf.App;
 
@@ -44,23 +43,7 @@ public partial class MainWindow
     private void WireEditGuards()
     {
         _ = EditOpenMenuGuardRegistered;
-
-        if (_readModeButton is not null)
-            _readModeButton.PreviewMouseLeftButtonDown += GuardedEditModeButton_PreviewMouseLeftButtonDown;
-        if (_signModeButton is not null)
-            _signModeButton.PreviewMouseLeftButtonDown += GuardedEditModeButton_PreviewMouseLeftButtonDown;
-        if (_organizeModeButton is not null)
-            _organizeModeButton.PreviewMouseLeftButtonDown += GuardedEditModeButton_PreviewMouseLeftButtonDown;
-
         Closing += EditWindow_Closing;
-    }
-
-    private void GuardedEditModeButton_PreviewMouseLeftButtonDown(
-        object sender,
-        MouseButtonEventArgs e)
-    {
-        if (_editModeActive && !TryLeaveEditModeWithGuard())
-            e.Handled = true;
     }
 
     private bool TryLeaveEditModeWithGuard()
