@@ -39,7 +39,6 @@ public partial class MainWindow
     private bool _updatingCommentProperties;
     private CommentTool _commentTool = CommentTool.Select;
     private CommentWorkspace? _commentWorkspace;
-    private Button? _commentModeButton;
     private Border? _commentToolbar;
     private Canvas? _commentOverlayCanvas;
     private StackPanel? _commentPropertiesPanel;
@@ -160,28 +159,6 @@ public partial class MainWindow
         InitializeEditUi();
         InitializeReaderUi();
         InitializeReaderSelectionUi();
-
-        var modePanel = FindModePanel();
-        var modeButton = new Button
-        {
-            Name = "CommentModeButton",
-            Content = "COMENTAR",
-            Padding = new Thickness(14, 4, 14, 4),
-            Margin = new Thickness(4, 0, 0, 0),
-            IsEnabled = false
-        };
-        modeButton.SetBinding(
-            IsEnabledProperty,
-            new Binding(nameof(IsEnabled)) { Source = PrintPdfMenuItem });
-        modeButton.Click += (_, _) => TryEnterCommentMode();
-
-        var organizeIndex = _organizeModeButton is null ? -1 : modePanel.Children.IndexOf(_organizeModeButton);
-        if (organizeIndex >= 0)
-            modePanel.Children.Insert(organizeIndex, modeButton);
-        else
-            modePanel.Children.Add(modeButton);
-        RegisterName(modeButton.Name, modeButton);
-        _commentModeButton = modeButton;
 
         var toolbarPanel = new WrapPanel
         {
