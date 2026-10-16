@@ -12,7 +12,7 @@ namespace SGPdf.App.Tests;
 public sealed class MainWindowCommentModeTests
 {
     [Fact]
-    public void CommentUi_IsPresentDisabledWithoutPdf_AndHiddenOutsideMode()
+    public void CommentUi_HidesContextOutsideMode_WithoutLegacyButton()
     {
         OrganizeWindowTestHost.RunInSta(() =>
         {
@@ -20,11 +20,10 @@ public sealed class MainWindowCommentModeTests
             OrganizeWindowTestHost.EnsureLoaded(window);
             try
             {
-                var mode = OrganizeWindowTestHost.Element<Button>(window, "CommentModeButton");
                 var toolbar = OrganizeWindowTestHost.Element<Border>(window, "CommentToolbar");
                 var properties = OrganizeWindowTestHost.Element<StackPanel>(window, "CommentPropertiesPanel");
 
-                Assert.False(mode.IsEnabled);
+                Assert.Null(window.FindName("CommentModeButton"));
                 Assert.Equal(Visibility.Collapsed, toolbar.Visibility);
                 Assert.Equal(Visibility.Collapsed, properties.Visibility);
 
