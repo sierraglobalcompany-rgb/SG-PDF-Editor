@@ -103,17 +103,15 @@ public sealed class MainWindowSignatureTests
                 Invoke(window, "RefreshSignatureOverlay");
                 var canvas = Assert.IsType<Canvas>(window.FindName("SignatureOverlayCanvas"));
                 Assert.Single(canvas.Children);
-                var first = Assert.IsType<Border>(canvas.Children[0]);
-                var firstLeft = Canvas.GetLeft(first);
-                var firstWidth = first.Width;
+                Assert.IsType<Border>(canvas.Children[0]);
 
                 SetField(window, "_currentPdfDeviceTransform",
                     new PdfPageDeviceTransform(0d, 300d, 0.5d, 0d, 0d, -0.5d, 600, 600));
                 Invoke(window, "RefreshSignatureOverlay");
 
                 var second = Assert.IsType<Border>(canvas.Children[0]);
-                Assert.InRange(Math.Abs(Canvas.GetLeft(second) - firstLeft * 2d), 0d, 0.05d);
-                Assert.InRange(Math.Abs(second.Width - firstWidth * 2d), 0d, 0.05d);
+                Assert.InRange(Math.Abs(Canvas.GetLeft(second) - canonical.Left * 2d), 0d, 0.05d);
+                Assert.InRange(Math.Abs(second.Width - canonical.Width * 2d), 0d, 0.05d);
                 Assert.Equal(canonical, GetState(window)!.Placements[0].Bounds);
             }
             finally
