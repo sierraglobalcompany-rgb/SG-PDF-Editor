@@ -158,7 +158,7 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="240" />
                 <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="320" />
+                <ColumnDefinition Width="0" />
             </Grid.ColumnDefinitions>
 
             <Border Grid.Column="0"
@@ -209,7 +209,8 @@
                 <Grid>
                     <TextBlock x:Name="PropertiesPlaceholderText"
                                Margin="16,18"
-                               Text="Propiedades"
+                               Text=""
+                               Visibility="Collapsed"
                                Style="{DynamicResource SgSectionHeaderStyle}" />
 
                     <ScrollViewer VerticalScrollBarVisibility="Auto">
