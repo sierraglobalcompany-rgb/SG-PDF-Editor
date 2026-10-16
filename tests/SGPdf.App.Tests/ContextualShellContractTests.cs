@@ -79,34 +79,25 @@ public sealed class ContextualShellContractTests
     public void CommentToolbar_IsHostedInsideWorkspace_AndKeepsRealOwnerActions()
     {
         var xamlPath = FindRepoFile("src", "SGPdf.App", "MainWindow.xaml");
-        var document = XDocument.Load(xamlPath);
-        XNamespace presentation = "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
-        XNamespace x = "http://schemas.microsoft.com/winfx/2006/xaml";
+        var appDirectory = Path.GetDirectoryName(xamlPath)
+            ?? throw new InvalidOperationException("No se encontró la carpeta de SGPdf.App.");
+        var shellSource = string.Join(
+            Environment.NewLine,
+            Directory.GetFiles(appDirectory, "MainWindow.Shell*.cs", SearchOption.TopDirectoryOnly)
+                .OrderBy(path => path, StringComparer.Ordinal)
+                .Select(File.ReadAllText));
 
-        var host = document
-            .Descendants(presentation + "Grid")
-            .SingleOrDefault(grid =>
-                string.Equals(
-                    (string?)grid.Attribute(x + "Name"),
-                    "ContextToolbarHost",
-                    StringComparison.Ordinal));
-
-        Assert.NotNull(host);
-        Assert.Equal("0", (string?)host!.Attribute("Grid.Row"));
-
-        var workspace = host.Parent;
-        Assert.NotNull(workspace);
-        var rows = workspace!
-            .Element(presentation + "Grid.RowDefinitions")?
-            .Elements(presentation + "RowDefinition")
-            .ToArray();
-        Assert.NotNull(rows);
-        Assert.Equal(2, rows!.Length);
-        Assert.Equal("Auto", (string?)rows[0].Attribute("Height"));
-        Assert.Equal("*", (string?)rows[1].Attribute("Height"));
-
-        var shellPath = FindRepoFile("src", "SGPdf.App", "MainWindow.Shell.cs");
-        var shellSource = File.ReadAllText(shellPath);
+        Assert.Contains("Name = \"ContextToolbarHost\"", shellSource, StringComparison.Ordinal);
+        Assert.Contains(
+            "workspace.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });",
+            shellSource,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "workspace.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1d, GridUnitType.Star) });",
+            shellSource,
+            StringComparison.Ordinal);
+        Assert.Contains("Grid.SetRow(child, 1);", shellSource, StringComparison.Ordinal);
+        Assert.Contains("Grid.SetRow(host, 0);", shellSource, StringComparison.Ordinal);
         Assert.Contains("AttachCommentToolbarToContextHost();", shellSource, StringComparison.Ordinal);
         Assert.Contains("ContextToolbarHost.Children.Add(_commentToolbar);", shellSource, StringComparison.Ordinal);
         Assert.Contains("SgToolbarBorderStyle", shellSource, StringComparison.Ordinal);
