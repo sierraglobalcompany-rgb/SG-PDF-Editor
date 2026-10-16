@@ -225,7 +225,7 @@ public partial class MainWindow
         switch (actionId)
         {
             case "read":
-                ReadMode_Click(this, new RoutedEventArgs());
+                await TryEnterReadModeAsync();
                 break;
             case "edit":
                 await TryEnterEditModeAsync();
@@ -234,11 +234,10 @@ public partial class MainWindow
                 TryEnterCommentMode();
                 break;
             case "sign":
-                SignMode_Click(this, new RoutedEventArgs());
+                await TryEnterSignModeAsync();
                 break;
             case "organize":
-                if (TryEnterOrganizeMode())
-                    await RefreshOrganizeThumbnailRenderWindowAsync();
+                TryEnterOrganizeMode();
                 break;
         }
 
