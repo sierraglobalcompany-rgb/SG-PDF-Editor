@@ -1,3 +1,4 @@
+using System.Xml.Linq;
 using Xunit;
 
 namespace SGPdf.App.Tests;
@@ -23,6 +24,24 @@ public sealed class ContextualTopChromeContractTests
         Assert.Contains("Name = \"EditSaveAsButton\"", editSource, StringComparison.Ordinal);
         Assert.Contains("saveAsButton.Click += EditSaveAs_Click;", editSource, StringComparison.Ordinal);
         Assert.Contains("_editSaveAsButton.Visibility = _editModeActive", editSource, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void GlobalMenu_ConvergesToApprovedFiveCategoryHierarchy()
+    {
+        var appDirectory = FindRepoDirectory("src", "SGPdf.App");
+        var document = XDocument.Load(Path.Combine(appDirectory, "MainWindow.xaml"));
+        XNamespace presentation = "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+
+        var menu = document.Descendants(presentation + "Menu").Single();
+        var headers = menu
+            .Elements(presentation + "MenuItem")
+            .Select(item => ((string?)item.Attribute("Header"))?.Replace("_", string.Empty, StringComparison.Ordinal))
+            .ToArray();
+
+        Assert.Equal(
+            new[] { "Archivo", "Editar", "Ver", "Herramientas", "Ayuda" },
+            headers);
     }
 
     private static string FindRepoDirectory(params string[] segments)
