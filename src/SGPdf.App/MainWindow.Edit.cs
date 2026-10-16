@@ -126,13 +126,6 @@ public partial class MainWindow
         _editOverlayCanvas = overlay;
         InitializeEditTextUi();
 
-        if (_readModeButton is not null)
-            _readModeButton.Click += ExistingModeAfterEdit_Click;
-        if (_signModeButton is not null)
-            _signModeButton.Click += ExistingModeAfterEdit_Click;
-        if (_organizeModeButton is not null)
-            _organizeModeButton.Click += ExistingModeAfterEdit_Click;
-
         PreviewKeyDown += EditHost_PreviewKeyDown;
         WireEditGuards();
     }
@@ -614,12 +607,6 @@ public partial class MainWindow
 
         if (TryHandleImageEditShortcut(e.Key, Keyboard.Modifiers, e.OriginalSource as DependencyObject))
             e.Handled = true;
-    }
-
-    private void ExistingModeAfterEdit_Click(object sender, RoutedEventArgs e)
-    {
-        if (_editModeActive)
-            ResetEditState();
     }
 
     private void ResetEditState()
