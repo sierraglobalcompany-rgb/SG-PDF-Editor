@@ -94,9 +94,9 @@ public sealed class ContextualShellContractTests
         Assert.NotNull(host);
         Assert.Equal("0", (string?)host!.Attribute("Grid.Row"));
 
-        var workspaceCenter = host.Parent;
-        Assert.NotNull(workspaceCenter);
-        var rows = workspaceCenter!
+        var workspace = host.Parent;
+        Assert.NotNull(workspace);
+        var rows = workspace!
             .Element(presentation + "Grid.RowDefinitions")?
             .Elements(presentation + "RowDefinition")
             .ToArray();
@@ -105,24 +105,14 @@ public sealed class ContextualShellContractTests
         Assert.Equal("Auto", (string?)rows[0].Attribute("Height"));
         Assert.Equal("*", (string?)rows[1].Attribute("Height"));
 
-        var pdfScrollViewer = workspaceCenter
-            .Elements(presentation + "ScrollViewer")
-            .Single(element =>
-                string.Equals(
-                    (string?)element.Attribute(x + "Name"),
-                    "PdfScrollViewer",
-                    StringComparison.Ordinal));
-        Assert.Equal("1", (string?)pdfScrollViewer.Attribute("Grid.Row"));
+        var shellPath = FindRepoFile("src", "SGPdf.App", "MainWindow.Shell.cs");
+        var shellSource = File.ReadAllText(shellPath);
+        Assert.Contains("AttachCommentToolbarToContextHost();", shellSource, StringComparison.Ordinal);
+        Assert.Contains("ContextToolbarHost.Children.Add(_commentToolbar);", shellSource, StringComparison.Ordinal);
+        Assert.Contains("SgToolbarBorderStyle", shellSource, StringComparison.Ordinal);
 
         var commentsPath = FindRepoFile("src", "SGPdf.App", "MainWindow.Comments.cs");
         var commentsSource = File.ReadAllText(commentsPath);
-
-        Assert.Contains("ContextToolbarHost.Children.Add(toolbar);", commentsSource, StringComparison.Ordinal);
-        Assert.DoesNotContain(
-            "root.Children.Insert(Math.Min(2, root.Children.Count), toolbar);",
-            commentsSource,
-            StringComparison.Ordinal);
-        Assert.Contains("SgToolbarBorderStyle", commentsSource, StringComparison.Ordinal);
         Assert.Contains("CommentUndoButton", commentsSource, StringComparison.Ordinal);
         Assert.Contains("CommentRedoButton", commentsSource, StringComparison.Ordinal);
         Assert.Contains("CommentSaveAsButton", commentsSource, StringComparison.Ordinal);
