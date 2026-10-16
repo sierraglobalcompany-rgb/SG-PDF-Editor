@@ -77,11 +77,6 @@ public partial class MainWindow
         RegisterName(list.Name, list);
         _readerContinuousSurface = surface;
         _readerPageList = list;
-
-        if (_signModeButton is not null)
-            _signModeButton.Click += ReaderSignModeAfterClick;
-        if (_readModeButton is not null)
-            _readModeButton.Click += ReaderReadModeAfterClick;
     }
 
     private static DataTemplate BuildReaderPageTemplate()
@@ -471,36 +466,31 @@ public partial class MainWindow
         _signatureModeActive = false;
     }
 
-    private async void ReaderSignModeAfterClick(object sender, RoutedEventArgs e)
+    private async Task<bool> PrepareReaderForSignModeAsync()
     {
-        if (!_signatureModeActive || _session is null || _navigation is null || _readerGeometry.Count == 0)
-            return;
+        if (_session is null || _navigation is null || _readerGeometry.Count == 0)
+            return false;
 
-        _signatureModeActive = false;
-        if (_signatureOverlayCanvas is not null)
-            _signatureOverlayCanvas.Visibility = Visibility.Collapsed;
-
+        var sourceSession = _session;
+        var sourcePageIndex = _navigation.CurrentPageIndex;
         try
         {
             await EnsureEditSurfaceForCurrentPageAsync();
-            if (_session is null || _navigation is null)
-                return;
-            _signatureModeActive = true;
-            _signatureOverlayCanvas!.Visibility = Visibility.Visible;
-            _signaturePropertiesPanel!.Visibility = Visibility.Visible;
-            PropertiesPlaceholderText.Visibility = Visibility.Collapsed;
-            RefreshSignatureOverlay();
+            return ReferenceEquals(_session, sourceSession) &&
+                   _navigation?.CurrentPageIndex == sourcePageIndex &&
+                   PdfScrollViewer.Visibility == Visibility.Visible;
         }
         catch (Exception ex)
         {
             StatusText.Text = $"No se pudo preparar la página para firmar: {ex.Message}";
             ShowContinuousReaderSurface();
+            return false;
         }
     }
 
-    private async void ReaderReadModeAfterClick(object sender, RoutedEventArgs e)
+    private async Task RestoreReaderAfterSignModeAsync()
     {
-        if (_signatureModeActive || _session is null || _zplDocument is not null || _readerGeometry.Count == 0)
+        if (_session is null || _zplDocument is not null || _readerGeometry.Count == 0)
             return;
 
         ShowContinuousReaderSurface();
