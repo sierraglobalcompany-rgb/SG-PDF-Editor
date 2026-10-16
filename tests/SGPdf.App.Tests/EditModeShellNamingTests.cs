@@ -19,7 +19,7 @@ public sealed class EditModeShellNamingTests
         Assert.NotNull(type.GetField("_editUiInitialized", InstanceFlags));
         Assert.NotNull(type.GetField("_editModeActive", InstanceFlags));
         Assert.NotNull(type.GetField("_editMaterializing", InstanceFlags));
-        Assert.NotNull(type.GetField("_editModeButton", InstanceFlags));
+        Assert.Null(type.GetField("_editModeButton", InstanceFlags));
         Assert.NotNull(type.GetField("_editSaveAsButton", InstanceFlags));
         Assert.NotNull(type.GetField("_editOverlayCanvas", InstanceFlags));
 
