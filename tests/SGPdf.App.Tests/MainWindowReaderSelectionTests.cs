@@ -187,8 +187,7 @@ public sealed class MainWindowReaderSelectionTests
                 var signatureState = new SignatureEditState(0, new PdfRect(0d, 0d, 300d, 400d));
                 SetField(window, "_signatureEditState", signatureState);
 
-                Element<Button>(window, "SignModeButton").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-                PumpUntil(() => (bool)GetField(window, "_signatureModeActive")!);
+                Assert.True(await InvokeTask<bool>(window, "TryEnterSignModeAsync"));
 
                 Assert.Null(GetField(window, "_readerTextSelection"));
                 Assert.Empty(Element<Canvas>(window, "ReaderSelectionHighlightCanvas").Children);

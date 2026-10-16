@@ -1,13 +1,8 @@
 using System.Reflection;
-using System.Runtime.ExceptionServices;
-using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using PdfSharp.Pdf;
 using SGPdf.App.Features.Sign;
-using SGPdf.App.Navigation;
 using SGPdf.App.Pdf;
 using Xunit;
 
@@ -29,14 +24,14 @@ public sealed class MainWindowSignaturePhotoTests
                 Assert.Equal(Visibility.Collapsed, panel.Visibility);
 
                 AttachPdfWorkspace(window, fixture.SourcePath);
-                Click(window, "SignModeButton");
+                Assert.True(OrganizeWindowTestHost.InvokeTaskSync<bool>(window, "TryEnterSignModeAsync"));
                 Assert.Equal(Visibility.Visible, panel.Visibility);
                 Assert.True(button.IsEnabled);
             }
             finally
             {
                 ClearDirtyState(window);
-                window.Close();
+                OrganizeWindowTestHost.CloseClean(window);
             }
         });
     }
@@ -51,7 +46,7 @@ public sealed class MainWindowSignaturePhotoTests
             try
             {
                 AttachPdfWorkspace(window, fixture.SourcePath);
-                Click(window, "SignModeButton");
+                Assert.True(OrganizeWindowTestHost.InvokeTaskSync<bool>(window, "TryEnterSignModeAsync"));
                 Invoke(window, "AddSignatureAsset", CreateAsset("existing.png"));
                 var state = GetState(window)!;
                 var before = state.Placements.ToArray();
@@ -69,7 +64,7 @@ public sealed class MainWindowSignaturePhotoTests
             finally
             {
                 ClearDirtyState(window);
-                window.Close();
+                OrganizeWindowTestHost.CloseClean(window);
             }
         });
     }
@@ -84,7 +79,7 @@ public sealed class MainWindowSignaturePhotoTests
             try
             {
                 AttachPdfWorkspace(window, fixture.SourcePath);
-                Click(window, "SignModeButton");
+                Assert.True(OrganizeWindowTestHost.InvokeTaskSync<bool>(window, "TryEnterSignModeAsync"));
                 Invoke(window, "AddSignatureAsset", CreateAsset("existing.png"));
                 var state = GetState(window)!;
                 var before = state.Placements.ToArray();
@@ -103,7 +98,7 @@ public sealed class MainWindowSignaturePhotoTests
             finally
             {
                 ClearDirtyState(window);
-                window.Close();
+                OrganizeWindowTestHost.CloseClean(window);
             }
         });
     }
@@ -118,7 +113,7 @@ public sealed class MainWindowSignaturePhotoTests
             try
             {
                 AttachPdfWorkspace(window, fixture.SourcePath);
-                Click(window, "SignModeButton");
+                Assert.True(OrganizeWindowTestHost.InvokeTaskSync<bool>(window, "TryEnterSignModeAsync"));
                 var prepared = CreateAsset("prepared.jpg");
                 SetField(window, "_prepareSignaturePhoto", (Func<Window, string, SignatureAsset?>)((_, _) => prepared));
 
@@ -132,29 +127,16 @@ public sealed class MainWindowSignaturePhotoTests
             finally
             {
                 ClearDirtyState(window);
-                window.Close();
+                OrganizeWindowTestHost.CloseClean(window);
             }
         });
     }
 
     private static void AttachPdfWorkspace(MainWindow window, string path)
     {
-        var session = PdfDocumentSession.Open(path);
-        SetField(window, "_session", session);
-        SetField(window, "_navigation", new PageNavigationState(1));
+        Assert.True(OrganizeWindowTestHost.OpenReader(window, path));
         SetField(window, "_currentPdfDeviceTransform",
             new PdfPageDeviceTransform(0d, 300d, 1d, 0d, 0d, -1d, 300, 300));
-
-        var pixels = new byte[300 * 300 * 4];
-        Array.Fill(pixels, (byte)255);
-        var bitmap = BitmapSource.Create(300, 300, 96, 96, PixelFormats.Bgra32, null, pixels, 300 * 4);
-        bitmap.Freeze();
-        var image = Assert.IsType<Image>(window.FindName("PdfImage"));
-        image.Source = bitmap;
-        image.Width = 300;
-        image.Height = 300;
-        image.Visibility = Visibility.Visible;
-        Invoke(window, "UpdateViewerControlsUi");
     }
 
     private static SignatureAsset CreateAsset(string name)
@@ -165,9 +147,6 @@ public sealed class MainWindowSignaturePhotoTests
         pixels[3] = 0;
         return new SignatureAsset(200, 100, 800, pixels, name);
     }
-
-    private static void Click(MainWindow window, string name)
-        => Assert.IsType<Button>(window.FindName(name)).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
 
     private static SignatureEditState? GetState(MainWindow window)
         => (SignatureEditState?)GetField(window, "_signatureEditState");
@@ -196,19 +175,7 @@ public sealed class MainWindowSignaturePhotoTests
     }
 
     private static void RunInSta(Action action)
-    {
-        Exception? failure = null;
-        var thread = new Thread(() =>
-        {
-            try { action(); }
-            catch (Exception ex) { failure = ex; }
-        });
-        thread.SetApartmentState(ApartmentState.STA);
-        thread.Start();
-        thread.Join();
-        if (failure is not null)
-            ExceptionDispatchInfo.Capture(failure).Throw();
-    }
+        => OrganizeWindowTestHost.RunInSta(action);
 
     private sealed class PdfFixture : IDisposable
     {

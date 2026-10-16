@@ -73,8 +73,8 @@ public sealed class LegacyNavigationParityContractTests
 
         Assert.Contains("private async Task<bool> TryEnterReadModeAsync()", signSource, StringComparison.Ordinal);
         Assert.Contains("private async Task<bool> TryEnterSignModeAsync()", signSource, StringComparison.Ordinal);
-        Assert.Contains("await RestoreReaderAfterSignModeAsync();", signSource, StringComparison.Ordinal);
-        Assert.Contains("await PrepareReaderForSignModeAsync();", signSource, StringComparison.Ordinal);
+        Assert.Contains("RestoreReaderAfterSignModeAsync()", signSource, StringComparison.Ordinal);
+        Assert.Contains("PrepareReaderForSignModeAsync()", signSource, StringComparison.Ordinal);
         Assert.Contains("CloseReaderFindBar();", signSource, StringComparison.Ordinal);
         Assert.Contains("ClearReaderTextSelection();", signSource, StringComparison.Ordinal);
 

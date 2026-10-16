@@ -4,7 +4,6 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Data;
-using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using SGPdf.App.Features.Organize;
@@ -24,7 +23,6 @@ public partial class MainWindow
     private bool _organizeModeActive;
     private bool _organizeUiInitialized;
     private bool _organizeThumbnailRefreshQueued;
-    private Button? _organizeModeButton;
     private Grid? _organizeSurface;
     private ListBox? _organizePageList;
 
@@ -57,28 +55,6 @@ public partial class MainWindow
 
         _organizeUiInitialized = true;
         _ = OrganizeLoadedHookRegistered;
-
-        var modePanel = FindModePanel();
-        var organizeModeButton = new Button
-        {
-            Name = "OrganizeModeButton",
-            Content = "ORGANIZAR",
-            Padding = new Thickness(14, 4, 14, 4),
-            Margin = new Thickness(4, 0, 0, 0),
-            IsEnabled = false
-        };
-        organizeModeButton.SetBinding(
-            IsEnabledProperty,
-            new Binding(nameof(IsEnabled)) { Source = PrintPdfMenuItem });
-        organizeModeButton.Click += OrganizeMode_Click;
-        modePanel.Children.Add(organizeModeButton);
-        RegisterName(organizeModeButton.Name, organizeModeButton);
-        _organizeModeButton = organizeModeButton;
-
-        if (_readModeButton is not null)
-            _readModeButton.PreviewMouseLeftButtonDown += ExistingModeButton_PreviewMouseLeftButtonDown;
-        if (_signModeButton is not null)
-            _signModeButton.PreviewMouseLeftButtonDown += ExistingModeButton_PreviewMouseLeftButtonDown;
 
         var viewerHost = PdfScrollViewer.Parent as Grid
             ?? throw new InvalidOperationException("No se encontró el contenedor central para ORGANIZAR.");
@@ -128,26 +104,6 @@ public partial class MainWindow
         _organizePageList = list;
 
         Closing += OrganizeWindow_Closing;
-    }
-
-    private StackPanel FindModePanel()
-    {
-        if (_readModeButton?.Parent is StackPanel panel)
-            return panel;
-
-        if (Content is DockPanel root)
-        {
-            foreach (var border in root.Children.OfType<Border>())
-            {
-                if (border.Child is StackPanel candidate &&
-                    candidate.Children.OfType<Button>().Any(button => button.Name == "ReadModeButton"))
-                {
-                    return candidate;
-                }
-            }
-        }
-
-        throw new InvalidOperationException("No se encontró la barra de modos para agregar ORGANIZAR.");
     }
 
     private StackPanel BuildOrganizeToolbar()
@@ -237,20 +193,6 @@ public partial class MainWindow
 
         outer.AppendChild(stack);
         return new DataTemplate(typeof(OrganizePageItem)) { VisualTree = outer };
-    }
-
-    private async void OrganizeMode_Click(object sender, RoutedEventArgs e)
-    {
-        if (!TryEnterOrganizeMode())
-            return;
-
-        await RefreshOrganizeThumbnailRenderWindowAsync();
-    }
-
-    private void ExistingModeButton_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-    {
-        if (_organizeModeActive)
-            LeaveOrganizeMode();
     }
 
     private bool TryEnterOrganizeMode()

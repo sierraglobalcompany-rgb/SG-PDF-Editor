@@ -80,8 +80,6 @@ public partial class MainWindow
         foreach (var page in _readerPages)
             page.PropertyChanged += ReaderSelectionPage_PropertyChanged;
         PreviewKeyDown += ReaderSelectionWindow_PreviewKeyDown;
-        if (_signModeButton is not null)
-            _signModeButton.Click += ReaderSelectionSignMode_Click;
     }
 
     private void ReaderSelectionMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -406,7 +404,4 @@ public partial class MainWindow
             UpdateReaderSelectionOverlay();
         }
     }
-
-    private void ReaderSelectionSignMode_Click(object sender, RoutedEventArgs e)
-        => ClearReaderTextSelection();
 }

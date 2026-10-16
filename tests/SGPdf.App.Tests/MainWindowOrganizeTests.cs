@@ -19,7 +19,7 @@ namespace SGPdf.App.Tests;
 public sealed class MainWindowOrganizeTests
 {
     [Fact]
-    public void OrganizeSurface_IsPresentDisabledWithoutPdf_AndVirtualized()
+    public void OrganizeSurface_IsPresentWhileDocumentRailIsHiddenWithoutPdf_AndVirtualized()
     {
         OrganizeWindowTestHost.RunInSta(() =>
         {
@@ -27,11 +27,13 @@ public sealed class MainWindowOrganizeTests
             OrganizeWindowTestHost.EnsureLoaded(window);
             try
             {
-                var mode = OrganizeWindowTestHost.Element<Button>(window, "OrganizeModeButton");
+                var rail = OrganizeWindowTestHost.Element<Border>(window, "DocumentToolRail");
+                var tool = OrganizeWindowTestHost.ToolButton(window, "organize");
                 var surface = OrganizeWindowTestHost.Element<Grid>(window, "OrganizeSurface");
                 var list = OrganizeWindowTestHost.Element<ListBox>(window, "OrganizePageList");
 
-                Assert.False(mode.IsEnabled);
+                Assert.True(tool.IsEnabled);
+                Assert.Equal(Visibility.Collapsed, rail.Visibility);
                 Assert.Equal(Visibility.Collapsed, surface.Visibility);
                 Assert.True(VirtualizingPanel.GetIsVirtualizing(list));
                 Assert.Equal(VirtualizationMode.Recycling, VirtualizingPanel.GetVirtualizationMode(list));
@@ -210,6 +212,9 @@ internal static class OrganizeWindowTestHost
         }
     }
 
+    internal static bool OpenReader(MainWindow window, string path, string? password = null)
+        => AwaitWithDispatcher(OpenReaderAsync(window, path, password));
+
     internal static PdfRenderedPage SyntheticRendered(int pageIndex, double dpi, byte marker)
     {
         var pixels = new byte[8 * 8 * 4];
@@ -235,6 +240,15 @@ internal static class OrganizeWindowTestHost
 
     internal static T Element<T>(MainWindow window, string name) where T : class
         => Assert.IsType<T>(window.FindName(name));
+
+    internal static Button ToolButton(MainWindow window, string actionId)
+    {
+        EnsureLoaded(window);
+        var items = Element<StackPanel>(window, "DocumentToolRailItems");
+        return Assert.Single(
+            items.Children.OfType<Button>(),
+            button => string.Equals(button.Tag as string, actionId, StringComparison.Ordinal));
+    }
 
     internal static object? GetField(MainWindow window, string name)
     {
@@ -264,18 +278,21 @@ internal static class OrganizeWindowTestHost
         return method.Invoke(window, args);
     }
 
+    internal static async Task InvokeTask(MainWindow window, string name, params object?[] args)
+        => await (Task)Invoke(window, name, args)!;
+
+    internal static async Task<T> InvokeTask<T>(MainWindow window, string name, params object?[] args)
+        => await (Task<T>)Invoke(window, name, args)!;
+
+    internal static T InvokeTaskSync<T>(MainWindow window, string name, params object?[] args)
+        => AwaitWithDispatcher(InvokeTask<T>(window, name, args));
+
     internal static void InvokeOn(object instance, string name, params object?[] args)
     {
         var method = instance.GetType().GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
             .Single(item => item.Name == name && item.GetParameters().Length == args.Length);
         method.Invoke(instance, args);
     }
-
-    internal static async Task InvokeTask(MainWindow window, string name, params object?[] args)
-        => await (Task)Invoke(window, name, args)!;
-
-    internal static async Task<T> InvokeTask<T>(MainWindow window, string name, params object?[] args)
-        => await (Task<T>)Invoke(window, name, args)!;
 
     internal static void RunInSta(Action action)
         => RunInSta(() => { action(); return Task.CompletedTask; });
@@ -341,5 +358,11 @@ internal static class OrganizeWindowTestHost
         task.ContinueWith(_ => frame.Continue = false, TaskScheduler.Default);
         Dispatcher.PushFrame(frame);
         task.GetAwaiter().GetResult();
+    }
+
+    private static T AwaitWithDispatcher<T>(Task<T> task)
+    {
+        AwaitWithDispatcher((Task)task);
+        return task.GetAwaiter().GetResult();
     }
 }

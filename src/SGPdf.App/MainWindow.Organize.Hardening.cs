@@ -1,5 +1,4 @@
 using System.Windows;
-using System.Windows.Input;
 
 namespace SGPdf.App;
 
@@ -42,26 +41,8 @@ public partial class MainWindow
         _ = OrganizeHardeningLoadedHookRegistered;
         InitializeOrganizeUi();
 
-        if (_readModeButton is not null)
-        {
-            _readModeButton.PreviewMouseLeftButtonDown -= ExistingModeButton_PreviewMouseLeftButtonDown;
-            _readModeButton.PreviewMouseLeftButtonDown += GuardedExistingModeButton_PreviewMouseLeftButtonDown;
-        }
-
-        if (_signModeButton is not null)
-        {
-            _signModeButton.PreviewMouseLeftButtonDown -= ExistingModeButton_PreviewMouseLeftButtonDown;
-            _signModeButton.PreviewMouseLeftButtonDown += GuardedExistingModeButton_PreviewMouseLeftButtonDown;
-        }
-
         OpenZplMenuItem.Click -= OpenZpl_Click;
         OpenZplMenuItem.Click += GuardedOpenZpl_Click;
-    }
-
-    private void GuardedExistingModeButton_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-    {
-        if (_organizeModeActive && !TryLeaveOrganizeModeWithGuard())
-            e.Handled = true;
     }
 
     private void GuardedOpenZpl_Click(object sender, RoutedEventArgs e)

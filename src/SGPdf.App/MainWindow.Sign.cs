@@ -3,7 +3,6 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
-using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -35,8 +34,6 @@ public partial class MainWindow
     private PdfPageDeviceTransform? _currentPdfDeviceTransform;
     private bool _signatureModeActive;
     private bool _signatureUiInitialized;
-    private Button? _readModeButton;
-    private Button? _signModeButton;
     private Canvas? _signatureOverlayCanvas;
     private StackPanel? _signaturePropertiesPanel;
 
@@ -163,29 +160,6 @@ public partial class MainWindow
             return;
 
         _signatureUiInitialized = true;
-        var root = (DockPanel)Content;
-
-        var modePanel = new StackPanel
-        {
-            Orientation = Orientation.Horizontal,
-            HorizontalAlignment = HorizontalAlignment.Center,
-            Margin = new Thickness(8, 5, 8, 5)
-        };
-        _readModeButton = new Button { Name = "ReadModeButton", Content = "LEER", Padding = new Thickness(14, 4, 14, 4), Margin = new Thickness(0, 0, 4, 0) };
-        _signModeButton = new Button { Name = "SignModeButton", Content = "FIRMAR", Padding = new Thickness(14, 4, 14, 4), IsEnabled = false };
-        _readModeButton.SetResourceReference(StyleProperty, "SgToolbarButtonStyle");
-        _signModeButton.SetResourceReference(StyleProperty, "SgToolbarButtonStyle");
-        RegisterName(_readModeButton.Name, _readModeButton);
-        RegisterName(_signModeButton.Name, _signModeButton);
-        _signModeButton.SetBinding(IsEnabledProperty, new Binding(nameof(IsEnabled)) { Source = PrintPdfMenuItem });
-        _readModeButton.Click += ReadMode_Click;
-        _signModeButton.Click += SignMode_Click;
-        modePanel.Children.Add(_readModeButton);
-        modePanel.Children.Add(_signModeButton);
-        var modeBorder = new Border { Child = modePanel };
-        modeBorder.SetResourceReference(StyleProperty, "SgToolbarBorderStyle");
-        DockPanel.SetDock(modeBorder, Dock.Top);
-        root.Children.Insert(Math.Min(1, root.Children.Count), modeBorder);
 
         var pageGrid = (Grid)PdfImage.Parent;
         _signatureOverlayCanvas = new Canvas
@@ -274,12 +248,17 @@ public partial class MainWindow
         return panel;
     }
 
-    private void SignMode_Click(object sender, RoutedEventArgs e)
+    private async Task<bool> TryEnterSignModeAsync()
     {
         if (_session is null || _navigation is null || _isBusy)
-            return;
+            return false;
 
+        CloseReaderFindBar();
+        ClearReaderTextSelection();
         ResetAcroFormUi();
+        if (!await PrepareReaderForSignModeAsync())
+            return false;
+
         EnsureCurrentDeviceTransform();
         _signatureModeActive = true;
         _signatureOverlayCanvas!.Visibility = Visibility.Visible;
@@ -287,12 +266,13 @@ public partial class MainWindow
         LabelPropertiesPanel.Visibility = Visibility.Collapsed;
         PropertiesPlaceholderText.Visibility = Visibility.Collapsed;
         RefreshSignatureOverlay();
+        return true;
     }
 
-    private void ReadMode_Click(object sender, RoutedEventArgs e)
+    private async Task<bool> TryEnterReadModeAsync()
     {
         if (_signatureEditState?.IsDirty == true && !TryResolvePendingSignatureEdits(SignatureGuardReason.LeaveSignMode))
-            return;
+            return false;
 
         _signatureModeActive = false;
         if (_signatureOverlayCanvas is not null)
@@ -301,7 +281,13 @@ public partial class MainWindow
             _signaturePropertiesPanel.Visibility = Visibility.Collapsed;
         PropertiesPlaceholderText.Visibility = _zplDocument is null ? Visibility.Visible : Visibility.Collapsed;
         if (_zplDocument is not null)
+        {
             LabelPropertiesPanel.Visibility = Visibility.Visible;
+            return true;
+        }
+
+        await RestoreReaderAfterSignModeAsync();
+        return true;
     }
 
     private void EnsureCurrentDeviceTransform()

@@ -200,8 +200,7 @@ public sealed class MainWindowReaderSearchTests
                 var state = new SignatureEditState(0, new PdfRect(0d, 0d, 300d, 400d));
                 SetField(window, "_signatureEditState", state);
 
-                Element<Button>(window, "SignModeButton").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-                PumpUntil(() => (bool)GetField(window, "_signatureModeActive")!);
+                Assert.True(await InvokeTask<bool>(window, "TryEnterSignModeAsync"));
 
                 Assert.Equal(Visibility.Collapsed, Element<Border>(window, "ReaderFindBar").Visibility);
                 Assert.Same(state, GetField(window, "_signatureEditState"));
@@ -284,20 +283,6 @@ public sealed class MainWindowReaderSearchTests
 
     private static async Task<T> InvokeTask<T>(MainWindow window, string name, params object?[] args)
         => await (Task<T>)Invoke(window, name, args)!;
-
-    private static void PumpUntil(Func<bool> predicate, int timeoutMilliseconds = 3000)
-    {
-        var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMilliseconds);
-        while (!predicate())
-        {
-            if (DateTime.UtcNow >= deadline)
-                throw new TimeoutException("WPF condition did not become true in time.");
-            var frame = new DispatcherFrame();
-            Dispatcher.CurrentDispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() => frame.Continue = false));
-            Dispatcher.PushFrame(frame);
-            Thread.Sleep(5);
-        }
-    }
 
     private static void RunInSta(Func<Task> action)
     {
