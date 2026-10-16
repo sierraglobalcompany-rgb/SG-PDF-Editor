@@ -2,7 +2,6 @@ using SGPdf.App.Features.Edit;
 using Microsoft.Win32;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
@@ -20,7 +19,6 @@ public partial class MainWindow
     private bool _editUiInitialized;
     private bool _editModeActive;
     private bool _editMaterializing;
-    private Button? _editModeButton;
     private Button? _editSaveAsButton;
     private Canvas? _editOverlayCanvas;
     private ImageEditWorkspace? _imageEditWorkspace;
@@ -94,30 +92,6 @@ public partial class MainWindow
         _ = EditLoadedHookRegistered;
 
         InitializeOrganizeUi();
-        var modePanel = FindModePanel();
-        var editModeButton = new Button
-        {
-            Name = "EditModeButton",
-            Content = "EDITAR",
-            Padding = new Thickness(14, 4, 14, 4),
-            Margin = new Thickness(4, 0, 0, 0),
-            IsEnabled = false
-        };
-        editModeButton.SetBinding(
-            IsEnabledProperty,
-            new Binding(nameof(IsEnabled)) { Source = PrintPdfMenuItem });
-        editModeButton.Click += EditMode_Click;
-
-        var organizeIndex = _organizeModeButton is null
-            ? -1
-            : modePanel.Children.IndexOf(_organizeModeButton);
-        if (organizeIndex >= 0)
-            modePanel.Children.Insert(organizeIndex, editModeButton);
-        else
-            modePanel.Children.Add(editModeButton);
-
-        RegisterName(editModeButton.Name, editModeButton);
-        _editModeButton = editModeButton;
 
         var saveAsButton = new Button
         {
@@ -129,10 +103,6 @@ public partial class MainWindow
             IsEnabled = false
         };
         saveAsButton.Click += EditSaveAs_Click;
-        if (organizeIndex >= 0)
-            modePanel.Children.Insert(organizeIndex + 1, saveAsButton);
-        else
-            modePanel.Children.Add(saveAsButton);
         RegisterName(saveAsButton.Name, saveAsButton);
         _editSaveAsButton = saveAsButton;
 
@@ -166,9 +136,6 @@ public partial class MainWindow
         PreviewKeyDown += EditHost_PreviewKeyDown;
         WireEditGuards();
     }
-
-    private async void EditMode_Click(object sender, RoutedEventArgs e)
-        => await TryEnterEditModeAsync();
 
     private void EditSaveAs_Click(object sender, RoutedEventArgs e)
         => TrySaveEditWorkspace();
