@@ -30,6 +30,31 @@ public sealed class LegacyNavigationParityContractTests
         Assert.Contains("TrySaveEditWorkspace()", editSource, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void CommentNavigation_UsesDocumentRailOwner_WithoutLegacyModeButton()
+    {
+        var shellPath = FindRepoFile("src", "SGPdf.App", "MainWindow.Shell.cs");
+        var shellSource = File.ReadAllText(shellPath);
+
+        Assert.Contains("case \"comment\":", shellSource, StringComparison.Ordinal);
+        Assert.Contains("TryEnterCommentMode();", shellSource, StringComparison.Ordinal);
+        Assert.Contains(
+            "!string.Equals(actionId, \"comment\", StringComparison.Ordinal)",
+            shellSource,
+            StringComparison.Ordinal);
+        Assert.Contains("TryLeaveCommentModeWithGuard()", shellSource, StringComparison.Ordinal);
+
+        var commentPath = FindRepoFile("src", "SGPdf.App", "MainWindow.Comments.cs");
+        var commentSource = File.ReadAllText(commentPath);
+
+        Assert.DoesNotContain("_commentModeButton", commentSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("CommentModeButton", commentSource, StringComparison.Ordinal);
+
+        Assert.Contains("CommentToolbar", commentSource, StringComparison.Ordinal);
+        Assert.Contains("CommentSaveAsButton", commentSource, StringComparison.Ordinal);
+        Assert.Contains("TrySaveCommentWorkspace()", commentSource, StringComparison.Ordinal);
+    }
+
     private static string FindRepoFile(params string[] segments)
     {
         for (var directory = new DirectoryInfo(AppContext.BaseDirectory);
