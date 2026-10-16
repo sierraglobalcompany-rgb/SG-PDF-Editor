@@ -150,8 +150,6 @@ public partial class MainWindow
             new ScrollChangedEventHandler(ReaderSearchReaderScrollChanged));
         _readerPageList.SizeChanged += ReaderSearchReaderSizeChanged;
         _readerPages.CollectionChanged += ReaderSearchPagesCollectionChanged;
-        if (_signModeButton is not null)
-            _signModeButton.Click += ReaderSearchSignMode_Click;
         Closing += ReaderSearchWindow_Closing;
     }
 
@@ -367,9 +365,6 @@ public partial class MainWindow
         if (e.Action == NotifyCollectionChangedAction.Reset)
             CloseReaderFindBar();
     }
-
-    private void ReaderSearchSignMode_Click(object sender, RoutedEventArgs e)
-        => CloseReaderFindBar();
 
     private void ReaderSearchWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
     {
