@@ -56,6 +56,7 @@ public partial class MainWindow
         _contextToolbarHost = host;
 
         AttachCommentToolbarToContextHost();
+        AttachCommentPropertiesToContextColumn();
         _contextToolbarUiInitialized = true;
     }
 
@@ -79,5 +80,29 @@ public partial class MainWindow
         }
 
         ContextToolbarHost.Children.Add(_commentToolbar);
+    }
+
+    private void AttachCommentPropertiesToContextColumn()
+    {
+        if (_commentPropertiesPanel is null)
+            return;
+
+        _commentPropertiesPanel.IsVisibleChanged += CommentPropertiesPanel_IsVisibleChanged;
+        SyncContextPropertiesColumn();
+    }
+
+    private void CommentPropertiesPanel_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+    {
+        SyncContextPropertiesColumn();
+    }
+
+    private void SyncContextPropertiesColumn()
+    {
+        var hasContext = LabelPropertiesPanel.Visibility == Visibility.Visible ||
+                         _commentPropertiesPanel?.Visibility == Visibility.Visible;
+
+        ContextPropertiesColumn.Width = hasContext
+            ? new GridLength(320d)
+            : new GridLength(0d);
     }
 }
