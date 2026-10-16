@@ -296,8 +296,7 @@ public sealed class MainWindowReaderTests
                 Assert.True(await OpenReaderAsync(window, fixture.SourcePath));
                 Invoke(window, "ScrollReaderToPage", 2);
 
-                Click(window, "SignModeButton");
-                PumpUntil(() => (bool)(GetField(window, "_signatureModeActive") ?? false));
+                Assert.True(await InvokeTask<bool>(window, "TryEnterSignModeAsync"));
 
                 Assert.Equal(2, GetNavigation(window)!.CurrentPageIndex);
                 Assert.Equal(Visibility.Collapsed, Element<Grid>(window, "ReaderContinuousSurface").Visibility);
@@ -321,13 +320,12 @@ public sealed class MainWindowReaderTests
             {
                 Assert.True(await OpenReaderAsync(window, fixture.SourcePath));
                 Invoke(window, "ScrollReaderToPage", 2);
-                Click(window, "SignModeButton");
-                PumpUntil(() => (bool)(GetField(window, "_signatureModeActive") ?? false));
+                Assert.True(await InvokeTask<bool>(window, "TryEnterSignModeAsync"));
                 Invoke(window, "AddSignatureAsset", CreateSignatureAsset());
 
                 SetField(window, "_resolvePendingSignatureDecision",
                     (Func<SignatureGuardReason, PendingSignatureDecision>)(_ => PendingSignatureDecision.Cancel));
-                Click(window, "ReadModeButton");
+                Assert.False(await InvokeTask<bool>(window, "TryEnterReadModeAsync"));
                 Assert.True((bool)GetField(window, "_signatureModeActive")!);
                 Assert.Equal(Visibility.Collapsed, Element<Grid>(window, "ReaderContinuousSurface").Visibility);
                 Assert.Equal(2, GetNavigation(window)!.CurrentPageIndex);
@@ -335,7 +333,7 @@ public sealed class MainWindowReaderTests
 
                 SetField(window, "_resolvePendingSignatureDecision",
                     (Func<SignatureGuardReason, PendingSignatureDecision>)(_ => PendingSignatureDecision.Discard));
-                Click(window, "ReadModeButton");
+                Assert.True(await InvokeTask<bool>(window, "TryEnterReadModeAsync"));
                 Assert.False((bool)GetField(window, "_signatureModeActive")!);
                 Assert.Equal(Visibility.Visible, Element<Grid>(window, "ReaderContinuousSurface").Visibility);
                 Assert.Equal(Visibility.Collapsed, Element<Canvas>(window, "SignatureOverlayCanvas").Visibility);
@@ -449,9 +447,6 @@ public sealed class MainWindowReaderTests
     private static T Element<T>(MainWindow window, string name) where T : class
         => Assert.IsType<T>(window.FindName(name));
 
-    private static void Click(MainWindow window, string name)
-        => Element<Button>(window, name).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-
     private static object? GetField(MainWindow window, string name)
     {
         var field = typeof(MainWindow).GetField(name, BindingFlags.Instance | BindingFlags.NonPublic);
@@ -495,20 +490,6 @@ public sealed class MainWindowReaderTests
 
     private static async Task<T> InvokeTask<T>(MainWindow window, string name, params object?[] args)
         => await (Task<T>)Invoke(window, name, args)!;
-
-    private static void PumpUntil(Func<bool> predicate, int timeoutMilliseconds = 3000)
-    {
-        var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMilliseconds);
-        while (!predicate())
-        {
-            if (DateTime.UtcNow >= deadline)
-                throw new TimeoutException("WPF condition did not become true in time.");
-            var frame = new DispatcherFrame();
-            Dispatcher.CurrentDispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() => frame.Continue = false));
-            Dispatcher.PushFrame(frame);
-            Thread.Sleep(5);
-        }
-    }
 
     private static void RunInSta(Action action)
         => RunInSta(() => { action(); return Task.CompletedTask; });
