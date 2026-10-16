@@ -43,6 +43,38 @@ public sealed class ContextualShellContractTests
                 StringComparison.Ordinal));
     }
 
+    [Fact]
+    public void LabelContext_ReopensRightPanelThroughExistingLabelOwner()
+    {
+        var xamlPath = FindRepoFile("src", "SGPdf.App", "MainWindow.xaml");
+        var document = XDocument.Load(xamlPath);
+        XNamespace presentation = "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+        XNamespace x = "http://schemas.microsoft.com/winfx/2006/xaml";
+
+        var contextualColumn = document
+            .Descendants(presentation + "ColumnDefinition")
+            .SingleOrDefault(column =>
+                string.Equals(
+                    (string?)column.Attribute(x + "Name"),
+                    "ContextPropertiesColumn",
+                    StringComparison.Ordinal));
+
+        Assert.NotNull(contextualColumn);
+        Assert.Equal("0", (string?)contextualColumn!.Attribute("Width"));
+
+        var labelsPath = FindRepoFile("src", "SGPdf.App", "MainWindow.Labels.cs");
+        var labelsSource = File.ReadAllText(labelsPath);
+
+        Assert.Contains(
+            "ContextPropertiesColumn.Width = new GridLength(0d);",
+            labelsSource,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "ContextPropertiesColumn.Width = new GridLength(320d);",
+            labelsSource,
+            StringComparison.Ordinal);
+    }
+
     private static string FindRepoFile(params string[] segments)
     {
         for (var directory = new DirectoryInfo(AppContext.BaseDirectory);
