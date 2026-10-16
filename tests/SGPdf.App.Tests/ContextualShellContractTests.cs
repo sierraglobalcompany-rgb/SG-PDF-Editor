@@ -143,6 +143,40 @@ public sealed class ContextualShellContractTests
             StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void SignatureContext_UsesExistingPanelVisibilityToControlShellWidth()
+    {
+        var xamlPath = FindRepoFile("src", "SGPdf.App", "MainWindow.xaml");
+        var appDirectory = Path.GetDirectoryName(xamlPath)
+            ?? throw new InvalidOperationException("No se encontró la carpeta de SGPdf.App.");
+        var shellSource = string.Join(
+            Environment.NewLine,
+            Directory.GetFiles(appDirectory, "MainWindow.Shell*.cs", SearchOption.TopDirectoryOnly)
+                .OrderBy(path => path, StringComparer.Ordinal)
+                .Select(File.ReadAllText));
+
+        Assert.Contains("AttachSignaturePropertiesToContextColumn();", shellSource, StringComparison.Ordinal);
+        Assert.Contains(
+            "_signaturePropertiesPanel.IsVisibleChanged += SignaturePropertiesPanel_IsVisibleChanged;",
+            shellSource,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "_signaturePropertiesPanel?.Visibility == Visibility.Visible",
+            shellSource,
+            StringComparison.Ordinal);
+
+        var signPath = FindRepoFile("src", "SGPdf.App", "MainWindow.Sign.cs");
+        var signSource = File.ReadAllText(signPath);
+        Assert.Contains(
+            "_signaturePropertiesPanel!.Visibility = Visibility.Visible;",
+            signSource,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "_signaturePropertiesPanel.Visibility = Visibility.Collapsed;",
+            signSource,
+            StringComparison.Ordinal);
+    }
+
     private static string FindRepoFile(params string[] segments)
     {
         for (var directory = new DirectoryInfo(AppContext.BaseDirectory);
