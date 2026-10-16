@@ -177,6 +177,40 @@ public sealed class ContextualShellContractTests
             StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void EditTextContext_UsesRealScrollVisibilityToControlShellWidth()
+    {
+        var xamlPath = FindRepoFile("src", "SGPdf.App", "MainWindow.xaml");
+        var appDirectory = Path.GetDirectoryName(xamlPath)
+            ?? throw new InvalidOperationException("No se encontró la carpeta de SGPdf.App.");
+        var shellSource = string.Join(
+            Environment.NewLine,
+            Directory.GetFiles(appDirectory, "MainWindow.Shell*.cs", SearchOption.TopDirectoryOnly)
+                .OrderBy(path => path, StringComparer.Ordinal)
+                .Select(File.ReadAllText));
+
+        Assert.Contains("AttachEditTextPropertiesToContextColumn();", shellSource, StringComparison.Ordinal);
+        Assert.Contains(
+            "_editTextPropertiesScrollViewer.IsVisibleChanged += EditTextPropertiesScrollViewer_IsVisibleChanged;",
+            shellSource,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "_editTextPropertiesScrollViewer?.Visibility == Visibility.Visible",
+            shellSource,
+            StringComparison.Ordinal);
+
+        var editTextPath = FindRepoFile("src", "SGPdf.App", "MainWindow.Edit.Text.cs");
+        var editTextSource = File.ReadAllText(editTextPath);
+        Assert.Contains(
+            "_editTextPropertiesScrollViewer.Visibility = Visibility.Visible;",
+            editTextSource,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "_editTextPropertiesScrollViewer.Visibility = Visibility.Collapsed;",
+            editTextSource,
+            StringComparison.Ordinal);
+    }
+
     private static string FindRepoFile(params string[] segments)
     {
         for (var directory = new DirectoryInfo(AppContext.BaseDirectory);
