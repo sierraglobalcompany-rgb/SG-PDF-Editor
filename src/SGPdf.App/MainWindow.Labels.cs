@@ -429,11 +429,13 @@ public partial class MainWindow
     {
         if (_zplDocument is null)
         {
+            ContextPropertiesColumn.Width = new GridLength(0d);
             LabelPropertiesPanel.Visibility = Visibility.Collapsed;
-            PropertiesPlaceholderText.Visibility = Visibility.Visible;
+            PropertiesPlaceholderText.Visibility = Visibility.Collapsed;
             return;
         }
 
+        ContextPropertiesColumn.Width = new GridLength(320d);
         LabelPropertiesPanel.Visibility = Visibility.Visible;
         PropertiesPlaceholderText.Visibility = Visibility.Collapsed;
 

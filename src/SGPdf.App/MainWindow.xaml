@@ -158,7 +158,7 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="240" />
                 <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="0" />
+                <ColumnDefinition x:Name="ContextPropertiesColumn" Width="0" />
             </Grid.ColumnDefinitions>
 
             <Border Grid.Column="0"
