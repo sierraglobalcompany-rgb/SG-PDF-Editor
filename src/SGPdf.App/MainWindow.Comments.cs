@@ -254,8 +254,6 @@ public partial class MainWindow
             _signModeButton.PreviewMouseLeftButtonDown += ExistingModeAfterComment_PreviewMouseLeftButtonDown;
         if (_organizeModeButton is not null)
             _organizeModeButton.PreviewMouseLeftButtonDown += ExistingModeAfterComment_PreviewMouseLeftButtonDown;
-        if (_editModeButton is not null)
-            _editModeButton.PreviewMouseLeftButtonDown += ExistingModeAfterComment_PreviewMouseLeftButtonDown;
 
         PreviewKeyDown += CommentHost_PreviewKeyDown;
         Closing += CommentWindow_Closing;
