@@ -110,19 +110,29 @@ public sealed class ContextualShellContractTests
     }
 
     [Fact]
-    public void CommentContext_OpensAndClosesRightPanelThroughCommentOwner()
+    public void CommentContext_UsesExistingPanelVisibilityToControlShellWidth()
     {
+        var xamlPath = FindRepoFile("src", "SGPdf.App", "MainWindow.xaml");
+        var appDirectory = Path.GetDirectoryName(xamlPath)
+            ?? throw new InvalidOperationException("No se encontró la carpeta de SGPdf.App.");
+        var shellSource = string.Join(
+            Environment.NewLine,
+            Directory.GetFiles(appDirectory, "MainWindow.Shell*.cs", SearchOption.TopDirectoryOnly)
+                .OrderBy(path => path, StringComparer.Ordinal)
+                .Select(File.ReadAllText));
+
+        Assert.Contains("AttachCommentPropertiesToContextColumn();", shellSource, StringComparison.Ordinal);
+        Assert.Contains(
+            "_commentPropertiesPanel.IsVisibleChanged += CommentPropertiesPanel_IsVisibleChanged;",
+            shellSource,
+            StringComparison.Ordinal);
+        Assert.Contains("SyncContextPropertiesColumn();", shellSource, StringComparison.Ordinal);
+        Assert.Contains("ContextPropertiesColumn.Width =", shellSource, StringComparison.Ordinal);
+        Assert.Contains("new GridLength(320d)", shellSource, StringComparison.Ordinal);
+        Assert.Contains("new GridLength(0d)", shellSource, StringComparison.Ordinal);
+
         var commentsPath = FindRepoFile("src", "SGPdf.App", "MainWindow.Comments.cs");
         var commentsSource = File.ReadAllText(commentsPath);
-
-        Assert.Contains(
-            "ContextPropertiesColumn.Width = new GridLength(320d);",
-            commentsSource,
-            StringComparison.Ordinal);
-        Assert.Contains(
-            "ContextPropertiesColumn.Width = new GridLength(0d);",
-            commentsSource,
-            StringComparison.Ordinal);
         Assert.Contains(
             "_commentPropertiesPanel!.Visibility = Visibility.Visible;",
             commentsSource,
