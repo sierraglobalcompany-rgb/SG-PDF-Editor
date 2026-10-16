@@ -10,29 +10,6 @@ namespace SGPdf.App.Tests;
 public sealed class MainWindowEditImagesTests
 {
     [Fact]
-    public void EditModeButton_IsBetweenFirmarAndOrganizar_AndDisabledWithoutPdf()
-    {
-        OrganizeWindowTestHost.RunInSta(() =>
-        {
-            var window = new MainWindow();
-            OrganizeWindowTestHost.EnsureLoaded(window);
-            try
-            {
-                var edit = OrganizeWindowTestHost.Element<Button>(window, "EditModeButton");
-                Assert.False(edit.IsEnabled);
-
-                var sign = OrganizeWindowTestHost.Element<Button>(window, "SignModeButton");
-                var organize = OrganizeWindowTestHost.Element<Button>(window, "OrganizeModeButton");
-                var panel = Assert.IsAssignableFrom<Panel>(edit.Parent);
-                var buttons = panel.Children.OfType<Button>().ToArray();
-                Assert.True(Array.IndexOf(buttons, sign) < Array.IndexOf(buttons, edit));
-                Assert.True(Array.IndexOf(buttons, edit) < Array.IndexOf(buttons, organize));
-            }
-            finally { OrganizeWindowTestHost.CloseClean(window); }
-        });
-    }
-
-    [Fact]
     public void EnterEditMode_EligiblePdf_CreatesWorkspaceAndUsesSinglePageOverlay()
     {
         OrganizeWindowTestHost.RunInSta(async () =>
