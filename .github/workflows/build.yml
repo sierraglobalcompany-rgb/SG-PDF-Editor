@@ -53,5 +53,12 @@ jobs:
       - name: Build
         run: dotnet build SGPdf.slnx --configuration Release --no-restore
 
+      - name: Smoke app startup
+        shell: pwsh
+        run: |
+          ./tools/smoke-startup.ps1 `
+            -Executable "./src/SGPdf.App/bin/Release/net10.0-windows/SGPdf.App.exe" `
+            -TimeoutSeconds 30
+
       - name: Test
         run: dotnet test SGPdf.slnx --configuration Release --no-build

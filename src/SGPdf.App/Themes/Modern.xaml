@@ -15,7 +15,7 @@
     <SolidColorBrush x:Key="SgBorderBrush"
                      Color="{DynamicResource CardStrokeColorDefault}" />
     <SolidColorBrush x:Key="SgAccentBrush"
-                     Color="{DynamicResource SystemAccentColor}" />
+                     Color="{StaticResource SystemAccentColor}" />
     <SolidColorBrush x:Key="SgMutedTextBrush"
                      Color="{DynamicResource TextFillColorSecondary}" />
 
