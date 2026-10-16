@@ -75,6 +75,59 @@ public sealed class ContextualShellContractTests
             StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void CommentToolbar_IsHostedInsideWorkspace_AndKeepsRealOwnerActions()
+    {
+        var xamlPath = FindRepoFile("src", "SGPdf.App", "MainWindow.xaml");
+        var document = XDocument.Load(xamlPath);
+        XNamespace presentation = "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+        XNamespace x = "http://schemas.microsoft.com/winfx/2006/xaml";
+
+        var host = document
+            .Descendants(presentation + "Grid")
+            .SingleOrDefault(grid =>
+                string.Equals(
+                    (string?)grid.Attribute(x + "Name"),
+                    "ContextToolbarHost",
+                    StringComparison.Ordinal));
+
+        Assert.NotNull(host);
+        Assert.Equal("0", (string?)host!.Attribute("Grid.Row"));
+
+        var workspaceCenter = host.Parent;
+        Assert.NotNull(workspaceCenter);
+        var rows = workspaceCenter!
+            .Element(presentation + "Grid.RowDefinitions")?
+            .Elements(presentation + "RowDefinition")
+            .ToArray();
+        Assert.NotNull(rows);
+        Assert.Equal(2, rows!.Length);
+        Assert.Equal("Auto", (string?)rows[0].Attribute("Height"));
+        Assert.Equal("*", (string?)rows[1].Attribute("Height"));
+
+        var pdfScrollViewer = workspaceCenter
+            .Elements(presentation + "ScrollViewer")
+            .Single(element =>
+                string.Equals(
+                    (string?)element.Attribute(x + "Name"),
+                    "PdfScrollViewer",
+                    StringComparison.Ordinal));
+        Assert.Equal("1", (string?)pdfScrollViewer.Attribute("Grid.Row"));
+
+        var commentsPath = FindRepoFile("src", "SGPdf.App", "MainWindow.Comments.cs");
+        var commentsSource = File.ReadAllText(commentsPath);
+
+        Assert.Contains("ContextToolbarHost.Children.Add(toolbar);", commentsSource, StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "root.Children.Insert(Math.Min(2, root.Children.Count), toolbar);",
+            commentsSource,
+            StringComparison.Ordinal);
+        Assert.Contains("SgToolbarBorderStyle", commentsSource, StringComparison.Ordinal);
+        Assert.Contains("CommentUndoButton", commentsSource, StringComparison.Ordinal);
+        Assert.Contains("CommentRedoButton", commentsSource, StringComparison.Ordinal);
+        Assert.Contains("CommentSaveAsButton", commentsSource, StringComparison.Ordinal);
+    }
+
     private static string FindRepoFile(params string[] segments)
     {
         for (var directory = new DirectoryInfo(AppContext.BaseDirectory);
