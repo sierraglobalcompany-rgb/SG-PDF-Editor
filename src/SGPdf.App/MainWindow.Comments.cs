@@ -248,10 +248,6 @@ public partial class MainWindow
             new ScrollChangedEventHandler((_, _) => RefreshCommentOverlay()));
         _readerPageList.SizeChanged += (_, _) => RefreshCommentOverlay();
 
-        if (_readModeButton is not null)
-            _readModeButton.PreviewMouseLeftButtonDown += ExistingModeAfterComment_PreviewMouseLeftButtonDown;
-        if (_signModeButton is not null)
-            _signModeButton.PreviewMouseLeftButtonDown += ExistingModeAfterComment_PreviewMouseLeftButtonDown;
         if (_organizeModeButton is not null)
             _organizeModeButton.PreviewMouseLeftButtonDown += ExistingModeAfterComment_PreviewMouseLeftButtonDown;
         if (_editModeButton is not null)
