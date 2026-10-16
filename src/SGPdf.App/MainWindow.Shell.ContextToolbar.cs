@@ -56,6 +56,7 @@ public partial class MainWindow
         _contextToolbarHost = host;
 
         AttachCommentToolbarToContextHost();
+        AttachEditToolbarToContextHost();
         AttachCommentPropertiesToContextColumn();
         AttachSignaturePropertiesToContextColumn();
         AttachEditTextPropertiesToContextColumn();
@@ -82,6 +83,18 @@ public partial class MainWindow
         }
 
         ContextToolbarHost.Children.Add(_commentToolbar);
+    }
+
+    private void AttachEditToolbarToContextHost()
+    {
+        if (_editSaveAsButton is null)
+            return;
+
+        if (_editSaveAsButton.Parent is Panel legacyParent)
+            legacyParent.Children.Remove(_editSaveAsButton);
+
+        _editSaveAsButton.SetResourceReference(FrameworkElement.StyleProperty, "SgToolbarButtonStyle");
+        ContextToolbarHost.Children.Add(_editSaveAsButton);
     }
 
     private void AttachCommentPropertiesToContextColumn()
