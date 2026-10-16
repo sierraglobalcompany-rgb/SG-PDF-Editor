@@ -101,9 +101,37 @@ public partial class MainWindow
 
         foreach (var descriptor in ToolCatalog.Document)
         {
+            var icon = new System.Windows.Shapes.Path
+            {
+                Width = 18d,
+                Height = 18d,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Stretch = System.Windows.Media.Stretch.Uniform,
+                StrokeThickness = 1.5d
+            };
+            icon.SetResourceReference(System.Windows.Shapes.Path.DataProperty, descriptor.IconKey);
+            icon.SetResourceReference(
+                System.Windows.Shapes.Shape.StrokeProperty,
+                "TextFillColorPrimaryBrush");
+
+            var label = new TextBlock
+            {
+                Text = descriptor.Title,
+                Margin = new Thickness(0, 4, 0, 0),
+                HorizontalAlignment = HorizontalAlignment.Center,
+                TextAlignment = TextAlignment.Center
+            };
+
+            var content = new StackPanel
+            {
+                HorizontalAlignment = HorizontalAlignment.Center
+            };
+            content.Children.Add(icon);
+            content.Children.Add(label);
+
             var button = new Button
             {
-                Content = descriptor.Title,
+                Content = content,
                 Tag = descriptor.Id,
                 Focusable = true,
                 IsEnabled = descriptor.ActionId is not null,
