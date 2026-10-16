@@ -17,8 +17,13 @@ public sealed class MainWindowToolRailTests
         "forms", "ocr", "redact", "compare", "convert", "protect"
     ];
 
+    private static readonly string[] FutureF14Actions =
+    [
+        "forms", "ocr", "redact", "compare", "convert", "protect"
+    ];
+
     [Fact]
-    public void DocumentRail_Is96Pixels_OrderedAccessible_AndHasOneSelectedItem()
+    public void DocumentRail_Is96Pixels_OrderedAccessible_IconAndText_AndHasOneSelectedItem()
     {
         RunInSta(() =>
         {
@@ -40,14 +45,37 @@ public sealed class MainWindowToolRailTests
                 Assert.All(buttons, button =>
                 {
                     Assert.True(button.Focusable);
-                    Assert.False(string.IsNullOrWhiteSpace(button.Content?.ToString()));
-                    Assert.Equal(button.Content?.ToString(), AutomationProperties.GetName(button));
+                    var accessibleName = AutomationProperties.GetName(button);
+                    Assert.False(string.IsNullOrWhiteSpace(accessibleName));
+
+                    var content = Assert.IsAssignableFrom<FrameworkElement>(button.Content);
+                    var label = Assert.IsType<TextBlock>(FindDescendant<TextBlock>(content));
+                    Assert.Equal(accessibleName, label.Text);
+                    Assert.NotNull(FindDescendant<System.Windows.Shapes.Path>(content));
+                });
+
+                Assert.All(buttons.Take(5), button => Assert.True(button.IsEnabled));
+                Assert.All(buttons.Skip(5), button =>
+                {
+                    Assert.False(button.IsEnabled);
+                    Assert.False(string.IsNullOrWhiteSpace(AutomationProperties.GetHelpText(button)));
+                    Assert.NotNull(button.ToolTip);
                 });
 
                 Assert.Single(buttons, button => ReferenceEquals(button.Style, selectedStyle));
             }
             finally { window.Close(); }
         });
+    }
+
+    [Fact]
+    public void DocumentRail_ConsumesDescriptorIconKey_WithoutStringOnlyContent()
+    {
+        var path = FindRepoFile("src", "SGPdf.App", "MainWindow.Shell.cs");
+        var source = File.ReadAllText(path);
+
+        Assert.Contains("descriptor.IconKey", source);
+        Assert.DoesNotContain("Content = descriptor.Title", source);
     }
 
     [Fact]
@@ -61,11 +89,14 @@ public sealed class MainWindowToolRailTests
                 RaiseLoaded(window);
                 var method = GetRouter();
 
-                SetField(window, "_organizeModeActive", true);
-                SetField(window, "_organizePlanDirty", false);
-                method.Invoke(window, ["forms"]);
+                foreach (var futureAction in FutureF14Actions)
+                {
+                    SetField(window, "_organizeModeActive", true);
+                    SetField(window, "_organizePlanDirty", false);
+                    method.Invoke(window, [futureAction]);
 
-                Assert.True(GetField<bool>(window, "_organizeModeActive"));
+                    Assert.True(GetField<bool>(window, "_organizeModeActive"));
+                }
             }
             finally { window.Close(); }
         });
@@ -125,6 +156,36 @@ public sealed class MainWindowToolRailTests
 
     private static void RaiseLoaded(MainWindow window)
         => window.RaiseEvent(new RoutedEventArgs(FrameworkElement.LoadedEvent));
+
+    private static T? FindDescendant<T>(DependencyObject root)
+        where T : DependencyObject
+    {
+        foreach (var child in LogicalTreeHelper.GetChildren(root).OfType<DependencyObject>())
+        {
+            if (child is T match)
+                return match;
+
+            var descendant = FindDescendant<T>(child);
+            if (descendant is not null)
+                return descendant;
+        }
+
+        return null;
+    }
+
+    private static string FindRepoFile(params string[] segments)
+    {
+        for (var directory = new DirectoryInfo(AppContext.BaseDirectory);
+             directory is not null;
+             directory = directory.Parent)
+        {
+            var candidate = segments.Aggregate(directory.FullName, Path.Combine);
+            if (File.Exists(candidate))
+                return candidate;
+        }
+
+        throw new FileNotFoundException($"Repository file not found: {Path.Combine(segments)}");
+    }
 
     private static void SetField(MainWindow window, string name, object value)
     {
