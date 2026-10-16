@@ -225,13 +225,6 @@ public partial class MainWindow
             new ScrollChangedEventHandler((_, _) => RefreshCommentOverlay()));
         _readerPageList.SizeChanged += (_, _) => RefreshCommentOverlay();
 
-        if (_readModeButton is not null)
-            _readModeButton.PreviewMouseLeftButtonDown += ExistingModeAfterComment_PreviewMouseLeftButtonDown;
-        if (_signModeButton is not null)
-            _signModeButton.PreviewMouseLeftButtonDown += ExistingModeAfterComment_PreviewMouseLeftButtonDown;
-        if (_organizeModeButton is not null)
-            _organizeModeButton.PreviewMouseLeftButtonDown += ExistingModeAfterComment_PreviewMouseLeftButtonDown;
-
         PreviewKeyDown += CommentHost_PreviewKeyDown;
         Closing += CommentWindow_Closing;
         UpdateCommentCommands();
@@ -921,12 +914,6 @@ public partial class MainWindow
         if (_session is not null && _zplDocument is null)
             PropertiesPlaceholderText.Visibility = Visibility.Visible;
         UpdateCommentCommands();
-    }
-
-    private void ExistingModeAfterComment_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-    {
-        if (_commentModeActive && !TryLeaveCommentModeWithGuard())
-            e.Handled = true;
     }
 
     private void CommentWindow_Closing(object? sender, CancelEventArgs e)
