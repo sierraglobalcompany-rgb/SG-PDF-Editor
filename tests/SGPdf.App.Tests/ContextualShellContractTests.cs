@@ -109,6 +109,30 @@ public sealed class ContextualShellContractTests
         Assert.Contains("CommentSaveAsButton", commentsSource, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void CommentContext_OpensAndClosesRightPanelThroughCommentOwner()
+    {
+        var commentsPath = FindRepoFile("src", "SGPdf.App", "MainWindow.Comments.cs");
+        var commentsSource = File.ReadAllText(commentsPath);
+
+        Assert.Contains(
+            "ContextPropertiesColumn.Width = new GridLength(320d);",
+            commentsSource,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "ContextPropertiesColumn.Width = new GridLength(0d);",
+            commentsSource,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "_commentPropertiesPanel!.Visibility = Visibility.Visible;",
+            commentsSource,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "_commentPropertiesPanel.Visibility = Visibility.Collapsed;",
+            commentsSource,
+            StringComparison.Ordinal);
+    }
+
     private static string FindRepoFile(params string[] segments)
     {
         for (var directory = new DirectoryInfo(AppContext.BaseDirectory);
