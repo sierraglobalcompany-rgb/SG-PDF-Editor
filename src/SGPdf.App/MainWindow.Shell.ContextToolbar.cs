@@ -57,6 +57,7 @@ public partial class MainWindow
 
         AttachCommentToolbarToContextHost();
         AttachCommentPropertiesToContextColumn();
+        AttachSignaturePropertiesToContextColumn();
         _contextToolbarUiInitialized = true;
     }
 
@@ -96,10 +97,25 @@ public partial class MainWindow
         SyncContextPropertiesColumn();
     }
 
+    private void AttachSignaturePropertiesToContextColumn()
+    {
+        if (_signaturePropertiesPanel is null)
+            return;
+
+        _signaturePropertiesPanel.IsVisibleChanged += SignaturePropertiesPanel_IsVisibleChanged;
+        SyncContextPropertiesColumn();
+    }
+
+    private void SignaturePropertiesPanel_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+    {
+        SyncContextPropertiesColumn();
+    }
+
     private void SyncContextPropertiesColumn()
     {
         var hasContext = LabelPropertiesPanel.Visibility == Visibility.Visible ||
-                         _commentPropertiesPanel?.Visibility == Visibility.Visible;
+                         _commentPropertiesPanel?.Visibility == Visibility.Visible ||
+                         _signaturePropertiesPanel?.Visibility == Visibility.Visible;
 
         ContextPropertiesColumn.Width = hasContext
             ? new GridLength(320d)
