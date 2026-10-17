@@ -5,10 +5,12 @@ namespace SGPdf.App.Tests;
 
 public sealed class AppIconContractTests
 {
-    private const string IconProjectPath = @"Assets\SGPdf.ico";
+    private const string AppIconProjectPath = @"Assets\SGPdf.App.ico";
+    private const string DocumentIconProjectPath = @"Assets\SGPdf.Document.ico";
+    private const string DocumentPngProjectPath = @"Assets\SGPdf.Document.png";
 
     [Fact]
-    public void OfficialAppIcon_IsWiredToExecutableAndWpfResources()
+    public void AppAndDocumentIcons_AreWiredToDistinctRoles()
     {
         var projectPath = FindRepoFile("src", "SGPdf.App", "SGPdf.App.csproj");
         var project = XDocument.Load(projectPath);
@@ -18,16 +20,26 @@ public sealed class AppIconContractTests
             .SingleOrDefault();
 
         Assert.NotNull(applicationIcon);
-        Assert.Equal(IconProjectPath, applicationIcon!.Value);
+        Assert.Equal(AppIconProjectPath, applicationIcon!.Value);
 
-        var iconResource = project
-            .Descendants("Resource")
-            .SingleOrDefault(element => string.Equals(
-                NormalizePath((string?)element.Attribute("Include")),
-                NormalizePath(IconProjectPath),
-                StringComparison.Ordinal));
+        AssertProjectResource(project, AppIconProjectPath);
+        AssertProjectResource(project, DocumentIconProjectPath);
+        AssertProjectResource(project, DocumentPngProjectPath);
 
-        Assert.NotNull(iconResource);
+        var appDirectory = Path.GetDirectoryName(projectPath)
+            ?? throw new InvalidOperationException("No se encontró la carpeta de SGPdf.App.");
+
+        var appIconPath = Path.Combine(appDirectory, "Assets", "SGPdf.App.ico");
+        var documentIconPath = Path.Combine(appDirectory, "Assets", "SGPdf.Document.ico");
+        var documentPngPath = Path.Combine(appDirectory, "Assets", "SGPdf.Document.png");
+
+        Assert.True(File.Exists(appIconPath), $"App icon not found: {appIconPath}");
+        Assert.True(File.Exists(documentIconPath), $"Document icon not found: {documentIconPath}");
+        Assert.True(File.Exists(documentPngPath), $"Document PNG not found: {documentPngPath}");
+
+        Assert.NotEqual(
+            Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(appIconPath))),
+            Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(documentIconPath))));
 
         var mainWindowPath = FindRepoFile("src", "SGPdf.App", "MainWindow.xaml");
         var mainWindow = XDocument.Load(mainWindowPath).Root;
@@ -36,19 +48,36 @@ public sealed class AppIconContractTests
         var windowIcon = NormalizePath((string?)mainWindow!.Attribute("Icon"));
         Assert.True(
             string.IsNullOrEmpty(windowIcon) ||
-            string.Equals(windowIcon, NormalizePath(IconProjectPath), StringComparison.Ordinal),
-            $"MainWindow must not override the executable icon with a different asset: {windowIcon}");
+            string.Equals(windowIcon, NormalizePath(AppIconProjectPath), StringComparison.Ordinal),
+            $"MainWindow must use the application icon role, not the document icon: {windowIcon}");
     }
 
     [Fact]
-    public void OfficialAppIcon_IsMultiSizeWindowsIco()
+    public void AppAndDocumentIcons_AreMultiSizeWindowsIco()
     {
         var projectPath = FindRepoFile("src", "SGPdf.App", "SGPdf.App.csproj");
         var appDirectory = Path.GetDirectoryName(projectPath)
             ?? throw new InvalidOperationException("No se encontró la carpeta de SGPdf.App.");
-        var iconPath = Path.Combine(appDirectory, "Assets", "SGPdf.ico");
 
-        Assert.True(File.Exists(iconPath), $"Official app icon not found: {iconPath}");
+        AssertMultiSizeIcon(Path.Combine(appDirectory, "Assets", "SGPdf.App.ico"), "app");
+        AssertMultiSizeIcon(Path.Combine(appDirectory, "Assets", "SGPdf.Document.ico"), "document");
+    }
+
+    private static void AssertProjectResource(XDocument project, string projectPath)
+    {
+        var resource = project
+            .Descendants("Resource")
+            .SingleOrDefault(element => string.Equals(
+                NormalizePath((string?)element.Attribute("Include")),
+                NormalizePath(projectPath),
+                StringComparison.Ordinal));
+
+        Assert.NotNull(resource);
+    }
+
+    private static void AssertMultiSizeIcon(string iconPath, string role)
+    {
+        Assert.True(File.Exists(iconPath), $"Official {role} icon not found: {iconPath}");
 
         using var stream = File.OpenRead(iconPath);
         using var reader = new BinaryReader(stream);
@@ -57,19 +86,19 @@ public sealed class AppIconContractTests
         Assert.Equal((ushort)1, reader.ReadUInt16());
 
         var imageCount = reader.ReadUInt16();
-        Assert.True(imageCount > 1, "The app icon must contain multiple Windows icon sizes.");
+        Assert.True(imageCount > 1, $"The {role} icon must contain multiple Windows icon sizes.");
 
         var sizes = new HashSet<int>();
         for (var index = 0; index < imageCount; index++)
         {
             var widthByte = reader.ReadByte();
             var heightByte = reader.ReadByte();
-            reader.ReadByte(); // color count
-            reader.ReadByte(); // reserved
-            reader.ReadUInt16(); // planes
-            reader.ReadUInt16(); // bit count
-            reader.ReadUInt32(); // bytes in resource
-            reader.ReadUInt32(); // image offset
+            reader.ReadByte();
+            reader.ReadByte();
+            reader.ReadUInt16();
+            reader.ReadUInt16();
+            reader.ReadUInt32();
+            reader.ReadUInt32();
 
             var width = widthByte == 0 ? 256 : widthByte;
             var height = heightByte == 0 ? 256 : heightByte;
