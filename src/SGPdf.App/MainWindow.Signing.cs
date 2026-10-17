@@ -85,12 +85,10 @@ public partial class MainWindow
         _cryptographicSigningUiInitialized = true;
         _ = CryptographicSigningLoadedHookRegistered;
 
-        if (Content is not DockPanel root)
+        if (Content is not DockPanel)
             throw new InvalidOperationException("No se encontró el contenedor principal para firma criptográfica.");
 
-        var menu = root.Children.OfType<Menu>().FirstOrDefault()
-            ?? throw new InvalidOperationException("No se encontró el menú principal para firma criptográfica.");
-        var fileMenu = menu.Items.OfType<MenuItem>().FirstOrDefault()
+        var fileMenu = ItemsControl.ItemsControlFromItemContainer(OpenPdfMenuItem) as MenuItem
             ?? throw new InvalidOperationException("No se encontró el menú Archivo para firma criptográfica.");
 
         var command = new MenuItem
