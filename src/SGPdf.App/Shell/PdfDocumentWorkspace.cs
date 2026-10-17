@@ -20,6 +20,7 @@ internal sealed class PdfDocumentWorkspace : IDisposable
         PageSizes = pageSizes.ToArray();
         Navigation = new PageNavigationState(PageSizes.Count);
         Zoom = new PdfZoomState();
+        PendingState = new PdfDocumentPendingState();
     }
 
     internal PdfDocumentSession Session { get; }
@@ -35,6 +36,8 @@ internal sealed class PdfDocumentWorkspace : IDisposable
     internal PdfZoomState Zoom { get; private set; }
 
     internal double VerticalOffset { get; set; }
+
+    internal PdfDocumentPendingState PendingState { get; }
 
     internal bool IsDirty { get; private set; }
 
