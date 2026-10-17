@@ -75,15 +75,28 @@ public sealed class DocumentShellRealignmentContractTests
         Assert.NotNull(contextMenu);
     }
 
-    [Fact(Skip = "T9.1-R3: rail documental con arte oficial se implementa después de tabs/top shell.")]
+    [Fact]
     public void DocumentToolRail_ConsumesOfficialArtworkWithFallbackOnlyForUnmappedTools()
     {
         var shellSource = File.ReadAllText(FindRepoFile("src", "SGPdf.App", "MainWindow.Shell.cs"));
         var descriptorSource = File.ReadAllText(FindRepoFile("src", "SGPdf.App", "Shell", "ToolDescriptor.cs"));
 
         Assert.Contains("DocumentIconPath", descriptorSource);
+        Assert.Contains("edit-pdf.png", descriptorSource);
+        Assert.Contains("sign.png", descriptorSource);
+        Assert.Contains("organize-pages.png", descriptorSource);
+        Assert.Contains("ocr.png", descriptorSource);
+        Assert.Contains("redact.png", descriptorSource);
+        Assert.Contains("compare-pdf.png", descriptorSource);
+        Assert.Contains("pdf-to-png.png", descriptorSource);
+        Assert.Contains("protect.png", descriptorSource);
+        Assert.Contains("\"read\" or \"comment\" or \"forms\" => null", descriptorSource);
+
         Assert.Contains("System.Windows.Controls.Image", shellSource);
-        Assert.Contains("DocumentIconPath", shellSource);
+        Assert.Contains("descriptor.DocumentIconPath", shellSource);
+        Assert.Contains("System.Windows.Shapes.Path", shellSource);
+        Assert.Contains("Width = 22d", shellSource);
+        Assert.Contains("TextWrapping = TextWrapping.NoWrap", shellSource);
     }
 
     [Fact]
