@@ -42,11 +42,11 @@ public sealed class PdfAcroFormWpfFlowContractTests
     {
         string root = FindRepositoryRoot();
         string forms = File.ReadAllText(Path.Combine(root, "src", "SGPdf.App", "MainWindow.Forms.cs"));
-        string reader = File.ReadAllText(Path.Combine(root, "src", "SGPdf.App", "MainWindow.Reader.cs"));
+        string documents = File.ReadAllText(Path.Combine(root, "src", "SGPdf.App", "MainWindow.Documents.cs"));
         string labels = File.ReadAllText(Path.Combine(root, "src", "SGPdf.App", "MainWindow.Labels.cs"));
 
         Assert.Contains("ResetAcroFormUi", forms, StringComparison.Ordinal);
-        Assert.Contains("ResetAcroFormUi();", reader, StringComparison.Ordinal);
+        Assert.Contains("ResetAcroFormUi();", documents, StringComparison.Ordinal);
         Assert.Contains("ResetAcroFormUi();", labels, StringComparison.Ordinal);
     }
 
