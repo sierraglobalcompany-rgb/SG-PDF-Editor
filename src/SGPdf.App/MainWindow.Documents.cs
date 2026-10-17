@@ -5,6 +5,7 @@ using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using SGPdf.App.Features.Labels;
 using SGPdf.App.Shell;
 
@@ -115,6 +116,7 @@ public partial class MainWindow
             HorizontalContentAlignment = HorizontalAlignment.Stretch,
             ItemTemplate = BuildDocumentTabHeaderTemplate()
         };
+        DocumentTabs.SetResourceReference(FrameworkElement.StyleProperty, "SgDocumentTabsStyle");
         DocumentTabs.ItemsSource = _openDocuments;
         DocumentTabs.SelectionChanged += DocumentTabs_SelectionChanged;
         AutomationProperties.SetName(DocumentTabs, "Documentos PDF abiertos");
@@ -210,6 +212,16 @@ public partial class MainWindow
         var panel = new FrameworkElementFactory(typeof(StackPanel));
         panel.SetValue(StackPanel.OrientationProperty, Orientation.Horizontal);
         panel.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
+
+        var documentIcon = new FrameworkElementFactory(typeof(Image));
+        documentIcon.SetValue(FrameworkElement.WidthProperty, 18d);
+        documentIcon.SetValue(FrameworkElement.HeightProperty, 18d);
+        documentIcon.SetValue(FrameworkElement.MarginProperty, new Thickness(0, 0, 8, 0));
+        documentIcon.SetValue(Image.StretchProperty, Stretch.Uniform);
+        documentIcon.SetValue(
+            Image.SourceProperty,
+            new BitmapImage(new Uri("/SGPdf.App;component/Assets/SGPdf.Document.png", UriKind.Relative)));
+        panel.AppendChild(documentIcon);
 
         var title = new FrameworkElementFactory(typeof(TextBlock));
         title.SetBinding(TextBlock.TextProperty, new Binding(nameof(PdfDocumentWorkspace.DisplayName)));
