@@ -17,23 +17,13 @@ GitHub + STATE mandan sobre snapshots viejos.
 
 ## Estado actual — 2026-10-17
 
-- F0–F12: CLOSED / FROZEN en la baseline automatizada.
-- F13: ACTIVE; Tasks 1–8 cerradas.
-- Task9 T9.0: DONE.
-- Task9 T9.1: ACTIVE.
-- DG-0 SG Design Governance: GREEN / CLOSED.
-- R1 multi-document core: GREEN / CLOSED.
-- R1B pending state + dirty-close guard: GREEN / CLOSED.
-- R2 top shell + real document tabs: GREEN / CLOSED en `cf816557adab80f0e6e2e4ecb2f6628dc92eba90`; CI `39043770373` SUCCESS.
-- R3 document rail + official artwork: GREEN / CLOSED técnicamente; product `394bd320f8df03c0b00b5a517c00869a6c3a74e2`, exact-head GREEN `4050ef37422fc2cdb98b79f4bd4c215534fc553e`; CI `39046256870`, job `117435463253`, Build 0/0, smoke 30 s PASS, tests `1279/0/2/1281`.
-- Los 2 skips restantes reservan R4 drawer y R5 context menu; no borrarlos.
-- Siguiente bloque: **T9.1-R4 — Pages/Bookmarks collapsible drawer**, NOT STARTED.
-- T9.2 NOT STARTED. F14–F18 FROZEN.
-- `main` read-only en `31c0594758a83ec555d73ecdd7c597cdf8791fd7`.
-- No merge aprobado.
+- F13 / Task9 / T9.1 ACTIVE; F0–F12 and Tasks 1–8 CLOSED; T9.2 and F14–F18 NOT STARTED/FROZEN.
+- R1/R1B/R2/R3 technical GREEN/CLOSED; **R4-B GREEN/CLOSED**.
+- **R4-C QA_PENDING:** commit `5ff21171abb4b467e8796ba18f54e0d337ab2418`; CI `39069863859` SUCCESS, full suite 1286 PASS / 0 FAIL / 1 SKIP; Windows visual/functional W01–W15 incomplete.
+- **V4 Light/Dark shell mockups APROBADOS por usuario**: `docs/design/SGPDF_V4_APPROVED_SHELL_2026-10-17.md`. Cinco PNG aprobados **aún deben subirse a GitHub**; allí figuran nombres y SHA-256.
+- **R4-D V4 realignment:** PLANNED, no implementación certificada. Prioridad: tabs leak del nombre de clase, indicador activo e icono de documento; rail consistente, menú/nav/drawer. Ver checkpoint `docs/history/2026-10-17-f13-t9-1-r4c-pending-v4-approved-checkpoint.md`.
+- **R5 NOT STARTED. T9.2 NOT STARTED. NO MERGE a main** (`main` read-only).
 
-Checkpoint actual:
-`docs/history/2026-10-17-f13-t9-1-r3-green-r4-next-checkpoint.md`
 
 ## Leyes obligatorias
 
@@ -132,17 +122,13 @@ No acumular varios slices sin checkpoint.
 ## Orden actual
 
 ```text
-R1  multi-document core                 ✅ GREEN / CLOSED
-R1B pending state + close guard         ✅ GREEN / CLOSED
-R2  top shell + real document tabs      ✅ GREEN / CLOSED
-R3  document rail + official artwork    ✅ GREEN / CLOSED técnico
-R4  Pages/Bookmarks drawer              ▶ NEXT / NOT STARTED
-R5  context menus                       ⏳
-R6  image-selection root cause          ⏳
-R7  final visual/functional QA          ⏳
-T9.2                                     🔒 NOT STARTED
-F14–F18                                  🔒 FROZEN
-main                                     🔒 no merge approval
+R1/R1B/R2/R3                  GREEN / CLOSED técnico
+R4-B                            GREEN / CLOSED
+R4-C                            QA_PENDING, CI PASS; Windows QA pendiente
+V4 mockups                      APROBADOS; binarios de referencia aún por sincronizar
+R4-D                            PLANNED; tabs → rail → top bar → drawer
+R5/T9.2                        NOT STARTED
+main                            READ-ONLY, NO MERGE
 ```
 
-Siguiente acción elegible: R4 con Ley SG de Diseño + TDD, reutilizando thumbnails/navigation existentes y auditando bookmarks reales antes de declarar funcionalidad.
+Al cambiar UI, leer `docs/design/SGPDF_V4_APPROVED_SHELL_2026-10-17.md` y reutilizar los iconos de `Assets/SGPdf.App.ico`, `Assets/SGPdf.Document.png`, `Assets/HomeTools/*.png` y `Themes/ShellIcons.xaml` según autoridad vigente; no usar recortes del mockup como assets productivos.
