@@ -128,6 +128,39 @@ public sealed class HomeDashboardContractTests
         });
     }
 
+    [Fact]
+    public void HomeToolCards_PreserveThemeAwareSurfaceAndTitleContrastForEnabledAndDisabledStates()
+    {
+        var path = FindRepoFile("src", "SGPdf.App", "Shell", "HomeDashboard.xaml");
+        var document = XDocument.Load(path);
+        XNamespace presentation = "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+        XNamespace x = "http://schemas.microsoft.com/winfx/2006/xaml";
+
+        var itemsControl = document.Descendants(presentation + "ItemsControl")
+            .Single(element => (string?)element.Attribute(x + "Name") == "HomeToolsItemsControl");
+        var cardButton = itemsControl.Descendants(presentation + "Button").Single();
+
+        var buttonStyle = cardButton.Element(presentation + "Button.Style")?.Element(presentation + "Style");
+        Assert.NotNull(buttonStyle);
+
+        var disabledTrigger = buttonStyle!.Descendants(presentation + "DataTrigger")
+            .SingleOrDefault(trigger => (string?)trigger.Attribute("Value") == "{x:Null}");
+        Assert.NotNull(disabledTrigger);
+        Assert.Contains(
+            disabledTrigger!.Elements(presentation + "Setter"),
+            setter => (string?)setter.Attribute("Property") == "IsEnabled" && (string?)setter.Attribute("Value") == "False");
+
+        var templateSetter = buttonStyle.Elements(presentation + "Setter")
+            .SingleOrDefault(setter => (string?)setter.Attribute("Property") == "Template");
+        Assert.NotNull(templateSetter);
+        Assert.NotNull(templateSetter!.Descendants(presentation + "ContentPresenter").SingleOrDefault());
+
+        var textBlocks = cardButton.Descendants(presentation + "TextBlock").ToArray();
+        Assert.Equal(2, textBlocks.Length);
+        Assert.Equal("{DynamicResource TextFillColorPrimaryBrush}", (string?)textBlocks[0].Attribute("Foreground"));
+        Assert.Equal("{DynamicResource SgMutedTextStyle}", (string?)textBlocks[1].Attribute("Style"));
+    }
+
     private static Type GetDashboardType()
         => typeof(MainWindow).Assembly.GetType("SGPdf.App.Shell.HomeDashboard", throwOnError: true)!;
 
