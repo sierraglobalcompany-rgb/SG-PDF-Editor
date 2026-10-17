@@ -1,0 +1,109 @@
+using System.Xml.Linq;
+using Xunit;
+
+namespace SGPdf.App.Tests;
+
+public sealed class DocumentShellRealignmentContractTests
+{
+    [Fact]
+    public void DocumentShell_DeclaresRealDocumentTabsAndAddButton()
+    {
+        var path = FindRepoFile("src", "SGPdf.App", "MainWindow.xaml");
+        var document = XDocument.Load(path);
+        XNamespace presentation = "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+        XNamespace x = "http://schemas.microsoft.com/winfx/2006/xaml";
+
+        var tabs = document
+            .Descendants(presentation + "TabControl")
+            .SingleOrDefault(element => (string?)element.Attribute(x + "Name") == "DocumentTabs");
+        var addButton = document
+            .Descendants(presentation + "Button")
+            .SingleOrDefault(element => (string?)element.Attribute(x + "Name") == "AddDocumentTabButton");
+
+        Assert.NotNull(tabs);
+        Assert.NotNull(addButton);
+    }
+
+    [Fact]
+    public void MultiDocumentShell_DeclaresPerDocumentWorkspaceOwner()
+    {
+        var workspacePath = TryFindRepoFile("src", "SGPdf.App", "Shell", "PdfDocumentWorkspace.cs");
+        Assert.True(
+            workspacePath is not null,
+            "T9.1-R0 contract: each open PDF needs a dedicated PdfDocumentWorkspace owner.");
+
+        var workspaceSource = File.ReadAllText(workspacePath!);
+        Assert.Contains("PdfDocumentSession", workspaceSource);
+        Assert.Contains("PageNavigationState", workspaceSource);
+        Assert.Contains("PdfZoomState", workspaceSource);
+        Assert.Contains("IsDirty", workspaceSource);
+
+        var mainSource = File.ReadAllText(FindRepoFile("src", "SGPdf.App", "MainWindow.xaml.cs"));
+        Assert.Contains("OpenDocuments", mainSource);
+        Assert.Contains("ActiveDocument", mainSource);
+    }
+
+    [Fact]
+    public void ReaderNavigation_DeclaresCollapsibleDrawerAndToggleOwner()
+    {
+        var xaml = File.ReadAllText(FindRepoFile("src", "SGPdf.App", "MainWindow.xaml"));
+        var readerSource = File.ReadAllText(FindRepoFile("src", "SGPdf.App", "MainWindow.ReaderThumbnails.cs"));
+        var combined = xaml + Environment.NewLine + readerSource;
+
+        Assert.Contains("ReaderNavigationDrawer", combined);
+        Assert.Contains("ReaderNavigationToggleButton", combined);
+    }
+
+    [Fact]
+    public void PdfWorkspace_DeclaresContextMenuOwner()
+    {
+        var path = FindRepoFile("src", "SGPdf.App", "MainWindow.xaml");
+        var document = XDocument.Load(path);
+        XNamespace presentation = "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+        XNamespace x = "http://schemas.microsoft.com/winfx/2006/xaml";
+
+        var contextMenu = document
+            .Descendants(presentation + "ContextMenu")
+            .SingleOrDefault(element => (string?)element.Attribute(x + "Name") == "PdfWorkspaceContextMenu");
+
+        Assert.NotNull(contextMenu);
+    }
+
+    [Fact]
+    public void DocumentToolRail_ConsumesOfficialArtworkWithFallbackOnlyForUnmappedTools()
+    {
+        var shellSource = File.ReadAllText(FindRepoFile("src", "SGPdf.App", "MainWindow.Shell.cs"));
+        var descriptorSource = File.ReadAllText(FindRepoFile("src", "SGPdf.App", "Shell", "ToolDescriptor.cs"));
+
+        Assert.Contains("DocumentIconPath", descriptorSource);
+        Assert.Contains("System.Windows.Controls.Image", shellSource);
+        Assert.Contains("DocumentIconPath", shellSource);
+    }
+
+    [Fact]
+    public void ImageSelectionOverlay_RemainsTransparentInsteadOfTintingSelectedImage()
+    {
+        var editSource = File.ReadAllText(FindRepoFile("src", "SGPdf.App", "MainWindow.Edit.cs"));
+
+        Assert.Contains("Fill = Brushes.Transparent", editSource);
+        Assert.DoesNotContain("Fill = Brushes.DodgerBlue", editSource);
+    }
+
+    private static string FindRepoFile(params string[] segments)
+        => TryFindRepoFile(segments)
+           ?? throw new FileNotFoundException($"Repository file not found: {Path.Combine(segments)}");
+
+    private static string? TryFindRepoFile(params string[] segments)
+    {
+        for (var directory = new DirectoryInfo(AppContext.BaseDirectory);
+             directory is not null;
+             directory = directory.Parent)
+        {
+            var candidate = segments.Aggregate(directory.FullName, Path.Combine);
+            if (File.Exists(candidate))
+                return candidate;
+        }
+
+        return null;
+    }
+}
