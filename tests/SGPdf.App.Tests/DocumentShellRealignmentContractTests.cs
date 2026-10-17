@@ -49,15 +49,19 @@ public sealed class DocumentShellRealignmentContractTests
         Assert.Contains("ActiveDocument", documentOwnerSource);
     }
 
-    [Fact(Skip = "T9.1-R4: drawer Páginas/Marcadores plegable se implementa después del shell y rail.")]
-    public void ReaderNavigation_DeclaresCollapsibleDrawerAndToggleOwner()
+    [Fact]
+    public void ReaderNavigation_DeclaresCollapsibleDrawerAndPerDocumentState()
     {
         var xaml = File.ReadAllText(FindRepoFile("src", "SGPdf.App", "MainWindow.xaml"));
         var readerSource = File.ReadAllText(FindRepoFile("src", "SGPdf.App", "MainWindow.ReaderThumbnails.cs"));
-        var combined = xaml + Environment.NewLine + readerSource;
+        var workspaceSource = File.ReadAllText(FindRepoFile("src", "SGPdf.App", "Shell", "PdfDocumentWorkspace.cs"));
 
-        Assert.Contains("ReaderNavigationDrawer", combined);
-        Assert.Contains("ReaderNavigationToggleButton", combined);
+        Assert.Contains("ReaderNavigationColumn", xaml);
+        Assert.Contains("ReaderNavigationDrawer", xaml);
+        Assert.Contains("ReaderNavigationToggleButton", xaml);
+        Assert.Contains("ToggleReaderNavigation", readerSource);
+        Assert.Contains("IsReaderNavigationOpen", workspaceSource);
+        Assert.Contains("ReaderNavigationSelectedIndex", workspaceSource);
     }
 
     [Fact(Skip = "T9.1-R5: menú contextual del workspace PDF se implementa después del drawer.")]
