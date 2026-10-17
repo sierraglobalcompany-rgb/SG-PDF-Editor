@@ -7,11 +7,18 @@ Aplicación Windows local-first para trabajar con PDF y etiquetas térmicas ZPL 
 - F0–F12: **CLOSED / FROZEN** en la baseline automatizada documentada.
 - F13 Tasks 1–8: cerradas; **Task9 ACTIVE**.
 - T9.0: DONE.
-- T9.1: ACTIVE — realineamiento visual/document shell y UX.
-- Último anchor GREEN anterior al R1 multidocumento: `0abae7ceb5f08611180c883346e21589d1509664`, exact-head CI run `39000181654` SUCCESS.
-- R1 actual permanece **RED / INCOMPLETE** en `feat/f13-task9-t9-1-document-shell-realignment-20261017` @ `bbae51f49ee3c54e3667c5ea477c2c3f179d3c46` mientras se valida DG-0.
-- DG-0: SG Design Governance en `feat/f13-dg0-sg-design-governance-20261017`, aislado desde el anchor GREEN.
+- T9.1: ACTIVE — realineamiento document shell / UX.
+- DG-0 SG Design Governance: **GREEN / CLOSED**.
+- R1 reader multi-document core: **GREEN** en `454dcadb6eca13ab98b5d219146dd10ec25af78d`.
+- Exact-head CI R1: run `39004872760` SUCCESS — Build PASS 0 warnings/0 errors, startup smoke PASS 30 s, tests `1266 passed / 0 failed / 4 skipped / 1270 total`.
+- Los 4 skips son contratos futuros intencionales de R2–R5: tabs, rail oficial, drawer Páginas/Marcadores y context menu PDF.
+- Próximo bloque: **T9.1-R1B — per-document pending state + close guard** antes de hacer visibles las pestañas.
+- Rama canónica: `feat/f13-task9-t9-1-document-shell-realignment-20261017`.
 - `main` continúa read-only en `31c0594758a83ec555d73ecdd7c597cdf8791fd7`; no hay merge aprobado.
+- T9.2 no iniciado; F14–F18 frozen.
+
+Checkpoint de recuperación:
+`docs/history/2026-10-17-f13-t9-1-r1-reader-core-green-checkpoint.md`.
 
 El PASS automatizado no equivale a QA real/manual/private/physical. Esos gates permanecen separados donde corresponda.
 
@@ -22,6 +29,7 @@ Resolver flujos diarios PDF + ZPL de forma rápida, privada, estable, comprensib
 ### PDF
 
 - abrir, leer, navegar e imprimir;
+- varios PDF abiertos con estado independiente, completando primero la preservación segura de estado pendiente por documento;
 - firma visual con PNG/foto/InkCanvas y biblioteca local;
 - firma criptográfica PFX/P12 dentro del alcance aprobado;
 - organizar páginas;
@@ -79,7 +87,9 @@ src/SGPdf.App
 tests/SGPdf.App.Tests
 ```
 
-No hay microservicios, plugin framework, segundo viewer, segundo motor PDF, BatchEngine genérico ni framework general de conversiones.
+No hay microservicios, plugin framework, segundo viewer, segundo motor PDF, ModeManager genérico, BatchEngine genérico ni framework general de conversiones.
+
+El multi-documento se mantiene simple: `PdfDocumentWorkspace` por PDF + `OpenDocuments` + `ActiveDocument`; no se introduce un framework de ventanas/documentos.
 
 ## Fuente de verdad
 
@@ -92,13 +102,30 @@ Antes de tocar código o documentación operativa:
 5. spec/plan aprobado del slice;
 6. para UI/UX, Ley SG de Diseño + skill;
 7. `docs/MASTER_CONTEXT.md` para decisiones durables;
-8. históricos solo como contexto.
+8. históricos solo como contexto/checkpoints.
 
 `AGENTS.md` contiene las reglas obligatorias de ejecución para agentes.
 
 ## Autoridad visual
 
 El icono de aplicación, icono de documento PDF y los 15 iconos Home aprobados tienen roles separados. No se rediseñan durante tareas ajenas. `PDF a PNG` permanece como contrato funcional actual; no se anuncia JPG hasta que exista esa capacidad. La asociación Windows de archivos pertenece al instalador futuro, no a hacks de Registry.
+
+## Continuidad T9.1
+
+Orden aprobado:
+
+```text
+R1 reader multi-document core             ✅ GREEN
+R1B pending state + close guard           ▶ NEXT
+R2 top shell + document tabs              ⏳
+R3 document rail + approved icons         ⏳
+R4 Pages/Bookmarks collapsible drawer     ⏳
+R5 contextual menus                       ⏳
+R6 image-selection root cause             ⏳
+R7 final visual/functional QA             ⏳
+```
+
+No iniciar R2 hasta que el cambio de documento pueda preservar/gestionar de forma segura el trabajo pendiente por documento.
 
 ## Privacidad
 
