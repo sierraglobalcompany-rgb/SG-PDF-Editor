@@ -38,11 +38,14 @@ public partial class MainWindow : Window
             Title = "Abrir PDF",
             Filter = "Archivos PDF (*.pdf)|*.pdf|Todos los archivos (*.*)|*.*",
             CheckFileExists = true,
-            Multiselect = false
+            Multiselect = true
         };
 
-        if (dialog.ShowDialog(this) == true)
-            await TryOpenPdfPathAsync(dialog.FileName);
+        if (dialog.ShowDialog(this) != true)
+            return;
+
+        foreach (var fileName in dialog.FileNames)
+            await TryOpenPdfPathAsync(fileName);
     }
 
     private async void PreviousPage_Click(object sender, RoutedEventArgs e)
