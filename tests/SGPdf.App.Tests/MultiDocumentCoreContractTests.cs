@@ -31,9 +31,9 @@ public sealed class MultiDocumentCoreContractTests
         Assert.Contains("ObservableCollection<PdfDocumentWorkspace> _openDocuments", source);
         Assert.Contains("IReadOnlyList<PdfDocumentWorkspace> OpenDocuments", source);
         Assert.Contains("PdfDocumentWorkspace? ActiveDocument", source);
-        Assert.Contains("ActiveDocument?.Session", source);
-        Assert.Contains("ActiveDocument?.Navigation", source);
-        Assert.Contains("ActiveDocument?.Zoom", source);
+        Assert.Contains("ActiveDocument.Session", source);
+        Assert.Contains("ActiveDocument.Navigation", source);
+        Assert.Contains("ActiveDocument.Zoom", source);
     }
 
     [Fact]
