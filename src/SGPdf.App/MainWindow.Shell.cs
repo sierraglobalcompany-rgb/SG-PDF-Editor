@@ -101,22 +101,42 @@ public partial class MainWindow
 
         foreach (var descriptor in ToolCatalog.Document)
         {
-            var icon = new System.Windows.Shapes.Path
+            FrameworkElement icon;
+            if (descriptor.DocumentIconPath is string documentIconPath)
             {
-                Width = 18d,
-                Height = 18d,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                Stretch = System.Windows.Media.Stretch.Uniform,
-                StrokeThickness = 1.5d
-            };
-            icon.SetResourceReference(System.Windows.Shapes.Path.DataProperty, descriptor.IconKey);
-            icon.SetResourceReference(
-                System.Windows.Shapes.Shape.StrokeProperty,
-                "TextFillColorPrimaryBrush");
+                icon = new System.Windows.Controls.Image
+                {
+                    Width = 22d,
+                    Height = 22d,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    Stretch = System.Windows.Media.Stretch.Uniform,
+                    Source = new System.Windows.Media.Imaging.BitmapImage(
+                        new Uri(documentIconPath, UriKind.Relative))
+                };
+            }
+            else
+            {
+                var fallbackIcon = new System.Windows.Shapes.Path
+                {
+                    Width = 22d,
+                    Height = 22d,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    Stretch = System.Windows.Media.Stretch.Uniform,
+                    StrokeThickness = 1.5d
+                };
+                fallbackIcon.SetResourceReference(System.Windows.Shapes.Path.DataProperty, descriptor.IconKey);
+                fallbackIcon.SetResourceReference(
+                    System.Windows.Shapes.Shape.StrokeProperty,
+                    "TextFillColorPrimaryBrush");
+                icon = fallbackIcon;
+            }
 
             var label = new TextBlock
             {
                 Text = descriptor.Title,
+                FontSize = 10.5d,
+                TextWrapping = TextWrapping.NoWrap,
+                TextTrimming = TextTrimming.CharacterEllipsis,
                 Margin = new Thickness(0, 4, 0, 0),
                 HorizontalAlignment = HorizontalAlignment.Center,
                 TextAlignment = TextAlignment.Center
