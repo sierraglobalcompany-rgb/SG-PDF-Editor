@@ -28,6 +28,7 @@ public partial class MainWindow
     private Button? _readerNavigationToggleButton;
     private TabControl? _readerNavigationTabs;
     private ListBox? _readerThumbnailList;
+    private TextBlock? _readerBookmarksFeedback;
 
     private Func<PdfDocumentSession, int, double, CancellationToken, PdfRenderedPage> _renderReaderThumbnail =
         static (session, pageIndex, dpi, token) => session.RenderPage(pageIndex, dpi, token);
@@ -96,7 +97,23 @@ public partial class MainWindow
         ScrollViewer.SetHorizontalScrollBarVisibility(thumbnailList, ScrollBarVisibility.Disabled);
 
         pagesTab.Content = thumbnailList;
-        bookmarksTab.Content = bookmarksTree;
+        var bookmarksContent = new Grid();
+        var feedback = new TextBlock
+        {
+            Name = "ReaderBookmarksFeedback",
+            Margin = new Thickness(12),
+            TextWrapping = TextWrapping.Wrap,
+            Visibility = Visibility.Collapsed
+        };
+        feedback.SetResourceReference(TextBlock.ForegroundProperty, "TextFillColorPrimaryBrush");
+        AutomationProperties.SetLiveSetting(feedback, AutomationLiveSetting.Polite);
+        AutomationProperties.SetName(bookmarksTree, "Marcadores del PDF");
+        ScrollViewer.SetHorizontalScrollBarVisibility(bookmarksTree, ScrollBarVisibility.Disabled);
+        bookmarksContent.Children.Add(bookmarksTree);
+        bookmarksContent.Children.Add(feedback);
+        bookmarksTab.Content = bookmarksContent;
+        _readerBookmarksFeedback = feedback;
+        RegisterName(feedback.Name, feedback);
         tabs.Items.Add(pagesTab);
         tabs.Items.Add(bookmarksTab);
         host.Child = tabs;
@@ -210,6 +227,7 @@ public partial class MainWindow
             return;
 
         ActiveDocument.ReaderNavigationSelectedIndex = tabs.SelectedIndex;
+        UpdateReaderBookmarkContext();
     }
 
     private void ApplyReaderNavigationState(PdfDocumentWorkspace? document)
@@ -234,7 +252,10 @@ public partial class MainWindow
         AutomationProperties.SetName(_readerNavigationToggleButton, accessibilityName);
 
         if (_readerNavigationTabs is null || document is null)
+        {
+            ClearReaderBookmarks();
             return;
+        }
 
         var selectedIndex = Math.Clamp(
             document.ReaderNavigationSelectedIndex,
@@ -249,6 +270,7 @@ public partial class MainWindow
         {
             _syncingReaderNavigationState = false;
         }
+        UpdateReaderBookmarkContext();
     }
 
     private static DataTemplate BuildReaderThumbnailTemplate()
@@ -556,6 +578,9 @@ public partial class MainWindow
             return;
 
         _thumbnailRenderScheduler.Dispose();
+        _readerNavigationClosed = true;
+        _readerBookmarkScheduler.Dispose();
+        ClearReaderBookmarks();
         _readerThumbnails.Clear();
     }
 }

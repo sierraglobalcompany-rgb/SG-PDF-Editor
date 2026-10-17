@@ -85,7 +85,7 @@ public sealed class PdfNavigationTests
         Assert.Throws<OperationCanceledException>(() => session.GetPageLinks(0, cancellation.Token));
     }
 
-    private sealed class NavigationPdfFixture : IDisposable
+    internal sealed class NavigationPdfFixture : IDisposable
     {
         private NavigationPdfFixture(string directoryPath, string sourcePath)
         {
@@ -122,14 +122,15 @@ public sealed class PdfNavigationTests
                 "5 0 obj\n<< /Length 0 >>\nstream\nendstream\nendobj\n",
                 "6 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 400] /Contents 7 0 R >>\nendobj\n",
                 "7 0 obj\n<< /Length 0 >>\nstream\nendstream\nendobj\n",
-                "8 0 obj\n<< /Type /Outlines /First 9 0 R /Last 11 0 R /Count 3 >>\nendobj\n",
+                "8 0 obj\n<< /Type /Outlines /First 9 0 R /Last 11 0 R /Count 4 >>\nendobj\n",
                 "9 0 obj\n<< /Title (Root) /Parent 8 0 R /First 10 0 R /Last 10 0 R /Count 1 /Next 11 0 R /Dest [4 0 R /Fit] >>\nendobj\n",
                 "10 0 obj\n<< /Title (Child) /Parent 9 0 R /Dest [6 0 R /Fit] >>\nendobj\n",
-                "11 0 obj\n<< /Title (Unsupported) /Parent 8 0 R /Prev 9 0 R /A << /S /Launch /F (local.txt) >> >>\nendobj\n",
+                "11 0 obj\n<< /Title (Unsupported) /Parent 8 0 R /Prev 9 0 R /First 16 0 R /Last 16 0 R /Count 1 /A << /S /Launch /F (local.txt) >> >>\nendobj\n",
                 "12 0 obj\n<< /Type /Annot /Subtype /Link /Rect [20 30 120 60] /Border [0 0 0] /Dest [6 0 R /Fit] >>\nendobj\n",
                 "13 0 obj\n<< /Type /Annot /Subtype /Link /Rect [20 80 180 105] /Border [0 0 0] /A << /S /URI /URI (https://example.invalid/path) >> >>\nendobj\n",
                 "14 0 obj\n<< /Type /Annot /Subtype /Link /Rect [20 120 160 145] /Border [0 0 0] /A << /S /Launch /F (local.txt) >> >>\nendobj\n",
-                "15 0 obj\n<< /Type /Annot /Subtype /Link /Rect [20 160 160 185] /Border [0 0 0] /A << /S /JavaScript /JS (app.alert\\(test\\)) >> >>\nendobj\n"
+                "15 0 obj\n<< /Type /Annot /Subtype /Link /Rect [20 160 160 185] /Border [0 0 0] /A << /S /JavaScript /JS (app.alert\\(test\\)) >> >>\nendobj\n",
+                "16 0 obj\n<< /Title (Reachable child) /Parent 11 0 R /Dest [6 0 R /Fit] >>\nendobj\n"
             };
 
             using var stream = new MemoryStream();

@@ -13,6 +13,156 @@ namespace SGPdf.App.Tests;
 public sealed class MainWindowReaderLinksTests
 {
     [Fact]
+    public void Bookmarks_RealHierarchyIsLazyAndNullParentKeepsNavigableChild()
+    {
+        RunInSta(async () =>
+        {
+            using var fixture = PdfNavigationTests.NavigationPdfFixture.Create();
+            var window = new MainWindow();
+            var calls = 0;
+            try
+            {
+                SetField(window, "_getReaderBookmarks",
+                    (Func<PdfDocumentSession, CancellationToken, IReadOnlyList<PdfBookmarkNode>>)((s, t) =>
+                    { Interlocked.Increment(ref calls); return s.GetBookmarks(t); }));
+                Assert.True(await OpenReaderAsync(window, fixture.SourcePath));
+                await (Task)Invoke(window, "RefreshReaderNavigationMetadataAsync")!;
+                Assert.Equal(0, calls);
+                ShowBookmarks(window);
+                var tree = Element<TreeView>(window, "ReaderBookmarksTree");
+                PumpUntil(() => tree.Items.Count == 2);
+                var root = Assert.IsType<PdfBookmarkNode>(tree.Items[0]);
+                Assert.Equal("Root", root.Title);
+                Assert.Equal("Child", Assert.Single(root.Children).Title);
+                var parent = Assert.IsType<PdfBookmarkNode>(tree.Items[1]);
+                Assert.Null(parent.DestinationPageIndex);
+                Assert.False((bool)Invoke(window, "TryActivateReaderBookmark", parent)!);
+                Assert.Equal(0, CurrentPageIndex(window));
+                var child = Assert.Single(parent.Children);
+                Assert.Equal("Reachable child", child.Title);
+                var scheduler = GetField(window, "_readerRenderScheduler")!;
+                var versionField = scheduler.GetType().GetField("_version", BindingFlags.Instance | BindingFlags.NonPublic)!;
+                var before = (long)versionField.GetValue(scheduler)!;
+                tree.RaiseEvent(new RoutedPropertyChangedEventArgs<object>(null!, child, TreeView.SelectedItemChangedEvent));
+                PumpUntil(() => CurrentPageIndex(window) == 1 && (long)versionField.GetValue(scheduler)! > before);
+                Assert.Equal(1, CurrentPageIndex(window));
+                Assert.Equal(before + 1, (long)versionField.GetValue(scheduler)!);
+                Assert.Equal(1, Element<ListBox>(window, "ReaderThumbnailList").SelectedIndex);
+                SetField(window, "_signatureModeActive", true);
+                Assert.False((bool)Invoke(window, "TryActivateReaderBookmark", root)!);
+                SetField(window, "_signatureModeActive", false);
+                Assert.False((bool)Invoke(window, "TryActivateReaderBookmark",
+                    new PdfBookmarkNode("Invalid", 99, Array.Empty<PdfBookmarkNode>()))!);
+            }
+            finally { CloseClean(window); }
+        });
+    }
+
+    [Theory]
+    [InlineData(false, "Este PDF no tiene marcadores.")]
+    [InlineData(true, "No fue posible cargar los marcadores.")]
+    public void Bookmarks_EmptyAndReadErrorHaveDistinctVisibleFeedback(bool fail, string message)
+    {
+        RunInSta(async () =>
+        {
+            using var fixture = PdfFixture.Create(2);
+            var window = new MainWindow();
+            try
+            {
+                SetNavigationSeams(window, Array.Empty<PdfBookmarkNode>(), Array.Empty<PdfPageLink>());
+                if (fail)
+                    SetField(window, "_getReaderBookmarks",
+                        (Func<PdfDocumentSession, CancellationToken, IReadOnlyList<PdfBookmarkNode>>)((_, _) =>
+                            throw new InvalidOperationException("Controlled outline read failure")));
+                Assert.True(await OpenReaderAsync(window, fixture.SourcePath));
+                ShowBookmarks(window);
+                var feedback = Element<TextBlock>(window, "ReaderBookmarksFeedback");
+                PumpUntil(() => feedback.Text == message);
+                Assert.Equal(Visibility.Visible, feedback.Visibility);
+                Assert.Empty(Element<TreeView>(window, "ReaderBookmarksTree").Items);
+            }
+            finally { CloseClean(window); }
+        });
+    }
+
+    [Fact]
+    public void Bookmarks_SwitchingDocumentsClearsAndRebuildsOnlyActiveOutlines()
+    {
+        RunInSta(async () =>
+        {
+            using var a = PdfNavigationTests.NavigationPdfFixture.Create();
+            using var b = PdfFixture.Create(2);
+            var window = new MainWindow();
+            try
+            {
+                Assert.True(await OpenReaderAsync(window, a.SourcePath));
+                var documentA = window.ActiveDocument!;
+                ShowBookmarks(window);
+                var tree = Element<TreeView>(window, "ReaderBookmarksTree");
+                PumpUntil(() => tree.Items.Count == 2);
+                Assert.True(await OpenReaderAsync(window, b.SourcePath));
+                Assert.Empty(tree.Items);
+                ShowBookmarks(window);
+                PumpUntil(() => Element<TextBlock>(window, "ReaderBookmarksFeedback").Text == "Este PDF no tiene marcadores.");
+                await (Task)Invoke(window, "ActivateDocumentAsync", documentA)!;
+                PumpUntil(() => tree.Items.Count == 2);
+                Assert.Equal(1, Element<TabControl>(window, "ReaderNavigationTabs").SelectedIndex);
+                Assert.True(documentA.IsReaderNavigationOpen);
+                await (Task)Invoke(window, "TryCloseDocumentWithGuard", documentA)!;
+                Assert.Empty(tree.Items);
+            }
+            finally { CloseClean(window); }
+        });
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Bookmarks_PendingReadCannotPublishAfterSwitchOrClose(bool close)
+    {
+        RunInSta(async () =>
+        {
+            using var a = PdfFixture.Create(2);
+            using var b = PdfFixture.Create(2);
+            using var entered = new ManualResetEventSlim();
+            using var release = new ManualResetEventSlim();
+            var finished = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var window = new MainWindow();
+            try
+            {
+                Assert.True(await OpenReaderAsync(window, a.SourcePath));
+                var documentA = window.ActiveDocument!;
+                SetField(window, "_getReaderBookmarks",
+                    (Func<PdfDocumentSession, CancellationToken, IReadOnlyList<PdfBookmarkNode>>)((s, _) =>
+                    {
+                        if (!ReferenceEquals(s, documentA.Session)) return Array.Empty<PdfBookmarkNode>();
+                        entered.Set();
+                        release.Wait(TimeSpan.FromSeconds(5));
+                        finished.TrySetResult();
+                        return new[] { new PdfBookmarkNode("STALE", 1, Array.Empty<PdfBookmarkNode>()) };
+                    }));
+                ShowBookmarks(window);
+                PumpUntil(() => entered.IsSet);
+                if (close) await (Task)Invoke(window, "TryCloseDocumentWithGuard", documentA)!;
+                else Assert.True(await OpenReaderAsync(window, b.SourcePath));
+                Assert.Empty(Element<TreeView>(window, "ReaderBookmarksTree").Items);
+                release.Set();
+                await finished.Task;
+                await Dispatcher.Yield(DispatcherPriority.ApplicationIdle);
+                Assert.Empty(Element<TreeView>(window, "ReaderBookmarksTree").Items);
+            }
+            finally { release.Set(); CloseClean(window); }
+        });
+    }
+
+    private static void ShowBookmarks(MainWindow window)
+    {
+        window.ActiveDocument!.IsReaderNavigationOpen = true;
+        window.ActiveDocument.ReaderNavigationSelectedIndex = 1;
+        Invoke(window, "ApplyReaderNavigationState", window.ActiveDocument);
+    }
+
+    [Fact]
     public void BookmarksTree_PopulatesAndInternalBookmarkNavigates()
     {
         RunInSta(async () =>
@@ -26,6 +176,7 @@ public sealed class MainWindowReaderLinksTests
                     Array.Empty<PdfPageLink>());
                 Assert.True(await OpenReaderAsync(window, fixture.SourcePath));
 
+                ShowBookmarks(window);
                 var tree = Element<TreeView>(window, "ReaderBookmarksTree");
                 PumpUntil(() => tree.Items.Count == 1);
                 var bookmark = Assert.IsType<PdfBookmarkNode>(tree.Items[0]);

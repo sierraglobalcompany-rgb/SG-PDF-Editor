@@ -26,6 +26,9 @@ public partial class MainWindow
     private TreeView? _readerBookmarksTree;
     private PdfDocumentSession? _readerNavigationMetadataSession;
     private PdfDocumentSession? _readerBookmarksLoadedSession;
+    private PdfDocumentSession? _readerBookmarksLoadingSession;
+    private readonly PdfRenderScheduler _readerBookmarkScheduler = new();
+    private bool _readerNavigationClosed;
     private PdfPageLink? _readerPressedLink;
     private Point _readerPressedLinkPoint;
 
@@ -75,6 +78,7 @@ public partial class MainWindow
         {
             _readerBookmarksTree.ItemTemplate = BuildReaderBookmarkTemplate();
             _readerBookmarksTree.SelectedItemChanged += ReaderBookmarksTree_SelectedItemChanged;
+            _readerBookmarksTree.PreviewKeyDown += ReaderBookmarksTree_PreviewKeyDown;
         }
 
         var overlay = new Canvas
@@ -154,13 +158,15 @@ public partial class MainWindow
 
     private void QueueReaderNavigationMetadataRefresh()
     {
-        if (_readerNavigationRefreshQueued || !_readerLinksUiInitialized)
+        if (_readerNavigationRefreshQueued || !_readerLinksUiInitialized || _readerNavigationClosed)
             return;
 
         _readerNavigationRefreshQueued = true;
         Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(async () =>
         {
             _readerNavigationRefreshQueued = false;
+            if (_readerNavigationClosed)
+                return;
             await RefreshReaderNavigationMetadataAsync();
         }));
     }
@@ -177,30 +183,88 @@ public partial class MainWindow
         if (!ReferenceEquals(_readerNavigationMetadataSession, sourceSession))
             ResetReaderNavigationMetadata(sourceSession);
 
-        if (!ReferenceEquals(_readerBookmarksLoadedSession, sourceSession))
-        {
-            try
-            {
-                var bookmarks = await Task.Run(() => _getReaderBookmarks(sourceSession, CancellationToken.None));
-                if (!ReferenceEquals(_session, sourceSession))
-                    return;
-                if (_readerBookmarksTree is not null)
-                    _readerBookmarksTree.ItemsSource = bookmarks;
-                _readerBookmarksLoadedSession = sourceSession;
-            }
-            catch (Exception ex)
-            {
-                if (ReferenceEquals(_session, sourceSession))
-                {
-                    if (_readerBookmarksTree is not null)
-                        _readerBookmarksTree.ItemsSource = Array.Empty<PdfBookmarkNode>();
-                    _readerBookmarksLoadedSession = sourceSession;
-                    StatusText.Text = $"No se pudieron leer los marcadores: {ex.Message}";
-                }
-            }
-        }
+        await RefreshReaderBookmarksAsync(sourceSession);
+        if (!ReferenceEquals(_session, sourceSession) || _readerNavigationClosed)
+            return;
 
         await RefreshReaderVisibleLinksAsync(sourceSession);
+    }
+
+    private bool ReaderBookmarksAreVisible => !_readerNavigationClosed &&
+        ActiveDocument is not null && ReferenceEquals(ActiveDocument.Session, _session) &&
+        _zplDocument is null && NavigationBar.Visibility == Visibility.Visible &&
+        _readerNavigationDrawer?.Visibility == Visibility.Visible &&
+        _readerNavigationTabs?.SelectedIndex == 1;
+
+    private void UpdateReaderBookmarkContext()
+    {
+        if (!ReaderBookmarksAreVisible ||
+            (!ReferenceEquals(_readerBookmarksLoadedSession, _session) &&
+             !ReferenceEquals(_readerBookmarksLoadingSession, _session)))
+            ClearReaderBookmarks();
+        if (ReaderBookmarksAreVisible)
+            QueueReaderNavigationMetadataRefresh();
+    }
+
+    private void ClearReaderBookmarks()
+    {
+        _readerBookmarkScheduler.CancelCurrent();
+        _readerBookmarksLoadedSession = null;
+        _readerBookmarksLoadingSession = null;
+        if (_readerBookmarksTree is not null)
+            _readerBookmarksTree.ItemsSource = null;
+        SetReaderBookmarksFeedback(string.Empty);
+    }
+
+    private void SetReaderBookmarksFeedback(string text)
+    {
+        if (_readerBookmarksFeedback is null)
+            return;
+        _readerBookmarksFeedback.Text = text;
+        _readerBookmarksFeedback.Visibility = string.IsNullOrEmpty(text) ? Visibility.Collapsed : Visibility.Visible;
+    }
+
+    private async Task RefreshReaderBookmarksAsync(PdfDocumentSession sourceSession)
+    {
+        if (!ReaderBookmarksAreVisible || ReferenceEquals(_readerBookmarksLoadedSession, sourceSession) ||
+            ReferenceEquals(_readerBookmarksLoadingSession, sourceSession))
+            return;
+
+        var request = _readerBookmarkScheduler.Begin();
+        _readerBookmarksLoadingSession = sourceSession;
+        SetReaderBookmarksFeedback("Cargando marcadores…");
+        bool IsCurrent() => _readerBookmarkScheduler.IsCurrent(request) &&
+            ReferenceEquals(_session, sourceSession) && ReaderBookmarksAreVisible;
+        try
+        {
+            var bookmarks = await Task.Run(() => _getReaderBookmarks(sourceSession, request.CancellationToken));
+            if (!IsCurrent())
+                return;
+            if (_readerBookmarksTree is not null)
+                _readerBookmarksTree.ItemsSource = bookmarks;
+            SetReaderBookmarksFeedback(bookmarks.Count == 0 ? "Este PDF no tiene marcadores." : string.Empty);
+            _readerBookmarksLoadedSession = sourceSession;
+        }
+        catch (OperationCanceledException) when (request.CancellationToken.IsCancellationRequested)
+        {
+            // A document/tab/visibility change invalidated this request.
+        }
+        catch (Exception ex)
+        {
+            if (IsCurrent())
+            {
+                if (_readerBookmarksTree is not null)
+                    _readerBookmarksTree.ItemsSource = null;
+                SetReaderBookmarksFeedback("No fue posible cargar los marcadores.");
+                StatusText.Text = $"No se pudieron leer los marcadores: {ex.Message}";
+                _readerBookmarksLoadedSession = sourceSession;
+            }
+        }
+        finally
+        {
+            if (_readerBookmarkScheduler.IsCurrent(request))
+                _readerBookmarksLoadingSession = null;
+        }
     }
 
     private async Task RefreshReaderVisibleLinksAsync(PdfDocumentSession sourceSession)
@@ -259,19 +323,34 @@ public partial class MainWindow
     private void ResetReaderNavigationMetadata(PdfDocumentSession? session)
     {
         _readerNavigationMetadataSession = session;
-        _readerBookmarksLoadedSession = null;
+        ClearReaderBookmarks();
         _readerPageLinks.Clear();
-        if (_readerBookmarksTree is not null)
-            _readerBookmarksTree.ItemsSource = null;
         if (_readerLinkOverlayCanvas is not null)
             _readerLinkOverlayCanvas.Children.Clear();
     }
 
-    private void ReaderBookmarksTree_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+    private async void ReaderBookmarksTree_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
     {
-        if (e.NewValue is not PdfBookmarkNode bookmark || !TryActivateReaderBookmark(bookmark))
+        if (e.NewValue is PdfBookmarkNode bookmark)
+            await NavigateReaderBookmarkAsync(bookmark);
+    }
+
+    private async void ReaderBookmarksTree_PreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Enter || _readerBookmarksTree?.SelectedItem is not PdfBookmarkNode bookmark)
             return;
-        _ = RefreshReaderRenderWindowAsync();
+        e.Handled = true;
+        await NavigateReaderBookmarkAsync(bookmark);
+    }
+
+    private async Task NavigateReaderBookmarkAsync(PdfBookmarkNode bookmark)
+    {
+        var sourceSession = _session;
+        if (!TryActivateReaderBookmark(bookmark))
+            return;
+        await RefreshReaderRenderWindowAsync();
+        if (ReferenceEquals(_session, sourceSession) && !_readerNavigationClosed)
+            await RefreshThumbnailRenderWindowAsync();
     }
 
     private bool TryActivateReaderBookmark(PdfBookmarkNode bookmark)
@@ -281,6 +360,9 @@ public partial class MainWindow
             pageIndex < 0 ||
             pageIndex >= _readerPages.Count ||
             _session is null ||
+            _navigation is null || _signatureModeActive ||
+            !ReferenceEquals(ActiveDocument?.Session, _session) ||
+            pageIndex == _navigation.CurrentPageIndex ||
             _zplDocument is not null)
         {
             return false;
