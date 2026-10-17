@@ -23,7 +23,7 @@ public sealed class MainWindowToolRailTests
     ];
 
     [Fact]
-    public void DocumentRail_Is96Pixels_OrderedAccessible_IconAndText_AndHasOneSelectedItem()
+    public void DocumentRail_Is96Pixels_OrderedAccessible_IconAndText_AndSelectionFollowsModeOwner()
     {
         RunInSta(() =>
         {
@@ -73,7 +73,23 @@ public sealed class MainWindowToolRailTests
                     Assert.NotNull(button.ToolTip);
                 });
 
-                Assert.Single(buttons, button => ReferenceEquals(button.Style, selectedStyle));
+                Assert.Equal(Visibility.Collapsed, rail.Visibility);
+                Assert.DoesNotContain(buttons, button => ReferenceEquals(button.Style, selectedStyle));
+
+                var updateSelection = typeof(MainWindow).GetMethod(
+                    "UpdateDocumentToolRailSelection", BindingFlags.Instance | BindingFlags.NonPublic)!;
+                foreach (var (mode, flag) in new[]
+                {
+                    ("read", ""), ("edit", "_editModeActive"), ("comment", "_commentModeActive"),
+                    ("sign", "_signatureModeActive"), ("organize", "_organizeModeActive"), ("read", "")
+                })
+                {
+                    if (flag.Length > 0) SetField(window, flag, true);
+                    updateSelection.Invoke(window, null);
+                    var selected = Assert.Single(buttons, button => ReferenceEquals(button.Style, selectedStyle));
+                    Assert.Equal(mode, selected.Tag);
+                    if (flag.Length > 0) SetField(window, flag, false);
+                }
             }
             finally { window.Close(); }
         });
