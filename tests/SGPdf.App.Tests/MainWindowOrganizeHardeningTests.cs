@@ -1,6 +1,7 @@
 using System.Windows.Input;
 using SGPdf.App.Features.Organize;
 using SGPdf.App.Pdf;
+using SGPdf.App.Shell;
 using Xunit;
 
 namespace SGPdf.App.Tests;
@@ -8,7 +9,7 @@ namespace SGPdf.App.Tests;
 public sealed class MainWindowOrganizeHardeningTests
 {
     [Fact]
-    public void DirtyPlan_OpenPdfCancel_PreservesCurrentSessionAndPlan()
+    public void DirtyPlan_OpenSecondPdf_PreservesPendingPlanOnFirstDocument()
     {
         OrganizeWindowTestHost.RunInSta(async () =>
         {
@@ -23,20 +24,34 @@ public sealed class MainWindowOrganizeHardeningTests
 
                 var sourceSession = Assert.IsType<PdfDocumentSession>(OrganizeWindowTestHost.GetField(window, "_session"));
                 var sourcePlan = Assert.IsType<OrganizePlan>(OrganizeWindowTestHost.GetField(window, "_organizePlan"));
-                OrganizeWindowTestHost.SetField(window, "_confirmDiscardOrganizeChanges", (Func<bool>)(() => false));
+                var discardPrompts = 0;
+                OrganizeWindowTestHost.SetField(window, "_confirmDiscardOrganizeChanges", (Func<bool>)(() =>
+                {
+                    discardPrompts++;
+                    return false;
+                }));
 
-                Assert.False(await OrganizeWindowTestHost.OpenReaderAsync(window, second.Path));
-                Assert.Same(sourceSession, OrganizeWindowTestHost.GetField(window, "_session"));
-                Assert.Same(sourcePlan, OrganizeWindowTestHost.GetField(window, "_organizePlan"));
-                Assert.True((bool)OrganizeWindowTestHost.GetField(window, "_organizeModeActive")!);
-                Assert.True((bool)OrganizeWindowTestHost.GetField(window, "_organizePlanDirty")!);
+                Assert.True(await OrganizeWindowTestHost.OpenReaderAsync(window, second.Path));
+
+                Assert.Equal(0, discardPrompts);
+                Assert.NotSame(sourceSession, OrganizeWindowTestHost.GetField(window, "_session"));
+                Assert.Null(OrganizeWindowTestHost.GetField(window, "_organizePlan"));
+                Assert.False((bool)OrganizeWindowTestHost.GetField(window, "_organizeModeActive")!);
+
+                var documents = Assert.IsAssignableFrom<IEnumerable<PdfDocumentWorkspace>>(
+                    OrganizeWindowTestHost.GetField(window, "_openDocuments"));
+                var firstDocument = Assert.Single(documents.Where(document =>
+                    string.Equals(document.FilePath, first.Path, StringComparison.OrdinalIgnoreCase)));
+                Assert.Same(sourcePlan, firstDocument.PendingState.OrganizePlan);
+                Assert.True(firstDocument.PendingState.OrganizeDirty);
+                Assert.True(firstDocument.PendingState.IsDirty);
             }
             finally { OrganizeWindowTestHost.CloseClean(window); }
         });
     }
 
     [Fact]
-    public void DirtyPlan_OpenPdfDiscard_DiscardsPlanThenOpensReplacement()
+    public void DirtyPlan_CloseDocumentDeclined_PreservesTrackedDocumentAndPlan()
     {
         OrganizeWindowTestHost.RunInSta(async () =>
         {
@@ -48,15 +63,23 @@ public sealed class MainWindowOrganizeHardeningTests
                 Assert.True(await OrganizeWindowTestHost.OpenReaderAsync(window, first.Path));
                 Assert.True((bool)OrganizeWindowTestHost.Invoke(window, "TryEnterOrganizeMode")!);
                 MakeDirty(window);
-                OrganizeWindowTestHost.SetField(window, "_confirmDiscardOrganizeChanges", (Func<bool>)(() => true));
+                var sourcePlan = Assert.IsType<OrganizePlan>(OrganizeWindowTestHost.GetField(window, "_organizePlan"));
 
                 Assert.True(await OrganizeWindowTestHost.OpenReaderAsync(window, second.Path));
+                var documents = Assert.IsAssignableFrom<IEnumerable<PdfDocumentWorkspace>>(
+                    OrganizeWindowTestHost.GetField(window, "_openDocuments")).ToArray();
+                var firstDocument = Assert.Single(documents.Where(document =>
+                    string.Equals(document.FilePath, first.Path, StringComparison.OrdinalIgnoreCase)));
+                OrganizeWindowTestHost.SetField(window, "_confirmCloseDirtyDocument", (Func<PdfDocumentWorkspace, bool>)(_ => false));
 
-                var session = Assert.IsType<PdfDocumentSession>(OrganizeWindowTestHost.GetField(window, "_session"));
-                Assert.Equal(second.Path, session.FilePath, ignoreCase: true);
-                Assert.Null(OrganizeWindowTestHost.GetField(window, "_organizePlan"));
-                Assert.False((bool)OrganizeWindowTestHost.GetField(window, "_organizeModeActive")!);
-                Assert.False((bool)OrganizeWindowTestHost.GetField(window, "_organizePlanDirty")!);
+                Assert.False(await OrganizeWindowTestHost.InvokeTask<bool>(window, "TryCloseDocumentWithGuard", firstDocument));
+
+                var remaining = Assert.IsAssignableFrom<IEnumerable<PdfDocumentWorkspace>>(
+                    OrganizeWindowTestHost.GetField(window, "_openDocuments")).ToArray();
+                Assert.Equal(2, remaining.Length);
+                Assert.Contains(firstDocument, remaining);
+                Assert.Same(sourcePlan, firstDocument.PendingState.OrganizePlan);
+                Assert.True(firstDocument.PendingState.IsDirty);
             }
             finally { OrganizeWindowTestHost.CloseClean(window); }
         });
