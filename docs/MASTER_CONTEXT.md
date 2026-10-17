@@ -18,15 +18,15 @@ Estado resumido actual:
 - F13: ACTIVE;
 - Task9 / T9.1: ACTIVE;
 - DG-0 Design Governance: GREEN / CLOSED;
-- R1 reader multi-document core: GREEN en `454dcadb6eca13ab98b5d219146dd10ec25af78d`, exact-head CI run `39004872760` SUCCESS;
-- siguiente bloque: R1B per-document pending state + close guard;
-- R2 tabs/top shell bloqueado hasta R1B GREEN;
+- R1 reader multi-document core: GREEN / CLOSED en `454dcadb6eca13ab98b5d219146dd10ec25af78d`;
+- R1B per-document pending state + close guard: GREEN / CLOSED técnicamente en `26d026b2fbe1f35754bcf7cef660d2fdaa7e5d34`, exact-head CI run `39040326178` SUCCESS;
+- siguiente bloque elegible: R2 top shell + real document tabs, NOT STARTED en este checkpoint;
 - T9.2 NOT STARTED;
 - F14–F18 FROZEN;
 - `main` read-only; no merge aprobado.
 
-Checkpoint R1:
-`docs/history/2026-10-17-f13-t9-1-r1-reader-core-green-checkpoint.md`.
+Checkpoint R1B:
+`docs/history/2026-10-17-f13-t9-1-r1b-pending-state-green-checkpoint.md`.
 
 ---
 
@@ -138,31 +138,41 @@ La separación por archivos/feature se usa solo para mantener owners comprensibl
 
 La dirección aprobada para T9.1 es multi-documento real, no tabs decorativos.
 
-Owner mínimo:
+Owner mínimo y vigente:
 
 ```text
 OpenDocuments
 ActiveDocument
 PdfDocumentWorkspace por PDF
+└─ PdfDocumentPendingState
 ```
 
-Cada `PdfDocumentWorkspace` ya posee:
+Cada `PdfDocumentWorkspace` posee:
 - `PdfDocumentSession`;
 - page sizes;
 - navegación;
 - zoom;
 - offset vertical;
-- dirty marker.
+- estado pendiente por documento mediante `PdfDocumentPendingState`.
 
-R1 reader core quedó GREEN en `454dcadb...`.
+R1 reader core quedó GREEN/CLOSED en `454dcadb...`.
 
-Requisito de usuario aún pendiente antes de tabs visibles:
-- cambiar de documento debe preservar trabajo pendiente por PDF (edición/firma/comentarios/organización cuando aplique), no exigir guardar solo para cambiar de tab ni descartar estado silenciosamente;
-- cierre de un documento dirty debe tener guard explícito.
+R1B quedó GREEN/CLOSED técnicamente en `26d026b2...` y resolvió el requisito previo a tabs visibles:
+- cambiar de documento preserva el trabajo pendiente del PDF, sin exigir guardar solo para cambiar de tab y sin descartarlo silenciosamente;
+- cierre de un documento dirty tiene guard explícito antes de disposal;
+- el pending state conserva **model state**, nunca controles WPF;
+- Edit reutiliza image/text/redaction workspaces y selección;
+- Sign reutiliza `SignatureEditState`;
+- Comments reutiliza `CommentWorkspace` y metadata necesaria;
+- Organize reutiliza `OrganizePlan`, dirty y source page sizes;
+- AcroForm conserva valores string original/current y reconstruye TextBox al activar el documento.
 
-Por eso R1B precede a R2.
+El cambio de documento sigue la secuencia KISS:
+`CAPTURE CURRENT MODEL → DETACH PRESENTATION → BIND TARGET → RESTORE TARGET MODEL/UI`.
 
-No crear un document framework, DI container, event bus o ModeManager para resolverlo. Extender owners existentes con el mínimo estado necesario.
+La auditoría de cierre detectó `LEGACY_SINGLE_DOCUMENT_GUARD_DRIFT` en rutas de Open PDF. Se eliminaron las pre-guardas de discard para Ctrl+O/Open PDF/Recientes y el owner obsoleto `MainWindow.Comments.Integration.cs`. Se conservaron los guards que sí corresponden a Open ZPL, cambios de modo y cierre de ventana.
+
+No crear un document framework, DI container, event bus o ModeManager. R2 debe reutilizar exactamente estos owners.
 
 ## 7. ZPL / etiquetas
 
@@ -204,7 +214,7 @@ No reinterpretar estos activos durante cambios UX no relacionados.
 
 Hallazgos abiertos:
 - DS-001 DOCUMENT_SHELL — P1 OPEN.
-- DS-002 MULTI_DOCUMENT_WORKSPACE — P1 ACTIVE; reader core GREEN, R1B next.
+- DS-002 MULTI_DOCUMENT_WORKSPACE — P1 ACTIVE; R1 + R1B GREEN, R2 next.
 - DS-003 SHELL_RAIL_PRESENTATION — P1 OPEN.
 - DS-004 DOCUMENT_TOOL_RAIL — P1 OPEN.
 - DS-005 READER_NAV_DRAWER — P1 OPEN.
@@ -217,14 +227,17 @@ Hallazgos abiertos:
 Secuencia:
 
 ```text
-R1B pending state + close guard
-→ R2 top shell + tabs
+R1 reader multi-document core       ✅
+R1B pending state + close guard     ✅
+R2 top shell + tabs                 NEXT
 → R3 document rail + approved icons
 → R4 Pages/Bookmarks collapsible drawer
 → R5 context menus
 → R6 image-selection root cause
 → R7 final visual/functional QA
 ```
+
+R2 debe añadir presentación/interaction de tabs sobre el owner existente, no un segundo registro de documentos o sesiones.
 
 Páginas/Marcadores debe abrir **contraído por defecto** y permitir expand/collapse.
 
@@ -285,20 +298,23 @@ Ampliaciones requieren un nuevo gate explícito; no extender por conveniencia de
 - T9.1: ACTIVE.
 - T9.2: NOT STARTED.
 
-R1 reader multi-document GREEN:
+R1 reader multi-document GREEN/CLOSED:
 `454dcadb6eca13ab98b5d219146dd10ec25af78d` — CI `39004872760` SUCCESS.
 
-Siguiente:
-`T9.1-R1B — PER_DOCUMENT_PENDING_STATE_AND_CLOSE_GUARD`.
+R1B pending-state GREEN/CLOSED técnicamente:
+`26d026b2fbe1f35754bcf7cef660d2fdaa7e5d34` — CI `39040326178` SUCCESS — `1274/0/4/1278`.
 
-No iniciar R2 visible hasta R1B GREEN. No iniciar T9.2 hasta cierre real de T9.1.
+Siguiente elegible:
+`T9.1-R2 — TOP_SHELL_AND_REAL_DOCUMENT_TABS`.
+
+R2 está NOT STARTED en este checkpoint. No iniciar T9.2 hasta cierre real de T9.1.
 
 ## 14. Historia y recuperación
 
 Detalle operativo actual:
 - `.planning/STATE.md`;
 - `.planning/ROADMAP.md`;
-- `docs/history/2026-10-17-f13-t9-1-r1-reader-core-green-checkpoint.md`.
+- `docs/history/2026-10-17-f13-t9-1-r1b-pending-state-green-checkpoint.md`.
 
 Los detalles de slices cerrados, preservation matrices, release packs, decisiones y experimentos siguen bajo `.planning/REQUIREMENTS.md`, `docs/history/**`, `docs/release/**` y planes/specs de `docs/superpowers/**`.
 
