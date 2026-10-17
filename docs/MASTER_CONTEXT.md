@@ -1,34 +1,62 @@
 # SG PDF Editor — Contexto maestro
 
-**Última consolidación:** 2026-10-07  
-**Estado:** A0/A1 completadas; F0 automatizado PASS con smoke físico pendiente; Gate ZPL-A sintético seleccionó Labelize 1.7.0; F2.1 Parse + Open en cierre automatizado.  
-**Repositorio:** `sierraglobalcompany-rgb/SG-PDF-Editor`
+## AUTORIDAD VIGENTE — 2026-10-17
 
-> Este documento permite abrir otro chat/agente y continuar sin reconstruir el proyecto. GitHub actual tiene prioridad para el estado ejecutado; `.planning/STATE.md` es el estado operativo; este archivo y `docs/MASTER_PLAN.md` son la autoridad arquitectónica salvo cambio explícitamente aprobado.
+Este documento conserva **arquitectura y decisiones durables**. El estado operativo diario no se deduce de snapshots históricos: usar primero GitHub exact HEAD/CI → `.planning/STATE.md` → `.planning/ROADMAP.md`.
+
+Estado resumido:
+- F0–F12: CLOSED / FROZEN para la baseline automatizada ya documentada;
+- F13: ACTIVE;
+- Task9 / T9.1: ACTIVE;
+- último anchor GREEN antes del R1 document-shell: `0abae7ceb5f08611180c883346e21589d1509664`, CI run `39000181654` SUCCESS;
+- R1 multidocumento actual: RED / INCOMPLETE en `bbae51f49ee3c54e3667c5ea477c2c3f179d3c46`;
+- DG-0 SG Design Governance se valida aislado antes de retomar R1;
+- `main` continúa read-only en `31c0594758a83ec555d73ecdd7c597cdf8791fd7`;
+- no hay merge aprobado.
+
+La autoridad de diseño está en `docs/design/SGPDF_DESIGN_LAW.md` y la skill obligatoria para UI/UX en `.agents/skills/sgpdf-design/SKILL.md`.
+
+---
 
 ## 1. Producto
 
-SG PDF Editor es una aplicación Windows local-first y offline para dos trabajos diarios:
+SG PDF Editor es una aplicación Windows local-first/offline para dos trabajos diarios:
 
-1. **PDF:** leer, imprimir, firmar visualmente, organizar y editar de forma práctica.
-2. **Etiquetas térmicas:** abrir ZPL/TXT/PRN, previsualizar, respetar cantidades, maquetar, convertir a PDF e imprimir sin Internet.
+1. **PDF:** leer, navegar, imprimir, firmar, organizar, editar de forma conservadora, comentar y ejecutar utilidades profesionales aprobadas.
+2. **Etiquetas térmicas:** abrir ZPL/TXT/PRN, previsualizar, respetar cantidades, maquetar, exportar PDF e imprimir sin depender de Internet.
 
-No pretende iniciar como clon completo de Acrobat. Se construye por vertical slices útiles y verificables.
+No pretende ser un clon total de Acrobat. Se construye por vertical slices útiles, verificables y mantenibles.
 
-## 2. Requisitos no negociables
+## 2. Reglas no negociables
 
+### KISS
+`SIMPLE → EFICIENTE → OPTIMIZADO → EFICAZ → MANTENIBLE → A→B`.
+
+### Anti-ruido
+`DELETE → SIMPLIFY → REUSE → MERGE → EXTEND → ADD`.
+
+### Ley SG de Diseño
+`INTENT → HIERARCHY → DISCLOSURE → CONSISTENCY → FEEDBACK → ACCESSIBILITY → VERIFY`.
+
+Toda UI debe partir de la tarea humana y aplicar progressive disclosure. No se acepta el patrón de “Excel infinito” donde todas las propiedades se muestran simultáneamente porque existen en el modelo.
+
+### Guardrail anti-parches
+Flujo separado para defectos:
+`REPRODUCE → CLASSIFY → ROOT CAUSE → OWNER → MINIMAL CHANGE → CAUSE TEST → FULL SUITE → EXACT-HEAD CI → REMOVE REDUNDANT WORKAROUND`.
+
+No renombrar este guardrail como una tercera ley numerada.
+
+### Producto / datos
 - Windows x64 inicialmente.
-- C# + .NET 10 LTS + WPF.
-- KISS + YAGNI.
-- Funciones principales 100 % offline.
+- C# + .NET 10 + WPF.
+- Funciones principales offline.
 - Sin API keys, SaaS, cuentas, servidores, créditos ni activación obligatoria.
-- Sin licencia comercial obligatoria en runtime.
-- Priorizar MIT/BSD/Apache-2.0.
-- No introducir AGPL/GPL fuerte sin aprobación expresa.
-- `Guardar como` por defecto durante primeras fases de edición.
-- No hacer merge automático a `main`.
-- Datos reales de Mercado Libre/clientes son privados y no se versionan.
-- Ningún corpus privado se adjunta a CI ni se indexa en Graphify.
+- Sin backend/base de datos para el baseline actual.
+- No licencia comercial obligatoria runtime.
+- No AGPL/GPL fuerte sin aprobación explícita.
+- Preservar originales y usar `Guardar como`/outputs separados donde la baseline lo define.
+- Datos reales de Mercado Libre/clientes no se versionan ni entran a CI/Graphify.
+- No merge automático a `main`.
 
 ## 3. Arquitectura runtime aprobada
 
@@ -42,458 +70,181 @@ SG PDF Editor
 │  ├─ texto/objetos
 │  ├─ firma visual
 │  ├─ edición práctica
-│  └─ organización de páginas primero
+│  └─ organización de páginas
 │
-├─ Labels (managed C#)
-│  ├─ ZplDocumentParser
+├─ Labels / ZPL
+│  ├─ parser managed
 │  ├─ cantidades ^PQ como metadata
 │  ├─ layout/orquestación
-│  └─ LabelizeProcessRenderer (desde F2.2)
-│       ↓ child process local
-│     labelize.exe 1.7.0
+│  └─ Labelize 1.7.0 local sidecar
 │
-├─ PDFsharp
-│  └─ solo si F2.4 demuestra que sigue siendo la vía KISS para composición de hojas
+├─ PDFsharp 6.2.4
+│  └─ usos estrechos ya aprobados; no motor PDF general
+│
+├─ qpdf 12.4.2
+│  └─ sidecar estrecho para protección AES aprobada
+│
+├─ Tesseract
+│  └─ OCR local/offline
 │
 └─ Windows Printing
 ```
 
-### Decisiones explícitas
+### Decisiones durables
 
-- **Labelize 1.7.0** es el motor ZPL aprobado tras Gate ZPL-A sintético.
-- BinaryKits.Zpl no queda como fallback runtime ni se construye una abstracción dual-engine.
-- Labelize se integra como ejecutable local sidecar pinneado, no como `labelize serve`, no mediante HTTP localhost y no mediante C ABI Rust/WASM.
-- El runtime final nunca descarga Labelize automáticamente.
-- PDFsharp no entra preventivamente: se añade solo en la slice de layout/export si sigue siendo necesario.
-
-No forman parte del núcleo actual:
-
-- qpdf/pdfcpu: solo ante carencia concreta de PDFium;
-- Tesseract: F10 OCR;
-- PdfPig: solo texto/layout avanzado si reduce complejidad;
-- BinaryKits: solo evidencia histórica del Gate;
-- MuPDF/iText/Ghostscript: descartados por AGPL/comercial.
+- **PDFium** es el motor PDF primario.
+- Toda llamada nativa PDFium se serializa mediante `PdfiumRuntime.NativeGate`; no se trata PDFium como thread-safe.
+- **Labelize 1.7.0** es el único renderer ZPL runtime aprobado, ejecutado como proceso local pinneado.
+- BinaryKits es histórico; no fallback runtime.
+- No Labelary ni HTTP/local server para render ZPL.
+- PDFsharp no se convierte en un segundo motor PDF general.
+- qpdf permanece sidecar estrecho; no motor general.
+- ZXing.Net permanece tests/QA-only.
+- DejaVu Sans sigue permitido donde la baseline pinneada lo usa.
+- No segundo viewer, plugin framework, generalized ModeManager, conversion framework genérico o BatchEngine genérico sin decisión explícita.
 
 ## 4. Solución KISS
 
-Mientras sea suficiente existen solo:
+Mientras sea suficiente:
 
 ```text
 src/SGPdf.App/
 tests/SGPdf.App.Tests/
 ```
 
-No recrear `Core`, `Infrastructure`, `Domain`, `Application`, CQRS, event bus, plugin framework o DI complejo sin necesidad real.
+No recrear capas `Core`, `Infrastructure`, `Domain`, `Application`, CQRS/event bus/DI complejo por prevención.
 
-Feature structure permitida cuando aporte claridad:
+La separación por archivos/feature se usa solo para mantener owners comprensibles. Un partial existente puede seguir siendo el owner correcto cuando evita arquitectura adicional.
 
-```text
-Pdf/
-Navigation/
-Printing/
-Features/
-  Labels/
-  Reader/
-  Sign/
-  Edit/
-  Organize/
-  Comments/
-Utilities/
-```
+## 5. PDF / seguridad de escritura
 
-La integración WPF de etiquetas de F2.1 usa `MainWindow.Labels.cs` como partial de la ventana existente. No crea ViewModel, mode service ni framework de navegación.
+- Preservar source/original cuando el contrato define Save As.
+- Validar outputs de forma independiente donde la capacidad lo exige.
+- No prometer preservación universal de firmas, formularios, tagging, metadata o compatibilidad externa sin evidencia representativa.
+- Las funciones que modifican contenido deben respetar los guards/transactional patterns ya cerrados en sus slices.
+- Firma visual y firma criptográfica son capacidades distintas.
 
-## 5. PDFium
+## 6. ZPL / etiquetas
 
-PDFium es el motor PDF primario y se distribuye mediante `bblanchon.PDFium.Win32` con versión explícita/pinneada.
-
-Se prefiere P/Invoke mínimo propio en vez de wrapper grande. Cada API nativa entra cuando una feature la necesita.
-
-### Thread safety
-
-PDFium se trata como no thread-safe dentro del proceso. Todas las llamadas pasan por exclusión global:
-
-```text
-WPF UI
-  ↓
-background task
-  ↓
-PdfRenderScheduler
-  ↓
-SemaphoreSlim(1,1)
-  ↓
-PDFium
-```
-
-F0.4 usa latest-request-wins + cancelación cooperativa alrededor del render síncrono. Progressive rendering (`FPDF_RenderPageBitmap_Start/Continue/Close`) queda diferido hasta que un PDF real demuestre que hace falta.
-
-## 6. PDF base implementado
-
-F0.1–F0.6 están automatizadamente PASS:
-
-- abrir PDF local;
-- render PDFium real;
-- anterior/siguiente/ir a página;
-- zoom presets / 100 % / Fit Page / Fit Width;
-- refit con debounce 150 ms;
-- scheduler latest-request-wins;
-- impresión Windows all/current/range mediante `PrintDialog` + `DocumentPaginator`;
-- Microsoft Print to PDF por la misma ruta;
-- multipágina e invalid-PDF regressions;
-- guard offline automatizado.
-
-### Pendientes físicos F0
-
-El entorno actual no tiene escritorio Windows/impresora interactiva. Siguen NOT RUN:
-
-- UI con PDFs reales/heavy;
-- navegación/zoom/resize rápido;
-- Microsoft Print to PDF + reopen;
-- impresora física si está disponible;
-- 200 DPI print quality/memory/latency;
-- red deshabilitada durante flujo PDF.
-
-No marcar `PDF-BASE-01..07` como aceptados físicamente hasta ese smoke.
-
-## 7. UX PDF
-
-Un PDF abre en `Leer` para evitar modificaciones accidentales.
-
-Modos finales previstos:
-
-```text
-LEER | FIRMAR | EDITAR | ORGANIZAR | COMENTAR
-```
-
-### Leer
-
-Objetivo final: abrir, navegación, zoom, fit page/width, scroll continuo, thumbnails, bookmarks, búsqueda, copiar texto, links, password e impresión.
-
-### Firmar
-
-Alta prioridad. MVP: PNG transparente, drag, resize proporcional, mover, eliminar/duplicar, insertar y `Guardar como`. Después: biblioteca local, firma principal, iniciales, fecha/nombre y sellos.
-
-Firma visual y firma criptográfica son funciones distintas. La firma criptográfica es profesional/posterior.
-
-### Editar imágenes
-
-Menú contextual previsto: reemplazar, extraer/guardar, copiar, recortar, girar, tamaño, opacidad, frente/fondo, propiedades y eliminar. Reemplazo intenta conservar posición/tamaño/rotación/orden.
-
-### Editar texto
-
-No tratar PDF como Word. Texto V1 es conservador; reflow/párrafos llegan después.
-
-APIs relevantes: `FPDFText_SetText`, `FPDFTextObj_GetFontName`, `FPDFText_LoadFont`, `FPDFText_LoadStandardFont`, `FPDFPageObj_CreateTextObj`.
-
-Si aparecen nuevos code points o subset dudoso, usar fallback con TTF redistribuible auditada y nuevo text object. Guardar copia, reabrir y validar.
-
-## 8. Organizar PDF
-
-PDFium se intenta primero.
-
-Intra-documento: mover/reordenar, rotar, eliminar, duplicar cuando aplique.
-
-Inter-documento: `FPDF_ImportPages`/`FPDF_ImportPagesByIndex` para insert/merge/extract cuando sea viable.
-
-Preflight previsto:
-
-- firmas: `FPDF_GetSignatureCount`;
-- formularios: `FPDF_GetFormType`;
-- bookmarks: `FPDFBookmark_GetFirstChild(document, NULL)`;
-- named destinations, links internos, tagged PDF, page labels, attachments y metadata según corpus.
-
-No prometer preservación de estructuras document-level que no se hayan probado.
-
-## 9. ZPL / Mercado Libre
-
-El usuario recibe ZPL de Mercado Libre y hoy usa Labelary manualmente antes de imprimir en una impresora térmica que acepta PDF pero no esos ZPL directamente.
-
-SG PDF Editor debe reemplazar ese proceso totalmente offline.
-
-Entradas:
-
+Entradas aprobadas:
 - `.zpl`;
 - `.txt` con ZPL;
 - `.prn` con ZPL.
 
-Bloques principales: `^XA ... ^XZ`.
+`^PQ` representa cantidad de salida; no multiplica innecesariamente trabajo de render por diseño.
 
-`^PQ28` significa un diseño con 28 copias, no 28 renders. Se renderiza el diseño una vez y la cantidad se aplica posteriormente al layout/print.
-
-Layouts previstos: 1/2/3/4/6/8/10/12/custom. Tamaños: térmicos, A4, Carta y custom.
-
-## 10. Gate ZPL-A — resultado
-
-Se compararon:
-
-- `BinaryKits/BinaryKits.Zpl` Viewer 1.3.1;
-- `GOODBOY008/labelize` 1.7.0 Windows x64 CLI.
-
-Spike throwaway:
-
-- branch `spike/f1-zpl-gate-a`;
-- head final `2df2f374ae6124729389640425dc8334d0647f9f`;
-- run final `37577735748` success.
-
-Corpus sintético validó:
-
-- `^CI28`, `^FH`, `^FB`, `^FR`, `^GFA`, `^BC`, `^BQ`, `^PQ`, `^DF`, `^XF`;
-- tildes/ñ;
-- direcciones largas;
-- etiqueta compuesta;
-- riesgo `^FT + ^BQ`.
-
-### Resultado medido
-
-- ambos motores produjeron Code128/QR decodificables tras corregir el comparador para componer el fondo transparente de BinaryKits sobre blanco;
-- Labelize ~59–61 diseños/s;
-- BinaryKits ~26–28 diseños/s;
-- Labelize exe 5,860,352 bytes;
-- BinaryKits probe framework-dependent publish ~16.9 MB / 14 archivos;
-- en `^FT + ^BQ`, BinaryKits renderizó el QR 60 px más abajo que Labelize, aunque ambos decodificaron.
-
-### Decisión
-
-Labelize 1.7.0 es el motor oficial planeado para F2.
-
-El Gate sintético es suficiente para seleccionar arquitectura. **F1 formal todavía requiere ejecutar corpus real privado de Mercado Libre.** Esos archivos nunca se versionan.
-
-## 11. Labelize runtime design
-
-Pin aprobado: **Labelize 1.7.0 Windows x64 MSVC**.
-
-SHA-256 del archive verificado en el spike:
-
-`cdd4030b0d1a8bad69b93f49866c8dcc5314af8975bb16a76991fe32f92dd21d`
-
-Pipeline desde F2.2:
+Labelize 1.7.0 permanece el renderer oficial local. El flujo general sigue siendo:
 
 ```text
 ZPL local
-  ↓
-ZplDocumentParser / normalized document source
-  ↓
-LabelizeProcessRenderer
-  ↓
-labelize.exe convert --width ... --height ... --dpmm ...
-  ↓
-PNG/PDF en temp request-scoped
-  ↓
-cargar/copiar output
-  ↓
-cleanup temp
+→ parser/documento normalizado
+→ LabelizeProcessRenderer
+→ output temporal local
+→ preview/layout/export/print
+→ cleanup
 ```
 
-`LabelizeProcessRenderer` deberá:
+El runtime no descarga Labelize ni usa red.
 
-- resolver el exe desde `AppContext.BaseDirectory`/subdirectorio fijo de app;
-- usar `ProcessStartInfo.ArgumentList`;
-- no concatenar shell commands;
-- escribir ZPL temporal UTF-8 sin BOM;
-- capturar stdout/stderr;
-- soportar cancelación matando process tree;
-- timeout acotado;
-- validar outputs existentes/no vacíos;
-- limpiar temp en `finally`;
-- no usar red ni `labelize serve`.
+### UX ZPL durable
 
-No auto-update. Upgrade de Labelize exige nueva auditoría + regresiones representativas.
+El panel de propiedades no debe presentar permanentemente todas las opciones de cantidad, tamaño, resolución, medio, hoja, filas, columnas, rotación, márgenes y gaps en una lista plana.
 
-## 12. F2.1 — Parse + Open
+Aplicar progressive disclosure:
+- cantidad personalizada solo cuando se selecciona;
+- tamaño personalizado solo cuando se selecciona;
+- opciones de hoja solo cuando la salida utiliza hoja;
+- filas/columnas solo para layout custom;
+- márgenes/gaps/rotación avanzada solo cuando aportan al flujo actual;
+- mantener capacidad sin saturar la visión.
 
-Rama: `feat/f2-1-zpl-parse-open`.  
-PR: #13 draft, base `design/f2-labelize-architecture`, no merge.
+Detalle: `.agents/skills/sgpdf-design/references/properties-panels.md`.
 
-Implementado:
+## 7. Autoridad visual
 
-- `ZplDesign` inmutable;
-- `ZplDocument` con `TotalQuantityFromFile: long`;
-- parser managed de bloques completos `^XA...^XZ`;
-- rechazo controlado de boundaries rotos/nested;
-- `^DF` tratado como support block y `^XF` preservado;
-- `NormalizedRenderSource` document-level;
-- extracción de `^PQ` como cantidad;
-- `^PQ0`/ausente => 1;
-- múltiples `^PQ` => último gana;
-- max 99,999,999;
-- malformed/out-of-range => error controlado;
-- `^PQ` dentro de `^DF` se rechaza en F2.1 para no inventar semántica;
-- strict UTF-8 loader, BOM UTF-8 permitido;
-- solo `.zpl/.txt/.prn`;
-- WPF `Abrir etiquetas ZPL...`;
-- candidate-first state swap: invalid ZPL conserva workspace válido anterior;
-- PDF ↔ ZPL swap sin tabs/modos/servicios nuevos;
-- regresiones WPF ejecutadas en STA dentro de CI.
+Roles separados:
 
-F2.1 **no** contiene Labelize, PDFsharp, ZXing ni nuevos paquetes runtime.
+- **App/software icon:** identidad de EXE/titlebar/taskbar/Alt-Tab.
+- **PDF document icon:** identidad de archivo/documento; asociación Windows futura solo mediante instalador aprobado.
+- **15 Home tool icons:** arte oficial por herramienta.
 
-## 13. Slices F2 siguientes
+No reinterpretar estos activos durante cambios de UX no relacionados.
 
-### F2.2 — Labelize adapter + preview
+`PDF a PNG` continúa siendo el contrato funcional actual aunque el arte aprobado comunique genéricamente PDF→imagen. No anunciar JPG hasta que esa capacidad exista.
 
-Pinned exe, process runner, PNG preview, cancellation, timeout, temp cleanup, `^DF/^XF`, Code128/QR y `^FT + ^BQ` regressions.
+## 8. Ley SG de Diseño aplicada a WPF
 
-### F2.3 — Quantity UX + dimensiones
+Para cualquier menú, barra, rail, Home, properties panel, diálogo, formulario, copy, icono visible, layout o estado:
 
-Cantidad archivo/una/custom, presets térmicos/custom, dpmm y rerender por tamaño físico.
+1. definir INTENT;
+2. establecer HIERARCHY;
+3. decidir DISCLOSURE;
+4. REUSE/CONSISTENCY con recursos/owners existentes;
+5. diseñar FEEDBACK;
+6. verificar ACCESSIBILITY;
+7. VERIFY con evidencia real.
 
-### F2.4 — Layout + PDF
+Gate mínimo de cierre visual:
+- Light + Dark;
+- 125% Windows scaling;
+- teclado/tab/foco;
+- estados aplicables;
+- sin clipping/scroll horizontal accidental;
+- copy y unidades coherentes;
+- tests aplicables + full suite + exact-head CI;
+- QA manual/hardware permanece NOT RUN si no fue ejecutado.
 
-Layouts 1/2/3/4/6/8/10/12/custom; térmico/A4/Carta/custom; PDFsharp solo si sigue siendo el camino mínimo fiable.
+No introducir framework UI nuevo para lograr polish que WPF/resources/templates existentes pueden resolver.
 
-### F2.5 — Thermal print
+## 9. Funcionalidad profesional cerrada hasta F12
 
-Tamaño físico exacto, capabilities/imageable-area, no shrink silencioso, Windows driver.
+La baseline histórica contiene, entre otros:
+- safe redaction conservadora;
+- firma PFX/P12 dentro del alcance documentado;
+- AcroForm clásico `/Tx` dentro del alcance documentado;
+- Compare local mínimo;
+- Batch `TextWatermark` únicamente;
+- QR PNG únicamente;
+- PDF→PNG, todas las páginas, 144 DPI fijo en su MVP cerrado.
 
-### F2.6 — Validation + hardening
+Ampliaciones de estas capacidades requieren un nuevo gate explícito; no extender por conveniencia desde tareas visuales.
 
-ZXing/decoder validation, corpus real privado, printer/scanner físico, offline/temp/privacy audit.
+## 10. QA y semántica de evidencia
 
-## 14. Impresión térmica
+- AUTO/CI PASS demuestra únicamente lo ejecutado por automatización.
+- Windows-real, hardware, private corpus, impresora/scanner, stylus/touch, PFX real, lector externo, offline físico y compatibilidad externa requieren evidencia separada.
+- Usar `NOT RUN` o `BLOCKED — ENVIRONMENT` cuando corresponda; nunca inferir PASS.
 
-Mantener tamaño físico exacto. No restar automáticamente hardware margins al PDF ni escalar silenciosamente un barcode.
+## 11. Estado F13 / continuidad
 
-Consultar `PrintQueue.GetPrintCapabilities()`; cuando el driver lo permita usar PageMediaSize exacto, scaling 100 %, una página por hoja y resolución nativa. `PageImageableArea` sirve para advertir recortes.
+### Cerrado antes de Task9
+- F13 Tasks 1–8: cerradas por sus checkpoints.
 
-Si un driver destruye la escala, primer fallback: raster directo a DPI nativo mediante el driver Windows, no RAW genérico a un lenguaje desconocido.
+### Task9
+- T9.0: DONE.
+- T9.1: ACTIVE.
+- T9.2: NOT STARTED.
 
-QA ZPL final: decode automático + impresión/scanner físico.
+Anchor GREEN pre-R1:
+`0abae7ceb5f08611180c883346e21589d1509664` — CI run `39000181654` SUCCESS.
 
-## 15. Licencias y terceros
+R1 congelado/incompleto durante DG-0:
+`feat/f13-task9-t9-1-document-shell-realignment-20261017` @ `bbae51f49ee3c54e3667c5ea477c2c3f179d3c46`.
 
-Código propio: `All rights reserved` hasta decisión distinta. Repo público NO significa open source.
+DG-0 existe para que el resto de T9.1 se diseñe bajo una autoridad UX estable en lugar de seguir agregando opciones/paneles sin jerarquía.
 
-Toda dependencia runtime/dev relevante se registra en `third_party/manifest.json` y conserva licencias/notices requeridos.
+## 12. Reanudación correcta
 
-Labelize 1.7.0 es MIT. Roboto Condensed usada como substitute es Apache-2.0; DejaVu es permisiva. `ZplGSCustom.ttf` se documenta como heredada de zebrash/MIT pero con origen exacto imperfectamente trazado. Tratamiento:
+1. terminar DG-0 y dejar checkpoint GREEN;
+2. reanudar R1 desde su checkpoint sin perder los contratos RED existentes;
+3. aplicar la design skill a cada superficie UI afectada;
+4. completar T9.1 con sus gates automáticos + visuales;
+5. T9.2 solo después del cierre real de T9.1;
+6. F14–F18 permanecen frozen;
+7. `main` solo con aprobación explícita.
 
-- aceptable para desarrollo y selección del Gate;
-- registrar provenance note al entrar al runtime en F2.2;
-- re-auditar antes de instalador público;
-- si la confianza legal no es suficiente, redibujar ese pequeño set de glifos en vez de cambiar de motor sin evidencia.
+## 13. Historia y detalle
 
-## 16. Development Intelligence — A1 completada
+Los detalles de slices cerrados, preservation matrices, release packs, decisiones y experimentos siguen bajo `.planning/REQUIREMENTS.md`, `docs/history/**`, `docs/release/**` y planes/specs de `docs/superpowers/**`.
 
-GSD Core + Graphify son tooling de desarrollo; nunca requisitos del producto.
-
-### GSD Core
-
-- upstream `open-gsd/gsd-core`;
-- pin `1.15.0`;
-- MIT;
-- Node 24+;
-- project-scoped;
-- `.planning/` versionado;
-- `.codex/` generado/ignorado.
-
-### Graphify
-
-- upstream `Graphify-Labs/graphify`;
-- pin `0.9.77`;
-- Apache-2.0;
-- grafo `src/` + `tests/`;
-- `tests/PrivateFixtures/` excluido;
-- `graphify-out/` regenerable;
-- auto-update OFF;
-- AST/query offline sin backend LLM/API.
-
-Probe final A1 `37530638793` success.
-
-Setup reproducible: `tools/setup-dev.ps1`.
-
-Jerarquía de contexto:
-
-```text
-Arquitectura → docs/MASTER_CONTEXT.md + docs/MASTER_PLAN.md
-Estado       → .planning/STATE.md
-Roadmap      → .planning/ROADMAP.md
-Requisitos   → .planning/REQUIREMENTS.md
-Fase         → .planning/phases/<fase>/...
-Código       → Git/GitHub
-Relaciones   → Graphify
-Histórico    → docs/history
-```
-
-## 17. Roadmap actual
-
-```text
-A0  Higiene/fuente de verdad               ✅ completada
-A1  GSD Core + Graphify                    ✅ completada
-F0  PDF base                               ✅ automatizado / ⏳ físico
-F1  Gate ZPL-A                             ✅ motor elegido / ⏳ corpus privado
-F2  Etiquetas ZPL                          ▶ F2.1 en cierre automatizado
-F3  Firma visual
-F4  Lector completo
-F5  Organizar
-F6  Imágenes
-F7  Texto V1
-F8  Comentarios
-F9  Utilidades
-F10 OCR
-F11 Texto V2
-F12 Profesional
-```
-
-## 18. GitHub / ramas
-
-- `main`: baseline; no tocar/mergear sin aprobación explícita del usuario.
-- A0: `feat/kiss-vertical-slice`, PR #2 draft.
-- A1: `feat/a1-dev-intelligence`, PR #6 draft.
-- F0: PRs #7–#12 draft, stacked, sin merge.
-- F1 spike: `spike/f1-zpl-gate-a`, throwaway evidence.
-- diseño Labelize: `design/f2-labelize-architecture`, spec + plan aprobados.
-- F2.1: `feat/f2-1-zpl-parse-open`, PR #13 draft.
-- una rama/vertical slice cuando sea razonable;
-- build/tests/QA antes de declarar terminado;
-- nunca auto-merge.
-
-## 19. Datos privados
-
-ZPL reales/documentos de clientes no entran al repo.
-
-`tests/PrivateFixtures/` permanece local/ignorado. Graphify no debe indexarlo. CI artifacts tampoco pueden contener customer labels.
-
-Corpus sintético versionable debe usar nombres/direcciones/datos inventados.
-
-## 20. Roles
-
-**ChatGPT:** planificación aplicada, código, GitHub, CI, tests, auditoría, documentación e históricos.
-
-**Codex/Antigravity:** ejecución/runtime/UX Windows, native debugging, impresión y trabajo de código cuando se use el host correspondiente.
-
-**Usuario:** prioridad/UX, corpus real privado, pruebas físicas e instrucción final de merge.
-
-**Otra IA:** auditor puntual, no arquitecto paralelo continuo.
-
-## 21. Definition of Done
-
-Una feature termina solo si:
-
-- funciona offline;
-- build/tests Windows tienen evidencia fresca;
-- errores controlados;
-- original/estado válido previo protegido;
-- pruebas/fixtures representativos;
-- dependencias/licencias registradas cuando aplican;
-- temporales/recursos limpios;
-- docs/STATE/histórico alineados.
-
-ZPL además exige:
-
-- `^PQ` como metadata, no renders duplicados;
-- decode automático cuando entra el renderer;
-- corpus real privado antes del cierre formal F1;
-- tamaño/códigos verificados físicamente antes de cerrar F2.
-
-## 22. Instrucción para un chat nuevo
-
-1. Verificar GitHub primero.
-2. Leer `.planning/STATE.md`.
-3. Leer el plan de la slice activa y `docs/superpowers/specs/2026-10-07-f2-labelize-architecture-design.md` si se toca ZPL.
-4. Usar Graphify antes de lecturas amplias cuando aporte valor.
-5. Leer MASTER docs completos solo ante arquitectura/licencias/cambio de fase/contradicción.
-6. No reabrir A0/A1 salvo evidencia material.
-7. No declarar F0 físicamente cerrado sin smoke Windows.
-8. No declarar F1 formalmente cerrado sin corpus real privado.
-9. F2.2 debe usar Labelize 1.7.0 sidecar local; no reintroducir BinaryKits ni servicio HTTP sin nueva evidencia/aprobación.
-10. No merge a `main` sin aprobación explícita del usuario.
+Esos documentos sirven como evidencia histórica/específica; no deben devolver el ruteo operativo a F12 cuando STATE y GitHub muestran F13 activo.
