@@ -137,5 +137,8 @@ public partial class MainWindow
 
         _openDocuments.Clear();
         ActiveDocument = null;
+        _session = null;
+        _navigation = null;
+        _zoom = new Pdf.PdfZoomState();
     }
 }
