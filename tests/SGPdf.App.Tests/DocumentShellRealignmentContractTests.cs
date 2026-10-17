@@ -38,9 +38,9 @@ public sealed class DocumentShellRealignmentContractTests
         Assert.Contains("PdfZoomState", workspaceSource);
         Assert.Contains("IsDirty", workspaceSource);
 
-        var mainSource = File.ReadAllText(FindRepoFile("src", "SGPdf.App", "MainWindow.xaml.cs"));
-        Assert.Contains("OpenDocuments", mainSource);
-        Assert.Contains("ActiveDocument", mainSource);
+        var documentOwnerSource = File.ReadAllText(FindRepoFile("src", "SGPdf.App", "MainWindow.Documents.cs"));
+        Assert.Contains("OpenDocuments", documentOwnerSource);
+        Assert.Contains("ActiveDocument", documentOwnerSource);
     }
 
     [Fact]
