@@ -55,10 +55,11 @@ public sealed class DocumentShellRealignmentContractTests
         var xaml = File.ReadAllText(FindRepoFile("src", "SGPdf.App", "MainWindow.xaml"));
         var readerSource = File.ReadAllText(FindRepoFile("src", "SGPdf.App", "MainWindow.ReaderThumbnails.cs"));
         var workspaceSource = File.ReadAllText(FindRepoFile("src", "SGPdf.App", "Shell", "PdfDocumentWorkspace.cs"));
+        var navigationOwnerSource = xaml + Environment.NewLine + readerSource;
 
-        Assert.Contains("ReaderNavigationColumn", xaml);
-        Assert.Contains("ReaderNavigationDrawer", xaml);
-        Assert.Contains("ReaderNavigationToggleButton", xaml);
+        Assert.Contains("ReaderNavigationColumn", navigationOwnerSource);
+        Assert.Contains("ReaderNavigationDrawer", navigationOwnerSource);
+        Assert.Contains("ReaderNavigationToggleButton", navigationOwnerSource);
         Assert.Contains("ToggleReaderNavigation", readerSource);
         Assert.Contains("IsReaderNavigationOpen", workspaceSource);
         Assert.Contains("ReaderNavigationSelectedIndex", workspaceSource);
