@@ -202,6 +202,7 @@ public partial class MainWindow
                 ? ShellWorkspaceKind.Pdf
                 : ShellWorkspaceKind.Home;
         SetShellWorkspace(kind);
+        ApplyReaderNavigationState(ActiveDocument);
     }
 
     private void SetShellWorkspace(ShellWorkspaceKind kind)
