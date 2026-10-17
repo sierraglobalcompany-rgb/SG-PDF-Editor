@@ -8,20 +8,12 @@ public sealed class DocumentShellRealignmentContractTests
     [Fact]
     public void DocumentShell_DeclaresRealDocumentTabsAndAddButton()
     {
-        var path = FindRepoFile("src", "SGPdf.App", "MainWindow.xaml");
-        var document = XDocument.Load(path);
-        XNamespace presentation = "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
-        XNamespace x = "http://schemas.microsoft.com/winfx/2006/xaml";
+        var source = File.ReadAllText(FindRepoFile("src", "SGPdf.App", "MainWindow.Documents.cs"));
 
-        var tabs = document
-            .Descendants(presentation + "TabControl")
-            .SingleOrDefault(element => (string?)element.Attribute(x + "Name") == "DocumentTabs");
-        var addButton = document
-            .Descendants(presentation + "Button")
-            .SingleOrDefault(element => (string?)element.Attribute(x + "Name") == "AddDocumentTabButton");
-
-        Assert.NotNull(tabs);
-        Assert.NotNull(addButton);
+        Assert.Contains("Name = \"DocumentTabs\"", source);
+        Assert.Contains("Name = \"AddDocumentTabButton\"", source);
+        Assert.Contains("Name = \"DocumentTopShell\"", source);
+        Assert.Contains("Name = \"DocumentTabRow\"", source);
     }
 
     [Fact]

@@ -1,6 +1,10 @@
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Windows;
+using System.Windows.Automation;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Media;
 using SGPdf.App.Features.Labels;
 using SGPdf.App.Shell;
 
@@ -11,6 +15,12 @@ public partial class MainWindow
     private static readonly bool DocumentLifecycleHookRegistered = RegisterDocumentLifecycleHook();
     private readonly ObservableCollection<PdfDocumentWorkspace> _openDocuments = new();
     private bool _documentLifecycleInitialized;
+    private bool _documentTabsUiInitialized;
+    private bool _syncingDocumentTabs;
+    private Border? _documentTopShell;
+    private Grid? _documentTabRow;
+    private TabControl? _documentTabs;
+    private Button? _addDocumentTabButton;
 
     private Func<PdfDocumentWorkspace, bool> _confirmCloseDirtyDocument = static document =>
         MessageBox.Show(
@@ -22,6 +32,12 @@ public partial class MainWindow
     internal IReadOnlyList<PdfDocumentWorkspace> OpenDocuments => _openDocuments;
 
     internal PdfDocumentWorkspace? ActiveDocument { get; private set; }
+
+    private TabControl DocumentTabs => _documentTabs
+        ?? throw new InvalidOperationException("Las pestañas de documentos no están inicializadas.");
+
+    private Button AddDocumentTabButton => _addDocumentTabButton
+        ?? throw new InvalidOperationException("El botón para abrir otro PDF no está inicializado.");
 
     private static bool RegisterDocumentLifecycleHook()
     {
@@ -40,6 +56,7 @@ public partial class MainWindow
 
         window._documentLifecycleInitialized = true;
         _ = DocumentLifecycleHookRegistered;
+        window.InitializeDocumentTabsUi();
         window.Closed += DocumentsWindow_Closed;
     }
 
@@ -49,19 +66,269 @@ public partial class MainWindow
             window.DisposeTrackedDocuments();
     }
 
+    private void InitializeDocumentTabsUi()
+    {
+        if (_documentTabsUiInitialized)
+            return;
+
+        if (Content is not DockPanel root)
+            throw new InvalidOperationException("No se encontró el shell principal de la ventana.");
+
+        var existingMenu = root.Children.OfType<Menu>().FirstOrDefault()
+            ?? throw new InvalidOperationException("No se encontró el menú principal.");
+
+        root.Children.Remove(existingMenu);
+        root.Children.Remove(NavigationBar);
+
+        var shellGrid = new Grid();
+        shellGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        shellGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+        var tabRow = new Grid
+        {
+            Name = "DocumentTabRow",
+            MinHeight = 38d,
+            Margin = new Thickness(8, 6, 8, 0),
+            Visibility = Visibility.Collapsed
+        };
+        tabRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        tabRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1d, GridUnitType.Star) });
+        tabRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        var brand = new TextBlock
+        {
+            Text = "SG PDF",
+            FontWeight = FontWeights.SemiBold,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(4, 0, 12, 0)
+        };
+        brand.SetResourceReference(TextBlock.ForegroundProperty, "TextFillColorPrimaryBrush");
+        Grid.SetColumn(brand, 0);
+        tabRow.Children.Add(brand);
+
+        _documentTabs = new TabControl
+        {
+            Name = "DocumentTabs",
+            MinHeight = 34d,
+            Background = Brushes.Transparent,
+            BorderThickness = new Thickness(0),
+            HorizontalContentAlignment = HorizontalAlignment.Stretch,
+            ItemTemplate = BuildDocumentTabHeaderTemplate()
+        };
+        DocumentTabs.ItemsSource = _openDocuments;
+        DocumentTabs.SelectionChanged += DocumentTabs_SelectionChanged;
+        AutomationProperties.SetName(DocumentTabs, "Documentos PDF abiertos");
+        RegisterName(DocumentTabs.Name, DocumentTabs);
+        Grid.SetColumn(DocumentTabs, 1);
+        tabRow.Children.Add(DocumentTabs);
+
+        _addDocumentTabButton = new Button
+        {
+            Name = "AddDocumentTabButton",
+            Content = "+",
+            Width = 32d,
+            Height = 32d,
+            MinWidth = 32d,
+            Padding = new Thickness(0),
+            Margin = new Thickness(6, 0, 2, 0),
+            VerticalAlignment = VerticalAlignment.Center,
+            ToolTip = "Abrir otro PDF"
+        };
+        AddDocumentTabButton.SetResourceReference(FrameworkElement.StyleProperty, "SgIconButtonStyle");
+        AddDocumentTabButton.Click += AddDocumentTabButton_Click;
+        AutomationProperties.SetName(AddDocumentTabButton, "Abrir otro PDF");
+        RegisterName(AddDocumentTabButton.Name, AddDocumentTabButton);
+        Grid.SetColumn(AddDocumentTabButton, 2);
+        tabRow.Children.Add(AddDocumentTabButton);
+
+        Grid.SetRow(tabRow, 0);
+        shellGrid.Children.Add(tabRow);
+
+        var commandRow = new Grid
+        {
+            Margin = new Thickness(4, 2, 4, 4)
+        };
+        commandRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1d, GridUnitType.Star) });
+        commandRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        existingMenu.HorizontalAlignment = HorizontalAlignment.Left;
+        existingMenu.VerticalAlignment = VerticalAlignment.Center;
+        existingMenu.Background = Brushes.Transparent;
+        Grid.SetColumn(existingMenu, 0);
+        commandRow.Children.Add(existingMenu);
+
+        NavigationBar.HorizontalAlignment = HorizontalAlignment.Right;
+        NavigationBar.BorderThickness = new Thickness(0);
+        NavigationBar.Background = Brushes.Transparent;
+        if (NavigationBar.Child is StackPanel navigationItems)
+        {
+            navigationItems.HorizontalAlignment = HorizontalAlignment.Right;
+            navigationItems.Margin = new Thickness(6, 4, 6, 4);
+        }
+
+        PreviousPageButton.Content = "‹";
+        PreviousPageButton.MinWidth = 32d;
+        PreviousPageButton.ToolTip = "Página anterior";
+        PreviousPageButton.SetResourceReference(FrameworkElement.StyleProperty, "SgIconButtonStyle");
+        NextPageButton.Content = "›";
+        NextPageButton.MinWidth = 32d;
+        NextPageButton.ToolTip = "Página siguiente";
+        NextPageButton.SetResourceReference(FrameworkElement.StyleProperty, "SgIconButtonStyle");
+        FitPageButton.Content = "Página";
+        FitWidthButton.Content = "Ancho";
+
+        Grid.SetColumn(NavigationBar, 1);
+        commandRow.Children.Add(NavigationBar);
+        Grid.SetRow(commandRow, 1);
+        shellGrid.Children.Add(commandRow);
+
+        var topShell = new Border
+        {
+            Name = "DocumentTopShell",
+            BorderThickness = new Thickness(0, 0, 0, 1),
+            Child = shellGrid,
+            Visibility = Visibility.Collapsed
+        };
+        topShell.SetResourceReference(Border.BackgroundProperty, "SgSurfaceBrush");
+        topShell.SetResourceReference(Border.BorderBrushProperty, "SgBorderBrush");
+        RegisterName(topShell.Name, topShell);
+        DockPanel.SetDock(topShell, Dock.Top);
+        root.Children.Insert(0, topShell);
+
+        NavigationBar.IsVisibleChanged += DocumentTopShellChildVisibilityChanged;
+        LabelNavigationBar.IsVisibleChanged += DocumentTopShellChildVisibilityChanged;
+
+        _documentTopShell = topShell;
+        _documentTabRow = tabRow;
+        _documentTabsUiInitialized = true;
+        SyncDocumentTabsSelection();
+        UpdateDocumentTopShellVisibility();
+    }
+
+    private DataTemplate BuildDocumentTabHeaderTemplate()
+    {
+        var panel = new FrameworkElementFactory(typeof(StackPanel));
+        panel.SetValue(StackPanel.OrientationProperty, Orientation.Horizontal);
+        panel.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
+
+        var title = new FrameworkElementFactory(typeof(TextBlock));
+        title.SetBinding(TextBlock.TextProperty, new Binding(nameof(PdfDocumentWorkspace.DisplayName)));
+        title.SetValue(TextBlock.TextTrimmingProperty, TextTrimming.CharacterEllipsis);
+        title.SetValue(FrameworkElement.MaxWidthProperty, 210d);
+        title.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
+        title.SetValue(FrameworkElement.MarginProperty, new Thickness(0, 0, 8, 0));
+        panel.AppendChild(title);
+
+        var close = new FrameworkElementFactory(typeof(Button));
+        close.SetValue(ContentControl.ContentProperty, "×");
+        close.SetValue(FrameworkElement.WidthProperty, 24d);
+        close.SetValue(FrameworkElement.HeightProperty, 24d);
+        close.SetValue(Control.PaddingProperty, new Thickness(0));
+        close.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
+        close.SetValue(ToolTipService.ToolTipProperty, "Cerrar documento");
+        close.SetValue(AutomationProperties.NameProperty, "Cerrar documento");
+        close.SetResourceReference(FrameworkElement.StyleProperty, "SgIconButtonStyle");
+        close.AddHandler(Button.ClickEvent, new RoutedEventHandler(DocumentTabClose_Click));
+        panel.AppendChild(close);
+
+        return new DataTemplate(typeof(PdfDocumentWorkspace)) { VisualTree = panel };
+    }
+
+    private void DocumentTopShellChildVisibilityChanged(object sender, DependencyPropertyChangedEventArgs e)
+        => UpdateDocumentTopShellVisibility();
+
+    private void UpdateDocumentTopShellVisibility()
+    {
+        if (!_documentTabsUiInitialized || _documentTopShell is null || _documentTabRow is null)
+            return;
+
+        var pdfActive = ActiveDocument is not null && _zplDocument is null;
+        var zplActive = _zplDocument is not null || LabelNavigationBar.Visibility == Visibility.Visible;
+        _documentTopShell.Visibility = pdfActive || zplActive
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+        _documentTabRow.Visibility = pdfActive
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+    }
+
+    private void SyncDocumentTabsSelection()
+    {
+        if (_documentTabs is null)
+            return;
+
+        _syncingDocumentTabs = true;
+        try
+        {
+            DocumentTabs.SelectedItem = ActiveDocument;
+        }
+        finally
+        {
+            _syncingDocumentTabs = false;
+        }
+    }
+
+    private async void DocumentTabs_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_syncingDocumentTabs || DocumentTabs.SelectedItem is not PdfDocumentWorkspace document ||
+            ReferenceEquals(document, ActiveDocument))
+        {
+            return;
+        }
+
+        try
+        {
+            await ActivateDocumentAsync(document);
+        }
+        finally
+        {
+            SyncDocumentTabsSelection();
+        }
+    }
+
+    private async void DocumentTabClose_Click(object sender, RoutedEventArgs e)
+    {
+        e.Handled = true;
+        if (sender is not Button { DataContext: PdfDocumentWorkspace document })
+            return;
+
+        await TryCloseDocumentWithGuard(document);
+        SyncDocumentTabsSelection();
+        UpdateDocumentTopShellVisibility();
+    }
+
+    private void AddDocumentTabButton_Click(object sender, RoutedEventArgs e)
+        => OpenPdf_Click(OpenPdfMenuItem, new RoutedEventArgs(MenuItem.ClickEvent));
+
     private void TrackOpenedDocument(PdfDocumentWorkspace document)
     {
         ArgumentNullException.ThrowIfNull(document);
         if (_openDocuments.Contains(document))
             return;
 
-        _openDocuments.Add(document);
+        _syncingDocumentTabs = true;
+        try
+        {
+            _openDocuments.Add(document);
+        }
+        finally
+        {
+            _syncingDocumentTabs = false;
+        }
     }
 
     private void UntrackOpenedDocument(PdfDocumentWorkspace document)
     {
         ArgumentNullException.ThrowIfNull(document);
-        _openDocuments.Remove(document);
+        _syncingDocumentTabs = true;
+        try
+        {
+            _openDocuments.Remove(document);
+        }
+        finally
+        {
+            _syncingDocumentTabs = false;
+        }
 
         if (ReferenceEquals(ActiveDocument, document))
         {
@@ -72,6 +339,8 @@ public partial class MainWindow
         }
 
         document.Dispose();
+        SyncDocumentTabsSelection();
+        UpdateDocumentTopShellVisibility();
     }
 
     private void SaveActiveDocumentReaderState()
@@ -92,13 +361,18 @@ public partial class MainWindow
         _session = ActiveDocument.Session;
         _navigation = ActiveDocument.Navigation;
         _zoom = ActiveDocument.Zoom;
+        SyncDocumentTabsSelection();
+        UpdateDocumentTopShellVisibility();
     }
 
     private async Task ActivateDocumentAsync(PdfDocumentWorkspace document)
     {
         ArgumentNullException.ThrowIfNull(document);
         if (ReferenceEquals(ActiveDocument, document))
+        {
+            SyncDocumentTabsSelection();
             return;
+        }
 
         CaptureActiveDocumentPendingState();
         SaveActiveDocumentReaderState();
@@ -109,6 +383,7 @@ public partial class MainWindow
         BindLegacyReaderStateToDocument(document);
         _zplDocument = null;
         _renderedZplLabels = Array.Empty<ZplRenderedLabel>();
+        UpdateDocumentTopShellVisibility();
 
         _updatingReaderScroll = true;
         try
@@ -134,6 +409,8 @@ public partial class MainWindow
         finally
         {
             _updatingReaderScroll = false;
+            SyncDocumentTabsSelection();
+            UpdateDocumentTopShellVisibility();
         }
     }
 
@@ -179,6 +456,8 @@ public partial class MainWindow
             EmptyStateText.Visibility = Visibility.Visible;
             Title = "SG PDF Editor";
             UpdateViewerControlsUi();
+            SyncDocumentTabsSelection();
+            UpdateDocumentTopShellVisibility();
         }
 
         UntrackOpenedDocument(document);
@@ -195,5 +474,6 @@ public partial class MainWindow
         _session = null;
         _navigation = null;
         _zoom = new Pdf.PdfZoomState();
+        SyncDocumentTabsSelection();
     }
 }

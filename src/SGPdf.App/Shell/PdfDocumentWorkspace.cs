@@ -27,9 +27,9 @@ internal sealed class PdfDocumentWorkspace : IDisposable
 
     internal IReadOnlyList<PdfPageSize> PageSizes { get; }
 
-    internal string FilePath => Session.FilePath;
+    public string FilePath => Session.FilePath;
 
-    internal string DisplayName => Path.GetFileName(FilePath);
+    public string DisplayName => Path.GetFileName(FilePath);
 
     internal PageNavigationState Navigation { get; private set; }
 
