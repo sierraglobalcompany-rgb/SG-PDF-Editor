@@ -42,8 +42,8 @@ public sealed class MainWindowEditImageHardeningTests
 
                 var documents = Assert.IsAssignableFrom<IEnumerable<PdfDocumentWorkspace>>(
                     OrganizeWindowTestHost.GetField(window, "_openDocuments"));
-                var firstDocument = Assert.Single(documents.Where(document =>
-                    string.Equals(document.FilePath, first.Path, StringComparison.OrdinalIgnoreCase)));
+                var firstDocument = Assert.Single(documents, document =>
+                    string.Equals(document.FilePath, first.Path, StringComparison.OrdinalIgnoreCase));
                 Assert.Same(originalWorkspace, firstDocument.PendingState.ImageEditWorkspace);
                 Assert.True(firstDocument.PendingState.IsDirty);
                 Assert.True(prepared.Workspace.IsDirty);
