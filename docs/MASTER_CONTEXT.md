@@ -2,7 +2,7 @@
 
 ## AUTORIDAD VIGENTE — 2026-10-17
 
-Este documento conserva **arquitectura y decisiones durables**. El estado operativo diario se resuelve en este orden:
+Este documento conserva arquitectura y decisiones durables. El estado operativo diario se resuelve en este orden:
 
 1. GitHub exact HEAD + exact-head CI;
 2. `.planning/STATE.md`;
@@ -10,65 +10,55 @@ Este documento conserva **arquitectura y decisiones durables**. El estado operat
 4. `.planning/REQUIREMENTS.md`;
 5. spec/plan aprobado del slice;
 6. para UI/UX: `docs/design/SGPDF_DESIGN_LAW.md` + `.agents/skills/sgpdf-design/SKILL.md`;
-7. este MASTER_CONTEXT para decisiones durables;
+7. este MASTER_CONTEXT;
 8. históricos como evidencia/contexto.
 
-Estado resumido actual:
-- F0–F12: CLOSED / FROZEN para la baseline automatizada;
-- F13: ACTIVE;
-- Task9 / T9.1: ACTIVE;
-- DG-0 Design Governance: GREEN / CLOSED;
-- R1 reader multi-document core: GREEN / CLOSED en `454dcadb6eca13ab98b5d219146dd10ec25af78d`;
-- R1B per-document pending state + close guard: GREEN / CLOSED técnicamente en `26d026b2fbe1f35754bcf7cef660d2fdaa7e5d34`, exact-head CI run `39040326178` SUCCESS;
-- siguiente bloque elegible: R2 top shell + real document tabs, NOT STARTED en este checkpoint;
+Estado resumido:
+- F0–F12 CLOSED/FROZEN para baseline automatizada;
+- F13 ACTIVE;
+- T9.0 DONE;
+- T9.1 ACTIVE;
+- DG-0 GREEN/CLOSED;
+- R1 GREEN/CLOSED;
+- R1B GREEN/CLOSED;
+- R2 top shell + real tabs GREEN/CLOSED en `cf816557adab80f0e6e2e4ecb2f6628dc92eba90`;
+- R3 document rail + official artwork GREEN/CLOSED técnicamente, exact-head `4050ef37422fc2cdb98b79f4bd4c215534fc553e`, CI `39046256870` SUCCESS;
+- R4 Pages/Bookmarks drawer NEXT / NOT STARTED;
 - T9.2 NOT STARTED;
 - F14–F18 FROZEN;
 - `main` read-only; no merge aprobado.
 
-Checkpoint R1B:
-`docs/history/2026-10-17-f13-t9-1-r1b-pending-state-green-checkpoint.md`.
+Checkpoint actual:
+`docs/history/2026-10-17-f13-t9-1-r3-green-r4-next-checkpoint.md`
 
 ---
 
 ## 1. Producto
 
-SG PDF Editor es una aplicación Windows local-first/offline para dos trabajos diarios:
+SG PDF Editor es una aplicación Windows local-first/offline para:
 
-1. **PDF:** leer, navegar, imprimir, firmar, organizar, editar de forma conservadora, comentar y ejecutar utilidades profesionales aprobadas.
-2. **Etiquetas térmicas:** abrir ZPL/TXT/PRN, previsualizar, respetar cantidades, maquetar, exportar PDF e imprimir sin depender de Internet.
+1. PDF: leer, navegar, imprimir, firmar, organizar, editar conservadoramente, comentar y ejecutar utilidades profesionales aprobadas.
+2. Etiquetas térmicas: abrir ZPL/TXT/PRN, previsualizar, respetar cantidades, maquetar, exportar PDF e imprimir sin Internet.
 
-No pretende ser un clon total de Acrobat. Se construye por vertical slices útiles, verificables y mantenibles.
+No pretende clonar Acrobat completo. Se construye por vertical slices útiles y verificables.
 
 ## 2. Reglas no negociables
 
 ### KISS
-`SIMPLE → EFICIENTE → OPTIMIZADO → EFICAZ → MANTENIBLE → A→B`.
+`SIMPLE → EFICIENTE → OPTIMIZADO → EFICAZ → MANTENIBLE → A→B`
 
 ### Anti-ruido
-`DELETE → SIMPLIFY → REUSE → MERGE → EXTEND → ADD`.
+`DELETE → SIMPLIFY → REUSE → MERGE → EXTEND → ADD`
 
 ### Ley SG de Diseño
-`INTENT → HIERARCHY → DISCLOSURE → CONSISTENCY → FEEDBACK → ACCESSIBILITY → VERIFY`.
+`INTENT → HIERARCHY → DISCLOSURE → CONSISTENCY → FEEDBACK → ACCESSIBILITY → VERIFY`
 
-Toda UI debe partir de la tarea humana y aplicar progressive disclosure. No se acepta el patrón de “Excel infinito” donde todas las propiedades se muestran simultáneamente porque existen en el modelo.
+Toda UI parte de la tarea humana y aplica progressive disclosure. No aceptar paneles tipo “Excel infinito”.
 
 ### Guardrail anti-parches
-Flujo separado para defectos:
-`REPRODUCE → CLASSIFY → ROOT CAUSE → OWNER → MINIMAL CHANGE → CAUSE TEST → FULL SUITE → EXACT-HEAD CI → REMOVE REDUNDANT WORKAROUND`.
+`REPRODUCE → CLASSIFY → ROOT CAUSE → OWNER → MINIMAL CHANGE → CAUSE TEST → FULL SUITE → EXACT-HEAD CI → REMOVE REDUNDANT WORKAROUND`
 
-No renombrar este guardrail como una tercera ley numerada.
-
-### Producto / datos
-- Windows x64 inicialmente.
-- C# + .NET 10 + WPF.
-- Funciones principales offline.
-- Sin API keys, SaaS, cuentas, servidores, créditos ni activación obligatoria.
-- Sin backend/base de datos para el baseline actual.
-- No licencia comercial obligatoria runtime.
-- No AGPL/GPL fuerte sin aprobación explícita.
-- Preservar originales y usar `Guardar como`/outputs separados donde la baseline lo define.
-- Datos reales de Mercado Libre/clientes no se versionan ni entran a CI/Graphify.
-- No merge automático a `main`.
+No llamarlo ley numerada.
 
 ## 3. Arquitectura runtime aprobada
 
@@ -76,42 +66,24 @@ No renombrar este guardrail como una tercera ley numerada.
 SG PDF Editor
 │
 ├─ WPF + .NET 10
-│
-├─ PDFium
-│  ├─ lectura/render
-│  ├─ texto/objetos
-│  ├─ firma visual
-│  ├─ edición práctica
-│  └─ organización de páginas
-│
-├─ Labels / ZPL
-│  ├─ parser managed
-│  ├─ cantidades ^PQ como metadata
-│  ├─ layout/orquestación
-│  └─ Labelize 1.7.0 local sidecar
-│
-├─ PDFsharp 6.2.4
-│  └─ usos estrechos ya aprobados; no motor PDF general
-│
-├─ qpdf 12.4.2
-│  └─ sidecar estrecho para protección AES aprobada
-│
-├─ Tesseract
-│  └─ OCR local/offline
-│
+├─ PDFium — motor PDF principal
+├─ Labelize 1.7.0 — renderer ZPL runtime
+├─ PDFsharp 6.2.4 — usos estrechos aprobados
+├─ qpdf 12.4.2 — AES sidecar estrecho
+├─ Tesseract — OCR local/offline
 └─ Windows Printing
 ```
 
 Decisiones durables:
-- PDFium es el motor PDF primario.
-- Toda llamada nativa PDFium se serializa mediante `PdfiumRuntime.NativeGate`.
-- Labelize 1.7.0 es el único renderer ZPL runtime aprobado.
+- PDFium sigue siendo el motor PDF primario.
+- Native PDFium bajo `PdfiumRuntime.NativeGate`.
+- Labelize 1.7.0 es único renderer ZPL runtime.
 - BinaryKits es histórico; no fallback runtime.
-- No Labelary ni HTTP/local server para render ZPL.
-- PDFsharp no se convierte en un segundo motor PDF general.
-- qpdf permanece sidecar estrecho; no motor general.
-- ZXing.Net permanece tests/QA-only.
-- No segundo viewer, plugin framework, generalized ModeManager, conversion framework genérico o BatchEngine genérico sin decisión explícita.
+- No Labelary/HTTP server runtime.
+- PDFsharp no se convierte en segundo motor general.
+- qpdf no se convierte en motor general.
+- ZXing.Net permanece test/QA-only.
+- No segundo viewer, plugin framework, generalized ModeManager, conversion framework o BatchEngine sin decisión explícita.
 
 ## 4. Solución KISS
 
@@ -122,23 +94,11 @@ src/SGPdf.App/
 tests/SGPdf.App.Tests/
 ```
 
-No recrear capas `Core`, `Infrastructure`, `Domain`, `Application`, CQRS/event bus/DI complejo por prevención.
+No recrear capas Core/Infrastructure/Domain/Application, CQRS/event bus/DI complejo por prevención.
 
-La separación por archivos/feature se usa solo para mantener owners comprensibles. Un partial existente puede seguir siendo el owner correcto cuando evita arquitectura adicional.
+## 5. Multi-documento
 
-## 5. PDF / seguridad de escritura
-
-- Preservar source/original cuando el contrato define Save As.
-- Validar outputs de forma independiente donde la capacidad lo exige.
-- No prometer preservación universal de firmas, formularios, tagging, metadata o compatibilidad externa sin evidencia representativa.
-- Las funciones que modifican contenido deben respetar los guards/transactional patterns ya cerrados en sus slices.
-- Firma visual y firma criptográfica son capacidades distintas.
-
-## 6. Multi-documento
-
-La dirección aprobada para T9.1 es multi-documento real, no tabs decorativos.
-
-Owner mínimo y vigente:
+Owner único vigente:
 
 ```text
 OpenDocuments
@@ -147,175 +107,171 @@ PdfDocumentWorkspace por PDF
 └─ PdfDocumentPendingState
 ```
 
-Cada `PdfDocumentWorkspace` posee:
-- `PdfDocumentSession`;
-- page sizes;
-- navegación;
-- zoom;
-- offset vertical;
-- estado pendiente por documento mediante `PdfDocumentPendingState`.
+Cada workspace posee sesión, navegación, zoom, scroll y pending model state.
 
-R1 reader core quedó GREEN/CLOSED en `454dcadb...`.
+R1 estableció el lifecycle multi-documento real.
 
-R1B quedó GREEN/CLOSED técnicamente en `26d026b2...` y resolvió el requisito previo a tabs visibles:
-- cambiar de documento preserva el trabajo pendiente del PDF, sin exigir guardar solo para cambiar de tab y sin descartarlo silenciosamente;
-- cierre de un documento dirty tiene guard explícito antes de disposal;
-- el pending state conserva **model state**, nunca controles WPF;
-- Edit reutiliza image/text/redaction workspaces y selección;
-- Sign reutiliza `SignatureEditState`;
-- Comments reutiliza `CommentWorkspace` y metadata necesaria;
-- Organize reutiliza `OrganizePlan`, dirty y source page sizes;
-- AcroForm conserva valores string original/current y reconstruye TextBox al activar el documento.
+R1B preserva estado pendiente por PDF para Edit, Sign, Comments, Organize y AcroForm sin almacenar controles WPF. Secuencia:
 
-El cambio de documento sigue la secuencia KISS:
-`CAPTURE CURRENT MODEL → DETACH PRESENTATION → BIND TARGET → RESTORE TARGET MODEL/UI`.
+`CAPTURE CURRENT MODEL → DETACH PRESENTATION → BIND TARGET → RESTORE TARGET MODEL/UI`
 
-La auditoría de cierre detectó `LEGACY_SINGLE_DOCUMENT_GUARD_DRIFT` en rutas de Open PDF. Se eliminaron las pre-guardas de discard para Ctrl+O/Open PDF/Recientes y el owner obsoleto `MainWindow.Comments.Integration.cs`. Se conservaron los guards que sí corresponden a Open ZPL, cambios de modo y cierre de ventana.
+Reglas:
+- cambiar de tab no exige guardar/discard;
+- cerrar tab dirty sí usa guard explícito;
+- Ctrl+O/Recientes/abrir otro PDF no destruyen trabajo pendiente;
+- no crear segundo registro de documentos o sesiones.
 
-No crear un document framework, DI container, event bus o ModeManager. R2 debe reutilizar exactamente estos owners.
+## 6. R2 — Top shell + real tabs
 
-## 7. ZPL / etiquetas
+R2 está GREEN/CLOSED.
 
-Entradas aprobadas:
-- `.zpl`;
-- `.txt` con ZPL;
-- `.prn` con ZPL.
+Anchor:
+`cf816557adab80f0e6e2e4ecb2f6628dc92eba90`
 
-`^PQ` representa cantidad de salida; no multiplica innecesariamente trabajo de render por diseño.
+CI:
+`39043770373` SUCCESS.
 
-Labelize 1.7.0 permanece el renderer oficial local.
+Durable truth:
+- tabs visibles reales;
+- botón `+` abre/agrega PDF;
+- selección de tab usa owner multi-documento existente;
+- cierre usa dirty guard existente;
+- top shell fue reparentado sin mantener supuestos de que `Menu` sea hijo directo del `DockPanel`;
+- no se introdujo una segunda arquitectura de navegación/documentos.
+
+## 7. R3 — Document tool rail
+
+R3 está GREEN/CLOSED técnicamente.
+
+Product commit:
+`394bd320f8df03c0b00b5a517c00869a6c3a74e2`
+
+Exact-head GREEN:
+`4050ef37422fc2cdb98b79f4bd4c215534fc553e`
+
+CI:
+- run `39046256870`;
+- job `117435463253`;
+- Build 0 warnings / 0 errors;
+- startup smoke 30 s PASS;
+- tests `1279 passed / 0 failed / 2 skipped / 1281 total`.
+
+Arte oficial reutilizado en document rail:
+- Editar → `edit-pdf.png`;
+- Firmar → `sign.png`;
+- Organizar → `organize-pages.png`;
+- OCR → `ocr.png`;
+- Censurar → `redact.png`;
+- Comparar → `compare-pdf.png`;
+- Convertir → `pdf-to-png.png`;
+- Proteger → `protect.png`.
+
+Leer, Comentar y Formularios mantienen glyph fallback porque aún no existe arte aprobado específico.
+
+El rail conserva 96 px, orden, accesibilidad, selected/disabled semantics y labels sin wrap.
+
+Un test viejo que exigía `Path` en todos los botones fue realineado a la nueva autoridad. No se añadieron Paths invisibles.
+
+Un timeout aislado de Tesseract no reprodujo en el exact-head GREEN; no se cambió código/timeout OCR.
+
+## 8. ZPL / etiquetas
+
+Entradas aprobadas: `.zpl`, `.txt` con ZPL, `.prn` con ZPL.
+
+`^PQ` representa cantidad de salida; no multiplicar render innecesariamente.
+
+Labelize 1.7.0 permanece renderer oficial local.
 
 ### UX ZPL durable
 
-El panel de propiedades no debe presentar permanentemente todas las opciones de cantidad, tamaño, resolución, medio, hoja, filas, columnas, rotación, márgenes y gaps en una lista plana.
+El panel de propiedades no debe mostrar simultáneamente cantidad, tamaño, resolución, medio, hoja, filas, columnas, rotación, márgenes y gaps en una lista plana.
 
 Aplicar progressive disclosure:
 - cantidad personalizada solo cuando se selecciona;
 - tamaño personalizado solo cuando se selecciona;
-- opciones de hoja solo cuando la salida utiliza hoja;
+- opciones de hoja solo para salida en hoja;
 - filas/columnas solo para layout custom;
-- márgenes/gaps/rotación avanzada solo cuando aportan al flujo actual;
-- mantener capacidad sin saturar la visión.
+- avanzado solo cuando aporta al flujo.
 
-Detalle: `.agents/skills/sgpdf-design/references/properties-panels.md`.
-
-## 8. Autoridad visual
+## 9. Autoridad visual
 
 Roles separados:
-- **App/software icon:** EXE/titlebar/taskbar/Alt-Tab.
-- **PDF document icon:** identidad de archivo/documento; asociación Windows futura solo mediante instalador aprobado.
-- **15 Home tool icons:** arte oficial por herramienta.
+- App/software icon → EXE/titlebar/taskbar/Alt-Tab.
+- PDF document icon → identidad documental/asociación futura por installer.
+- 15 Home tool icons → arte oficial por herramienta.
 
-No reinterpretar estos activos durante cambios UX no relacionados.
+No reinterpretarlos durante cambios no relacionados.
 
-`PDF a PNG` continúa siendo el contrato funcional actual aunque el arte aprobado comunique genéricamente PDF→imagen. No anunciar JPG hasta que esa capacidad exista.
+`PDF a PNG` continúa siendo el contrato funcional actual; no anunciar JPG sin capacidad real.
 
-## 9. Document shell / UX aprobado
+## 10. Document shell / UX
 
-Hallazgos abiertos:
-- DS-001 DOCUMENT_SHELL — P1 OPEN.
-- DS-002 MULTI_DOCUMENT_WORKSPACE — P1 ACTIVE; R1 + R1B GREEN, R2 next.
-- DS-003 SHELL_RAIL_PRESENTATION — P1 OPEN.
-- DS-004 DOCUMENT_TOOL_RAIL — P1 OPEN.
-- DS-005 READER_NAV_DRAWER — P1 OPEN.
-- DS-006 BOOKMARKS — P2 AUDIT_REQUIRED.
-- DS-007 IMAGE_SELECTION_RENDERING — P1 REPRODUCE_REQUIRED.
-- DS-008 PDF_CONTEXT_MENU — P1 OPEN.
-- DS-009 TOP_SHELL — P1 OPEN.
-- DS-010 EDIT_OBJECT_INTERACTION — P1 OPEN.
+Estado de hallazgos:
+- DS-001 DOCUMENT_SHELL — mejorado por R2/R3; final visual QA sigue R7.
+- DS-002 MULTI_DOCUMENT_WORKSPACE — R1/R1B/R2 GREEN.
+- DS-003 SHELL_RAIL_PRESENTATION — R3 technical GREEN; final visual QA R7.
+- DS-004 DOCUMENT_TOOL_RAIL — R3 technical GREEN.
+- DS-005 READER_NAV_DRAWER — R4 NEXT.
+- DS-006 BOOKMARKS — R4 AUDIT_REQUIRED.
+- DS-007 IMAGE_SELECTION_RENDERING — R6 REPRODUCE_REQUIRED.
+- DS-008 PDF_CONTEXT_MENU — R5 OPEN.
+- DS-009 TOP_SHELL — R2 technical GREEN; final visual QA R7.
+- DS-010 EDIT_OBJECT_INTERACTION — OPEN.
 
-Secuencia:
+Sequence:
 
 ```text
-R1 reader multi-document core       ✅
-R1B pending state + close guard     ✅
-R2 top shell + tabs                 NEXT
-→ R3 document rail + approved icons
-→ R4 Pages/Bookmarks collapsible drawer
-→ R5 context menus
-→ R6 image-selection root cause
-→ R7 final visual/functional QA
+R1  multi-document core              ✅
+R1B pending state + close guard      ✅
+R2  top shell + tabs                 ✅
+R3  document rail + approved icons   ✅
+R4  Pages/Bookmarks drawer           NEXT
+R5  context menus
+R6  image-selection root cause
+R7  final visual/functional QA
 ```
 
-R2 debe añadir presentación/interaction de tabs sobre el owner existente, no un segundo registro de documentos o sesiones.
+## 11. R4 — next bounded slice
 
-Páginas/Marcadores debe abrir **contraído por defecto** y permitir expand/collapse.
+Pages/Bookmarks drawer must:
+- start collapsed by default;
+- expand/collapse explicitly;
+- reclaim workspace width when closed;
+- reuse existing thumbnail renderer/scheduler;
+- audit real bookmark/outline data before calling Bookmarks functional;
+- avoid a second navigation architecture;
+- use Ley SG de Diseño + RED→GREEN + exact-head CI;
+- checkpoint before R5.
 
-El context menu PDF debe reutilizar capacidades reales; no copiar Adobe indiscriminadamente.
+## 12. QA semantics
 
-La selección de imagen no debe teñir la imagen completa de azul. El código declara fill transparente; si el tintado visual ocurre, se trata como bug y se reproduce antes de corregir.
+AUTO/CI PASS demonstrates only automated evidence.
 
-## 10. Ley SG de Diseño aplicada a WPF
+Windows-real, Light/Dark visual fidelity, 125% scaling, hardware/private corpus, printer/scanner, stylus/touch, PFX real, external-reader and physical offline checks require separate evidence.
 
-Para cualquier menú, barra, rail, Home, properties panel, diálogo, formulario, copy, icono visible, layout o estado:
+Use `NOT RUN` / `BLOCKED — ENVIRONMENT` when appropriate.
 
-1. definir INTENT;
-2. establecer HIERARCHY;
-3. decidir DISCLOSURE;
-4. REUSE/CONSISTENCY con recursos/owners existentes;
-5. diseñar FEEDBACK;
-6. verificar ACCESSIBILITY;
-7. VERIFY con evidencia real.
+## 13. Micro-task/checkpoint discipline
 
-Gate mínimo de cierre visual:
-- Light + Dark;
-- 125% Windows scaling real cuando se exige;
-- teclado/tab/foco;
-- estados aplicables;
-- sin clipping/scroll horizontal accidental;
-- copy y unidades coherentes;
-- tests aplicables + full suite + exact-head CI;
-- QA manual/hardware permanece NOT RUN si no fue ejecutado.
+To avoid chat/tool blocking, work in micro-tasks with checkpoints:
 
-No introducir framework UI nuevo para lograr polish que WPF/resources/templates existentes pueden resolver.
+```text
+slice-A focused change → checkpoint
+slice-B CI/diagnostic → checkpoint
+slice-C docs/closure → checkpoint
+```
 
-## 11. Funcionalidad profesional cerrada hasta F12
+Do not accumulate multiple slices before checkpointing.
 
-La baseline histórica contiene, entre otros:
-- safe redaction conservadora;
-- firma PFX/P12 dentro del alcance documentado;
-- AcroForm clásico `/Tx` dentro del alcance documentado;
-- Compare local mínimo;
-- Batch `TextWatermark` únicamente;
-- QR PNG únicamente;
-- PDF→PNG, todas las páginas, 144 DPI fijo en su MVP cerrado.
+## 14. Recovery
 
-Ampliaciones requieren un nuevo gate explícito; no extender por conveniencia desde tareas visuales.
-
-## 12. QA y semántica de evidencia
-
-- AUTO/CI PASS demuestra únicamente lo ejecutado por automatización.
-- Windows-real, hardware, private corpus, impresora/scanner, stylus/touch, PFX real, lector externo, offline físico y compatibilidad externa requieren evidencia separada.
-- Usar `NOT RUN` o `BLOCKED — ENVIRONMENT` cuando corresponda; nunca inferir PASS.
-
-## 13. Estado F13 / continuidad
-
-### Cerrado antes de Task9
-- F13 Tasks 1–8: cerradas por sus checkpoints.
-
-### Task9
-- T9.0: DONE.
-- T9.1: ACTIVE.
-- T9.2: NOT STARTED.
-
-R1 reader multi-document GREEN/CLOSED:
-`454dcadb6eca13ab98b5d219146dd10ec25af78d` — CI `39004872760` SUCCESS.
-
-R1B pending-state GREEN/CLOSED técnicamente:
-`26d026b2fbe1f35754bcf7cef660d2fdaa7e5d34` — CI `39040326178` SUCCESS — `1274/0/4/1278`.
-
-Siguiente elegible:
-`T9.1-R2 — TOP_SHELL_AND_REAL_DOCUMENT_TABS`.
-
-R2 está NOT STARTED en este checkpoint. No iniciar T9.2 hasta cierre real de T9.1.
-
-## 14. Historia y recuperación
-
-Detalle operativo actual:
+Read in order:
+- live GitHub HEAD + exact-head CI;
 - `.planning/STATE.md`;
 - `.planning/ROADMAP.md`;
-- `docs/history/2026-10-17-f13-t9-1-r1b-pending-state-green-checkpoint.md`.
+- `docs/history/2026-10-17-f13-t9-1-r3-green-r4-next-checkpoint.md`;
+- this MASTER_CONTEXT for architecture only.
 
-Los detalles de slices cerrados, preservation matrices, release packs, decisiones y experimentos siguen bajo `.planning/REQUIREMENTS.md`, `docs/history/**`, `docs/release/**` y planes/specs de `docs/superpowers/**`.
-
-Esos documentos sirven como evidencia histórica/específica; no deben devolver el ruteo operativo a F12 cuando STATE y GitHub muestran F13 activo.
+Current next block: R4, NOT STARTED.
+T9.2 remains NOT STARTED.
+No merge to `main` approved.
