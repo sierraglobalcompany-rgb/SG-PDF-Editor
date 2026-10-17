@@ -5,7 +5,7 @@ namespace SGPdf.App.Tests;
 
 public sealed class DocumentShellRealignmentContractTests
 {
-    [Fact(Skip = "T9.1-R2: tabs reales y botón + se implementan después del core multidocumento R1.")]
+    [Fact]
     public void DocumentShell_DeclaresRealDocumentTabsAndAddButton()
     {
         var path = FindRepoFile("src", "SGPdf.App", "MainWindow.xaml");
@@ -22,6 +22,20 @@ public sealed class DocumentShellRealignmentContractTests
 
         Assert.NotNull(tabs);
         Assert.NotNull(addButton);
+    }
+
+    [Fact]
+    public void DocumentTabs_ReuseExistingMultiDocumentOwnersInsteadOfCreatingParallelState()
+    {
+        var source = File.ReadAllText(FindRepoFile("src", "SGPdf.App", "MainWindow.Documents.cs"));
+
+        Assert.Contains("DocumentTabs.ItemsSource = _openDocuments", source);
+        Assert.Contains("DocumentTabs_SelectionChanged", source);
+        Assert.Contains("ActivateDocumentAsync", source);
+        Assert.Contains("DocumentTabClose_Click", source);
+        Assert.Contains("TryCloseDocumentWithGuard", source);
+        Assert.Contains("AddDocumentTabButton_Click", source);
+        Assert.DoesNotContain("ObservableCollection<PdfDocumentWorkspace> _tabDocuments", source);
     }
 
     [Fact]
