@@ -38,6 +38,58 @@ public sealed class HomeDashboardContractTests
     }
 
     [Fact]
+    public void HomeRail_GeometryAndWrapping_KeepSpanishLabelsUnclipped()
+    {
+        var path = FindRepoFile("src", "SGPdf.App", "Shell", "HomeDashboard.xaml");
+        var document = XDocument.Load(path);
+        XNamespace presentation = "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+        XNamespace x = "http://schemas.microsoft.com/winfx/2006/xaml";
+
+        var rail = document.Descendants(presentation + "Border")
+            .Single(element => (string?)element.Attribute(x + "Name") == "HomeRail");
+        var railWidth = double.Parse((string?)rail.Attribute("Width") ?? "0", System.Globalization.CultureInfo.InvariantCulture);
+        Assert.Equal(96d, railWidth);
+
+        var railGrid = rail.Elements(presentation + "Grid").Single();
+        var gridHorizontalMargin = HorizontalThicknessSum((string?)railGrid.Attribute("Margin"), 0d);
+
+        var buttons = railGrid.Elements(presentation + "Button").ToArray();
+        Assert.Equal(4, buttons.Length);
+
+        foreach (var button in buttons)
+        {
+            var buttonMargin = HorizontalThicknessSum((string?)button.Attribute("Margin"), 12d);
+            var buttonPadding = HorizontalThicknessSum((string?)button.Attribute("Padding"), 16d);
+            var availableTextWidth = railWidth - 1d - gridHorizontalMargin - buttonMargin - buttonPadding;
+            Assert.True(
+                availableTextWidth >= 75d,
+                $"Expected Home rail button '{button.Attribute("AutomationProperties.Name")?.Value}' to leave at least 75 DIPs for text, but left {availableTextWidth} DIPs.");
+
+            var label = button.Descendants(presentation + "TextBlock").Single();
+            Assert.Equal("Wrap", (string?)label.Attribute("TextWrapping"));
+            Assert.Null(label.Attribute("TextTrimming"));
+        }
+    }
+
+    private static double HorizontalThicknessSum(string? value, double defaultHorizontalSum)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return defaultHorizontalSum;
+
+        var parts = value.Split(',', StringSplitOptions.TrimEntries)
+            .Select(part => double.Parse(part, System.Globalization.CultureInfo.InvariantCulture))
+            .ToArray();
+
+        return parts.Length switch
+        {
+            1 => parts[0] * 2d,
+            2 => parts[0] * 2d,
+            4 => parts[0] + parts[2],
+            _ => defaultHorizontalSum
+        };
+    }
+
+    [Fact]
     public void Dashboard_DeclaresIntentOnlyHostingContract()
     {
         var type = GetDashboardType();
