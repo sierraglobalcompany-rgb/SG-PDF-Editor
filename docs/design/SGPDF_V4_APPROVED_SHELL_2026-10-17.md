@@ -9,7 +9,7 @@
 
 ## Entregables V4 aprobados y huellas SHA-256
 
-Las imágenes originales fueron adjuntadas en el chat/proyecto del 17-10-2026. **Por ahora estos PNG de mockup no están incorporados como blobs a GitHub; no inferir lo contrario.** Localizarlos por sus nombres y comprobar las huellas antes de copiar al repositorio. Hasta que se suban, el bloqueo `V4_ASSETS_NOT_IN_GITHUB` permanece.
+Los cinco PNG originales se incorporaron desde `SG_PDF_MOCKUP_V4_IDENTIDAD_OFICIAL_PACK_2026-10-17.zip` después de verificar los cinco SHA-256 contra esta tabla. Referencias: [Light cerrado](references/sgpdf-v4/SG_PDF_MOCKUP_V4_CLARO_CERRADO_2026-10-17.png), [Light navegación](references/sgpdf-v4/SG_PDF_MOCKUP_V4_CLARO_NAVEGACION_2026-10-17.png), [Dark cerrado](references/sgpdf-v4/SG_PDF_MOCKUP_V4_OSCURO_CERRADO_2026-10-17.png), [Dark navegación](references/sgpdf-v4/SG_PDF_MOCKUP_V4_OSCURO_NAVEGACION_2026-10-17.png) e [inventario](references/sgpdf-v4/SG_PDF_INVENTARIO_ICONOS_APROBADOS_V4_2026-10-17.png). Son mockups aprobados, no capturas de QA Windows.
 
 | Referencia | SHA-256 |
 | --- | --- |
@@ -21,7 +21,7 @@ Las imágenes originales fueron adjuntadas en el chat/proyecto del 17-10-2026. *
 
 Documentos del paquete del chat: `SG_PDF_MOCKUP_V4_IDENTIDAD_OFICIAL_ESPECIFICACION_2026-10-17.md`, `SG_PDF_MOCKUP_SHELL_OFICIAL_V4_2026-10-17.html`, `SG_PDF_MOCKUP_V4_IDENTIDAD_OFICIAL_PACK_2026-10-17.zip`.
 
-**Acción para completar continuidad:** subir únicamente los cinco PNG aprobados en `docs/design/references/sgpdf-v4/` con sus nombres exactos, verificar SHA-256 y actualizar esta sección con enlaces relativos permanentes. El HTML es prototipo no productivo y puede conservarse solo si su peso/documentación aportan valor; no incorporar capturas de documentos privados ni recortes como assets productivos.
+**Continuidad de assets:** los cinco originales se conservan en `docs/design/references/sgpdf-v4/` con nombres y hashes exactos. El ZIP completo queda local y no se versiona. No se incorporan HTML, recursos duplicados ni recortes como assets productivos.
 
 ## Identidad de tres tipos — sin sustitutos
 

@@ -16,8 +16,8 @@ Este documento conserva arquitectura y decisiones durables. El estado operativo 
 Estado resumido y routing al 2026-10-17:
 - F0–F12 CLOSED/FROZEN; F13 Task9 T9.1 ACTIVE, T9.2 NOT STARTED; R1/R1B/R2/R3 technical GREEN/CLOSED.
 - R4-B GREEN/CLOSED. R4-C está en `QA_PENDING` (commit `5ff21171abb4b467e8796ba18f54e0d337ab2418`, CI `39069863859` SUCCESS, Windows W01–W15 sin completar).
-- Diseño visual V4 APROBADO por usuario; `docs/design/SGPDF_V4_APPROVED_SHELL_2026-10-17.md` es la referencia de UI. Los PNG de mockup todavía requieren publicación binaria en GitHub.
-- R4-D (shell V4 alignment): primer microbloque tabs publicado (`14065f7`); microbloque rail también publicado (`da060c5`), selección única y 60 DIP; CI exact-head y QA Windows pendientes. R5 NOT STARTED, no merge a main.
+- Diseño visual V4 APROBADO por usuario; `docs/design/SGPDF_V4_APPROVED_SHELL_2026-10-17.md` es la referencia de UI. Los cinco PNG originales están incorporados con hashes verificados en `docs/design/references/sgpdf-v4/`; comparación Windows pendiente.
+- R4-D (shell V4 alignment): tabs y rail implementados. Gate Windows 17-10: test de selección Home realineado en `e4220b6`; focal 13 PASS/1 SKIP, full 1288 PASS/0 FAIL/1 SKIP, build 0/0, smoke 30s PASS. QA Windows parcial detenida por Escape del usuario; no cierre visual. CI final por verificar tras publicar. R4-C/R4-D siguen QA_PENDING; bloque 3/R5/T9.2 no iniciados. Ver checkpoint del rail.
 - Checkpoint: `docs/history/2026-10-17-f13-t9-1-r4c-pending-v4-approved-checkpoint.md`.
 
 

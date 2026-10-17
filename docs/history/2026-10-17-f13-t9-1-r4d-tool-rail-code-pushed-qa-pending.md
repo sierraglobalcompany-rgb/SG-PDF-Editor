@@ -31,3 +31,14 @@ Lectura de código en rama GitHub y búsqueda de las claves, estilos y rutas esp
 ## Continuación
 
 R4-D microbloque 3 (command bar) **NO STARTED**; aplazar hasta el gate de tabs+rail o autorización explícita para acumulación controlada. No ejecutar R5, no merge.
+
+## Gate Windows y sincronización V4 — 2026-10-17
+
+- HEAD inicial auditado: `13aaa651c012843f11c09b24b5c6c2c3bd8dea02`; CI inicial [39075875401](https://github.com/sierraglobalcompany-rgb/SG-PDF-Editor/actions/runs/39075875401) FAIL por expectativa antigua de selección inicial en Home.
+- Reproducción focal: 1 FAIL / 4 PASS. Cambio `e4220b6`: solo test; Home no exige selección ficticia y el owner existente selecciona un único modo. Ningún cambio productivo, segundo registro o UI paralela añadido en este gate.
+- Local: restore locked PASS, build 0 warnings / 0 errors, focal 13 PASS / 1 SKIP, full 1288 PASS / 0 FAIL / 1 SKIP / 1289 total, startup smoke 30s PASS. Skip de R5 conservado.
+- QA real: Home sin rail accidental y un PDF sintético abierto mediante Recientes; pestaña activa, título corto, árbol visual sin contenido de tipo debajo del tab y rail observados en Light. La herramienta fue detenida por Escape físico del usuario antes de completar el segundo PDF. No se emitió evidencia visual completa ni capturas permanentes.
+- NOT_RUN: 2+ PDFs, cierre activo/inactivo, dirty guard, título largo/ellipsis, confirmación visual del icono de tab, todos los modos/disabled/scroll/foco/teclado, ZPL, Dark, 125% y mínimo 960x640. Comparación contra V4 pendiente. P0/P1/P2 visuales no clasificados por cobertura incompleta.
+- Cinco PNG extraídos del paquete completo recibido en Descargas; SHA-256 de los cinco coincide con la tabla de [autoridad V4](../design/SGPDF_V4_APPROVED_SHELL_2026-10-17.md). Incorporados en `docs/design/references/sgpdf-v4/`; ZIP completo local en raíz, no versionado. Segundo ZIP no localizado y no necesario para recuperar estos cinco originales.
+- Evidencia automatizada local: `C:\Users\felip\AppData\Local\Temp\SGPDF_R4D_20261017\red.log` y `verification.log`; smoke en `C:\Users\felip\AppData\Local\Temp\SGPdf-startup-c80fff9847044ca4a6ec988816408544`.
+- Estado: **R4-C/R4-D QA_PENDING**. No GREEN visual, no bloque 3, no R5/T9.2, no merge. El CI del HEAD final se comprueba después del push; no confundirlo con el CI inicial fallido ni con QA manual.

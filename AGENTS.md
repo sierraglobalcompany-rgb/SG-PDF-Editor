@@ -20,8 +20,8 @@ GitHub + STATE mandan sobre snapshots viejos.
 - F13 / Task9 / T9.1 ACTIVE; F0–F12 and Tasks 1–8 CLOSED; T9.2 and F14–F18 NOT STARTED/FROZEN.
 - R1/R1B/R2/R3 technical GREEN/CLOSED; **R4-B GREEN/CLOSED**.
 - **R4-C QA_PENDING:** commit `5ff21171abb4b467e8796ba18f54e0d337ab2418`; CI `39069863859` SUCCESS, full suite 1286 PASS / 0 FAIL / 1 SKIP; Windows visual/functional W01–W15 incomplete.
-- **V4 Light/Dark shell mockups APROBADOS por usuario**: `docs/design/SGPDF_V4_APPROVED_SHELL_2026-10-17.md`. Cinco PNG aprobados **aún deben subirse a GitHub**; allí figuran nombres y SHA-256.
-- **R4-D V4 realignment:** IN PROGRESS; microbloques tabs (`14065f7`) y rail (test `ca0d905`, código `2055f703`, tema `da060c5`) publicados; CI exact-head y QA Windows NO VERIFICADOS. Gate pendiente antes de más UI: `docs/history/2026-10-17-f13-t9-1-r4d-tool-rail-code-pushed-qa-pending.md`. Prioridad: tabs leak del nombre de clase, indicador activo e icono de documento; rail consistente, menú/nav/drawer. Ver checkpoint `docs/history/2026-10-17-f13-t9-1-r4c-pending-v4-approved-checkpoint.md`.
+- **V4 Light/Dark shell mockups APROBADOS por usuario**: `docs/design/SGPDF_V4_APPROVED_SHELL_2026-10-17.md`. Cinco PNG aprobados incorporados en `docs/design/references/sgpdf-v4/` con SHA-256 verificados; allí figuran enlaces y hashes.
+- **R4-D V4 realignment:** tabs y rail implementados. Gate Windows 17-10: test de selección Home realineado en `e4220b6`; focal 13 PASS/1 SKIP, full 1288 PASS/0 FAIL/1 SKIP, build 0/0, smoke 30s PASS. QA Windows parcial detenida por Escape del usuario; no cierre visual. CI final por verificar tras publicar. R4-C/R4-D siguen QA_PENDING; bloque 3/R5/T9.2 no iniciados. Ver checkpoint del rail.
 - **R5 NOT STARTED. T9.2 NOT STARTED. NO MERGE a main** (`main` read-only).
 
 
@@ -125,7 +125,7 @@ No acumular varios slices sin checkpoint.
 R1/R1B/R2/R3                  GREEN / CLOSED técnico
 R4-B                            GREEN / CLOSED
 R4-C                            QA_PENDING, CI PASS; Windows QA pendiente
-V4 mockups                      APROBADOS; binarios de referencia aún por sincronizar
+V4 mockups                      APROBADOS; binarios de referencia incorporados; comparación Windows pendiente
 R4-D                            TABS CODE PUSHED, CI_PENDING; rail → top bar → drawer
 R5/T9.2                        NOT STARTED
 main                            READ-ONLY, NO MERGE
