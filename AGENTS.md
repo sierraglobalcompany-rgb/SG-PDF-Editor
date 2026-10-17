@@ -28,22 +28,33 @@ Los snapshots viejos pueden contener estados ya sustituidos. GitHub + STATE mand
 ## Estado actual — 2026-10-17
 
 - F0–F12: **CLOSED / FROZEN** en el sentido automatizado ya documentado; QA real/manual/private/physical permanece separado donde corresponda.
-- F13: **ACTIVE**.
-- F13 Tasks 1–8: cerradas según sus checkpoints.
+- F13: **ACTIVE**. Tasks 1–8 cerradas según sus checkpoints.
 - Task9 T9.0: DONE.
 - Task9 T9.1: ACTIVE.
 - DG-0 SG Design Governance: **GREEN / CLOSED**.
-- R1 reader multi-document core: **GREEN** en checkpoint `454dcadb6eca13ab98b5d219146dd10ec25af78d`.
-- Exact-head CI de ese checkpoint: run `39004872760`, job `117315172824`, Build PASS 0/0, startup smoke PASS 30 s, tests `1266 passed / 0 failed / 4 skipped / 1270 total`.
+- R1 reader multi-document core: **GREEN / CLOSED** en `454dcadb6eca13ab98b5d219146dd10ec25af78d`.
+- R1B per-document pending state + close guard: **GREEN / CLOSED técnicamente** en `26d026b2fbe1f35754bcf7cef660d2fdaa7e5d34`.
+- Exact-head CI R1B: run `39040326178`, job `117418290462`, Build PASS 0 warnings/0 errors, startup smoke PASS 30 s, tests `1274 passed / 0 failed / 4 skipped / 1278 total`.
 - Los 4 skips corresponden deliberadamente a R2–R5 y no deben borrarse: tabs, rail con arte oficial, drawer Páginas/Marcadores y context menu PDF.
 - Rama canónica: `feat/f13-task9-t9-1-document-shell-realignment-20261017`.
-- Próximo bloque: **T9.1-R1B — per-document pending state + close guard**. No exponer tabs reales hasta que cambiar de documento no descarte trabajo pendiente.
+- Próximo bloque elegible: **T9.1-R2 — top shell + real document tabs**. No está iniciado por este checkpoint.
 - Último anchor GREEN de producto previo al realineamiento: `0abae7ceb5f08611180c883346e21589d1509664`.
 - `main`: `31c0594758a83ec555d73ecdd7c597cdf8791fd7`, read-only hasta aprobación explícita.
 - No merge aprobado. T9.2 no iniciado. F14–F18 frozen.
 
-Checkpoint de continuidad R1:
-`docs/history/2026-10-17-f13-t9-1-r1-reader-core-green-checkpoint.md`.
+Checkpoint de continuidad R1B:
+`docs/history/2026-10-17-f13-t9-1-r1b-pending-state-green-checkpoint.md`.
+
+### Verdad durable de R1B
+
+- cada `PdfDocumentWorkspace` posee un `PdfDocumentPendingState`;
+- cambiar de PDF captura/detacha/restaura el estado de modelo del documento, no guarda controles WPF;
+- Edit, Sign, Comments, Organize y AcroForm reutilizan sus owners existentes;
+- cierre dirty usa guard explícito antes de disposal;
+- abrir otro PDF, Ctrl+O y Recientes no deben forzar discard del trabajo pendiente del documento actual;
+- Open ZPL, cambios de modo y cierre de ventana conservan sus guards correspondientes;
+- `MainWindow.Comments.Integration.cs` fue eliminado como owner obsoleto de guards de apertura PDF;
+- no se introdujo ModeManager, DI container, event bus ni framework documental.
 
 ## Leyes obligatorias
 
@@ -68,7 +79,7 @@ Para cualquier UI/UX:
 Autoridad completa: `docs/design/SGPDF_DESIGN_LAW.md`.
 Skill ejecutable: `.agents/skills/sgpdf-design/SKILL.md`.
 
-Regla operativa: no diseñar paneles como un “Excel infinito” de opciones. La complejidad se revela según intención/contexto sin eliminar capacidad. Menús, barras, paneles, copy, iconos, estados y alineaciones deben pasar el gate de diseño antes de implementación.
+No diseñar paneles como un “Excel infinito” de opciones. La complejidad se revela según intención/contexto sin eliminar capacidad.
 
 ### Guardrail anti-parches
 
@@ -89,8 +100,6 @@ Antes de cambiar XAML, copy, navegación o interacción se debe establecer:
 5. lenguaje, unidades, ayudas y errores;
 6. teclado/foco/estados/accesibilidad;
 7. evidencia de cierre: Light, Dark, 125% scaling, estados, clipping, tests y CI.
-
-Después aplicar solo la referencia pertinente de `.agents/skills/sgpdf-design/references/`.
 
 Compilar no equivale a QA visual. CI no convierte pruebas manuales/hardware/private en PASS.
 
@@ -123,14 +132,6 @@ Compilar no equivale a QA visual. CI no convierte pruebas manuales/hardware/priv
 - No afirmar fidelity/preservation/interoperability universal sin evidencia.
 - Foto real, stylus/touch, impresora, scanner, PFX real, lector externo, private corpus y offline físico requieren evidencia real separada.
 
-## Tooling de desarrollo
-
-- GSD Core y Graphify son dev-only.
-- `.codex/`, `.devtools/`, `graphify-out/`: regenerables/ignorados.
-- `.planning/`: versionado.
-- `.agents/skills/sgpdf-design/`: gobernanza versionada, no dependencia runtime.
-- Ningún tooling de desarrollo es requisito del producto instalado.
-
 ## Git y ramas
 
 - No merge a `main` sin aprobación explícita del usuario.
@@ -148,12 +149,11 @@ Compilar no equivale a QA visual. CI no convierte pruebas manuales/hardware/priv
 3. aplicar KISS + anti-ruido;
 4. si cambia UI/UX, ejecutar Ley SG de Diseño + skill antes de implementar;
 5. reutilizar owners/evidencia existente;
-6. usar rama aislada cuando corresponda;
-7. comportamiento nuevo/fix: RED→GREEN y cambio mínimo;
-8. build/tests/CI exact-head;
-9. QA real cuando aplique;
-10. actualizar STATE/ROADMAP/checkpoint si cambió el ruteo o verdad durable;
-11. no merge sin aprobación explícita.
+6. comportamiento nuevo/fix: RED→GREEN y cambio mínimo;
+7. build/tests/CI exact-head;
+8. QA real cuando aplique;
+9. actualizar STATE/ROADMAP/checkpoint si cambió el ruteo o verdad durable;
+10. no merge sin aprobación explícita.
 
 ## Orden actual
 
@@ -162,9 +162,9 @@ F0–F12                                      ✅ CLOSED / FROZEN (auto)
 F13 Tasks 1–8                              ✅ CLOSED
 F13 Task9 / T9.0                           ✅ DONE
 DG-0 SG Design Governance                  ✅ GREEN / CLOSED
-T9.1 / R1 reader multi-document core       ✅ GREEN
-T9.1 / R1B per-document pending state      ▶ NEXT
-T9.1 / R2 top shell + tabs                 ⏳ BLOCKED BY R1B
+T9.1 / R1 reader multi-document core       ✅ GREEN / CLOSED
+T9.1 / R1B per-document pending state      ✅ GREEN / CLOSED
+T9.1 / R2 top shell + tabs                 ▶ NEXT / NOT STARTED
 T9.1 / R3 rail oficial                     ⏳
 T9.1 / R4 Páginas/Marcadores drawer        ⏳
 T9.1 / R5 context menus                    ⏳
@@ -175,4 +175,4 @@ F14–F18                                    🔒 FROZEN
 main                                       🔒 sin aprobación explícita
 ```
 
-Siguiente acción: ejecutar R1B con TDD antes de exponer pestañas visibles. No adelantar T9.2 automáticamente.
+Siguiente acción elegible: ejecutar R2 con TDD y Ley SG de Diseño sobre los owners R1/R1B existentes. No adelantar T9.2 automáticamente.
