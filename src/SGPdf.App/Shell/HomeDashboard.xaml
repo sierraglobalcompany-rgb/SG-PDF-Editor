@@ -1,11 +1,6 @@
 <UserControl x:Class="SGPdf.App.Shell.HomeDashboard"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:SGPdf.App.Shell">
-    <UserControl.Resources>
-        <local:ShellIconKeyConverter x:Key="ShellIconKeyConverter" />
-    </UserControl.Resources>
-
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Grid Background="{DynamicResource SgSurfaceBrush}">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="96" />
@@ -178,18 +173,13 @@
                                                 <ColumnDefinition Width="Auto" />
                                                 <ColumnDefinition Width="*" />
                                             </Grid.ColumnDefinitions>
-                                            <Border Grid.Column="0"
-                                                    Style="{DynamicResource SgShellIconTileStyle}"
-                                                    Margin="0,0,12,0">
-                                                <Path Width="20"
-                                                      Height="20"
-                                                      HorizontalAlignment="Center"
-                                                      VerticalAlignment="Center"
-                                                      Stretch="Uniform"
-                                                      Stroke="{DynamicResource TextFillColorPrimaryBrush}"
-                                                      StrokeThickness="1.5"
-                                                      Data="{Binding IconKey, Converter={StaticResource ShellIconKeyConverter}}" />
-                                            </Border>
+                                            <Image Grid.Column="0"
+                                                   Width="56"
+                                                   Height="56"
+                                                   Margin="0,0,12,0"
+                                                   VerticalAlignment="Center"
+                                                   Stretch="Uniform"
+                                                   Source="{Binding HomeIconPath}" />
                                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                                 <TextBlock Text="{Binding Title}"
                                                            FontWeight="SemiBold"
@@ -238,7 +228,23 @@
                                             <ColumnDefinition Width="Auto" />
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Grid.Column="0" Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
+                                        <Grid Grid.Column="0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <Image Grid.Column="0"
+                                                   Width="20"
+                                                   Height="20"
+                                                   Margin="0,0,8,0"
+                                                   VerticalAlignment="Center"
+                                                   Stretch="Uniform"
+                                                   Source="/SGPdf.App;component/Assets/SGPdf.Document.png" />
+                                            <TextBlock Grid.Column="1"
+                                                       Text="{Binding Name}"
+                                                       VerticalAlignment="Center"
+                                                       TextTrimming="CharacterEllipsis" />
+                                        </Grid>
                                         <TextBlock Grid.Column="1" Text="{Binding Location}" TextTrimming="CharacterEllipsis" Style="{DynamicResource SgMutedTextStyle}" />
                                         <TextBlock Grid.Column="2" Text="{Binding LastOpened}" Margin="12,0" Style="{DynamicResource SgMutedTextStyle}" />
                                         <TextBlock Grid.Column="3" Text="{Binding Size}" Style="{DynamicResource SgMutedTextStyle}" />

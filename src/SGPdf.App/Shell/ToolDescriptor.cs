@@ -8,4 +8,8 @@ internal sealed record ToolDescriptor(
     string IconKey,
     string? ActionId,
     bool RequiresPdf,
-    string? DisabledReason = null);
+    string? DisabledReason = null)
+{
+    public string HomeIconPath =>
+        $"/SGPdf.App;component/Assets/HomeTools/{Id}.png";
+}
