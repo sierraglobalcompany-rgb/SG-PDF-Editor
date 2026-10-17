@@ -59,3 +59,6 @@ Por fila: `PASS/FAIL/NOT_RUN/PARTIAL/BLOCKED_ENVIRONMENT`, timestamp, SHA/entorn
 - P2: espaciado y retoques sin riesgo/obstáculo de uso.
 
 **R4-C/R4-D siguen QA_PENDING** hasta capturas WPF reales V01–V04, W01–W15 y T01–T08 con cobertura suficiente y P0=P1=0, más CI exact-head final. Si el agente no puede operar Windows, reportar bloqueo con pasos reproducibles. **No empezar bloque 3, R5, T9.2 ni hacer merge.**
+## Cobertura automatizada nueva (independiente del QA manual)
+
+Dos refuerzos se aprobaron en CI sobre `e8001a0ea354a22f5b9868d1c792148e92d11e49`: prueba XAML semántica header-only en `f3aecac` y prueba STA de `DocumentTabs.SelectedItem == ActiveDocument` tras abrir un PDF en `e8001a0`. [CI 39080291059](https://github.com/sierraglobalcompany-rgb/SG-PDF-Editor/actions/runs/39080291059) SUCCESS; 1.288 PASS, 0 FAIL, 1 SKIP; build 0/0, smoke 30 s. **El gate W01–W15, V01–V04 y T01–T08 NO cambia de NOT_RUN/PARTIAL a PASS por esta evidencia automatizada.** Este checkpoint documental crea nuevo SHA que requerirá su propio CI.

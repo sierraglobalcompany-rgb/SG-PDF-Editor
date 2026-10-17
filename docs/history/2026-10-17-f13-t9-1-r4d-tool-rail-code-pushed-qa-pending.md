@@ -49,3 +49,10 @@ R4-D microbloque 3 (command bar) **NO STARTED**; aplazar hasta el gate de tabs+r
 - Directorio `docs/design/references/sgpdf-v4/` incluye cinco PNG (el ZIP original no se versiona), con SHA-256 declarado/registrado en la spec. Los PNG son mockups, no screenshots de QA.
 - Ejecución Windows parcial previa: Light Home y un PDF sintético; no terminó 2+ PDFs ni Dark/125%; cobertura insuficiente. **R4-C/R4-D QA_PENDING**.
 - Próximo único gate: [Matriz W01–W15 y V01–V04](../qa/2026-10-17-r4c-r4d-v4-windows-matrix.md). No bloque 3, R5, T9.2 ni merge. Este checkpoint actualiza documentación; el CI del nuevo SHA documental se verificará por separado.
+
+### R4-D / QA automatizado adicional — 2026-10-17
+
+- Test de contrato del `TabControl` header-only reforzado con XAML semántico en `f3aecace66f1b4a039487f3a864d8417141b2822` (no `ContentPresenter` de workspace debajo de las tabs).
+- Test STA real de pestaña seleccionada en apertura PDF contra `ActiveDocument` en `e8001a0ea354a22f5b9868d1c792148e92d11e49`.
+- Exact-head CI de `e8001a0`: [39080291059](https://github.com/sierraglobalcompany-rgb/SG-PDF-Editor/actions/runs/39080291059), SUCCESS: 1.288 PASS, 0 FAIL, 1 SKIP; 0 warnings/0 errors; startup 30 s PASS.
+- **No prueba visual**: aún sin cuatro capturas WPF reales, Windows 125% ni cobertura completa W01–W15/T01–T08. R4-C/R4-D permanecen `QA_PENDING`. No abrir bloque 3/R5/T9.2 ni merge.

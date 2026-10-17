@@ -152,3 +152,10 @@ Automated PASS proves only automated evidence. Windows-real, Light/Dark visual f
 3. Estado: R4-C/R4-D WINDOWS QA_PENDING (código tabs+rail y CI SUCCESS en `0427cff`), bloque 3/R5/T9.2 NOT STARTED, R4-B GREEN/CLOSED. No merge.
 4. Cinco PNG V4 en `docs/design/references/sgpdf-v4/`, hashes verificados; no confundir mockups con evidencia Windows.
 5. Ejecutar [matriz de QA W01–W15 y V4](../docs/qa/2026-10-17-r4c-r4d-v4-windows-matrix.md) en Windows real antes de cierre. Este cambio documental requiere CI nuevo del HEAD final.
+
+### R4-D / QA automatizado adicional — 2026-10-17
+
+- Test de contrato del `TabControl` header-only reforzado con XAML semántico en `f3aecace66f1b4a039487f3a864d8417141b2822` (no `ContentPresenter` de workspace debajo de las tabs).
+- Test STA real de pestaña seleccionada en apertura PDF contra `ActiveDocument` en `e8001a0ea354a22f5b9868d1c792148e92d11e49`.
+- Exact-head CI de `e8001a0`: [39080291059](https://github.com/sierraglobalcompany-rgb/SG-PDF-Editor/actions/runs/39080291059), SUCCESS: 1.288 PASS, 0 FAIL, 1 SKIP; 0 warnings/0 errors; startup 30 s PASS.
+- **No prueba visual**: aún sin cuatro capturas WPF reales, Windows 125% ni cobertura completa W01–W15/T01–T08. R4-C/R4-D permanecen `QA_PENDING`. No abrir bloque 3/R5/T9.2 ni merge.
