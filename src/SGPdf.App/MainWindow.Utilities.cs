@@ -39,14 +39,7 @@ public partial class MainWindow
         _utilityUiInitialized = true;
         _ = UtilitiesLoadedHookRegistered;
 
-        var menu = (Content as DockPanel)?.Children.OfType<Menu>().FirstOrDefault()
-            ?? throw new InvalidOperationException("No se encontró el menú principal para Herramientas.");
-
-        var utilities = new MenuItem
-        {
-            Name = "UtilitiesMenuItem",
-            Header = "_Herramientas"
-        };
+        var utilities = UtilitiesMenuItem;
         var watermark = new MenuItem
         {
             Name = "WatermarkTextMenuItem",
@@ -115,9 +108,7 @@ public partial class MainWindow
         utilities.Items.Add(ocr);
         utilities.Items.Add(qrCode);
         utilities.Items.Add(pdfToPng);
-        menu.Items.Add(utilities);
 
-        RegisterName(utilities.Name, utilities);
         RegisterName(watermark.Name, watermark);
         RegisterName(batchWatermark.Name, batchWatermark);
         RegisterName(numbering.Name, numbering);

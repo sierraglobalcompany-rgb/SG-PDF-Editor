@@ -32,7 +32,7 @@
             </MenuItem>
             <MenuItem Header="_Editar" />
             <MenuItem Header="_Ver" />
-            <MenuItem Header="_Herramientas" />
+            <MenuItem x:Name="UtilitiesMenuItem" Header="_Herramientas" />
             <MenuItem Header="_Ayuda" />
         </Menu>
 

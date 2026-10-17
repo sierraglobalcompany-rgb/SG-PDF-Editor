@@ -30,6 +30,28 @@ public sealed class MainWindowUtilitiesTests
     }
 
     [Fact]
+    public void HerramientasTopLevelMenu_IsSingleAndReusedAfterLoaded()
+    {
+        OrganizeWindowTestHost.RunInSta(() =>
+        {
+            var window = new MainWindow();
+            OrganizeWindowTestHost.EnsureLoaded(window);
+            try
+            {
+                var menu = Assert.IsType<DockPanel>(window.Content).Children.OfType<Menu>().Single();
+                var toolsMenus = menu.Items
+                    .OfType<MenuItem>()
+                    .Where(item => string.Equals((string?)item.Header, "_Herramientas", StringComparison.Ordinal))
+                    .ToArray();
+
+                var tools = Assert.Single(toolsMenus);
+                Assert.Same(OrganizeWindowTestHost.Element<MenuItem>(window, "UtilitiesMenuItem"), tools);
+            }
+            finally { OrganizeWindowTestHost.CloseClean(window); }
+        });
+    }
+
+    [Fact]
     public void HerramientasCommands_EnableAfterOpeningPdf()
     {
         OrganizeWindowTestHost.RunInSta(async () =>
