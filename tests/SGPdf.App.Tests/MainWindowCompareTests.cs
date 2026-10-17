@@ -91,13 +91,13 @@ public sealed class MainWindowCompareTests
     public void CompareUi_ReusesExistingWorkspaceResetOwner()
     {
         string root = FindRepositoryRoot();
-        string reader = File.ReadAllText(Path.Combine(root, "src", "SGPdf.App", "MainWindow.Reader.cs"));
+        string documents = File.ReadAllText(Path.Combine(root, "src", "SGPdf.App", "MainWindow.Documents.cs"));
         string edit = File.ReadAllText(Path.Combine(root, "src", "SGPdf.App", "MainWindow.Edit.cs"));
         string organize = File.ReadAllText(Path.Combine(root, "src", "SGPdf.App", "MainWindow.Organize.cs"));
         string sign = File.ReadAllText(Path.Combine(root, "src", "SGPdf.App", "MainWindow.Sign.cs"));
         string forms = File.ReadAllText(Path.Combine(root, "src", "SGPdf.App", "MainWindow.Forms.cs"));
 
-        Assert.Contains("ResetAcroFormUi();", reader, StringComparison.Ordinal);
+        Assert.Contains("ResetAcroFormUi();", documents, StringComparison.Ordinal);
         Assert.Contains("ResetAcroFormUi();", edit, StringComparison.Ordinal);
         Assert.Contains("ResetAcroFormUi();", organize, StringComparison.Ordinal);
         Assert.Contains("ResetAcroFormUi();", sign, StringComparison.Ordinal);
