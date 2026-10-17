@@ -13,7 +13,7 @@ Orden obligatorio antes de tocar código o documentación operativa:
 7. `docs/MASTER_CONTEXT.md` para arquitectura y decisiones durables;
 8. `docs/MASTER_PLAN.md` y `docs/history/**` como contexto histórico, nunca para sobreescribir estado más nuevo.
 
-Los snapshots viejos pueden contener estados de fase ya sustituidos. GitHub + STATE mandan sobre cualquier histórico.
+Los snapshots viejos pueden contener estados ya sustituidos. GitHub + STATE mandan sobre cualquier histórico.
 
 ## Contexto mínimo antes de actuar
 
@@ -29,14 +29,14 @@ Los snapshots viejos pueden contener estados de fase ya sustituidos. GitHub + ST
 
 - F0–F12: **CLOSED / FROZEN** en el sentido automatizado ya documentado; QA real/manual/private/physical permanece separado donde corresponda.
 - F13: **ACTIVE**.
-- F13 Tasks 1–8: cerradas según sus checkpoints; Task9 está activo.
+- F13 Tasks 1–8: cerradas según sus checkpoints.
 - Task9 T9.0: DONE.
-- Task9 T9.1: ACTIVE — realineamiento visual/document shell y UX.
-- Último anchor verde inmediatamente anterior al R1 multidocumento: `0abae7ceb5f08611180c883346e21589d1509664`, exact-head CI run `39000181654` SUCCESS.
-- R1 multidocumento/document-shell está **RED / INCOMPLETE** en `feat/f13-task9-t9-1-document-shell-realignment-20261017` @ `bbae51f49ee3c54e3667c5ea477c2c3f179d3c46`; no tratarlo como baseline verde ni continuar allí mientras DG-0 se valida.
-- DG-0 SG Design Governance se valida aisladamente desde `0abae7...` en `feat/f13-dg0-sg-design-governance-20261017`.
+- Task9 T9.1: ACTIVE.
+- DG-0 SG Design Governance: **GREEN / CLOSED**. Implementation anchor `3011f700e9014d72951314291bab4c3a67b89c8c`, exact-head CI run `39002956513` SUCCESS.
+- Próximo bloque: reanudar R1 document-shell/multi-document desde su RED congelado `bbae51f49ee3c54e3667c5ea477c2c3f179d3c46` en `feat/f13-task9-t9-1-document-shell-realignment-20261017`.
+- Último anchor GREEN de producto antes de R1: `0abae7ceb5f08611180c883346e21589d1509664`, exact-head CI run `39000181654` SUCCESS.
 - `main`: `31c0594758a83ec555d73ecdd7c597cdf8791fd7`, read-only hasta aprobación explícita.
-- No merge aprobado.
+- No merge aprobado. T9.2 no iniciado. F14–F18 frozen.
 
 ## Leyes obligatorias
 
@@ -132,6 +132,7 @@ Compilar no equivale a QA visual. CI no convierte pruebas manuales/hardware/priv
 - No reusar una rama histórica divergente como base operativa.
 - Preservar evidencia exact-head.
 - Una rama RED/incompleta nunca sustituye al último anchor GREEN como base de validación transversal.
+- Al llevar DG-0 a R1, conservar los contratos RED existentes y evitar mezclar cambios de producto no relacionados.
 
 ## Flujo por slice o bloque
 
@@ -153,12 +154,11 @@ Compilar no equivale a QA visual. CI no convierte pruebas manuales/hardware/priv
 F0–F12                                      ✅ CLOSED / FROZEN (auto)
 F13 Tasks 1–8                              ✅ CLOSED
 F13 Task9 / T9.0                           ✅ DONE
-F13 Task9 / T9.1                           ▶ ACTIVE
-DG-0 SG Design Governance                  ▶ validar antes de continuar R1
-R1 document-shell/multi-document           🟥 RED / congelado mientras DG-0
-T9.2                                       ⏳ no iniciado
+DG-0 SG Design Governance                  ✅ GREEN / CLOSED
+F13 Task9 / T9.1 / R1 document shell       ▶ NEXT — resume existing RED
+T9.2                                       ⏳ NOT STARTED
 F14–F18                                    🔒 FROZEN
 main                                       🔒 sin aprobación explícita
 ```
 
-Cuando DG-0 quede GREEN, reanudar R1 desde su checkpoint conservando la gobernanza validada; no adelantar T9.2 automáticamente.
+Siguiente acción: reanudar R1 desde su checkpoint RED bajo la gobernanza validada; no adelantar T9.2 automáticamente.

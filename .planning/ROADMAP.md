@@ -27,21 +27,13 @@ Tasks 1–8 are closed by their existing checkpoints.
 - T9.1 — ACTIVE.
 - T9.2 — NOT STARTED.
 
-Last verified GREEN anchor before the current document-shell R1:
+Last verified GREEN product anchor before current document-shell R1:
 `0abae7ceb5f08611180c883346e21589d1509664`
 
 Exact-head CI:
 - run `39000181654` — SUCCESS.
 
-Current R1 document-shell/multi-document branch:
-`feat/f13-task9-t9-1-document-shell-realignment-20261017`
-
-Frozen incomplete checkpoint:
-`bbae51f49ee3c54e3667c5ea477c2c3f179d3c46`
-
-Its run `39001470186` is FAILURE, so it is not a GREEN baseline.
-
-## Current bounded block — DG-0 SG Design Governance
+## DG-0 SG Design Governance — CLOSED / GREEN
 
 Branch:
 `feat/f13-dg0-sg-design-governance-20261017`
@@ -49,55 +41,63 @@ Branch:
 Base:
 `0abae7ceb5f08611180c883346e21589d1509664`
 
-Purpose:
-- make the Ley SG de Diseño durable;
-- create a project-owned design skill;
-- align AGENTS/README/STATE/ROADMAP/current architecture context;
-- prevent future agents from routing back to stale F12 UI instructions;
-- establish progressive-disclosure rules before further panel/menu/document-shell work.
+RED contract:
+`57b1eeb22302b33619e58246a3f3dcb1b8970363` → CI run `39002512451` with Build/Smoke PASS and expected Test FAIL.
 
-DG-0 changes governance only. It must not alter runtime/product behavior or “fix” R1 while the governance gate is being validated.
+GREEN implementation:
+`3011f700e9014d72951314291bab4c3a67b89c8c` → CI run `39002956513` SUCCESS, including Build/Smoke/Test PASS.
 
-Exit:
-- static governance contracts GREEN;
-- full suite GREEN;
-- exact-head CI GREEN;
-- KISS/anti-noise audit PASS;
-- no merge;
-- main unchanged;
-- R1 unchanged;
-- checkpoint recorded.
+Closure record:
+`docs/history/2026-10-17-f13-dg0-design-governance-checkpoint.md`
 
-## After DG-0
+DG-0 established:
+- `docs/design/SGPDF_DESIGN_LAW.md`;
+- `.agents/skills/sgpdf-design/SKILL.md`;
+- focused references for properties, navigation, copy/forms, WPF/accessibility and final review;
+- static governance contracts;
+- current F13 routing in AGENTS/README/STATE/ROADMAP/MASTER_CONTEXT.
 
-### 1. Resume T9.1 R1
+It did not add a runtime feature, UI framework or production dependency.
 
-Resume from the frozen R1 checkpoint using the validated design governance. Do not bypass the existing RED contracts and do not restart from a stale F12 branch.
+## Current bounded block — Resume R1 document shell
 
-For every UI surface changed in R1 or later T9.1 work:
+Branch already holding the intentional R1 RED:
+`feat/f13-task9-t9-1-document-shell-realignment-20261017`
+
+Frozen RED checkpoint:
+`bbae51f49ee3c54e3667c5ea477c2c3f179d3c46`
+
+Its run `39001470186` is FAILURE, so it is not a GREEN baseline.
+
+Next work is to resume those existing RED contracts while deliberately carrying the validated design governance. Do not restart from stale F12 routing and do not silently discard the R1 test intent.
+
+Before editing any R1 XAML/copy/navigation/interaction, execute:
 
 `INTENT → HIERARCHY → DISCLOSURE → CONSISTENCY → FEEDBACK → ACCESSIBILITY → VERIFY`
 
-The mandatory skill is `.agents/skills/sgpdf-design/SKILL.md`.
+Mandatory skill:
+`.agents/skills/sgpdf-design/SKILL.md`
 
-### 2. Complete remaining T9.1 slices
+## After R1
 
-Continue the already approved T9.1 document-shell/UI sequence (remaining R2–R7 as defined by its current approved spec/plan). Do not invent new scope from this roadmap.
+### Remaining T9.1 slices
 
-Each slice exits through:
+Continue the approved T9.1 document-shell/UI sequence (remaining R2–R7 as defined by its current approved spec/plan). Do not invent new scope from this roadmap.
+
+Each applicable UI slice exits through:
 - focused RED→GREEN where behavior changes;
 - full suite;
 - exact-head CI;
-- required Light/Dark/125%/keyboard/state visual QA where applicable;
+- required Light/Dark/125%/keyboard/state visual QA;
 - no open P0/P1 for its exit gate.
 
-### 3. T9.2
+### T9.2
 
 Do not start automatically. It becomes eligible only after T9.1 is actually closed and its required evidence exists.
 
-### 4. Release / installer / remaining real QA
+### Release / installer / remaining real QA
 
-Historical Packs A–D and installer/runtime/license gates remain useful evidence/requirements, but they no longer define the immediate execution order ahead of active F13 work. Resume them when the active F13 plan reaches its release gate.
+Historical Packs A–D and installer/runtime/license gates remain evidence/requirements, but they do not override active F13 routing. Resume them when the active F13 plan reaches its release gate.
 
 ## Engineering governance
 
@@ -117,7 +117,6 @@ Separate operational guardrail:
 ## Design-specific routing
 
 Any task involving menus, toolbars, Home, side rails, properties panels, dialogs, forms, copy, icon presentation, visual states, accessibility, alignment or layout must consult:
-
 - `docs/design/SGPDF_DESIGN_LAW.md`;
 - `.agents/skills/sgpdf-design/SKILL.md`;
 - only the relevant reference under `.agents/skills/sgpdf-design/references/`.
@@ -126,4 +125,4 @@ The ZPL right panel is the canonical anti-pattern to avoid: supported settings a
 
 ## Next bounded task
 
-Finish **DG-0** and produce a GREEN exact-head checkpoint. Then resume R1; do not merge to `main`, do not begin T9.2, and do not thaw F14–F18 without explicit routing/approval.
+Resume **R1 document-shell/multi-document** from its frozen RED checkpoint under the now-GREEN DG-0 governance. Do not merge to `main`, do not begin T9.2, and do not thaw F14–F18.

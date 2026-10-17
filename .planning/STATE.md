@@ -1,6 +1,6 @@
 ---
 gsd_state_version: '1.1'
-status: f13-task9-t9-1-design-governance-active
+status: f13-task9-t9-1-dg0-green-r1-resume-ready
 progress:
   total_phases: 19
   completed_phases: 13
@@ -41,10 +41,10 @@ Operational order:
 
 - T9.0: DONE.
 - T9.1: ACTIVE.
-- No merge to `main` approved.
 - T9.2: NOT STARTED.
+- No merge to `main` approved.
 
-### Last verified GREEN anchor before current document-shell R1
+### Last verified GREEN product anchor before current document-shell R1
 
 Commit:
 `0abae7ceb5f08611180c883346e21589d1509664`
@@ -53,26 +53,7 @@ Exact-head CI:
 - run `39000181654`;
 - conclusion `SUCCESS`.
 
-This anchor includes the official visual/icon authority realignment that precedes the current document-shell R1 work.
-
-### R1 document-shell / multi-document — RED / INCOMPLETE
-
-Branch:
-`feat/f13-task9-t9-1-document-shell-realignment-20261017`
-
-Frozen checkpoint while DG-0 is validated:
-`bbae51f49ee3c54e3667c5ea477c2c3f179d3c46`
-
-Exact-head CI at that checkpoint:
-- run `39001470186`;
-- conclusion `FAILURE`;
-- do not promote this branch to a green baseline.
-
-R1 is intentionally not being modified by DG-0. Resume only after the design-governance anchor is validated.
-
-## DG-0 — SG Design Governance
-
-Purpose: make UX/design rules durable before continuing T9.1 visual/document-shell work.
+### DG-0 — SG Design Governance — GREEN / CLOSED
 
 Branch:
 `feat/f13-dg0-sg-design-governance-20261017`
@@ -83,21 +64,42 @@ Base:
 RED contract:
 `57b1eeb22302b33619e58246a3f3dcb1b8970363`
 
-RED CI:
+RED exact-head CI:
 - run `39002512451`;
+- job `117308235572`;
 - Build PASS;
 - startup smoke PASS;
-- Test FAIL as required before governance artifacts existed.
+- Test FAIL as intended before governance materialization.
 
-Target GREEN requires:
-- project-owned `.agents/skills/sgpdf-design/SKILL.md`;
-- `docs/design/SGPDF_DESIGN_LAW.md`;
-- focused reference guides for properties/navigation/copy/WPF/review;
-- AGENTS + README + STATE + ROADMAP + durable context aligned to F13 truth;
-- full exact-head CI PASS;
-- no product behavior/UI implementation change;
-- `main` unchanged;
-- R1 unchanged.
+GREEN implementation anchor:
+`3011f700e9014d72951314291bab4c3a67b89c8c`
+
+GREEN exact-head CI:
+- run `39002956513`;
+- job `117309529279`;
+- Build PASS;
+- startup smoke PASS;
+- Test PASS;
+- overall SUCCESS.
+
+Closure record:
+`docs/history/2026-10-17-f13-dg0-design-governance-checkpoint.md`
+
+DG-0 adds no runtime/product feature, no new UI framework, and no production dependency. Its purpose is durable design governance before further T9.1 visual work.
+
+### R1 document-shell / multi-document — RED / INCOMPLETE — NEXT
+
+Branch:
+`feat/f13-task9-t9-1-document-shell-realignment-20261017`
+
+Frozen checkpoint:
+`bbae51f49ee3c54e3667c5ea477c2c3f179d3c46`
+
+Exact-head CI at that checkpoint:
+- run `39001470186`;
+- conclusion `FAILURE`.
+
+Do not promote this branch to a green baseline. Resume its existing RED contracts next while carrying the validated Design Law/skill; do not restart from stale F12 routing.
 
 ## Main
 
@@ -117,7 +119,7 @@ Read-only until explicit user approval. No automatic merge/rebase/force-push.
 - Tesseract local OCR.
 - ZXing.Net test/QA only.
 - No backend, DB, cloud, plugin framework, second viewer/engine, generalized ModeManager/conversion/Batch framework without explicit decision.
-- No new UI framework/package for the design-governance work.
+- No new UI framework/package simply for visual polish.
 
 ## Visual / design authority
 
@@ -131,13 +133,11 @@ The ZPL properties panel is the reference problem for progressive disclosure: su
 
 ## Resume order
 
-1. Finish DG-0 GREEN + exact-head CI + checkpoint.
-2. Audit DG-0 against KISS/anti-noise/design/anti-patch taxonomy.
-3. Resume R1 from its frozen checkpoint while carrying the validated design governance.
-4. Complete remaining T9.1 work and required manual visual evidence.
-5. Do not start T9.2 until T9.1 exit criteria are actually satisfied.
-6. Keep F14–F18 frozen.
-7. `main` only with explicit approval.
+1. Resume R1 from `bbae51f49ee3c54e3667c5ea477c2c3f179d3c46`, preserving its RED contracts and incorporating DG-0 governance deliberately.
+2. Continue remaining T9.1 work under the Design Law and required exact-head/visual gates.
+3. Do not start T9.2 until T9.1 is actually closed.
+4. Keep F14–F18 frozen.
+5. `main` only with explicit approval.
 
 ## QA semantics
 
