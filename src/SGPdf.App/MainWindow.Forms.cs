@@ -28,23 +28,13 @@ public partial class MainWindow
         if (_editAcroFormMenuItem is not null)
             return;
 
-        if (Content is not DockPanel root)
-            throw new InvalidOperationException("No se encontró el contenedor principal de la ventana.");
-
-        Menu? menu = root.Children.OfType<Menu>().FirstOrDefault();
-        MenuItem? editMenu = menu?.Items
-            .OfType<MenuItem>()
-            .FirstOrDefault(item => string.Equals(item.Header?.ToString(), "_Editar", StringComparison.Ordinal));
-        if (editMenu is null)
-            throw new InvalidOperationException("No se encontró el menú Editar.");
-
         var editAcroFormMenuItem = new MenuItem
         {
             Name = "EditAcroFormMenuItem",
             Header = "_Campos de formulario..."
         };
         editAcroFormMenuItem.Click += EditAcroForm_Click;
-        editMenu.Items.Add(editAcroFormMenuItem);
+        EditMenuItem.Items.Add(editAcroFormMenuItem);
 
         Grid propertiesHost = PropertiesPlaceholderText.Parent as Grid
             ?? throw new InvalidOperationException("No se encontró el panel de propiedades.");
