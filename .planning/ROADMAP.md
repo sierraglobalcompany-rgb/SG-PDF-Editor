@@ -1,6 +1,6 @@
 # Roadmap — SG PDF Editor
 
-> Operational authority: exact GitHub HEAD/CI → `.planning/STATE.md` → this roadmap → `.planning/REQUIREMENTS.md` → approved slice specs/plans. Historical/master documents never override newer operational state.
+> Operational authority: exact GitHub HEAD/CI → `.planning/STATE.md` → this roadmap → `.planning/REQUIREMENTS.md` → approved slice specs/plans. Historical documents never override newer operational state.
 
 ## Current routing — 2026-10-17
 
@@ -38,23 +38,15 @@ Validated authority:
 - focused design references;
 - `DesignGovernanceContractTests`.
 
-Implementation anchor:
-`3011f700e9014d72951314291bab4c3a67b89c8c`
-
-Closure checkpoint:
-`9ea973d79b4cd49946022cbbd174678a1280821f`
-
-DG-0 added no runtime feature, UI framework or production dependency.
+Implementation anchor: `3011f700e9014d72951314291bab4c3a67b89c8c`.
+Closure checkpoint: `9ea973d79b4cd49946022cbbd174678a1280821f`.
 
 ## T9.1 document-shell realignment
 
 Canonical branch:
 `feat/f13-task9-t9-1-document-shell-realignment-20261017`
 
-Historical R0/R1 RED checkpoint retained for traceability:
-`bbae51f49ee3c54e3667c5ea477c2c3f179d3c46`
-
-### R1 reader multi-document core — GREEN
+### R1 reader multi-document core — GREEN / CLOSED
 
 Verified checkpoint:
 `454dcadb6eca13ab98b5d219146dd10ec25af78d`
@@ -62,19 +54,39 @@ Verified checkpoint:
 Exact-head CI:
 - run `39004872760`;
 - job `117315172824`;
-- Build PASS — 0 warnings / 0 errors;
-- startup smoke PASS — 30 s;
-- tests: `1266 passed / 0 failed / 4 skipped / 1270 total`;
+- Build 0 warnings / 0 errors;
+- startup smoke PASS 30 s;
+- tests `1266 passed / 0 failed / 4 skipped / 1270 total`;
 - overall SUCCESS.
 
-Implemented scope:
-- multi-select Open PDF dialog;
-- one `PdfDocumentWorkspace` per open PDF;
-- `OpenDocuments` registry + `ActiveDocument`;
-- no implicit disposal of previous PDF merely because another is opened;
-- reader state page/zoom/vertical offset preserved per workspace;
-- tracked sessions disposed on explicit removal/window shutdown;
-- password/open failure preserves/restores previous active document where possible.
+Implemented owner: one `PdfDocumentWorkspace` per PDF, `OpenDocuments`, `ActiveDocument`, multi-select open, independent reader page/zoom/scroll state and explicit tracked-session lifetime.
+
+### R1B per-document pending state + close guard — GREEN / CLOSED
+
+Technical GREEN anchor:
+`26d026b2fbe1f35754bcf7cef660d2fdaa7e5d34`
+
+Exact-head CI:
+- run `39040326178`;
+- job `117418290462`;
+- Build PASS — 0 warnings / 0 errors;
+- startup smoke PASS — 30 s;
+- tests `1274 passed / 0 failed / 4 skipped / 1278 total`;
+- overall SUCCESS.
+
+Checkpoint:
+`docs/history/2026-10-17-f13-t9-1-r1b-pending-state-green-checkpoint.md`.
+
+R1B preserves model state per PDF for Edit, Sign, Comments, Organize and AcroForm while switching documents. UI controls are not stored in the per-document model. Dirty-close is explicit before disposal.
+
+Closure audit also removed legacy single-document Open-PDF discard guards from Ctrl+O, Edit and Comments, while preserving guards for ZPL, mode changes and window close. Obsolete `MainWindow.Comments.Integration.cs` was deleted rather than patched around.
+
+Focused RED for that route drift:
+- commit `db94045d9710fb67d827b79b260090c4eb3a5aa5`;
+- run `39039423862`;
+- 3 expected route failures before the minimal correction.
+
+No DI container, event bus, document framework or generalized ModeManager was introduced.
 
 The four skipped tests deliberately reserve future T9.1 contracts:
 - R2 tabs;
@@ -82,31 +94,20 @@ The four skipped tests deliberately reserve future T9.1 contracts:
 - R4 collapsible Pages/Bookmarks drawer;
 - R5 PDF context menu.
 
-### R1B — per-document pending state + close guard — NEXT
-
-Reason:
-The user requires switching among multiple PDF tabs without silently discarding pending edits/signatures/comments/organize work. Current mode owners still include global MainWindow state and `ActivateDocumentAsync()` resets some feature state. Exposing tabs now would create a data-loss risk.
-
-R1B must:
-1. inventory pending state for Edit, Sign, Comments, Organize and Forms;
-2. define the smallest per-document state owner/snapshot compatible with existing feature owners;
-3. preserve pending state when switching documents where technically supported;
-4. add explicit dirty-close behavior;
-5. use focused RED→GREEN tests;
-6. pass full suite + startup smoke + exact-head CI;
-7. checkpoint before R2.
-
-No DI container, event bus, ModeManager or document framework.
-
 ## Remaining T9.1 slices
 
-### R2 — top shell + real document tabs
+### R2 — top shell + real document tabs — NEXT
 
-Only after R1B GREEN:
-- tab strip with file name + close `×`;
+Now eligible because R1B is GREEN, but **not started by this checkpoint**.
+
+Bounded scope:
+- visible tab strip with file name + close `×`;
 - add/open `+`;
-- active tab switches `ActiveDocument`;
-- shell hierarchy aligned with approved mockup and Design Law.
+- active tab switches existing `ActiveDocument`;
+- close routes through the R1B dirty-close owner;
+- no duplicate document/session owner;
+- shell hierarchy aligned with approved mockup and Design Law;
+- RED → GREEN → full suite → exact-head CI → checkpoint.
 
 ### R3 — document tool rail
 
@@ -121,7 +122,7 @@ Only after R1B GREEN:
 - explicit expand/collapse;
 - preserve useful workspace width;
 - reuse thumbnail renderer;
-- audit whether Bookmarks has real outline binding before calling it functional.
+- audit real bookmark/outline binding before calling Bookmarks functional.
 
 ### R5 — context menus
 
@@ -132,21 +133,12 @@ Only after R1B GREEN:
 ### R6 — image-selection rendering
 
 - reproduce reported blue-tint behavior;
-- code contract currently declares transparent selection fill, so full-image tint is treated as a defect until root cause is found;
+- current contract declares transparent selection fill, so full-image tint is a defect until root cause is found;
 - fix cause, not symptom.
 
 ### R7 — final visual / functional QA
 
-Must cover:
-- Home Light/Dark;
-- PDF-open Light/Dark;
-- two or more PDF tabs;
-- switch preserving per-document state;
-- drawer collapsed/expanded;
-- context menus;
-- image selection;
-- real 125% Windows scaling / DPI evidence;
-- P0=0, P1=0 for T9.1 exit.
+Must cover Home/PDF Light+Dark, two or more PDF tabs, switching with pending per-document state, drawer, context menus, image selection, real 125% Windows scaling/DPI and P0=0/P1=0 for T9.1 exit.
 
 ### T9.2
 
@@ -164,18 +156,8 @@ Do not start automatically. It becomes eligible only after T9.1 is actually clos
 `INTENT → HIERARCHY → DISCLOSURE → CONSISTENCY → FEEDBACK → ACCESSIBILITY → VERIFY`.
 
 ### Guardrail anti-parches
-Separate operational guardrail:
 `REPRODUCE → CLASSIFY → ROOT CAUSE → OWNER → MINIMAL CHANGE → CAUSE TEST → FULL SUITE → EXACT-HEAD CI → REMOVE REDUNDANT WORKAROUND`.
-
-## Design-specific routing
-
-Any task involving menus, toolbars, Home, side rails, properties panels, dialogs, forms, copy, icon presentation, visual states, accessibility, alignment or layout must consult:
-- `docs/design/SGPDF_DESIGN_LAW.md`;
-- `.agents/skills/sgpdf-design/SKILL.md`;
-- only the relevant reference under `.agents/skills/sgpdf-design/references/`.
-
-The ZPL right panel is the canonical anti-pattern to avoid: supported settings are preserved, but irrelevant/advanced controls must be disclosed contextually rather than exposed as one endless property list.
 
 ## Next bounded task
 
-Execute **T9.1-R1B per-document pending state + close guard** on the canonical branch. Do not merge to `main`, do not begin R2 before R1B is safe, do not begin T9.2, and do not thaw F14–F18.
+**T9.1-R2 top shell + real document tabs** is the next eligible slice. Do not merge to `main`, do not begin T9.2, and do not thaw F14–F18.
