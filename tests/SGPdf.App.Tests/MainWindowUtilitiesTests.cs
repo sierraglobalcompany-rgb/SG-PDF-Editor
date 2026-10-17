@@ -38,14 +38,14 @@ public sealed class MainWindowUtilitiesTests
             OrganizeWindowTestHost.EnsureLoaded(window);
             try
             {
-                var menu = Assert.IsType<DockPanel>(window.Content).Children.OfType<Menu>().Single();
+                var tools = OrganizeWindowTestHost.Element<MenuItem>(window, "UtilitiesMenuItem");
+                var menu = Assert.IsType<Menu>(ItemsControl.ItemsControlFromItemContainer(tools));
                 var toolsMenus = menu.Items
                     .OfType<MenuItem>()
                     .Where(item => string.Equals((string?)item.Header, "_Herramientas", StringComparison.Ordinal))
                     .ToArray();
 
-                var tools = Assert.Single(toolsMenus);
-                Assert.Same(OrganizeWindowTestHost.Element<MenuItem>(window, "UtilitiesMenuItem"), tools);
+                Assert.Same(tools, Assert.Single(toolsMenus));
             }
             finally { OrganizeWindowTestHost.CloseClean(window); }
         });
@@ -118,6 +118,7 @@ public sealed class MainWindowUtilitiesTests
             try
             {
                 Assert.True(await OrganizeWindowTestHost.OpenReaderAsync(window, fixture.Path));
+                var original = File.ReadAllBytes(fixture.Path);
                 var destination = Path.Combine(fixture.DirectoryPath, "invalid-watermark.pdf");
                 var request = CreateRequest(
                     "WatermarkUtilityRequest",
