@@ -38,15 +38,19 @@ public sealed class PdfAcroFormWpfFlowContractTests
     }
 
     [Fact]
-    public void MainWindow_FormStateIsResetWhenDocumentWorkspaceChanges()
+    public void MainWindow_FormStateMovesThroughDocumentPendingOwnerWhenWorkspaceChanges()
     {
         string root = FindRepositoryRoot();
         string forms = File.ReadAllText(Path.Combine(root, "src", "SGPdf.App", "MainWindow.Forms.cs"));
+        string pendingForms = File.ReadAllText(Path.Combine(root, "src", "SGPdf.App", "MainWindow.Forms.PendingState.cs"));
         string documents = File.ReadAllText(Path.Combine(root, "src", "SGPdf.App", "MainWindow.Documents.cs"));
         string labels = File.ReadAllText(Path.Combine(root, "src", "SGPdf.App", "MainWindow.Labels.cs"));
 
         Assert.Contains("ResetAcroFormUi", forms, StringComparison.Ordinal);
-        Assert.Contains("ResetAcroFormUi();", documents, StringComparison.Ordinal);
+        Assert.Contains("CaptureAcroFormCurrentValues", pendingForms, StringComparison.Ordinal);
+        Assert.Contains("RestoreAcroFormPendingState", pendingForms, StringComparison.Ordinal);
+        Assert.Contains("CaptureActiveDocumentPendingState();", documents, StringComparison.Ordinal);
+        Assert.Contains("RestoreDocumentPendingState(document);", documents, StringComparison.Ordinal);
         Assert.Contains("ResetAcroFormUi();", labels, StringComparison.Ordinal);
     }
 
