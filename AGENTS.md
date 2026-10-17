@@ -11,7 +11,7 @@ Orden obligatorio antes de tocar código o documentación operativa:
 5. spec/plan aprobado del slice concreto;
 6. para cualquier cambio visible/interactivo: `docs/design/SGPDF_DESIGN_LAW.md` + `.agents/skills/sgpdf-design/SKILL.md`;
 7. `docs/MASTER_CONTEXT.md` para arquitectura y decisiones durables;
-8. `docs/MASTER_PLAN.md` y `docs/history/**` como contexto histórico, nunca para sobreescribir estado más nuevo.
+8. `docs/history/**` como checkpoints/evidencia; nunca sobreescriben GitHub+STATE.
 
 Los snapshots viejos pueden contener estados ya sustituidos. GitHub + STATE mandan sobre cualquier histórico.
 
@@ -32,11 +32,18 @@ Los snapshots viejos pueden contener estados ya sustituidos. GitHub + STATE mand
 - F13 Tasks 1–8: cerradas según sus checkpoints.
 - Task9 T9.0: DONE.
 - Task9 T9.1: ACTIVE.
-- DG-0 SG Design Governance: **GREEN / CLOSED**. Implementation anchor `3011f700e9014d72951314291bab4c3a67b89c8c`, exact-head CI run `39002956513` SUCCESS.
-- Próximo bloque: reanudar R1 document-shell/multi-document desde su RED congelado `bbae51f49ee3c54e3667c5ea477c2c3f179d3c46` en `feat/f13-task9-t9-1-document-shell-realignment-20261017`.
-- Último anchor GREEN de producto antes de R1: `0abae7ceb5f08611180c883346e21589d1509664`, exact-head CI run `39000181654` SUCCESS.
+- DG-0 SG Design Governance: **GREEN / CLOSED**.
+- R1 reader multi-document core: **GREEN** en checkpoint `454dcadb6eca13ab98b5d219146dd10ec25af78d`.
+- Exact-head CI de ese checkpoint: run `39004872760`, job `117315172824`, Build PASS 0/0, startup smoke PASS 30 s, tests `1266 passed / 0 failed / 4 skipped / 1270 total`.
+- Los 4 skips corresponden deliberadamente a R2–R5 y no deben borrarse: tabs, rail con arte oficial, drawer Páginas/Marcadores y context menu PDF.
+- Rama canónica: `feat/f13-task9-t9-1-document-shell-realignment-20261017`.
+- Próximo bloque: **T9.1-R1B — per-document pending state + close guard**. No exponer tabs reales hasta que cambiar de documento no descarte trabajo pendiente.
+- Último anchor GREEN de producto previo al realineamiento: `0abae7ceb5f08611180c883346e21589d1509664`.
 - `main`: `31c0594758a83ec555d73ecdd7c597cdf8791fd7`, read-only hasta aprobación explícita.
 - No merge aprobado. T9.2 no iniciado. F14–F18 frozen.
+
+Checkpoint de continuidad R1:
+`docs/history/2026-10-17-f13-t9-1-r1-reader-core-green-checkpoint.md`.
 
 ## Leyes obligatorias
 
@@ -131,8 +138,8 @@ Compilar no equivale a QA visual. CI no convierte pruebas manuales/hardware/priv
 - No limpieza destructiva de ramas durante auditoría.
 - No reusar una rama histórica divergente como base operativa.
 - Preservar evidencia exact-head.
-- Una rama RED/incompleta nunca sustituye al último anchor GREEN como base de validación transversal.
-- Al llevar DG-0 a R1, conservar los contratos RED existentes y evitar mezclar cambios de producto no relacionados.
+- Una rama RED/incompleta nunca sustituye al último anchor GREEN como base transversal hasta que su exact-head CI sea verde.
+- Los contratos futuros pueden permanecer `Skip` con fase explícita; no borrarlos para maquillar un gate.
 
 ## Flujo por slice o bloque
 
@@ -145,7 +152,7 @@ Compilar no equivale a QA visual. CI no convierte pruebas manuales/hardware/priv
 7. comportamiento nuevo/fix: RED→GREEN y cambio mínimo;
 8. build/tests/CI exact-head;
 9. QA real cuando aplique;
-10. actualizar STATE/ROADMAP solo si cambió el ruteo o verdad durable;
+10. actualizar STATE/ROADMAP/checkpoint si cambió el ruteo o verdad durable;
 11. no merge sin aprobación explícita.
 
 ## Orden actual
@@ -155,10 +162,17 @@ F0–F12                                      ✅ CLOSED / FROZEN (auto)
 F13 Tasks 1–8                              ✅ CLOSED
 F13 Task9 / T9.0                           ✅ DONE
 DG-0 SG Design Governance                  ✅ GREEN / CLOSED
-F13 Task9 / T9.1 / R1 document shell       ▶ NEXT — resume existing RED
-T9.2                                       ⏳ NOT STARTED
+T9.1 / R1 reader multi-document core       ✅ GREEN
+T9.1 / R1B per-document pending state      ▶ NEXT
+T9.1 / R2 top shell + tabs                 ⏳ BLOCKED BY R1B
+T9.1 / R3 rail oficial                     ⏳
+T9.1 / R4 Páginas/Marcadores drawer        ⏳
+T9.1 / R5 context menus                    ⏳
+T9.1 / R6 image-selection root cause       ⏳
+T9.1 / R7 final QA                         ⏳
+T9.2                                       🔒 NOT STARTED
 F14–F18                                    🔒 FROZEN
 main                                       🔒 sin aprobación explícita
 ```
 
-Siguiente acción: reanudar R1 desde su checkpoint RED bajo la gobernanza validada; no adelantar T9.2 automáticamente.
+Siguiente acción: ejecutar R1B con TDD antes de exponer pestañas visibles. No adelantar T9.2 automáticamente.
