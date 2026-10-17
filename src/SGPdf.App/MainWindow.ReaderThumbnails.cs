@@ -2,22 +2,30 @@ using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Windows;
+using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Media;
 using SGPdf.App.Features.Reader;
 using SGPdf.App.Pdf;
+using SGPdf.App.Shell;
 
 namespace SGPdf.App;
 
 public partial class MainWindow
 {
+    private const double ReaderNavigationDrawerWidth = 240d;
+
     private readonly PdfRenderScheduler _thumbnailRenderScheduler = new();
     private readonly ObservableCollection<ReaderThumbnailItem> _readerThumbnails = new();
     private bool _thumbnailUiInitialized;
     private bool _updatingThumbnailSelection;
     private bool _thumbnailRefreshQueued;
+    private bool _syncingReaderNavigationState;
+    private ColumnDefinition? _readerNavigationColumn;
+    private Border? _readerNavigationDrawer;
+    private Button? _readerNavigationToggleButton;
     private TabControl? _readerNavigationTabs;
     private ListBox? _readerThumbnailList;
 
@@ -46,6 +54,8 @@ public partial class MainWindow
             return;
 
         var host = FindReaderNavigationHost();
+        InitializeReaderNavigationDrawer(host);
+
         var tabs = new TabControl
         {
             Name = "ReaderNavigationTabs",
@@ -105,6 +115,7 @@ public partial class MainWindow
         PageNumberTextBox.TextChanged += ReaderPageNumberTextBox_TextChanged;
         NavigationBar.IsVisibleChanged += ReaderNavigationVisibilityChanged;
         LabelNavigationBar.IsVisibleChanged += ReaderNavigationVisibilityChanged;
+        tabs.SelectionChanged += ReaderNavigationTabs_SelectionChanged;
         thumbnailList.SelectionChanged += ReaderThumbnailList_SelectionChanged;
         thumbnailList.AddHandler(
             ScrollViewer.ScrollChangedEvent,
@@ -122,23 +133,122 @@ public partial class MainWindow
         UpdateReaderNavigationVisibility();
     }
 
+    private void InitializeReaderNavigationDrawer(Border host)
+    {
+        var workspace = host.Parent as Grid
+            ?? throw new InvalidOperationException("No se encontró el workspace del panel de navegación.");
+        var columnIndex = Grid.GetColumn(host);
+        if (columnIndex < 0 || columnIndex >= workspace.ColumnDefinitions.Count)
+            throw new InvalidOperationException("No se encontró la columna del panel de navegación.");
+
+        var column = workspace.ColumnDefinitions[columnIndex];
+        column.Name = "ReaderNavigationColumn";
+        column.Width = new GridLength(0d);
+        host.Name = "ReaderNavigationDrawer";
+        host.Visibility = Visibility.Collapsed;
+
+        RegisterName(column.Name, column);
+        RegisterName(host.Name, host);
+
+        var center = PdfScrollViewer.Parent as Grid
+            ?? throw new InvalidOperationException("No se encontró el canvas central del lector.");
+        var toggle = new Button
+        {
+            Name = "ReaderNavigationToggleButton",
+            Content = "›",
+            Width = 30d,
+            Height = 36d,
+            MinWidth = 30d,
+            Padding = new Thickness(0),
+            Margin = new Thickness(8, 8, 0, 0),
+            HorizontalAlignment = HorizontalAlignment.Left,
+            VerticalAlignment = VerticalAlignment.Top,
+            Visibility = Visibility.Collapsed,
+            ToolTip = "Mostrar páginas y marcadores"
+        };
+        toggle.SetResourceReference(FrameworkElement.StyleProperty, "SgIconButtonStyle");
+        toggle.Click += ToggleReaderNavigation;
+        AutomationProperties.SetName(toggle, "Mostrar páginas y marcadores");
+        Panel.SetZIndex(toggle, 80);
+        center.Children.Add(toggle);
+        RegisterName(toggle.Name, toggle);
+
+        _readerNavigationColumn = column;
+        _readerNavigationDrawer = host;
+        _readerNavigationToggleButton = toggle;
+    }
+
     private Border FindReaderNavigationHost()
     {
-        if (Content is not DockPanel dock)
-            throw new InvalidOperationException("No se encontró el contenedor principal de navegación.");
+        var center = PdfScrollViewer.Parent as Grid
+            ?? throw new InvalidOperationException("No se encontró el canvas central del lector.");
+        var workspace = center.Parent as Grid
+            ?? throw new InvalidOperationException("No se encontró el contenedor principal de navegación.");
+        var navigationColumn = Grid.GetColumn(center) - 1;
+        if (navigationColumn < 0)
+            throw new InvalidOperationException("No se encontró la columna izquierda del lector.");
 
-        foreach (var child in dock.Children)
+        var host = workspace.Children.OfType<Border>()
+            .FirstOrDefault(border => Grid.GetColumn(border) == navigationColumn);
+        return host ?? throw new InvalidOperationException("No se encontró el panel izquierdo del lector.");
+    }
+
+    private void ToggleReaderNavigation(object sender, RoutedEventArgs e)
+    {
+        if (ActiveDocument is null || _zplDocument is not null)
+            return;
+
+        ActiveDocument.IsReaderNavigationOpen = !ActiveDocument.IsReaderNavigationOpen;
+        ApplyReaderNavigationState(ActiveDocument);
+        if (ActiveDocument.IsReaderNavigationOpen)
+            QueueThumbnailRefresh();
+    }
+
+    private void ReaderNavigationTabs_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_syncingReaderNavigationState || ActiveDocument is null || sender is not TabControl tabs || tabs.SelectedIndex < 0)
+            return;
+
+        ActiveDocument.ReaderNavigationSelectedIndex = tabs.SelectedIndex;
+    }
+
+    private void ApplyReaderNavigationState(PdfDocumentWorkspace? document)
+    {
+        if (_readerNavigationColumn is null || _readerNavigationDrawer is null || _readerNavigationToggleButton is null)
+            return;
+
+        var canToggle = document is not null &&
+                        _zplDocument is null &&
+                        NavigationBar.Visibility == Visibility.Visible;
+        var isOpen = canToggle && document!.IsReaderNavigationOpen;
+
+        _readerNavigationColumn.Width = new GridLength(isOpen ? ReaderNavigationDrawerWidth : 0d);
+        _readerNavigationDrawer.Visibility = isOpen ? Visibility.Visible : Visibility.Collapsed;
+        _readerNavigationToggleButton.Visibility = canToggle ? Visibility.Visible : Visibility.Collapsed;
+        _readerNavigationToggleButton.Content = isOpen ? "‹" : "›";
+
+        var accessibilityName = isOpen
+            ? "Ocultar páginas y marcadores"
+            : "Mostrar páginas y marcadores";
+        _readerNavigationToggleButton.ToolTip = accessibilityName;
+        AutomationProperties.SetName(_readerNavigationToggleButton, accessibilityName);
+
+        if (_readerNavigationTabs is null || document is null)
+            return;
+
+        var selectedIndex = Math.Clamp(
+            document.ReaderNavigationSelectedIndex,
+            0,
+            Math.Max(0, _readerNavigationTabs.Items.Count - 1));
+        _syncingReaderNavigationState = true;
+        try
         {
-            if (child is not Grid grid || grid.ColumnDefinitions.Count != 3)
-                continue;
-
-            var host = grid.Children.OfType<Border>()
-                .FirstOrDefault(border => Grid.GetColumn(border) == 0);
-            if (host is not null)
-                return host;
+            _readerNavigationTabs.SelectedIndex = selectedIndex;
         }
-
-        throw new InvalidOperationException("No se encontró el panel izquierdo del lector.");
+        finally
+        {
+            _syncingReaderNavigationState = false;
+        }
     }
 
     private static DataTemplate BuildReaderThumbnailTemplate()
@@ -292,10 +402,15 @@ public partial class MainWindow
         if (_readerNavigationTabs is null)
             return;
 
-        _readerNavigationTabs.Visibility =
-            _session is not null && _zplDocument is null && NavigationBar.Visibility == Visibility.Visible
-                ? Visibility.Visible
-                : Visibility.Collapsed;
+        var readerVisible =
+            ActiveDocument is not null &&
+            _session is not null &&
+            _zplDocument is null &&
+            NavigationBar.Visibility == Visibility.Visible;
+        _readerNavigationTabs.Visibility = readerVisible
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+        ApplyReaderNavigationState(readerVisible ? ActiveDocument : null);
     }
 
     private void QueueThumbnailRefresh()
