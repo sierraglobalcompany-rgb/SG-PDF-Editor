@@ -18,15 +18,15 @@ public sealed class MultiDocumentCoreContractTests
     {
         var source = File.ReadAllText(FindRepoFile("src", "SGPdf.App", "MainWindow.Reader.cs"));
 
-        Assert.Contains("_openDocuments.Add", source);
+        Assert.Contains("TrackOpenedDocument", source);
         Assert.Contains("ActivateDocumentAsync", source);
         Assert.DoesNotContain("previousSession?.Dispose()", source);
     }
 
     [Fact]
-    public void ActiveDocumentState_IsBackedByWorkspaceInsteadOfParallelGlobalSessionState()
+    public void ActiveDocumentState_IsOwnedByDocumentWorkspacePartial()
     {
-        var source = File.ReadAllText(FindRepoFile("src", "SGPdf.App", "MainWindow.xaml.cs"));
+        var source = File.ReadAllText(FindRepoFile("src", "SGPdf.App", "MainWindow.Documents.cs"));
 
         Assert.Contains("ObservableCollection<PdfDocumentWorkspace> _openDocuments", source);
         Assert.Contains("IReadOnlyList<PdfDocumentWorkspace> OpenDocuments", source);
@@ -51,7 +51,7 @@ public sealed class MultiDocumentCoreContractTests
     [Fact]
     public void ClosingWindow_DisposesEveryOpenWorkspace()
     {
-        var source = File.ReadAllText(FindRepoFile("src", "SGPdf.App", "MainWindow.xaml.cs"));
+        var source = File.ReadAllText(FindRepoFile("src", "SGPdf.App", "MainWindow.Documents.cs"));
 
         Assert.Contains("foreach (var document in _openDocuments", source);
         Assert.Contains("document.Dispose()", source);
