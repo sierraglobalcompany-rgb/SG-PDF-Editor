@@ -17,7 +17,7 @@ Estado resumido y routing al 2026-10-17:
 - F0–F12 CLOSED/FROZEN; F13 Task9 T9.1 ACTIVE, T9.2 NOT STARTED; R1/R1B/R2/R3 technical GREEN/CLOSED.
 - R4-B GREEN/CLOSED. R4-C está en `QA_PENDING` (commit `5ff21171abb4b467e8796ba18f54e0d337ab2418`, CI `39069863859` SUCCESS, Windows W01–W15 sin completar).
 - Diseño visual V4 APROBADO por usuario; `docs/design/SGPDF_V4_APPROVED_SHELL_2026-10-17.md` es la referencia de UI. Los PNG de mockup todavía requieren publicación binaria en GitHub.
-- R4-D (shell V4 alignment): primer microbloque tabs publicado (`14065f7`); CI exact-head y QA Windows pendientes. R5 NOT STARTED, no merge a main.
+- R4-D (shell V4 alignment): primer microbloque tabs publicado (`14065f7`); microbloque rail también publicado (`da060c5`), selección única y 60 DIP; CI exact-head y QA Windows pendientes. R5 NOT STARTED, no merge a main.
 - Checkpoint: `docs/history/2026-10-17-f13-t9-1-r4c-pending-v4-approved-checkpoint.md`.
 
 
