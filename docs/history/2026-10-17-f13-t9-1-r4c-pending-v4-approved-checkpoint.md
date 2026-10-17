@@ -17,3 +17,12 @@ Referencia canónica: [V4 approved shell](../design/SGPDF_V4_APPROVED_SHELL_2026
 **Limitación de evidencia:** los cinco PNG V4 aprobados fueron entregados en el chat, todavía pendientes de subir como binarios al repositorio (hashes en referencia V4). No decir que repositorio conserva visual completo hasta que existan blobs y correspondan las huellas.
 
 **STOP:** no merge a main; R5/T9.2 no iniciados; no marcar R4-C/D GREEN sin screenshots Windows reales y exact-head CI final.
+
+## Microbloque R4-D/Tabs — avance de código 2026-10-17
+
+- RED de contrato añadida: `83c136501722222b798d198efd473b5a8225f060` (**ejecución RED no verificada en este entorno**).
+- Nuevo estilo `SgDocumentTabItemStyle`/`SgDocumentTabsStyle` en `Themes/Modern.xaml`: `b5095b9db91cda52331bed3e8609f50525d8da15`.
+- UI owner `MainWindow.Documents.cs`: `14065f7608adaa13d75769236fba9f9e067e5132`; tab strip header-only, icono oficial `Assets/SGPdf.Document.png`, estilo seleccionado semántico; no se cambió `ActiveDocument` ni guard dirty.
+- **Estado: CODE_PUSHED / CI_PENDING / WINDOWS_QA_NOT_RUN**. No declarar GREEN, R4-C sigue QA_PENDING.
+- Próxima verificación: `dotnet restore SGPdf.slnx --locked-mode`; `dotnet build SGPdf.slnx -c Release --no-restore`; `dotnet test SGPdf.slnx -c Release --no-build`; `./tools/smoke-startup.ps1 -Executable ./src/SGPdf.App/bin/Release/net10.0-windows/SGPdf.App.exe -TimeoutSeconds 30`; pruebas reales Light/Dark tabs 2+ PDF, close dirty, tab selected, 125% scaling.
+- Si falla compilación/CI, reparar solo causa del dueño `MainWindow.Documents.cs` / `Themes/Modern.xaml`, volver a ejecutar todo y registrar nuevo SHA/CI.
