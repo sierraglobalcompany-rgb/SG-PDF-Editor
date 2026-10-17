@@ -44,7 +44,7 @@ public partial class MainWindow
         state.CommentDefaultBorderWidth = _commentDefaultBorderWidth;
 
         state.OrganizePlan = _organizePlan;
-        state.OrganizeDirty = _organizeDirty;
+        state.OrganizeDirty = _organizePlanDirty;
         state.OrganizeSourcePageSizes = _organizeSourcePageSizes.ToDictionary(
             pair => pair.Key,
             pair => (IReadOnlyList<PdfPageSize>)pair.Value.ToArray());
@@ -124,7 +124,7 @@ public partial class MainWindow
         _organizeThumbnailRefreshQueued = false;
         _organizeModeActive = false;
         _organizePlan = null;
-        _organizeDirty = false;
+        _organizePlanDirty = false;
         foreach (var item in _organizePages)
             item.ReleaseBitmap();
         _organizePages.Clear();
@@ -252,7 +252,7 @@ public partial class MainWindow
 
         InitializeOrganizeUi();
         _organizePlan = state.OrganizePlan;
-        _organizeDirty = state.OrganizeDirty;
+        _organizePlanDirty = state.OrganizeDirty;
         _organizeSourcePageSizes.Clear();
         foreach (var pair in state.OrganizeSourcePageSizes)
             _organizeSourcePageSizes[pair.Key] = pair.Value.ToArray();
