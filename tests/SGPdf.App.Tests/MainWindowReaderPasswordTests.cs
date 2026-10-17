@@ -200,12 +200,8 @@ public sealed class MainWindowReaderPasswordTests
 
     private static void CloseClean(MainWindow window)
     {
+        Invoke(window, "DisposeTrackedDocuments");
         window.Close();
-        if (GetField(window, "_session") is PdfDocumentSession session)
-        {
-            session.Dispose();
-            SetField(window, "_session", null!);
-        }
     }
 
     private sealed class PdfFixture : IDisposable

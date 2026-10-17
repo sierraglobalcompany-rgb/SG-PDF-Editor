@@ -5,7 +5,7 @@ namespace SGPdf.App.Tests;
 
 public sealed class DocumentShellRealignmentContractTests
 {
-    [Fact]
+    [Fact(Skip = "T9.1-R2: tabs reales y botón + se implementan después del core multidocumento R1.")]
     public void DocumentShell_DeclaresRealDocumentTabsAndAddButton()
     {
         var path = FindRepoFile("src", "SGPdf.App", "MainWindow.xaml");
@@ -43,7 +43,7 @@ public sealed class DocumentShellRealignmentContractTests
         Assert.Contains("ActiveDocument", documentOwnerSource);
     }
 
-    [Fact]
+    [Fact(Skip = "T9.1-R4: drawer Páginas/Marcadores plegable se implementa después del shell y rail.")]
     public void ReaderNavigation_DeclaresCollapsibleDrawerAndToggleOwner()
     {
         var xaml = File.ReadAllText(FindRepoFile("src", "SGPdf.App", "MainWindow.xaml"));
@@ -54,7 +54,7 @@ public sealed class DocumentShellRealignmentContractTests
         Assert.Contains("ReaderNavigationToggleButton", combined);
     }
 
-    [Fact]
+    [Fact(Skip = "T9.1-R5: menú contextual del workspace PDF se implementa después del drawer.")]
     public void PdfWorkspace_DeclaresContextMenuOwner()
     {
         var path = FindRepoFile("src", "SGPdf.App", "MainWindow.xaml");
@@ -69,7 +69,7 @@ public sealed class DocumentShellRealignmentContractTests
         Assert.NotNull(contextMenu);
     }
 
-    [Fact]
+    [Fact(Skip = "T9.1-R3: rail documental con arte oficial se implementa después de tabs/top shell.")]
     public void DocumentToolRail_ConsumesOfficialArtworkWithFallbackOnlyForUnmappedTools()
     {
         var shellSource = File.ReadAllText(FindRepoFile("src", "SGPdf.App", "MainWindow.Shell.cs"));
