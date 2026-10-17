@@ -98,7 +98,7 @@ public sealed class ShellThemeContractTests
     }
 
     [Fact]
-    public void HomeDashboard_ConsumesIconKey_WithoutGenericPdfPlaceholder()
+    public void HomeDashboard_ConsumesOfficialToolArtwork_WithoutGenericPdfPlaceholder()
     {
         var path = FindRepoFile("src", "SGPdf.App", "Shell", "HomeDashboard.xaml");
         var document = XDocument.Load(path);
@@ -113,12 +113,19 @@ public sealed class ShellThemeContractTests
             .ToArray();
         Assert.Empty(genericPdfPlaceholders);
 
-        var iconKeyBindings = document
+        var homeIconBindings = document
+            .Descendants(presentation + "Image")
+            .Attributes("Source")
+            .Where(attribute => attribute.Value.Contains("Binding HomeIconPath", StringComparison.Ordinal))
+            .ToArray();
+        Assert.NotEmpty(homeIconBindings);
+
+        var staleIconKeyBindings = document
             .Descendants()
             .Attributes()
             .Where(attribute => attribute.Value.Contains("Binding IconKey", StringComparison.Ordinal))
             .ToArray();
-        Assert.NotEmpty(iconKeyBindings);
+        Assert.Empty(staleIconKeyBindings);
     }
 
     [Fact]
