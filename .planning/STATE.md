@@ -1,6 +1,6 @@
 ---
 gsd_state_version: '1.1'
-status: f13-task9-t9-1-r1b-green-r2-next
+status: f13-task9-t9-1-r3-green-r4-next
 progress:
   total_phases: 19
   completed_phases: 13
@@ -20,22 +20,22 @@ Operational order:
 4. `.planning/REQUIREMENTS.md`;
 5. approved slice/spec/plan;
 6. for UI/UX: `docs/design/SGPDF_DESIGN_LAW.md` + `.agents/skills/sgpdf-design/SKILL.md`;
-7. `docs/MASTER_CONTEXT.md` for durable architecture only;
-8. historical/master snapshots as context only.
+7. `docs/MASTER_CONTEXT.md` for durable architecture;
+8. `docs/history/**` as checkpoints/evidence.
 
 ## Mandatory rules
 
 - **KISS:** `SIMPLE → EFICIENTE → OPTIMIZADO → EFICAZ → MANTENIBLE → A→B`.
 - **Anti-noise:** `DELETE → SIMPLIFY → REUSE → MERGE → EXTEND → ADD`.
 - **Ley SG de Diseño:** `INTENT → HIERARCHY → DISCLOSURE → CONSISTENCY → FEEDBACK → ACCESSIBILITY → VERIFY`.
-- **Guardrail anti-parches** (separate, not a numbered law): `REPRODUCE → CLASSIFY → ROOT CAUSE → OWNER → MINIMAL CHANGE → CAUSE TEST → FULL SUITE → EXACT-HEAD CI → REMOVE REDUNDANT WORKAROUND`.
+- **Guardrail anti-parches:** `REPRODUCE → CLASSIFY → ROOT CAUSE → OWNER → MINIMAL CHANGE → CAUSE TEST → FULL SUITE → EXACT-HEAD CI → REMOVE REDUNDANT WORKAROUND`.
 
 ## Frozen history
 
-- F0–F12: CLOSED / FROZEN for the automated baseline already recorded in requirements/history.
-- Real/manual/private/physical QA remains separate wherever historical records say NOT RUN.
-- F13 Tasks 1–8: CLOSED by their existing checkpoints.
-- F14–F18: FROZEN; do not start opportunistically.
+- F0–F12: CLOSED / FROZEN for automated baseline.
+- F13 Tasks 1–8: CLOSED by checkpoints.
+- F14–F18: FROZEN.
+- `main`: read-only at `31c0594758a83ec555d73ecdd7c597cdf8791fd7` until explicit approval.
 
 ## F13 Task9 — ACTIVE
 
@@ -44,165 +44,125 @@ Operational order:
 - T9.2: NOT STARTED.
 - No merge to `main` approved.
 
-### Last verified GREEN product anchor before document-shell realignment
-
-Commit: `0abae7ceb5f08611180c883346e21589d1509664`.
-
-### DG-0 — SG Design Governance — GREEN / CLOSED
-
-Implementation anchor: `3011f700e9014d72951314291bab4c3a67b89c8c`.
-Closure checkpoint: `9ea973d79b4cd49946022cbbd174678a1280821f`.
-
-### T9.1 — Document shell realignment
-
 Canonical branch:
 `feat/f13-task9-t9-1-document-shell-realignment-20261017`
 
+## DG-0 — SG Design Governance — GREEN / CLOSED
+
+- implementation: `3011f700e9014d72951314291bab4c3a67b89c8c`;
+- checkpoint: `9ea973d79b4cd49946022cbbd174678a1280821f`.
+
+## T9.1 slices
+
 ### R1 reader multi-document core — GREEN / CLOSED
 
-Verified checkpoint:
-`454dcadb6eca13ab98b5d219146dd10ec25af78d`
+- checkpoint: `454dcadb6eca13ab98b5d219146dd10ec25af78d`;
+- CI run `39004872760`, job `117315172824`;
+- tests `1266 passed / 0 failed / 4 skipped / 1270 total`.
 
-Exact-head CI:
-- run `39004872760`;
-- job `117315172824`;
-- Build PASS — 0 warnings / 0 errors;
-- startup smoke PASS — 30 s;
-- tests `1266 passed / 0 failed / 4 skipped / 1270 total`;
-- overall SUCCESS.
+Established `OpenDocuments`, `ActiveDocument` and one `PdfDocumentWorkspace` per PDF with independent session/page/zoom/scroll ownership.
 
-R1 established `OpenDocuments`, `ActiveDocument` and one `PdfDocumentWorkspace` per PDF with independent session/page/zoom/scroll ownership.
+### R1B per-document pending state + close guard — GREEN / CLOSED
 
-### R1B per-document pending state + close guard — GREEN / CLOSED technically
+- technical anchor: `26d026b2fbe1f35754bcf7cef660d2fdaa7e5d34`;
+- CI run `39040326178`, job `117418290462`;
+- tests `1274 passed / 0 failed / 4 skipped / 1278 total`.
+
+Each `PdfDocumentWorkspace` owns model-only pending state for Edit, Sign, Comments, Organize and AcroForm. Switching PDFs preserves pending work. Dirty close uses an explicit guard. Opening/switching PDFs does not force discard.
+
+### R2 top shell + real document tabs — GREEN / CLOSED
 
 Technical GREEN anchor:
-`26d026b2fbe1f35754bcf7cef660d2fdaa7e5d34`
+`cf816557adab80f0e6e2e4ecb2f6628dc92eba90`
 
 Exact-head CI:
-- run `39040326178`;
-- job `117418290462`;
-- exact checkout `26d026b2fbe1f35754bcf7cef660d2fdaa7e5d34`;
-- repository hygiene PASS;
-- restore locked dependencies PASS;
-- Build PASS — 0 warnings / 0 errors;
-- startup smoke PASS — 30 s;
-- tests `1274 passed / 0 failed / 4 skipped / 1278 total`;
+- run `39043770373`;
 - overall SUCCESS.
 
+R2 truth:
+- real document tabs exist;
+- `+` opens/adds PDFs;
+- tab activation reuses `ActiveDocument` / `ActivateDocumentAsync()`;
+- tab close reuses the R1B dirty-close owner;
+- no second document/session registry was introduced;
+- top-shell menu reparenting was hardened by removing assumptions that Menu is a direct DockPanel child.
+
+### R3 document tool rail + official artwork — GREEN / CLOSED technically
+
+Product implementation:
+`394bd320f8df03c0b00b5a517c00869a6c3a74e2`
+
+Test alignment / exact-head GREEN:
+`4050ef37422fc2cdb98b79f4bd4c215534fc553e`
+
+Exact-head CI:
+- run `39046256870`;
+- job `117435463253`;
+- Build PASS — 0 warnings / 0 errors;
+- startup smoke PASS — 30 s;
+- tests `1279 passed / 0 failed / 2 skipped / 1281 total`;
+- overall SUCCESS.
+
+R3 truth:
+- document rail remains 96 px and ordered;
+- accessibility/selected/disabled semantics remain;
+- official approved artwork is used for `edit`, `sign`, `organize`, `ocr`, `redact`, `compare`, `convert`, `protect`;
+- `read`, `comment`, `forms` keep semantic glyph fallback because no approved matching art exists yet;
+- labels use 10.5 pt, no wrapping and ellipsis trimming;
+- an old test requiring Path for all 11 buttons was realigned to the approved Image/Path split;
+- a one-off Tesseract process timeout from the previous run did not reproduce; no OCR timeout/code change was made.
+
 Checkpoint:
-`docs/history/2026-10-17-f13-t9-1-r1b-pending-state-green-checkpoint.md`.
+`docs/history/2026-10-17-f13-t9-1-r3-green-r4-next-checkpoint.md`.
 
-R1B truth:
-- each `PdfDocumentWorkspace` owns one `PdfDocumentPendingState`;
-- pending state contains model/workspace state, never WPF controls;
-- Edit preserves image/text/redaction workspaces and relevant selections;
-- Sign preserves `SignatureEditState`;
-- Comments preserves `CommentWorkspace` plus required source/loaded metadata;
-- Organize preserves `OrganizePlan`, source sizes and dirty state;
-- AcroForm preserves original/current string values and rebuilds controls on activation;
-- `ActivateDocumentAsync()` captures current model state, detaches current presentation, binds target and restores target model/UI;
-- dirty document close is guarded explicitly before disposal;
-- switching/opening another PDF does not itself require save/discard.
+## Next bounded block — R4
 
-Closure audit found and fixed `LEGACY_SINGLE_DOCUMENT_GUARD_DRIFT`:
-- Ctrl+O no longer runs edit/sign discard guards before opening another PDF;
-- Open PDF no longer triggers Edit/Comment discard class handlers;
-- Recent PDFs use the multi-document open path without legacy discard;
-- obsolete `MainWindow.Comments.Integration.cs` was deleted;
-- Open ZPL, mode-switch and window-close guards remain intact;
-- stale old single-document shortcut tests were realigned instead of restoring obsolete behavior.
-
-Focused route RED evidence:
-- commit `db94045d9710fb67d827b79b260090c4eb3a5aa5`;
-- run `39039423862`, job `117415694668`;
-- Build/smoke PASS with exactly 3 expected route-contract failures before correction.
-
-No DI container, event bus, generalized ModeManager or document framework was introduced.
-
-The 4 skipped contracts remain intentional future-phase contracts:
-- R2 document tabs / `+`;
-- R3 official document rail artwork;
-- R4 collapsible Pages/Bookmarks drawer;
-- R5 PDF workspace context menu.
-They are preserved, not deleted.
-
-## Next bounded block — R2
-
-`T9.1-R2 — TOP_SHELL_AND_REAL_DOCUMENT_TABS`
+`T9.1-R4 — PAGES_BOOKMARKS_COLLAPSIBLE_DRAWER`
 
 Status: **NEXT / NOT STARTED**.
 
-R2 may now build visible tabs because R1/R1B own document/session/pending-state lifecycle safely.
-
 Bounded goals:
-1. visible tab strip with filename + close `×`;
-2. add/open `+`;
-3. switch active tab through existing `ActivateDocumentAsync()` / `ActiveDocument` owner;
-4. close through existing R1B dirty-close guard;
-5. no duplicate document registry/session owner;
-6. apply SG Design Law before visible UI implementation;
-7. focused RED → GREEN tests;
-8. full suite + smoke + exact-head CI;
-9. checkpoint before R3.
+1. Pages/Bookmarks drawer collapsed by default;
+2. explicit expand/collapse control;
+3. preserve workspace width while closed;
+4. reuse existing thumbnail renderer/scheduler;
+5. audit real bookmark/outline population before calling Bookmarks functional;
+6. preserve drawer state per document only if it fits existing workspace ownership without new framework;
+7. focused RED → GREEN;
+8. build + smoke + full suite + exact-head CI;
+9. checkpoint before R5.
 
-Do not start R2 in a recovery session without first verifying live HEAD/CI against this STATE.
+Do not start R5 before R4 is GREEN.
 
-## Open findings / approved sequence
+## Remaining findings / sequence
 
-- DS-001 DOCUMENT_SHELL — P1 OPEN.
-- DS-002 MULTI_DOCUMENT_WORKSPACE — P1 ACTIVE; R1 + R1B GREEN, R2 NEXT.
-- DS-003 SHELL_RAIL_PRESENTATION — P1 OPEN.
-- DS-004 DOCUMENT_TOOL_RAIL — P1 OPEN.
-- DS-005 READER_NAV_DRAWER — P1 OPEN.
-- DS-006 BOOKMARKS — P2 AUDIT_REQUIRED.
-- DS-007 IMAGE_SELECTION_RENDERING — P1 REPRODUCE_REQUIRED; visible full-image blue tint remains a bug to reproduce, not intended behavior.
-- DS-008 PDF_CONTEXT_MENU — P1 OPEN.
-- DS-009 TOP_SHELL — P1 OPEN.
+- DS-001 DOCUMENT_SHELL — P1 ACTIVE, improved by R2/R3.
+- DS-002 MULTI_DOCUMENT_WORKSPACE — R1/R1B/R2 GREEN.
+- DS-003 SHELL_RAIL_PRESENTATION — R3 technical GREEN; final visual QA remains R7.
+- DS-004 DOCUMENT_TOOL_RAIL — R3 technical GREEN.
+- DS-005 READER_NAV_DRAWER — P1 NEXT / R4.
+- DS-006 BOOKMARKS — P2 AUDIT_REQUIRED in R4.
+- DS-007 IMAGE_SELECTION_RENDERING — P1 REPRODUCE_REQUIRED in R6.
+- DS-008 PDF_CONTEXT_MENU — P1 OPEN / R5.
+- DS-009 TOP_SHELL — R2 technical GREEN; final visual QA remains R7.
 - DS-010 EDIT_OBJECT_INTERACTION — P1 OPEN.
 
 Execution order:
-`R2 top shell/tabs → R3 document rail → R4 pages/bookmarks drawer → R5 context menus → R6 image selection root cause → R7 final visual/functional QA`.
-
-## Main
-
-`main` live historical/read-only anchor remains:
-`31c0594758a83ec555d73ecdd7c597cdf8791fd7`
-
-Read-only until explicit user approval. No automatic merge/rebase/force-push.
-
-## Runtime / architecture constraints
-
-- Windows x64 + WPF + .NET 10.
-- `SGPdf.App + SGPdf.App.Tests` while sufficient.
-- PDFium primary PDF engine; `PdfiumRuntime.NativeGate` for native access.
-- Labelize 1.7.0 only ZPL runtime renderer.
-- PDFsharp narrow approved roles only; not general second engine.
-- qpdf narrow AES sidecar.
-- Tesseract local OCR.
-- ZXing.Net test/QA only.
-- No backend, DB, cloud, plugin framework, second viewer/engine, generalized ModeManager/conversion/Batch framework without explicit decision.
-- No new UI framework/package simply for visual polish.
-
-## Visual / design authority
-
-The approved app icon, PDF document icon and 15 Home tool icons keep distinct roles. Do not reinterpret them during unrelated UX work.
-
-For all visible/interactable changes, load the SG design skill:
-`INTENT → HIERARCHY → DISCLOSURE → CONSISTENCY → FEEDBACK → ACCESSIBILITY → VERIFY`.
+`R4 pages/bookmarks drawer → R5 context menus → R6 image selection root cause → R7 final visual/functional QA`.
 
 ## QA semantics
 
-Automated PASS never upgrades Windows-real, hardware, private-corpus, scanner, printer, stylus/touch, external-reader or other manual evidence to PASS. Use `NOT RUN`, `BLOCKED — ENVIRONMENT`, or the actual observed result.
+Automated PASS proves only automated evidence. Windows-real, Light/Dark visual fidelity, 125% scaling, hardware/private corpus, printing/scanning/stylus and external-reader checks remain separate until actually run.
 
-## Recovery if the current chat ends
+## Recovery if chat ends
 
 Start from:
-- branch `feat/f13-task9-t9-1-document-shell-realignment-20261017`;
+- canonical branch above;
 - live HEAD + exact-head CI first;
-- technical R1B GREEN anchor `26d026b2fbe1f35754bcf7cef660d2fdaa7e5d34` / CI run `39040326178`;
-- checkpoint `docs/history/2026-10-17-f13-t9-1-r1b-pending-state-green-checkpoint.md`;
-- current next block `T9.1-R2`, NOT STARTED;
-- T9.2 frozen/not started;
+- latest technical GREEN SHA `4050ef37422fc2cdb98b79f4bd4c215534fc553e` / CI `39046256870`;
+- read `docs/history/2026-10-17-f13-t9-1-r3-green-r4-next-checkpoint.md`;
+- next block R4, NOT STARTED;
+- T9.2 remains frozen/not started;
 - no merge approved.
 
-Read this STATE first, then the R1B checkpoint. If live GitHub is newer, live exact HEAD/CI takes precedence.
+If GitHub live is newer, live exact HEAD/CI takes precedence.
