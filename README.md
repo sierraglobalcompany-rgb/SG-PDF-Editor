@@ -9,16 +9,17 @@ Aplicación Windows local-first para trabajar con PDF y etiquetas térmicas ZPL 
 - T9.0: DONE.
 - T9.1: ACTIVE — realineamiento document shell / UX.
 - DG-0 SG Design Governance: **GREEN / CLOSED**.
-- R1 reader multi-document core: **GREEN** en `454dcadb6eca13ab98b5d219146dd10ec25af78d`.
-- Exact-head CI R1: run `39004872760` SUCCESS — Build PASS 0 warnings/0 errors, startup smoke PASS 30 s, tests `1266 passed / 0 failed / 4 skipped / 1270 total`.
+- R1 reader multi-document core: **GREEN / CLOSED** en `454dcadb6eca13ab98b5d219146dd10ec25af78d`.
+- R1B per-document pending state + close guard: **GREEN / CLOSED técnicamente** en `26d026b2fbe1f35754bcf7cef660d2fdaa7e5d34`.
+- Exact-head CI R1B: run `39040326178`, job `117418290462` — Build PASS 0 warnings/0 errors, startup smoke PASS 30 s, tests `1274 passed / 0 failed / 4 skipped / 1278 total`.
 - Los 4 skips son contratos futuros intencionales de R2–R5: tabs, rail oficial, drawer Páginas/Marcadores y context menu PDF.
-- Próximo bloque: **T9.1-R1B — per-document pending state + close guard** antes de hacer visibles las pestañas.
+- Próximo bloque elegible: **T9.1-R2 — top shell + real document tabs**. No está iniciado por este checkpoint.
 - Rama canónica: `feat/f13-task9-t9-1-document-shell-realignment-20261017`.
 - `main` continúa read-only en `31c0594758a83ec555d73ecdd7c597cdf8791fd7`; no hay merge aprobado.
 - T9.2 no iniciado; F14–F18 frozen.
 
-Checkpoint de recuperación:
-`docs/history/2026-10-17-f13-t9-1-r1-reader-core-green-checkpoint.md`.
+Checkpoint de recuperación R1B:
+`docs/history/2026-10-17-f13-t9-1-r1b-pending-state-green-checkpoint.md`.
 
 El PASS automatizado no equivale a QA real/manual/private/physical. Esos gates permanecen separados donde corresponda.
 
@@ -29,7 +30,8 @@ Resolver flujos diarios PDF + ZPL de forma rápida, privada, estable, comprensib
 ### PDF
 
 - abrir, leer, navegar e imprimir;
-- varios PDF abiertos con estado independiente, completando primero la preservación segura de estado pendiente por documento;
+- varios PDF abiertos con estado independiente;
+- preservar trabajo pendiente de Editar, Firmar, Comentar, Organizar y Formularios al cambiar de documento;
 - firma visual con PNG/foto/InkCanvas y biblioteca local;
 - firma criptográfica PFX/P12 dentro del alcance aprobado;
 - organizar páginas;
@@ -89,7 +91,16 @@ tests/SGPdf.App.Tests
 
 No hay microservicios, plugin framework, segundo viewer, segundo motor PDF, ModeManager genérico, BatchEngine genérico ni framework general de conversiones.
 
-El multi-documento se mantiene simple: `PdfDocumentWorkspace` por PDF + `OpenDocuments` + `ActiveDocument`; no se introduce un framework de ventanas/documentos.
+El multi-documento se mantiene simple:
+
+```text
+OpenDocuments
+ActiveDocument
+PdfDocumentWorkspace por PDF
+└─ PdfDocumentPendingState
+```
+
+R1B guarda **estado de modelo**, no controles WPF. Al cambiar de PDF se captura el documento activo, se desacopla su presentación y se restaura/reconstruye la presentación del documento objetivo. Abrir otro PDF, Ctrl+O y Recientes no fuerzan discard del trabajo pendiente. Cerrar un documento dirty sí usa guard explícito antes de disposal.
 
 ## Fuente de verdad
 
@@ -115,9 +126,9 @@ El icono de aplicación, icono de documento PDF y los 15 iconos Home aprobados t
 Orden aprobado:
 
 ```text
-R1 reader multi-document core             ✅ GREEN
-R1B pending state + close guard           ▶ NEXT
-R2 top shell + document tabs              ⏳
+R1 reader multi-document core             ✅ GREEN / CLOSED
+R1B pending state + close guard           ✅ GREEN / CLOSED
+R2 top shell + document tabs              ▶ NEXT / NOT STARTED
 R3 document rail + approved icons         ⏳
 R4 Pages/Bookmarks collapsible drawer     ⏳
 R5 contextual menus                       ⏳
@@ -125,7 +136,7 @@ R6 image-selection root cause             ⏳
 R7 final visual/functional QA             ⏳
 ```
 
-No iniciar R2 hasta que el cambio de documento pueda preservar/gestionar de forma segura el trabajo pendiente por documento.
+R2 debe reutilizar `OpenDocuments`, `ActiveDocument`, `PdfDocumentWorkspace`, `ActivateDocumentAsync` y el dirty-close guard de R1B; no crear un segundo owner de sesiones/documentos.
 
 ## Privacidad
 
