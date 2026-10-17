@@ -51,6 +51,22 @@ public partial class MainWindow
         _openDocuments.Add(document);
     }
 
+    private void UntrackOpenedDocument(PdfDocumentWorkspace document)
+    {
+        ArgumentNullException.ThrowIfNull(document);
+        _openDocuments.Remove(document);
+
+        if (ReferenceEquals(ActiveDocument, document))
+        {
+            ActiveDocument = null;
+            _session = null;
+            _navigation = null;
+            _zoom = new Pdf.PdfZoomState();
+        }
+
+        document.Dispose();
+    }
+
     private void SaveActiveDocumentReaderState()
     {
         if (ActiveDocument is null)
