@@ -51,7 +51,18 @@ public sealed class MainWindowToolRailTests
                     var content = Assert.IsAssignableFrom<FrameworkElement>(button.Content);
                     var label = Assert.IsType<TextBlock>(FindDescendant<TextBlock>(content));
                     Assert.Equal(accessibleName, label.Text);
-                    Assert.NotNull(FindDescendant<System.Windows.Shapes.Path>(content));
+
+                    var id = Assert.IsType<string>(button.Tag);
+                    if (id is "read" or "comment" or "forms")
+                    {
+                        Assert.NotNull(FindDescendant<System.Windows.Shapes.Path>(content));
+                        Assert.Null(FindDescendant<Image>(content));
+                    }
+                    else
+                    {
+                        Assert.NotNull(FindDescendant<Image>(content));
+                        Assert.Null(FindDescendant<System.Windows.Shapes.Path>(content));
+                    }
                 });
 
                 Assert.All(buttons.Take(5), button => Assert.True(button.IsEnabled));
