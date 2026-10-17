@@ -43,12 +43,13 @@ public sealed class MainWindowReaderShortcutTests
     }
 
     [Fact]
-    public void DirtySignature_CtrlOpenCancelWinsBeforeOpenAction()
+    public void DirtySignature_CtrlOpen_OpensPickerWithoutResolvingPendingSignature()
     {
         RunInSta(() =>
         {
             var window = new MainWindow();
             var openCalls = 0;
+            var decisionCalls = 0;
             try
             {
                 var state = new SignatureEditState(0, new PdfRect(0d, 0d, 300d, 400d));
@@ -56,12 +57,19 @@ public sealed class MainWindowReaderShortcutTests
                 SetField(window, "_signatureEditState", state);
                 SetField(window, "_signatureModeActive", true);
                 SetField(window, "_resolvePendingSignatureDecision",
-                    (Func<SignatureGuardReason, PendingSignatureDecision>)(_ => PendingSignatureDecision.Cancel));
+                    (Func<SignatureGuardReason, PendingSignatureDecision>)(_ =>
+                    {
+                        decisionCalls++;
+                        return PendingSignatureDecision.Cancel;
+                    }));
                 SetField(window, "_openPdfShortcutAction", (Action)(() => openCalls++));
 
                 Assert.True(InvokeBool(window, "TryHandleReaderShortcut", Key.O, ModifierKeys.Control, null));
 
-                Assert.Equal(0, openCalls);
+                Assert.Equal(1, openCalls);
+                Assert.Equal(0, decisionCalls);
+                Assert.Same(state, GetField(window, "_signatureEditState"));
+                Assert.True((bool)GetField(window, "_signatureModeActive")!);
                 Assert.True(state.IsDirty);
             }
             finally { CloseClean(window); }
