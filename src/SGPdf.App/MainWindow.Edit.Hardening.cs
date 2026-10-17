@@ -30,11 +30,8 @@ public partial class MainWindow
         if (sender is not MenuItem menuItem || Window.GetWindow(menuItem) is not MainWindow window)
             return;
 
-        if (!ReferenceEquals(menuItem, window.OpenPdfMenuItem) &&
-            !ReferenceEquals(menuItem, window.OpenZplMenuItem))
-        {
+        if (!ReferenceEquals(menuItem, window.OpenZplMenuItem))
             return;
-        }
 
         if (window._editModeActive && !window.TryLeaveEditModeWithGuard())
             e.Handled = true;
