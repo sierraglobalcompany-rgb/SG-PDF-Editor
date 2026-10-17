@@ -31,6 +31,20 @@ public sealed class DocumentShellRealignmentContractTests
     }
 
     [Fact]
+    public void DocumentTabs_V4UsesApprovedDocumentIconAndHeaderOnlySelectedVisual()
+    {
+        var source = File.ReadAllText(FindRepoFile("src", "SGPdf.App", "MainWindow.Documents.cs"));
+        var styles = File.ReadAllText(FindRepoFile("src", "SGPdf.App", "Themes", "Modern.xaml"));
+
+        Assert.Contains("SgDocumentTabsStyle", source);
+        Assert.Contains("SGPdf.Document.png", source);
+        Assert.Contains("SgDocumentTabItemStyle", styles);
+        Assert.Contains("TabPanel IsItemsHost=\"True\"", styles);
+        Assert.Contains("Property=\"IsSelected\" Value=\"True\"", styles);
+        Assert.DoesNotContain("ContentSource=\"Content\"", styles);
+    }
+
+    [Fact]
     public void MultiDocumentShell_DeclaresPerDocumentWorkspaceOwner()
     {
         var workspacePath = TryFindRepoFile("src", "SGPdf.App", "Shell", "PdfDocumentWorkspace.cs");
