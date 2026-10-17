@@ -40,8 +40,8 @@ public sealed class MainWindowOrganizeHardeningTests
 
                 var documents = Assert.IsAssignableFrom<IEnumerable<PdfDocumentWorkspace>>(
                     OrganizeWindowTestHost.GetField(window, "_openDocuments"));
-                var firstDocument = Assert.Single(documents.Where(document =>
-                    string.Equals(document.FilePath, first.Path, StringComparison.OrdinalIgnoreCase)));
+                var firstDocument = Assert.Single(documents, document =>
+                    string.Equals(document.FilePath, first.Path, StringComparison.OrdinalIgnoreCase));
                 Assert.Same(sourcePlan, firstDocument.PendingState.OrganizePlan);
                 Assert.True(firstDocument.PendingState.OrganizeDirty);
                 Assert.True(firstDocument.PendingState.IsDirty);
@@ -68,8 +68,8 @@ public sealed class MainWindowOrganizeHardeningTests
                 Assert.True(await OrganizeWindowTestHost.OpenReaderAsync(window, second.Path));
                 var documents = Assert.IsAssignableFrom<IEnumerable<PdfDocumentWorkspace>>(
                     OrganizeWindowTestHost.GetField(window, "_openDocuments")).ToArray();
-                var firstDocument = Assert.Single(documents.Where(document =>
-                    string.Equals(document.FilePath, first.Path, StringComparison.OrdinalIgnoreCase)));
+                var firstDocument = Assert.Single(documents, document =>
+                    string.Equals(document.FilePath, first.Path, StringComparison.OrdinalIgnoreCase));
                 OrganizeWindowTestHost.SetField(window, "_confirmCloseDirtyDocument", (Func<PdfDocumentWorkspace, bool>)(_ => false));
 
                 Assert.False(await OrganizeWindowTestHost.InvokeTask<bool>(window, "TryCloseDocumentWithGuard", firstDocument));
