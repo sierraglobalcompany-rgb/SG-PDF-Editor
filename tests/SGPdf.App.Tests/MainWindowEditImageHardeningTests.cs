@@ -4,6 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using SGPdf.App.Features.Edit.Images;
 using SGPdf.App.Pdf;
+using SGPdf.App.Shell;
 using Xunit;
 
 namespace SGPdf.App.Tests;
@@ -11,7 +12,7 @@ namespace SGPdf.App.Tests;
 public sealed class MainWindowEditImageHardeningTests
 {
     [Fact]
-    public void DirtyImageEdit_OpenPdfCancel_PreservesCurrentSessionAndWorkspace()
+    public void DirtyImageEdit_OpenSecondPdf_PreservesPendingWorkspaceOnFirstDocument()
     {
         OrganizeWindowTestHost.RunInSta(async () =>
         {
@@ -25,13 +26,26 @@ public sealed class MainWindowEditImageHardeningTests
                 Assert.True(prepared.Workspace.IsDirty);
                 var originalSession = OrganizeWindowTestHost.GetField(window, "_session");
                 var originalWorkspace = OrganizeWindowTestHost.GetField(window, "_imageEditWorkspace");
-                OrganizeWindowTestHost.SetField(window, "_confirmDiscardImageEditChanges", (Func<bool>)(() => false));
+                var discardPrompts = 0;
+                OrganizeWindowTestHost.SetField(window, "_confirmDiscardImageEditChanges", (Func<bool>)(() =>
+                {
+                    discardPrompts++;
+                    return false;
+                }));
 
-                Assert.False(await OrganizeWindowTestHost.InvokeTask<bool>(window, "TryOpenPdfPathAsync", second.Path, null));
+                Assert.True(await OrganizeWindowTestHost.InvokeTask<bool>(window, "TryOpenPdfPathAsync", second.Path, null));
 
-                Assert.Same(originalSession, OrganizeWindowTestHost.GetField(window, "_session"));
-                Assert.Same(originalWorkspace, OrganizeWindowTestHost.GetField(window, "_imageEditWorkspace"));
-                Assert.True((bool)OrganizeWindowTestHost.GetField(window, "_editModeActive")!);
+                Assert.Equal(0, discardPrompts);
+                Assert.NotSame(originalSession, OrganizeWindowTestHost.GetField(window, "_session"));
+                Assert.Null(OrganizeWindowTestHost.GetField(window, "_imageEditWorkspace"));
+                Assert.False((bool)OrganizeWindowTestHost.GetField(window, "_editModeActive")!);
+
+                var documents = Assert.IsAssignableFrom<IEnumerable<PdfDocumentWorkspace>>(
+                    OrganizeWindowTestHost.GetField(window, "_openDocuments"));
+                var firstDocument = Assert.Single(documents.Where(document =>
+                    string.Equals(document.FilePath, first.Path, StringComparison.OrdinalIgnoreCase)));
+                Assert.Same(originalWorkspace, firstDocument.PendingState.ImageEditWorkspace);
+                Assert.True(firstDocument.PendingState.IsDirty);
                 Assert.True(prepared.Workspace.IsDirty);
             }
             finally { ImageEditCommandTestHost.CloseClean(window); }
