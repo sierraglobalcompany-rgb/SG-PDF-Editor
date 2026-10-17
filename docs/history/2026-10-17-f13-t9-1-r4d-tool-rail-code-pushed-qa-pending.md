@@ -42,3 +42,10 @@ R4-D microbloque 3 (command bar) **NO STARTED**; aplazar hasta el gate de tabs+r
 - Cinco PNG extraídos del paquete completo recibido en Descargas; SHA-256 de los cinco coincide con la tabla de [autoridad V4](../design/SGPDF_V4_APPROVED_SHELL_2026-10-17.md). Incorporados en `docs/design/references/sgpdf-v4/`; ZIP completo local en raíz, no versionado. Segundo ZIP no localizado y no necesario para recuperar estos cinco originales.
 - Evidencia automatizada local: `C:\Users\felip\AppData\Local\Temp\SGPDF_R4D_20261017\red.log` y `verification.log`; smoke en `C:\Users\felip\AppData\Local\Temp\SGPdf-startup-c80fff9847044ca4a6ec988816408544`.
 - Estado: **R4-C/R4-D QA_PENDING**. No GREEN visual, no bloque 3, no R5/T9.2, no merge. El CI del HEAD final se comprueba después del push; no confundirlo con el CI inicial fallido ni con QA manual.
+
+## Verificación posterior del mismo HEAD: CI y referencias V4
+
+- Commit `0427cfff84e500884759d5287fd53054738c2fb9` está en el HEAD de la rama y CI exact-head [39076821081](https://github.com/sierraglobalcompany-rgb/SG-PDF-Editor/actions/runs/39076821081) SUCCESS (job `117525580062`): build **0 Warning(s), 0 Error(s)**; startup `PASS: process survived 30 seconds`; full suite **1.288 PASS, 0 FAIL, 1 SKIP**.
+- Directorio `docs/design/references/sgpdf-v4/` incluye cinco PNG (el ZIP original no se versiona), con SHA-256 declarado/registrado en la spec. Los PNG son mockups, no screenshots de QA.
+- Ejecución Windows parcial previa: Light Home y un PDF sintético; no terminó 2+ PDFs ni Dark/125%; cobertura insuficiente. **R4-C/R4-D QA_PENDING**.
+- Próximo único gate: [Matriz W01–W15 y V01–V04](../qa/2026-10-17-r4c-r4d-v4-windows-matrix.md). No bloque 3, R5, T9.2 ni merge. Este checkpoint actualiza documentación; el CI del nuevo SHA documental se verificará por separado.

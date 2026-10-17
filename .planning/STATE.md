@@ -1,6 +1,6 @@
 ---
 gsd_state_version: '1.1'
-status: f13-task9-t9-1-r4c-qa-pending-v4-approved-r4d-planned
+status: f13-t9-1-v4-published-ci-success-r4c-r4d-windows-qa-pending
 progress:
   total_phases: 19
   completed_phases: 13
@@ -120,7 +120,7 @@ Checkpoint:
 - **R4-B:** GREEN / CLOSED; no reabrir.
 - **R4-C (marcadores):** código en `5ff21171abb4b467e8796ba18f54e0d337ab2418`, exact-head CI [39069863859](https://github.com/sierraglobalcompany-rgb/SG-PDF-Editor/actions/runs/39069863859) SUCCESS: 1286 PASS, 0 FAIL, 1 SKIP; build 0/0; smoke 30s. **Windows QA W01–W15 pendiente → QA_PENDING**; no GREEN de cierre.
 - **V4 visual:** mockups aprobados el 17-10, autoridad [V4](../docs/design/SGPDF_V4_APPROVED_SHELL_2026-10-17.md); validar hashes antes de incorporar imágenes. Cinco PNG V4 incorporados con SHA-256 verificados y enlaces en la spec; comparación visual Windows pendiente.
-- **R4-D:** tabs y rail implementados. Gate Windows 17-10: test de selección Home realineado en `e4220b6`; focal 13 PASS/1 SKIP, full 1288 PASS/0 FAIL/1 SKIP, build 0/0, smoke 30s PASS. QA Windows parcial detenida por Escape del usuario; no cierre visual. CI final por verificar tras publicar. R4-C/R4-D siguen QA_PENDING; bloque 3/R5/T9.2 no iniciados. Ver checkpoint del rail.
+- **R4-D:** tabs y rail implementados. Gate Windows 17-10: test de selección Home realineado en `e4220b6`; focal 13 PASS/1 SKIP, full 1288 PASS/0 FAIL/1 SKIP, build 0/0, smoke 30s PASS. QA Windows parcial detenida por Escape del usuario; no cierre visual. CI exact-head [39076821081](https://github.com/sierraglobalcompany-rgb/SG-PDF-Editor/actions/runs/39076821081) SUCCESS en `0427cfff84e500884759d5287fd53054738c2fb9` (1.288 PASS, 0 FAIL, 1 SKIP, build 0/0, smoke 30s). R4-C/R4-D siguen QA_PENDING; bloque 3/R5/T9.2 no iniciados. Ver checkpoint del rail.
 - **R5 y T9.2:** NOT STARTED. **NO MERGE**.
 
 Checkpoint: `docs/history/2026-10-17-f13-t9-1-r4c-pending-v4-approved-checkpoint.md`.
@@ -149,6 +149,6 @@ Automated PASS proves only automated evidence. Windows-real, Light/Dark visual f
 
 1. Confirmar rama y HEAD/CI live; nunca asumir un SHA histórico.
 2. Leer este STATE y [V4 aprobada](../docs/design/SGPDF_V4_APPROVED_SHELL_2026-10-17.md) + checkpoint `docs/history/2026-10-17-f13-t9-1-r4c-pending-v4-approved-checkpoint.md`.
-3. Estado: R4-C QA_PENDING, R4-D tabs pushed CI_PENDING, R5/T9.2 NOT STARTED. R4-B GREEN/CLOSED. No merge.
+3. Estado: R4-C/R4-D WINDOWS QA_PENDING (código tabs+rail y CI SUCCESS en `0427cff`), bloque 3/R5/T9.2 NOT STARTED, R4-B GREEN/CLOSED. No merge.
 4. Cinco PNG V4 en `docs/design/references/sgpdf-v4/`, hashes verificados; no confundir mockups con evidencia Windows.
-5. Validar capturas Windows Light/Dark/125%, múltiples PDFs, Home y ZPL antes de cierre visual.
+5. Ejecutar [matriz de QA W01–W15 y V4](../docs/qa/2026-10-17-r4c-r4d-v4-windows-matrix.md) en Windows real antes de cierre. Este cambio documental requiere CI nuevo del HEAD final.

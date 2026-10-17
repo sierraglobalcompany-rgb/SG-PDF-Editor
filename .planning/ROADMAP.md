@@ -86,7 +86,7 @@ Checkpoint:
 - **R4-B:** GREEN/CLOSED; navegación Páginas/Marcadores desplegable existente.
 - **R4-C:** código `5ff21171abb4b467e8796ba18f54e0d337ab2418`; CI run `39069863859` SUCCESS; 1286 PASS/0 FAIL/1 SKIP, build 0/0, smoke 30s PASS; Windows W01–W15 **pendientes**, por tanto **QA_PENDING**.
 - **Diseño V4:** usuario aprobó 4 vistas (Light/Dark, drawer abierto/cerrado) e iconos de app, documento asociado y herramientas. Ver [autoridad visual V4](../docs/design/SGPDF_V4_APPROVED_SHELL_2026-10-17.md).
-- **R4-D V4:** tabs y rail implementados. Gate Windows 17-10: test de selección Home realineado en `e4220b6`; focal 13 PASS/1 SKIP, full 1288 PASS/0 FAIL/1 SKIP, build 0/0, smoke 30s PASS. QA Windows parcial detenida por Escape del usuario; no cierre visual. CI final por verificar tras publicar. R4-C/R4-D siguen QA_PENDING; bloque 3/R5/T9.2 no iniciados. Ver checkpoint del rail.
+- **R4-D V4:** tabs y rail implementados. Gate Windows 17-10: test de selección Home realineado en `e4220b6`; focal 13 PASS/1 SKIP, full 1288 PASS/0 FAIL/1 SKIP, build 0/0, smoke 30s PASS. QA Windows parcial detenida por Escape del usuario; no cierre visual. CI exact-head [39076821081](https://github.com/sierraglobalcompany-rgb/SG-PDF-Editor/actions/runs/39076821081) SUCCESS en `0427cfff84e500884759d5287fd53054738c2fb9` (1.288 PASS/0 FAIL/1 SKIP, build 0/0, smoke 30s). R4-C/R4-D siguen QA_PENDING; bloque 3/R5/T9.2 no iniciados. Ver checkpoint del rail.
 - **Cierre de R4:** requiere pruebas funcionales+visuales completas, Light/Dark, escala 125%, exact-head CI posterior al último cambio.
 
 
@@ -117,6 +117,6 @@ Must include:
 
 ## Next bounded task
 
-**T9.1-R4-D — realineamiento V4 aprobado, comenzando por pestañas**. R4-C sigue QA_PENDING.
+**T9.1-R4-D — tabs+rail publicados y CI SUCCESS; siguiente único gate: [QA visual Windows V4](../docs/qa/2026-10-17-r4c-r4d-v4-windows-matrix.md)**. R4-C/R4-D siguen QA_PENDING. Bloque 3/R5/T9.2 bloqueados.
 
 Do not start R5, T9.2, F14–F18 or merge to `main` automatically. V4 is design-approved, not Windows QA-approved.

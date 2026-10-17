@@ -21,7 +21,7 @@ GitHub + STATE mandan sobre snapshots viejos.
 - R1/R1B/R2/R3 technical GREEN/CLOSED; **R4-B GREEN/CLOSED**.
 - **R4-C QA_PENDING:** commit `5ff21171abb4b467e8796ba18f54e0d337ab2418`; CI `39069863859` SUCCESS, full suite 1286 PASS / 0 FAIL / 1 SKIP; Windows visual/functional W01–W15 incomplete.
 - **V4 Light/Dark shell mockups APROBADOS por usuario**: `docs/design/SGPDF_V4_APPROVED_SHELL_2026-10-17.md`. Cinco PNG aprobados incorporados en `docs/design/references/sgpdf-v4/` con SHA-256 verificados; allí figuran enlaces y hashes.
-- **R4-D V4 realignment:** tabs y rail implementados. Gate Windows 17-10: test de selección Home realineado en `e4220b6`; focal 13 PASS/1 SKIP, full 1288 PASS/0 FAIL/1 SKIP, build 0/0, smoke 30s PASS. QA Windows parcial detenida por Escape del usuario; no cierre visual. CI final por verificar tras publicar. R4-C/R4-D siguen QA_PENDING; bloque 3/R5/T9.2 no iniciados. Ver checkpoint del rail.
+- **R4-D V4 realignment:** tabs y rail implementados. Gate Windows 17-10: test de selección Home realineado en `e4220b6`; focal 13 PASS/1 SKIP, full 1288 PASS/0 FAIL/1 SKIP, build 0/0, smoke 30s PASS. QA Windows parcial detenida por Escape del usuario; no cierre visual. CI exact-head `0427cff` / [39076821081](https://github.com/sierraglobalcompany-rgb/SG-PDF-Editor/actions/runs/39076821081) SUCCESS (1.288 PASS/0 FAIL/1 SKIP, build 0/0, smoke 30s); no equivale a QA Windows. R4-C/R4-D siguen QA_PENDING; bloque 3/R5/T9.2 no iniciados. Ver checkpoint del rail.
 - **R5 NOT STARTED. T9.2 NOT STARTED. NO MERGE a main** (`main` read-only).
 
 
@@ -126,9 +126,13 @@ R1/R1B/R2/R3                  GREEN / CLOSED técnico
 R4-B                            GREEN / CLOSED
 R4-C                            QA_PENDING, CI PASS; Windows QA pendiente
 V4 mockups                      APROBADOS; binarios de referencia incorporados; comparación Windows pendiente
-R4-D                            TABS CODE PUSHED, CI_PENDING; rail → top bar → drawer
+R4-D                            TABS+RAIL PUBLISHED / CI GREEN / WINDOWS QA_PENDING; bloque 3 cerrado
 R5/T9.2                        NOT STARTED
 main                            READ-ONLY, NO MERGE
 ```
 
 Al cambiar UI, leer `docs/design/SGPDF_V4_APPROVED_SHELL_2026-10-17.md` y reutilizar los iconos de `Assets/SGPdf.App.ico`, `Assets/SGPdf.Document.png`, `Assets/HomeTools/*.png` y `Themes/ShellIcons.xaml` según autoridad vigente; no usar recortes del mockup como assets productivos.
+
+## Gate visual activo 2026-10-17
+
+- [Matriz Windows W01–W15 + 4 vistas V4](docs/qa/2026-10-17-r4c-r4d-v4-windows-matrix.md). La QA manual no está completa; no iniciar bloque 3, R5 ni merge. Los cinco PNG V4 ya están en GitHub.

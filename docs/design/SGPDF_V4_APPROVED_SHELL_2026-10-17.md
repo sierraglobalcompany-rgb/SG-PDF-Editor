@@ -39,9 +39,9 @@ Documentos del paquete del chat: `SG_PDF_MOCKUP_V4_IDENTIDAD_OFICIAL_ESPECIFICAC
 | Cabecera, menú, zoom y navegación incoherentes | `MainWindow.Documents.cs`, `MainWindow.xaml`; evitar nuevas filas/duplicación de comandos |
 | Toggle / pestañas Páginas-Marcadores y estados de feedback visualmente débiles | `MainWindow.ReaderThumbnails.cs`, reutilizando `MainWindow.ReaderLinks.cs`; preservar navegación, cargas diferidas, cancelación y aislamiento por PDF |
 
-## R4-D — slice visual aprobado, aún NO implementado
+## R4-D — pestañas y barra izquierda implementadas; QA Windows pendiente
 
-**Orden:** preflight exact-head y rama limpia → test RED para la fuga de tipo/selección de tabs → mínima reparación del dueño de las pestañas → focal GREEN → pausa/checkpoint → rail/menú/drawer por microtareas → build completo/tests/smoke → capturas de Windows *reales* Light/Dark, escala 125%, navegación cerrada/abierta, teclado/foco, varias tabs, Home, ZPL → CI exact-head después del último commit → checkpoint. **No cerrar R4/C/D ni declarar fidelidad visual por test automático.**
+**Restante:** completar [matriz Windows V4](../qa/2026-10-17-r4c-r4d-v4-windows-matrix.md) con cuatro capturas **reales** de WPF, W01–W15 y controles tabs/rail en Light/Dark, 125%, teclado/foco, multi-PDF, Home/ZPL. CI verde no equivale a QA visual. No avanzar bloque 3, R5, T9.2 ni merge.
 
 **Aceptación V4:**
 - 0 textos internos de tipos/clases expuestos.
@@ -57,7 +57,7 @@ Documentos del paquete del chat: `SG_PDF_MOCKUP_V4_IDENTIDAD_OFICIAL_ESPECIFICAC
 
 - **R4-B:** GREEN cerrado (no reabrir).
 - **R4-C:** código en `5ff2117`, CI PASS, **QA_PENDING**; Windows W01–W15 sin cierre. Checkpoint original fuera de GitHub: `R4C_CHECKPOINT.md` (debe sincronizarse como evidencia, sin inventar QA).
-- **R4-D:** diseño V4 aprobado; **IMPLEMENTATION_NOT_STARTED** en esta referencia.
+- **R4-D:** diseño V4 aprobado; **CODE_IMPLEMENTED / CI_GREEN / WINDOWS_QA_PENDING**. Las pestañas y el rail están publicados, pero la fidelidad V4 no está certificada.
 - **R5/T9.2:** NOT STARTED; **NO MERGE**.
 - `.planning/STATE.md` y `.planning/ROADMAP.md` deben reflejar los estados actuales y enlazar esta autoridad.
 - Estilo SG: KISS + antirruido + anti-parches + ley diseño. Aceptación del diseño **no sustituye** aprobación para modificar arquitectura ni exime pruebas.
@@ -68,4 +68,4 @@ Leer GitHub HEAD y CI → `.planning/STATE.md` → esta referencia → `.plannin
 
 ## Progreso posterior a la aprobación
 
-Primer microbloque R4-D (pestañas) enviado a la rama: prueba contrato `83c136501722222b798d198efd473b5a8225f060`, estilo `b5095b9db91cda52331bed3e8609f50525d8da15` y UI `14065f7608adaa13d75769236fba9f9e067e5132`. **Pendientes:** prueba CI exact-head de implementación, verificación del leak en Windows y comparación contra V4. Este progreso no certifica el diseño ni elimina el bloqueo de los cinco PNG V4 sin subir.
+Tabs: test `83c1365`, tema `b5095b9`, código `14065f7`. Rail: test `ca0d905`, código `2055f70`, tema `da060c5`; alineación y selección desde owner real. Gate test Home realineado en `e4220b6`. **Los cinco PNG están versionados** en `docs/design/references/sgpdf-v4/` con hashes registrados arriba. Exact-head CI [39076821081](https://github.com/sierraglobalcompany-rgb/SG-PDF-Editor/actions/runs/39076821081) SUCCESS en `0427cfff84e500884759d5287fd53054738c2fb9`: 1.288 PASS, 0 FAIL, 1 SKIP, build 0/0, smoke 30s. **Falta QA Windows visual de R4-C/R4-D**; ver [matriz](../qa/2026-10-17-r4c-r4d-v4-windows-matrix.md). No bloque 3, R5 ni merge.
