@@ -2,19 +2,31 @@
 
 ## AUTORIDAD VIGENTE — 2026-10-17
 
-Este documento conserva **arquitectura y decisiones durables**. El estado operativo diario no se deduce de snapshots históricos: usar primero GitHub exact HEAD/CI → `.planning/STATE.md` → `.planning/ROADMAP.md`.
+Este documento conserva **arquitectura y decisiones durables**. El estado operativo diario se resuelve en este orden:
 
-Estado resumido:
-- F0–F12: CLOSED / FROZEN para la baseline automatizada ya documentada;
+1. GitHub exact HEAD + exact-head CI;
+2. `.planning/STATE.md`;
+3. `.planning/ROADMAP.md`;
+4. `.planning/REQUIREMENTS.md`;
+5. spec/plan aprobado del slice;
+6. para UI/UX: `docs/design/SGPDF_DESIGN_LAW.md` + `.agents/skills/sgpdf-design/SKILL.md`;
+7. este MASTER_CONTEXT para decisiones durables;
+8. históricos como evidencia/contexto.
+
+Estado resumido actual:
+- F0–F12: CLOSED / FROZEN para la baseline automatizada;
 - F13: ACTIVE;
 - Task9 / T9.1: ACTIVE;
-- último anchor GREEN antes del R1 document-shell: `0abae7ceb5f08611180c883346e21589d1509664`, CI run `39000181654` SUCCESS;
-- R1 multidocumento actual: RED / INCOMPLETE en `bbae51f49ee3c54e3667c5ea477c2c3f179d3c46`;
-- DG-0 SG Design Governance se valida aislado antes de retomar R1;
-- `main` continúa read-only en `31c0594758a83ec555d73ecdd7c597cdf8791fd7`;
-- no hay merge aprobado.
+- DG-0 Design Governance: GREEN / CLOSED;
+- R1 reader multi-document core: GREEN en `454dcadb6eca13ab98b5d219146dd10ec25af78d`, exact-head CI run `39004872760` SUCCESS;
+- siguiente bloque: R1B per-document pending state + close guard;
+- R2 tabs/top shell bloqueado hasta R1B GREEN;
+- T9.2 NOT STARTED;
+- F14–F18 FROZEN;
+- `main` read-only; no merge aprobado.
 
-La autoridad de diseño está en `docs/design/SGPDF_DESIGN_LAW.md` y la skill obligatoria para UI/UX en `.agents/skills/sgpdf-design/SKILL.md`.
+Checkpoint R1:
+`docs/history/2026-10-17-f13-t9-1-r1-reader-core-green-checkpoint.md`.
 
 ---
 
@@ -90,17 +102,15 @@ SG PDF Editor
 └─ Windows Printing
 ```
 
-### Decisiones durables
-
-- **PDFium** es el motor PDF primario.
-- Toda llamada nativa PDFium se serializa mediante `PdfiumRuntime.NativeGate`; no se trata PDFium como thread-safe.
-- **Labelize 1.7.0** es el único renderer ZPL runtime aprobado, ejecutado como proceso local pinneado.
+Decisiones durables:
+- PDFium es el motor PDF primario.
+- Toda llamada nativa PDFium se serializa mediante `PdfiumRuntime.NativeGate`.
+- Labelize 1.7.0 es el único renderer ZPL runtime aprobado.
 - BinaryKits es histórico; no fallback runtime.
 - No Labelary ni HTTP/local server para render ZPL.
 - PDFsharp no se convierte en un segundo motor PDF general.
 - qpdf permanece sidecar estrecho; no motor general.
 - ZXing.Net permanece tests/QA-only.
-- DejaVu Sans sigue permitido donde la baseline pinneada lo usa.
 - No segundo viewer, plugin framework, generalized ModeManager, conversion framework genérico o BatchEngine genérico sin decisión explícita.
 
 ## 4. Solución KISS
@@ -124,7 +134,37 @@ La separación por archivos/feature se usa solo para mantener owners comprensibl
 - Las funciones que modifican contenido deben respetar los guards/transactional patterns ya cerrados en sus slices.
 - Firma visual y firma criptográfica son capacidades distintas.
 
-## 6. ZPL / etiquetas
+## 6. Multi-documento
+
+La dirección aprobada para T9.1 es multi-documento real, no tabs decorativos.
+
+Owner mínimo:
+
+```text
+OpenDocuments
+ActiveDocument
+PdfDocumentWorkspace por PDF
+```
+
+Cada `PdfDocumentWorkspace` ya posee:
+- `PdfDocumentSession`;
+- page sizes;
+- navegación;
+- zoom;
+- offset vertical;
+- dirty marker.
+
+R1 reader core quedó GREEN en `454dcadb...`.
+
+Requisito de usuario aún pendiente antes de tabs visibles:
+- cambiar de documento debe preservar trabajo pendiente por PDF (edición/firma/comentarios/organización cuando aplique), no exigir guardar solo para cambiar de tab ni descartar estado silenciosamente;
+- cierre de un documento dirty debe tener guard explícito.
+
+Por eso R1B precede a R2.
+
+No crear un document framework, DI container, event bus o ModeManager para resolverlo. Extender owners existentes con el mínimo estado necesario.
+
+## 7. ZPL / etiquetas
 
 Entradas aprobadas:
 - `.zpl`;
@@ -133,18 +173,7 @@ Entradas aprobadas:
 
 `^PQ` representa cantidad de salida; no multiplica innecesariamente trabajo de render por diseño.
 
-Labelize 1.7.0 permanece el renderer oficial local. El flujo general sigue siendo:
-
-```text
-ZPL local
-→ parser/documento normalizado
-→ LabelizeProcessRenderer
-→ output temporal local
-→ preview/layout/export/print
-→ cleanup
-```
-
-El runtime no descarga Labelize ni usa red.
+Labelize 1.7.0 permanece el renderer oficial local.
 
 ### UX ZPL durable
 
@@ -160,19 +189,50 @@ Aplicar progressive disclosure:
 
 Detalle: `.agents/skills/sgpdf-design/references/properties-panels.md`.
 
-## 7. Autoridad visual
+## 8. Autoridad visual
 
 Roles separados:
-
-- **App/software icon:** identidad de EXE/titlebar/taskbar/Alt-Tab.
+- **App/software icon:** EXE/titlebar/taskbar/Alt-Tab.
 - **PDF document icon:** identidad de archivo/documento; asociación Windows futura solo mediante instalador aprobado.
 - **15 Home tool icons:** arte oficial por herramienta.
 
-No reinterpretar estos activos durante cambios de UX no relacionados.
+No reinterpretar estos activos durante cambios UX no relacionados.
 
 `PDF a PNG` continúa siendo el contrato funcional actual aunque el arte aprobado comunique genéricamente PDF→imagen. No anunciar JPG hasta que esa capacidad exista.
 
-## 8. Ley SG de Diseño aplicada a WPF
+## 9. Document shell / UX aprobado
+
+Hallazgos abiertos:
+- DS-001 DOCUMENT_SHELL — P1 OPEN.
+- DS-002 MULTI_DOCUMENT_WORKSPACE — P1 ACTIVE; reader core GREEN, R1B next.
+- DS-003 SHELL_RAIL_PRESENTATION — P1 OPEN.
+- DS-004 DOCUMENT_TOOL_RAIL — P1 OPEN.
+- DS-005 READER_NAV_DRAWER — P1 OPEN.
+- DS-006 BOOKMARKS — P2 AUDIT_REQUIRED.
+- DS-007 IMAGE_SELECTION_RENDERING — P1 REPRODUCE_REQUIRED.
+- DS-008 PDF_CONTEXT_MENU — P1 OPEN.
+- DS-009 TOP_SHELL — P1 OPEN.
+- DS-010 EDIT_OBJECT_INTERACTION — P1 OPEN.
+
+Secuencia:
+
+```text
+R1B pending state + close guard
+→ R2 top shell + tabs
+→ R3 document rail + approved icons
+→ R4 Pages/Bookmarks collapsible drawer
+→ R5 context menus
+→ R6 image-selection root cause
+→ R7 final visual/functional QA
+```
+
+Páginas/Marcadores debe abrir **contraído por defecto** y permitir expand/collapse.
+
+El context menu PDF debe reutilizar capacidades reales; no copiar Adobe indiscriminadamente.
+
+La selección de imagen no debe teñir la imagen completa de azul. El código declara fill transparente; si el tintado visual ocurre, se trata como bug y se reproduce antes de corregir.
+
+## 10. Ley SG de Diseño aplicada a WPF
 
 Para cualquier menú, barra, rail, Home, properties panel, diálogo, formulario, copy, icono visible, layout o estado:
 
@@ -186,7 +246,7 @@ Para cualquier menú, barra, rail, Home, properties panel, diálogo, formulario,
 
 Gate mínimo de cierre visual:
 - Light + Dark;
-- 125% Windows scaling;
+- 125% Windows scaling real cuando se exige;
 - teclado/tab/foco;
 - estados aplicables;
 - sin clipping/scroll horizontal accidental;
@@ -196,7 +256,7 @@ Gate mínimo de cierre visual:
 
 No introducir framework UI nuevo para lograr polish que WPF/resources/templates existentes pueden resolver.
 
-## 9. Funcionalidad profesional cerrada hasta F12
+## 11. Funcionalidad profesional cerrada hasta F12
 
 La baseline histórica contiene, entre otros:
 - safe redaction conservadora;
@@ -207,15 +267,15 @@ La baseline histórica contiene, entre otros:
 - QR PNG únicamente;
 - PDF→PNG, todas las páginas, 144 DPI fijo en su MVP cerrado.
 
-Ampliaciones de estas capacidades requieren un nuevo gate explícito; no extender por conveniencia desde tareas visuales.
+Ampliaciones requieren un nuevo gate explícito; no extender por conveniencia desde tareas visuales.
 
-## 10. QA y semántica de evidencia
+## 12. QA y semántica de evidencia
 
 - AUTO/CI PASS demuestra únicamente lo ejecutado por automatización.
 - Windows-real, hardware, private corpus, impresora/scanner, stylus/touch, PFX real, lector externo, offline físico y compatibilidad externa requieren evidencia separada.
 - Usar `NOT RUN` o `BLOCKED — ENVIRONMENT` cuando corresponda; nunca inferir PASS.
 
-## 11. Estado F13 / continuidad
+## 13. Estado F13 / continuidad
 
 ### Cerrado antes de Task9
 - F13 Tasks 1–8: cerradas por sus checkpoints.
@@ -225,25 +285,20 @@ Ampliaciones de estas capacidades requieren un nuevo gate explícito; no extende
 - T9.1: ACTIVE.
 - T9.2: NOT STARTED.
 
-Anchor GREEN pre-R1:
-`0abae7ceb5f08611180c883346e21589d1509664` — CI run `39000181654` SUCCESS.
+R1 reader multi-document GREEN:
+`454dcadb6eca13ab98b5d219146dd10ec25af78d` — CI `39004872760` SUCCESS.
 
-R1 congelado/incompleto durante DG-0:
-`feat/f13-task9-t9-1-document-shell-realignment-20261017` @ `bbae51f49ee3c54e3667c5ea477c2c3f179d3c46`.
+Siguiente:
+`T9.1-R1B — PER_DOCUMENT_PENDING_STATE_AND_CLOSE_GUARD`.
 
-DG-0 existe para que el resto de T9.1 se diseñe bajo una autoridad UX estable en lugar de seguir agregando opciones/paneles sin jerarquía.
+No iniciar R2 visible hasta R1B GREEN. No iniciar T9.2 hasta cierre real de T9.1.
 
-## 12. Reanudación correcta
+## 14. Historia y recuperación
 
-1. terminar DG-0 y dejar checkpoint GREEN;
-2. reanudar R1 desde su checkpoint sin perder los contratos RED existentes;
-3. aplicar la design skill a cada superficie UI afectada;
-4. completar T9.1 con sus gates automáticos + visuales;
-5. T9.2 solo después del cierre real de T9.1;
-6. F14–F18 permanecen frozen;
-7. `main` solo con aprobación explícita.
-
-## 13. Historia y detalle
+Detalle operativo actual:
+- `.planning/STATE.md`;
+- `.planning/ROADMAP.md`;
+- `docs/history/2026-10-17-f13-t9-1-r1-reader-core-green-checkpoint.md`.
 
 Los detalles de slices cerrados, preservation matrices, release packs, decisiones y experimentos siguen bajo `.planning/REQUIREMENTS.md`, `docs/history/**`, `docs/release/**` y planes/specs de `docs/superpowers/**`.
 
