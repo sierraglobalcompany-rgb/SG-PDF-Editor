@@ -9,17 +9,19 @@ Aplicación Windows local-first para trabajar con PDF y etiquetas térmicas ZPL 
 - T9.0: DONE.
 - T9.1: ACTIVE — realineamiento document shell / UX.
 - DG-0 SG Design Governance: **GREEN / CLOSED**.
-- R1 reader multi-document core: **GREEN / CLOSED** en `454dcadb6eca13ab98b5d219146dd10ec25af78d`.
-- R1B per-document pending state + close guard: **GREEN / CLOSED técnicamente** en `26d026b2fbe1f35754bcf7cef660d2fdaa7e5d34`.
-- Exact-head CI R1B: run `39040326178`, job `117418290462` — Build PASS 0 warnings/0 errors, startup smoke PASS 30 s, tests `1274 passed / 0 failed / 4 skipped / 1278 total`.
-- Los 4 skips son contratos futuros intencionales de R2–R5: tabs, rail oficial, drawer Páginas/Marcadores y context menu PDF.
-- Próximo bloque elegible: **T9.1-R2 — top shell + real document tabs**. No está iniciado por este checkpoint.
+- R1 reader multi-document core: **GREEN / CLOSED**.
+- R1B per-document pending state + close guard: **GREEN / CLOSED**.
+- R2 top shell + real document tabs: **GREEN / CLOSED** en `cf816557adab80f0e6e2e4ecb2f6628dc92eba90`.
+- R3 document rail + official artwork: **GREEN / CLOSED técnicamente**; product commit `394bd320f8df03c0b00b5a517c00869a6c3a74e2`, exact-head GREEN `4050ef37422fc2cdb98b79f4bd4c215534fc553e`.
+- Exact-head CI R3: run `39046256870`, job `117435463253` — Build PASS 0 warnings/0 errors, startup smoke PASS 30 s, tests `1279 passed / 0 failed / 2 skipped / 1281 total`.
+- Los 2 skips restantes son contratos futuros intencionales: R4 drawer Páginas/Marcadores y R5 context menu PDF.
+- Próximo bloque elegible: **T9.1-R4 — Pages/Bookmarks collapsible drawer**. No iniciado.
 - Rama canónica: `feat/f13-task9-t9-1-document-shell-realignment-20261017`.
 - `main` continúa read-only en `31c0594758a83ec555d73ecdd7c597cdf8791fd7`; no hay merge aprobado.
 - T9.2 no iniciado; F14–F18 frozen.
 
-Checkpoint de recuperación R1B:
-`docs/history/2026-10-17-f13-t9-1-r1b-pending-state-green-checkpoint.md`.
+Checkpoint de recuperación R3:
+`docs/history/2026-10-17-f13-t9-1-r3-green-r4-next-checkpoint.md`.
 
 El PASS automatizado no equivale a QA real/manual/private/physical. Esos gates permanecen separados donde corresponda.
 
@@ -31,6 +33,7 @@ Resolver flujos diarios PDF + ZPL de forma rápida, privada, estable, comprensib
 
 - abrir, leer, navegar e imprimir;
 - varios PDF abiertos con estado independiente;
+- pestañas reales para cambiar y cerrar documentos;
 - preservar trabajo pendiente de Editar, Firmar, Comentar, Organizar y Formularios al cambiar de documento;
 - firma visual con PNG/foto/InkCanvas y biblioteca local;
 - firma criptográfica PFX/P12 dentro del alcance aprobado;
@@ -102,6 +105,8 @@ PdfDocumentWorkspace por PDF
 
 R1B guarda **estado de modelo**, no controles WPF. Al cambiar de PDF se captura el documento activo, se desacopla su presentación y se restaura/reconstruye la presentación del documento objetivo. Abrir otro PDF, Ctrl+O y Recientes no fuerzan discard del trabajo pendiente. Cerrar un documento dirty sí usa guard explícito antes de disposal.
 
+R2 y R3 añaden presentación sobre esos owners existentes, no una arquitectura paralela.
+
 ## Fuente de verdad
 
 Antes de tocar código o documentación operativa:
@@ -119,7 +124,11 @@ Antes de tocar código o documentación operativa:
 
 ## Autoridad visual
 
-El icono de aplicación, icono de documento PDF y los 15 iconos Home aprobados tienen roles separados. No se rediseñan durante tareas ajenas. `PDF a PNG` permanece como contrato funcional actual; no se anuncia JPG hasta que exista esa capacidad. La asociación Windows de archivos pertenece al instalador futuro, no a hacks de Registry.
+El icono de aplicación, icono de documento PDF y los 15 iconos Home aprobados tienen roles separados. No se rediseñan durante tareas ajenas.
+
+En el rail documental, el arte oficial aprobado ya se reutiliza para Editar, Firmar, Organizar, OCR, Censurar, Comparar, Convertir y Proteger. Leer, Comentar y Formularios mantienen glyph fallback hasta que exista arte aprobado específico.
+
+`PDF a PNG` permanece como contrato funcional actual; no se anuncia JPG hasta que exista esa capacidad. La asociación Windows de archivos pertenece al instalador futuro, no a hacks de Registry.
 
 ## Continuidad T9.1
 
@@ -128,15 +137,16 @@ Orden aprobado:
 ```text
 R1 reader multi-document core             ✅ GREEN / CLOSED
 R1B pending state + close guard           ✅ GREEN / CLOSED
-R2 top shell + document tabs              ▶ NEXT / NOT STARTED
-R3 document rail + approved icons         ⏳
-R4 Pages/Bookmarks collapsible drawer     ⏳
+R2 top shell + document tabs              ✅ GREEN / CLOSED
+R3 document rail + approved icons         ✅ GREEN / CLOSED técnico
+R4 Pages/Bookmarks collapsible drawer     ▶ NEXT / NOT STARTED
 R5 contextual menus                       ⏳
 R6 image-selection root cause             ⏳
 R7 final visual/functional QA             ⏳
+T9.2                                      🔒 NOT STARTED
 ```
 
-R2 debe reutilizar `OpenDocuments`, `ActiveDocument`, `PdfDocumentWorkspace`, `ActivateDocumentAsync` y el dirty-close guard de R1B; no crear un segundo owner de sesiones/documentos.
+R4 debe reutilizar el renderer/scheduler de thumbnails ya existente y auditar la fuente real de bookmarks antes de declarar esa pestaña funcional.
 
 ## Privacidad
 
