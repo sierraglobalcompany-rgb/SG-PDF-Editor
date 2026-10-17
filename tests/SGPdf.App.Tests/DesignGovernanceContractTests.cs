@@ -44,8 +44,10 @@ public sealed class DesignGovernanceContractTests
         Assert.Contains("F13", state, StringComparison.Ordinal);
         Assert.Contains("Task9", state, StringComparison.Ordinal);
         Assert.Contains("DG-0", state, StringComparison.Ordinal);
-        Assert.Contains("0abae7ceb5f08611180c883346e21589d1509664", state, StringComparison.Ordinal);
-        Assert.Contains("bbae51f49ee3c54e3667c5ea477c2c3f179d3c46", state, StringComparison.Ordinal);
+        Assert.Contains("R1B", state, StringComparison.Ordinal);
+        Assert.Contains("R2", state, StringComparison.Ordinal);
+        Assert.Contains("feat/f13-task9-t9-1-document-shell-realignment-20261017", state, StringComparison.Ordinal);
+        Assert.DoesNotContain("feat/f12-7-pdf-to-png-mvp-green3", state, StringComparison.Ordinal);
 
         Assert.Contains("AUTORIDAD VIGENTE — 2026-10-17", master, StringComparison.Ordinal);
         Assert.Contains("docs/design/SGPDF_DESIGN_LAW.md", master, StringComparison.Ordinal);
