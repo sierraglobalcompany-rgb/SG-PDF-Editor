@@ -37,6 +37,10 @@ internal sealed class PdfDocumentWorkspace : IDisposable
 
     internal double VerticalOffset { get; set; }
 
+    internal bool IsReaderNavigationOpen { get; set; }
+
+    internal int ReaderNavigationSelectedIndex { get; set; }
+
     internal PdfDocumentPendingState PendingState { get; }
 
     internal bool IsDirty { get; private set; }
