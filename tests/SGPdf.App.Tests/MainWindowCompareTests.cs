@@ -88,16 +88,19 @@ public sealed class MainWindowCompareTests
     }
 
     [Fact]
-    public void CompareUi_ReusesExistingWorkspaceResetOwner()
+    public void CompareUi_ReusesDocumentPendingOwnerForWorkspaceChanges()
     {
         string root = FindRepositoryRoot();
         string documents = File.ReadAllText(Path.Combine(root, "src", "SGPdf.App", "MainWindow.Documents.cs"));
+        string pending = File.ReadAllText(Path.Combine(root, "src", "SGPdf.App", "MainWindow.DocumentPendingState.cs"));
         string edit = File.ReadAllText(Path.Combine(root, "src", "SGPdf.App", "MainWindow.Edit.cs"));
         string organize = File.ReadAllText(Path.Combine(root, "src", "SGPdf.App", "MainWindow.Organize.cs"));
         string sign = File.ReadAllText(Path.Combine(root, "src", "SGPdf.App", "MainWindow.Sign.cs"));
         string forms = File.ReadAllText(Path.Combine(root, "src", "SGPdf.App", "MainWindow.Forms.cs"));
 
-        Assert.Contains("ResetAcroFormUi();", documents, StringComparison.Ordinal);
+        Assert.Contains("CaptureActiveDocumentPendingState();", documents, StringComparison.Ordinal);
+        Assert.Contains("RestoreDocumentPendingState(document);", documents, StringComparison.Ordinal);
+        Assert.Contains("DetachActiveDocumentPendingUi", pending, StringComparison.Ordinal);
         Assert.Contains("ResetAcroFormUi();", edit, StringComparison.Ordinal);
         Assert.Contains("ResetAcroFormUi();", organize, StringComparison.Ordinal);
         Assert.Contains("ResetAcroFormUi();", sign, StringComparison.Ordinal);
