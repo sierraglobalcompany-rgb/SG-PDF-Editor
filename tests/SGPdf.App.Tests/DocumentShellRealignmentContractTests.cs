@@ -119,6 +119,36 @@ public sealed class DocumentShellRealignmentContractTests
     }
 
     [Fact]
+    public void DocumentToolRail_V4SingleSelectedOwnerAndUniformLayout()
+    {
+        var shellSource = File.ReadAllText(FindRepoFile("src", "SGPdf.App", "MainWindow.Shell.cs"));
+        var styles = XDocument.Load(FindRepoFile("src", "SGPdf.App", "Themes", "Modern.xaml"));
+        XNamespace x = "http://schemas.microsoft.com/winfx/2006/xaml";
+        XNamespace presentation = "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+
+        // Only the existing mode-based owner chooses selected styling.
+        Assert.Contains("UpdateDocumentToolRailSelection()", shellSource);
+        Assert.DoesNotContain("string.Equals(descriptor.Id, \"read\", StringComparison.Ordinal)", shellSource);
+        Assert.Contains("descriptor.DocumentIconPath", shellSource);
+        Assert.Contains("IsEnabled = descriptor.ActionId is not null", shellSource);
+        Assert.Contains("Width = 72d", shellSource);
+
+        var railStyle = styles.Descendants(presentation + "Style")
+            .Single(e => (string?)e.Attribute(x + "Key") == "SgRailItemStyle");
+        var selectedStyle = styles.Descendants(presentation + "Style")
+            .Single(e => (string?)e.Attribute(x + "Key") == "SgRailItemSelectedStyle");
+        Assert.Contains(railStyle.Elements(presentation + "Setter"),
+            setter => (string?)setter.Attribute("Property") == "Height"
+                   && (string?)setter.Attribute("Value") == "60");
+        Assert.Contains(selectedStyle.Elements(presentation + "Setter"),
+            setter => (string?)setter.Attribute("Property") == "Background"
+                   && ((string?)setter.Attribute("Value"))?.Contains("SgCanvasBrush") == true);
+        Assert.Contains(selectedStyle.Elements(presentation + "Setter"),
+            setter => (string?)setter.Attribute("Property") == "BorderBrush"
+                   && ((string?)setter.Attribute("Value"))?.Contains("SgAccentBrush") == true);
+    }
+
+    [Fact]
     public void ImageSelectionOverlay_RemainsTransparentInsteadOfTintingSelectedImage()
     {
         var editSource = File.ReadAllText(FindRepoFile("src", "SGPdf.App", "MainWindow.Edit.cs"));
