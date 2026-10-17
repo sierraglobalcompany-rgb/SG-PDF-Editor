@@ -2,6 +2,7 @@ using System.Reflection;
 using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
@@ -54,6 +55,12 @@ public sealed class MainWindowShellStateTests
 
                 Assert.Equal("Pdf", GetShellKind(window));
                 Assert.Equal(Visibility.Collapsed, GetHomeDashboard(window).Visibility);
+                // Runtime regression: actual PDF selection and header strip track the same owner.
+                var tabs = Assert.IsType<TabControl>(window.FindName("DocumentTabs"));
+                Assert.Single(tabs.Items);
+                Assert.Same(window.ActiveDocument, tabs.SelectedItem);
+                Assert.NotNull(window.ActiveDocument);
+                Assert.Equal(Visibility.Visible, tabs.Visibility);
             }
             finally { CloseClean(window); }
         });
