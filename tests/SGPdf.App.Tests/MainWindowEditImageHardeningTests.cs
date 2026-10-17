@@ -53,7 +53,7 @@ public sealed class MainWindowEditImageHardeningTests
     }
 
     [Fact]
-    public void DirtyImageEdit_CtrlODeclined_DoesNotOpenPickerOrDropWorkspace()
+    public void DirtyImageEdit_CtrlO_OpensPickerWithoutDiscardingWorkspace()
     {
         OrganizeWindowTestHost.RunInSta(async () =>
         {
@@ -63,7 +63,12 @@ public sealed class MainWindowEditImageHardeningTests
             {
                 var prepared = await ImageEditCommandTestHost.PrepareAsync(window, fixture.Path);
                 Assert.True((bool)OrganizeWindowTestHost.Invoke(window, "RotateSelectedImage", 5d)!);
-                OrganizeWindowTestHost.SetField(window, "_confirmDiscardImageEditChanges", (Func<bool>)(() => false));
+                var discardPrompts = 0;
+                OrganizeWindowTestHost.SetField(window, "_confirmDiscardImageEditChanges", (Func<bool>)(() =>
+                {
+                    discardPrompts++;
+                    return false;
+                }));
                 var openCalls = 0;
                 OrganizeWindowTestHost.SetField(window, "_openPdfShortcutAction", (Action)(() => openCalls++));
 
@@ -75,7 +80,8 @@ public sealed class MainWindowEditImageHardeningTests
                     null)!;
 
                 Assert.True(handled);
-                Assert.Equal(0, openCalls);
+                Assert.Equal(1, openCalls);
+                Assert.Equal(0, discardPrompts);
                 Assert.True((bool)OrganizeWindowTestHost.GetField(window, "_editModeActive")!);
                 Assert.Same(prepared.Workspace, OrganizeWindowTestHost.GetField(window, "_imageEditWorkspace"));
                 Assert.True(prepared.Workspace.IsDirty);
