@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Windows.Media.Imaging;
+using System.Windows.Threading;
 using SGPdf.App.Pdf;
 using Xunit;
 
@@ -29,6 +30,7 @@ public sealed class MainWindowOrganizeThumbnailTests
 
                 Assert.True(await OrganizeWindowTestHost.OpenReaderAsync(window, fixture.Path));
                 Assert.True((bool)OrganizeWindowTestHost.Invoke(window, "TryEnterOrganizeMode")!);
+                DrainQueuedOrganizeRefresh();
                 await OrganizeWindowTestHost.InvokeTask(window, "RefreshOrganizeThumbnailRenderWindowAsync");
 
                 var items = OrganizeWindowTestHost.GetOrganizeItems(window);
@@ -67,6 +69,7 @@ public sealed class MainWindowOrganizeThumbnailTests
 
                 Assert.True(await OrganizeWindowTestHost.OpenReaderAsync(window, fixture.Path));
                 Assert.True((bool)OrganizeWindowTestHost.Invoke(window, "TryEnterOrganizeMode")!);
+                DrainQueuedOrganizeRefresh();
                 await OrganizeWindowTestHost.InvokeTask(window, "RefreshOrganizeThumbnailRenderWindowAsync");
                 foreach (var item in OrganizeWindowTestHost.GetOrganizeItems(window))
                     OrganizeWindowTestHost.InvokeOn(item, "ReleaseBitmap");
@@ -129,6 +132,7 @@ public sealed class MainWindowOrganizeThumbnailTests
 
                 Assert.True(await OrganizeWindowTestHost.OpenReaderAsync(window, fixture.Path));
                 Assert.True((bool)OrganizeWindowTestHost.Invoke(window, "TryEnterOrganizeMode")!);
+                DrainQueuedOrganizeRefresh();
                 await OrganizeWindowTestHost.InvokeTask(window, "RefreshOrganizeThumbnailRenderWindowAsync");
 
                 var items = OrganizeWindowTestHost.GetOrganizeItems(window);
@@ -158,6 +162,7 @@ public sealed class MainWindowOrganizeThumbnailTests
 
                 Assert.True(await OrganizeWindowTestHost.OpenReaderAsync(window, fixture.Path));
                 Assert.True((bool)OrganizeWindowTestHost.Invoke(window, "TryEnterOrganizeMode")!);
+                DrainQueuedOrganizeRefresh();
                 await OrganizeWindowTestHost.InvokeTask(window, "RefreshOrganizeThumbnailRenderWindowAsync");
 
                 var before = OrganizeWindowTestHost.GetOrganizeItems(window);
@@ -177,4 +182,7 @@ public sealed class MainWindowOrganizeThumbnailTests
             finally { OrganizeWindowTestHost.CloseClean(window); }
         });
     }
+
+    private static void DrainQueuedOrganizeRefresh()
+        => Dispatcher.CurrentDispatcher.Invoke(static () => { }, DispatcherPriority.ContextIdle);
 }
