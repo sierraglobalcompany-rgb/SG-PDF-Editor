@@ -21,7 +21,7 @@ GitHub + STATE mandan sobre snapshots viejos.
 - R1/R1B/R2/R3 technical GREEN/CLOSED; **R4-B GREEN/CLOSED**.
 - **R4-C QA_PENDING:** commit `5ff21171abb4b467e8796ba18f54e0d337ab2418`; CI `39069863859` SUCCESS, full suite 1286 PASS / 0 FAIL / 1 SKIP; Windows visual/functional W01–W15 incomplete.
 - **V4 Light/Dark shell mockups APROBADOS por usuario**: `docs/design/SGPDF_V4_APPROVED_SHELL_2026-10-17.md`. Cinco PNG aprobados **aún deben subirse a GitHub**; allí figuran nombres y SHA-256.
-- **R4-D V4 realignment:** IN PROGRESS; primer microbloque tabs (`14065f7`) publicado; CI exact-head y QA Windows NO VERIFICADOS. Prioridad: tabs leak del nombre de clase, indicador activo e icono de documento; rail consistente, menú/nav/drawer. Ver checkpoint `docs/history/2026-10-17-f13-t9-1-r4c-pending-v4-approved-checkpoint.md`.
+- **R4-D V4 realignment:** IN PROGRESS; microbloques tabs (`14065f7`) y rail (test `ca0d905`, código `2055f703`, tema `da060c5`) publicados; CI exact-head y QA Windows NO VERIFICADOS. Gate pendiente antes de más UI: `docs/history/2026-10-17-f13-t9-1-r4d-tool-rail-code-pushed-qa-pending.md`. Prioridad: tabs leak del nombre de clase, indicador activo e icono de documento; rail consistente, menú/nav/drawer. Ver checkpoint `docs/history/2026-10-17-f13-t9-1-r4c-pending-v4-approved-checkpoint.md`.
 - **R5 NOT STARTED. T9.2 NOT STARTED. NO MERGE a main** (`main` read-only).
 
 
