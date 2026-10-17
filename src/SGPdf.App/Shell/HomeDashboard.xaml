@@ -18,7 +18,7 @@
                 BorderBrush="{DynamicResource SgBorderBrush}"
                 BorderThickness="0,0,1,0"
                 Background="{DynamicResource SgPanelBrush}">
-            <Grid Margin="2,12">
+            <Grid Margin="0,12">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
@@ -29,8 +29,8 @@
 
                 <Button Grid.Row="0"
                         Style="{DynamicResource SgRailItemSelectedStyle}"
-                        Margin="2,3"
-                        Padding="2,8"
+                        Margin="0,3"
+                        Padding="0,8"
                         AutomationProperties.Name="Inicio"
                         Click="HomeRailInicio_Click">
                     <StackPanel HorizontalAlignment="Center">
@@ -40,13 +40,13 @@
                               Stroke="{DynamicResource TextFillColorPrimaryBrush}"
                               StrokeThickness="1.5"
                               Data="{DynamicResource ShellIconHome}" />
-                        <TextBlock Margin="0,4,0,0" Text="Inicio" TextAlignment="Center" TextWrapping="Wrap" />
+                        <TextBlock Margin="0,4,0,0" FontSize="11.5" Text="Inicio" TextAlignment="Center" TextWrapping="Wrap" />
                     </StackPanel>
                 </Button>
                 <Button Grid.Row="1"
                         Style="{DynamicResource SgRailItemStyle}"
-                        Margin="2,3"
-                        Padding="2,8"
+                        Margin="0,3"
+                        Padding="0,8"
                         AutomationProperties.Name="Herramientas"
                         Click="HomeRailTools_Click">
                     <StackPanel HorizontalAlignment="Center">
@@ -56,13 +56,13 @@
                               Stroke="{DynamicResource TextFillColorPrimaryBrush}"
                               StrokeThickness="1.5"
                               Data="{DynamicResource ShellIconTools}" />
-                        <TextBlock Margin="0,4,0,0" Text="Herramientas" TextAlignment="Center" TextWrapping="Wrap" />
+                        <TextBlock Margin="0,4,0,0" FontSize="11.5" Text="Herramientas" TextAlignment="Center" TextWrapping="Wrap" />
                     </StackPanel>
                 </Button>
                 <Button Grid.Row="2"
                         Style="{DynamicResource SgRailItemStyle}"
-                        Margin="2,3"
-                        Padding="2,8"
+                        Margin="0,3"
+                        Padding="0,8"
                         AutomationProperties.Name="Recientes"
                         Click="HomeRailRecent_Click">
                     <StackPanel HorizontalAlignment="Center">
@@ -72,13 +72,13 @@
                               Stroke="{DynamicResource TextFillColorPrimaryBrush}"
                               StrokeThickness="1.5"
                               Data="{DynamicResource ShellIconRecent}" />
-                        <TextBlock Margin="0,4,0,0" Text="Recientes" TextAlignment="Center" TextWrapping="Wrap" />
+                        <TextBlock Margin="0,4,0,0" FontSize="11.5" Text="Recientes" TextAlignment="Center" TextWrapping="Wrap" />
                     </StackPanel>
                 </Button>
                 <Button Grid.Row="4"
                         Style="{DynamicResource SgRailItemStyle}"
-                        Margin="2,3"
-                        Padding="2,8"
+                        Margin="0,3"
+                        Padding="0,8"
                         AutomationProperties.Name="Configuración"
                         ToolTip="Próximamente"
                         IsEnabled="False">
@@ -89,7 +89,7 @@
                               Stroke="{DynamicResource TextFillColorPrimaryBrush}"
                               StrokeThickness="1.5"
                               Data="{DynamicResource ShellIconSettings}" />
-                        <TextBlock Margin="0,4,0,0" Text="Configuración" TextAlignment="Center" TextWrapping="Wrap" />
+                        <TextBlock Margin="0,4,0,0" FontSize="11.5" Text="Configuración" TextAlignment="Center" TextWrapping="Wrap" />
                     </StackPanel>
                 </Button>
             </Grid>
