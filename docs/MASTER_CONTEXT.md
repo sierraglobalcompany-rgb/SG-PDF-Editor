@@ -13,23 +13,13 @@ Este documento conserva arquitectura y decisiones durables. El estado operativo 
 7. este MASTER_CONTEXT;
 8. históricos como evidencia/contexto.
 
-Estado resumido:
-- F0–F12 CLOSED/FROZEN para baseline automatizada;
-- F13 ACTIVE;
-- T9.0 DONE;
-- T9.1 ACTIVE;
-- DG-0 GREEN/CLOSED;
-- R1 GREEN/CLOSED;
-- R1B GREEN/CLOSED;
-- R2 top shell + real tabs GREEN/CLOSED en `cf816557adab80f0e6e2e4ecb2f6628dc92eba90`;
-- R3 document rail + official artwork GREEN/CLOSED técnicamente, exact-head `4050ef37422fc2cdb98b79f4bd4c215534fc553e`, CI `39046256870` SUCCESS;
-- R4 Pages/Bookmarks drawer NEXT / NOT STARTED;
-- T9.2 NOT STARTED;
-- F14–F18 FROZEN;
-- `main` read-only; no merge aprobado.
+Estado resumido y routing al 2026-10-17:
+- F0–F12 CLOSED/FROZEN; F13 Task9 T9.1 ACTIVE, T9.2 NOT STARTED; R1/R1B/R2/R3 technical GREEN/CLOSED.
+- R4-B GREEN/CLOSED. R4-C está en `QA_PENDING` (commit `5ff21171abb4b467e8796ba18f54e0d337ab2418`, CI `39069863859` SUCCESS, Windows W01–W15 sin completar).
+- Diseño visual V4 APROBADO por usuario; `docs/design/SGPDF_V4_APPROVED_SHELL_2026-10-17.md` es la referencia de UI. Los PNG de mockup todavía requieren publicación binaria en GitHub.
+- R4-D (shell V4 alignment) PLANNED / NOT IMPLEMENTED. R5 NOT STARTED, no merge a main.
+- Checkpoint: `docs/history/2026-10-17-f13-t9-1-r4c-pending-v4-approved-checkpoint.md`.
 
-Checkpoint actual:
-`docs/history/2026-10-17-f13-t9-1-r3-green-r4-next-checkpoint.md`
 
 ---
 
@@ -231,17 +221,15 @@ R6  image-selection root cause
 R7  final visual/functional QA
 ```
 
-## 11. R4 — next bounded slice
+## 11. R4 — recuperación de estado y V4 aprobado
 
-Pages/Bookmarks drawer must:
-- start collapsed by default;
-- expand/collapse explicitly;
-- reclaim workspace width when closed;
-- reuse existing thumbnail renderer/scheduler;
-- audit real bookmark/outline data before calling Bookmarks functional;
-- avoid a second navigation architecture;
-- use Ley SG de Diseño + RED→GREEN + exact-head CI;
-- checkpoint before R5.
+- R4-B GREEN/CLOSED.
+- R4-C implementación bookmark con lazy load, cancelación y feedback: CI automatizada PASS, QA Windows pendiente.
+- Los mockups V4 Light/Dark, drawer cerrado/abierto e iconografía oficial fueron aprobados; leer `docs/design/SGPDF_V4_APPROVED_SHELL_2026-10-17.md`.
+- R4-D planificado en microbloques: eliminar fuga de tipo en tabs + hacer activa distinguible + icono de documento; normalizar rail (único owner), command bar y drawer; evidenciar pantallas reales Windows.
+- Preservar modelo por PDF, permisos, PDFium, ZPL, R4-C funcional, sin nuevos frameworks.
+- No declarar GREEN visual antes de screenshots Light/Dark/125%/teclado y CI exact-head.
+
 
 ## 12. QA semantics
 
@@ -265,13 +253,5 @@ Do not accumulate multiple slices before checkpointing.
 
 ## 14. Recovery
 
-Read in order:
-- live GitHub HEAD + exact-head CI;
-- `.planning/STATE.md`;
-- `.planning/ROADMAP.md`;
-- `docs/history/2026-10-17-f13-t9-1-r3-green-r4-next-checkpoint.md`;
-- this MASTER_CONTEXT for architecture only.
-
-Current next block: R4, NOT STARTED.
-T9.2 remains NOT STARTED.
-No merge to `main` approved.
+Live HEAD y CI → `.planning/STATE.md` → `docs/design/SGPDF_V4_APPROVED_SHELL_2026-10-17.md` → `.planning/ROADMAP.md` → checkpoint `docs/history/2026-10-17-f13-t9-1-r4c-pending-v4-approved-checkpoint.md` → `AGENTS.md`.
+R4-C QA_PENDING; R4-D PLANNED; R5/T9.2 NOT STARTED; main sin merge autorizado.
