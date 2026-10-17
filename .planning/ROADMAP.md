@@ -1,182 +1,128 @@
 # Roadmap — SG PDF Editor
 
-> Operational authority: exact GitHub head/CI → `.planning/STATE.md` → this roadmap → `.planning/REQUIREMENTS.md` → approved slice specs/plans. `docs/MASTER_PLAN.md` is an architectural/historical plan and must not override newer operational state.
+> Operational authority: exact GitHub HEAD/CI → `.planning/STATE.md` → this roadmap → `.planning/REQUIREMENTS.md` → approved slice specs/plans. Historical/master documents never override newer operational state.
 
-## Current baseline — 2026-10-14
+## Current routing — 2026-10-17
 
-**F0–F12 functional automated baseline is CLOSED and feature-frozen.**
-
-Authoritative functional branch:
-`feat/f12-7-pdf-to-png-mvp-green3`
-
-Exact functional HEAD:
-`8e1845d6d8fe72374d7a80994d8500b6d36077cc`
-
-Exact-head functional CI:
-- run `38555829715`;
-- job `115824598759`;
-- Release build: **0 warnings / 0 errors**;
-- tests: **1202/1202 PASS**, 0 failed, 0 skipped.
+F0–F12 remain **CLOSED / FROZEN** for the automated baseline already documented. F13 is active. F14–F18 remain frozen.
 
 `main` remains read-only at `31c0594758a83ec555d73ecdd7c597cdf8791fd7` until explicit user approval.
 
-## Phase table
+## Phase status
 
-| Phase | Automated status | Real/manual/private/physical status |
+| Phase | Status | Notes |
 |---|---|---|
-| F0 PDF Base | CLOSED / AUTO PASS | open where documented |
-| F1 ZPL Gate | synthetic PASS | private corpus open |
-| F2 ZPL Workspace | CLOSED / AUTO PASS | physical/private open |
-| F3 Visual Signature | CLOSED / AUTO PASS | Windows/photo/stylus open |
-| F4 Reader | CLOSED / AUTO PASS | Windows real open |
-| F5 Organize | CLOSED / AUTO PASS | Windows real open |
-| F6 Images | CLOSED / AUTO PASS | Windows real open |
-| F7 Text V1 | CLOSED / AUTO PASS | Windows/external open |
-| F8 Comments | CLOSED / AUTO PASS | stylus/touch/external open |
-| F9 Utilities | CLOSED / AUTO PASS | Windows/private/external open |
-| F10 OCR | CLOSED / AUTO PASS | private scans/external/offline open |
-| F11 Text V2 | CLOSED / AUTO PASS | representative layouts open |
-| F12 Professional | **CLOSED / AUTO PASS** | representative QA open |
+| F0–F12 | CLOSED / FROZEN | automated baseline; real/manual/private/physical gates remain separate where documented |
+| F13 | ACTIVE | current product/UI hardening and document-shell work |
+| F14–F18 | FROZEN | do not start opportunistically |
+| main | LOCKED | no merge without explicit approval |
 
-## F12 Professional — frozen baseline
+## F13
 
-| Slice | Baseline status |
-|---|---|
-| F12.1 Safe Redaction | CLOSED / AUTO PASS |
-| F12.2 PFX/P12 Cryptographic Signature | CLOSED / AUTO PASS |
-| F12.3 Existing AcroForm `/Tx` | CLOSED / AUTO PASS |
-| F12.4 Compare | CLOSED / AUTO PASS — core + minimal UI |
-| F12.5 Batch | CLOSED / AUTO PASS — TextWatermark only |
-| F12.6 Code Generator | CLOSED / AUTO PASS — QR PNG only |
-| F12.7 Audited Conversions | **CLOSED / AUTO PASS — PDF→PNG only** |
+Tasks 1–8 are closed by their existing checkpoints.
 
-Any additional batch operation, symbology, conversion, form type or signing technology requires a new explicit value/capability decision and does not silently extend F12.
+### Task9
 
-## F12.7 closed MVP — PDF→PNG
+- T9.0 — DONE.
+- T9.1 — ACTIVE.
+- T9.2 — NOT STARTED.
 
-Flow:
-`open PDF → Herramientas → Exportar PDF a PNG... → choose folder → PdfDocumentSession/PDFium → one PNG/page`.
+Last verified GREEN product anchor before current document-shell R1:
+`0abae7ceb5f08611180c883346e21589d1509664`
 
-Contract:
-- current/open PDF only;
-- all pages only;
-- 144 DPI fixed baseline;
-- deterministic `<basename>-pagina-001.png` naming;
-- originals untouched;
-- target collisions rejected before writing;
-- `FileMode.CreateNew` blocks race-condition overwrite;
-- partial outputs from the current operation are cleaned best-effort on later failure;
-- core cancellation supported;
-- minimal UI with folder selection and controlled status/errors;
-- existing PDFium + WPF encoder only;
-- no runtime/package addition.
+Exact-head CI:
+- run `39000181654` — SUCCESS.
 
-Not baseline:
-- JPEG/WebP/TIFF;
-- page ranges;
-- configurable DPI/quality studio;
-- image→PDF;
-- Office↔PDF / PDF→Office;
-- LibreOffice/Office automation;
-- cloud conversion;
-- second PDF/document engine;
-- generalized conversion framework/registry/plugins/queue.
+## DG-0 SG Design Governance — CLOSED / GREEN
 
-## Release QA packs
+Branch:
+`feat/f13-dg0-sg-design-governance-20261017`
 
-All four packs now have a canonical automated-evidence preflight plus an executable real/manual checklist. **This does not mean the real QA was executed.**
+Base:
+`0abae7ceb5f08611180c883346e21589d1509664`
 
-| Pack | Canonical record | Automated preflight | Real/manual gate |
-|---|---|---|---|
-| A — Reader / Organize / Editing | `docs/release/2026-10-14-pack-a-reader-organize-editing.md` | PASS | NOT RUN — ENVIRONMENT |
-| B — ZPL / QR / physical print-scan | `docs/release/2026-10-14-pack-b-zpl-qr-physical.md` | PASS | NOT RUN — ENVIRONMENT |
-| C — visual + cryptographic signatures | `docs/release/2026-10-14-pack-c-signatures.md` | PASS | NOT RUN — ENVIRONMENT |
-| D — OCR / Forms / Compare / Batch / PDF→PNG | `docs/release/2026-10-14-pack-d-ocr-forms-compare-batch-convert.md` | PASS | NOT RUN — ENVIRONMENT |
+RED contract:
+`57b1eeb22302b33619e58246a3f3dcb1b8970363` → CI run `39002512451` with Build/Smoke PASS and expected Test FAIL.
 
-Exit for each real pack remains: representative evidence actually executed, no open P0/P1, limitations documented, and no synthetic/CI PASS promoted into a physical/manual PASS.
+GREEN implementation:
+`3011f700e9014d72951314291bab4c3a67b89c8c` → CI run `39002956513` SUCCESS, including Build/Smoke/Test PASS.
 
-## Remaining sequence
+Closure record:
+`docs/history/2026-10-17-f13-dg0-design-governance-checkpoint.md`
 
-### 1. Real QA execution — OPEN / environment-gated
+DG-0 established:
+- `docs/design/SGPDF_DESIGN_LAW.md`;
+- `.agents/skills/sgpdf-design/SKILL.md`;
+- focused references for properties, navigation, copy/forms, WPF/accessibility and final review;
+- static governance contracts;
+- current F13 routing in AGENTS/README/STATE/ROADMAP/MASTER_CONTEXT.
 
-Execute Packs A–D on suitable Windows/hardware/private-fixture environments. Until then their final gates remain NOT RUN.
+It did not add a runtime feature, UI framework or production dependency.
 
-### 2. Documentation routing consolidation — CURRENT BLOCK
+## Current bounded block — Resume R1 document shell
 
-Only fix documents that can materially misroute execution:
-- `.planning/STATE.md` remains the daily operational router;
-- this roadmap reflects Pack A–D preflight completion;
-- `AGENTS.md` must reflect the closed F0–F12 baseline and current rules;
-- `docs/MASTER_PLAN.md` remains useful for architectural/history detail but must be explicitly marked non-authoritative for current execution order;
-- avoid Markdown-per-commit noise and do not rewrite historical evidence merely because it is old.
+Branch already holding the intentional R1 RED:
+`feat/f13-task9-t9-1-document-shell-realignment-20261017`
 
-### 3. Integration audit — NEXT
+Frozen RED checkpoint:
+`bbae51f49ee3c54e3667c5ea477c2c3f179d3c46`
 
-Before touching `main`:
-- map branch and PR ancestry;
-- identify unique/product commits;
-- classify historical/noise branches;
-- verify that Pack A–D planning branches form only documentation lineage over the closed functional baseline;
-- choose one conservative integration candidate;
-- verify candidate exact-head CI;
-- no destructive cleanup during audit.
+Its run `39001470186` is FAILURE, so it is not a GREEN baseline.
 
-### 4. Integration candidate
+Next work is to resume those existing RED contracts while deliberately carrying the validated design governance. Do not restart from stale F12 routing and do not silently discard the R1 test intent.
 
-Use a dedicated integration branch only. Required gates:
-- clean ancestry from authoritative functional head;
-- no replay of historical PRs if already contained;
-- locked restore;
-- Release build/test;
-- representative QA evidence;
-- installer/runtime/license review.
+Before editing any R1 XAML/copy/navigation/interaction, execute:
 
-### 5. Release Candidate
+`INTENT → HIERARCHY → DISCLOSURE → CONSISTENCY → FEEDBACK → ACCESSIBILITY → VERIFY`
 
-RC requires:
-- clean-clone reproducibility;
-- locked restore;
-- Release build/tests;
-- packaged runtime/installer smoke;
-- offline smoke;
-- no P0/P1 blockers;
-- no feature creep.
+Mandatory skill:
+`.agents/skills/sgpdf-design/SKILL.md`
 
-### 6. `main`
+## After R1
 
-`main` moves only with explicit user approval after integration + RC evidence. No automatic merge.
+### Remaining T9.1 slices
 
-## Engineering laws
+Continue the approved T9.1 document-shell/UI sequence (remaining R2–R7 as defined by its current approved spec/plan). Do not invent new scope from this roadmap.
+
+Each applicable UI slice exits through:
+- focused RED→GREEN where behavior changes;
+- full suite;
+- exact-head CI;
+- required Light/Dark/125%/keyboard/state visual QA;
+- no open P0/P1 for its exit gate.
+
+### T9.2
+
+Do not start automatically. It becomes eligible only after T9.1 is actually closed and its required evidence exists.
+
+### Release / installer / remaining real QA
+
+Historical Packs A–D and installer/runtime/license gates remain evidence/requirements, but they do not override active F13 routing. Resume them when the active F13 plan reaches its release gate.
+
+## Engineering governance
 
 ### KISS
-Simple, efficient, optimized, effective. Prefer A→B over generalized architecture.
+`SIMPLE → EFICIENTE → OPTIMIZADO → EFICAZ → MANTENIBLE → A→B`.
 
 ### Anti-noise
-Before ADD: DELETE → SIMPLIFY → REUSE → MERGE → EXTEND → ADD.
+`DELETE → SIMPLIFY → REUSE → MERGE → EXTEND → ADD`.
 
-### Anti-patch operational guardrail
+### Ley SG de Diseño
+`INTENT → HIERARCHY → DISCLOSURE → CONSISTENCY → FEEDBACK → ACCESSIBILITY → VERIFY`.
+
+### Guardrail anti-parches
+Separate operational guardrail:
 `REPRODUCE → CLASSIFY → ROOT CAUSE → OWNER → MINIMAL CHANGE → CAUSE TEST → FULL SUITE → EXACT-HEAD CI → REMOVE REDUNDANT WORKAROUND`.
 
-## Branch hygiene notes
+## Design-specific routing
 
-Authoritative closed functional F12 head:
-`feat/f12-7-pdf-to-png-mvp-green3` @ `8e1845d6d8fe72374d7a80994d8500b6d36077cc`.
+Any task involving menus, toolbars, Home, side rails, properties panels, dialogs, forms, copy, icon presentation, visual states, accessibility, alignment or layout must consult:
+- `docs/design/SGPDF_DESIGN_LAW.md`;
+- `.agents/skills/sgpdf-design/SKILL.md`;
+- only the relevant reference under `.agents/skills/sgpdf-design/references/`.
 
-Release-QA preflight lineage:
-- `plan/release-pack-a-qa`;
-- `plan/release-pack-b-qa`;
-- `plan/release-pack-c-qa`;
-- `plan/release-pack-d-qa`.
-
-Do not treat these as authoritative functional bases:
-- divergent historical `feat/f12-7-pdf-to-png`;
-- old RED/checkpoint `feat/f12-7-pdf-to-png-mvp`;
-- accidental empty aliases `...-green` and `...-green2`.
-
-They are release-hygiene items, not functional blockers.
+The ZPL right panel is the canonical anti-pattern to avoid: supported settings are preserved, but irrelevant/advanced controls must be disclosed contextually rather than exposed as one endless property list.
 
 ## Next bounded task
 
-Run the **integration ancestry / PR audit** from the latest audited release-routing checkpoint, then select one conservative integration candidate. Do not merge to `main` and do not clean branches destructively during the audit.
-
-No merge to `main` without explicit user approval.
+Resume **R1 document-shell/multi-document** from its frozen RED checkpoint under the now-GREEN DG-0 governance. Do not merge to `main`, do not begin T9.2, and do not thaw F14–F18.
