@@ -126,7 +126,7 @@ R1/R1B/R2/R3                  GREEN / CLOSED técnico
 R4-B                            GREEN / CLOSED
 R4-C                            QA_PENDING, CI PASS; Windows QA pendiente
 V4 mockups                      APROBADOS; binarios de referencia incorporados; comparación Windows pendiente
-R4-D                            TABS+RAIL PUBLISHED / CI GREEN / WINDOWS QA_PENDING; bloque 3 cerrado
+R4-D                            TABS+RAIL PUBLISHED / CI GREEN / WINDOWS QA_PENDING; bloque 3 BLOQUEADO
 R5/T9.2                        NOT STARTED
 main                            READ-ONLY, NO MERGE
 ```
