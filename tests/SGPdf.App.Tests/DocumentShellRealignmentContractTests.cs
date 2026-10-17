@@ -34,14 +34,39 @@ public sealed class DocumentShellRealignmentContractTests
     public void DocumentTabs_V4UsesApprovedDocumentIconAndHeaderOnlySelectedVisual()
     {
         var source = File.ReadAllText(FindRepoFile("src", "SGPdf.App", "MainWindow.Documents.cs"));
-        var styles = File.ReadAllText(FindRepoFile("src", "SGPdf.App", "Themes", "Modern.xaml"));
+        var styles = XDocument.Load(FindRepoFile("src", "SGPdf.App", "Themes", "Modern.xaml"));
+        XNamespace presentation = "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+        XNamespace x = "http://schemas.microsoft.com/winfx/2006/xaml";
 
         Assert.Contains("SgDocumentTabsStyle", source);
         Assert.Contains("SGPdf.Document.png", source);
-        Assert.Contains("SgDocumentTabItemStyle", styles);
-        Assert.Contains("TabPanel IsItemsHost=\"True\"", styles);
-        Assert.Contains("Property=\"IsSelected\" Value=\"True\"", styles);
-        Assert.DoesNotContain("ContentSource=\"Content\"", styles);
+        Assert.Contains("BuildDocumentTabHeaderTemplate()", source);
+        Assert.Contains("TextTrimming.CharacterEllipsis", source);
+
+        var tabControlStyle = styles.Descendants(presentation + "Style")
+            .Single(item => (string?)item.Attribute(x + "Key") == "SgDocumentTabsStyle");
+        var root = tabControlStyle.Descendants(presentation + "ControlTemplate")
+            .Single().Elements().Single();
+        // The PDF reader already owns document content. TabControl renders headers ONLY:
+        // this prevents WPF from displaying PdfDocumentWorkspace.ToString() under tabs.
+        Assert.Equal(presentation + "TabPanel", root.Name);
+        Assert.Equal("True", (string?)root.Attribute("IsItemsHost"));
+        Assert.Empty(tabControlStyle.Descendants(presentation + "ContentPresenter"));
+
+        var tabItemStyle = styles.Descendants(presentation + "Style")
+            .Single(item => (string?)item.Attribute(x + "Key") == "SgDocumentTabItemStyle");
+        var chrome = tabItemStyle.Descendants(presentation + "ControlTemplate")
+            .Single().Element(presentation + "Border");
+        Assert.NotNull(chrome);
+        var header = Assert.Single(chrome.Elements(presentation + "ContentPresenter"));
+        Assert.Equal("Header", (string?)header.Attribute("ContentSource"));
+        Assert.Contains(tabItemStyle.Descendants(presentation + "Trigger"),
+            trigger => (string?)trigger.Attribute("Property") == "IsSelected"
+                && (string?)trigger.Attribute("Value") == "True"
+                && trigger.Descendants(presentation + "Setter").Any(setter =>
+                    (string?)setter.Attribute("TargetName") == "TabChrome"
+                    && (string?)setter.Attribute("Property") == "BorderThickness"
+                    && (string?)setter.Attribute("Value") == "1,1,1,3"));
     }
 
     [Fact]
