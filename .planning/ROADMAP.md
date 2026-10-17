@@ -86,7 +86,7 @@ Checkpoint:
 - **R4-B:** GREEN/CLOSED; navegación Páginas/Marcadores desplegable existente.
 - **R4-C:** código `5ff21171abb4b467e8796ba18f54e0d337ab2418`; CI run `39069863859` SUCCESS; 1286 PASS/0 FAIL/1 SKIP, build 0/0, smoke 30s PASS; Windows W01–W15 **pendientes**, por tanto **QA_PENDING**.
 - **Diseño V4:** usuario aprobó 4 vistas (Light/Dark, drawer abierto/cerrado) e iconos de app, documento asociado y herramientas. Ver [autoridad visual V4](../docs/design/SGPDF_V4_APPROVED_SHELL_2026-10-17.md).
-- **R4-D V4:** **PLANNED / NOT IMPLEMENTED**. Plan: microtask tabs y eliminación de texto tipo .NET; rail/estado activo; command/navigation row; drawer; comparación con screenshots Windows reales. Los cinco PNG V4 requieren sincronización GitHub con hash exacto.
+- **R4-D V4:** **IN PROGRESS / TABS CODE PUSHED / CI_PENDING**. Microtask 1: test `83c1365`, theme `b5095b9`, document tabs `14065f7`; falta validar CI exact-head y Windows. Luego rail/estado activo, command/navigation row, drawer y screenshots Windows reales. Los cinco PNG V4 requieren sincronización GitHub con hash exacto.
 - **Cierre de R4:** requiere pruebas funcionales+visuales completas, Light/Dark, escala 125%, exact-head CI posterior al último cambio.
 
 
