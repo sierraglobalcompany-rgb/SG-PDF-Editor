@@ -95,7 +95,7 @@ public partial class MainWindow
         var items = new StackPanel
         {
             Name = "DocumentToolRailItems",
-            Margin = new Thickness(0, 6, 0, 6)
+            Margin = new Thickness(0, 8, 0, 8)
         };
         RegisterName(items.Name, items);
 
@@ -137,6 +137,7 @@ public partial class MainWindow
                 FontSize = 10.5d,
                 TextWrapping = TextWrapping.NoWrap,
                 TextTrimming = TextTrimming.CharacterEllipsis,
+                Width = 72d,
                 Margin = new Thickness(0, 4, 0, 0),
                 HorizontalAlignment = HorizontalAlignment.Center,
                 TextAlignment = TextAlignment.Center
@@ -157,11 +158,8 @@ public partial class MainWindow
                 IsEnabled = descriptor.ActionId is not null,
                 ToolTip = descriptor.DisabledReason ?? descriptor.Description
             };
-            button.SetResourceReference(
-                FrameworkElement.StyleProperty,
-                string.Equals(descriptor.Id, "read", StringComparison.Ordinal)
-                    ? "SgRailItemSelectedStyle"
-                    : "SgRailItemStyle");
+            // Selection is applied only by UpdateDocumentToolRailSelection() from actual mode state.
+            button.SetResourceReference(FrameworkElement.StyleProperty, "SgRailItemStyle");
             AutomationProperties.SetName(button, descriptor.Title);
             AutomationProperties.SetHelpText(button, descriptor.DisabledReason ?? descriptor.Description);
 
