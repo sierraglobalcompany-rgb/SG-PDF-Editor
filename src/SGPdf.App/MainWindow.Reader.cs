@@ -10,6 +10,7 @@ using SGPdf.App.Features.Labels;
 using SGPdf.App.Features.Reader;
 using SGPdf.App.Navigation;
 using SGPdf.App.Pdf;
+using SGPdf.App.Shell;
 
 namespace SGPdf.App;
 
@@ -123,6 +124,8 @@ public partial class MainWindow
         var previousStatus = StatusText.Text;
         StatusText.Text = "Abriendo PDF...";
         PdfDocumentSession? candidateSession = null;
+        PdfDocumentWorkspace? openedDocument = null;
+        var previousDocument = ActiveDocument;
         var attemptPassword = password;
         var hasAttemptedPassword = password is not null;
 
@@ -181,32 +184,33 @@ public partial class MainWindow
 
                 attemptPassword = null;
                 candidateSession = loaded.Session;
-                var previousSession = _session;
-                _session = candidateSession;
-                _navigation = new PageNavigationState(loaded.Sizes.Count);
-                _zoom = new PdfZoomState();
-                _zplDocument = null;
-                _renderedZplLabels = Array.Empty<ZplRenderedLabel>();
-                _signatureModeActive = false;
-                _signatureEditState = null;
-                ResetAcroFormUi();
+                openedDocument = new PdfDocumentWorkspace(candidateSession, loaded.Sizes);
                 candidateSession = null;
+                TrackOpenedDocument(openedDocument);
 
-                _updatingReaderScroll = true;
-                InitializeContinuousReader(loaded.Sizes);
-                previousSession?.Dispose();
-
-                Title = $"SG PDF Editor — {Path.GetFileName(_session.FilePath)}";
-                UpdateViewerControlsUi();
-                UpdateCurrentPageStatus();
-                await RefreshReaderRenderWindowAsync();
-                TryRecordRecentPdf(_session.FilePath);
+                await ActivateDocumentAsync(openedDocument);
+                TryRecordRecentPdf(openedDocument.FilePath);
                 return true;
             }
         }
         catch (Exception ex)
         {
             candidateSession?.Dispose();
+            if (openedDocument is not null)
+            {
+                UntrackOpenedDocument(openedDocument);
+                if (previousDocument is not null)
+                {
+                    try
+                    {
+                        await ActivateDocumentAsync(previousDocument);
+                    }
+                    catch
+                    {
+                    }
+                }
+            }
+
             StatusText.Text = "No se pudo abrir el PDF.";
             if (IsVisible)
             {
