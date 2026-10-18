@@ -104,20 +104,13 @@ Reglas:
 - Exact-head CI antes de declarar GREEN.
 - Si un test viejo contradice un contrato nuevo aprobado, clasificar y realinear el test; no meter workarounds invisibles en producto.
 
-## Micro-task/checkpoint rule
+## Lotes coherentes / checkpoints (ajuste aprobado para eficiencia)
 
-Por instrucción del usuario, dividir el trabajo en micro-tasks y crear checkpoint frecuente para evitar bloqueos.
+Para UI V4, agrupar correcciones relacionadas por dueño/causa en **un lote coherente**. Ejecutar build y pruebas focales durante el trabajo, y **una suite full + smoke + CI exact-head al finalizar el lote**. Los fallos P0, seguridad, datos, dirty guard o navegación tienen RED→GREEN causal obligatorio; no generar un test ni un CI por cada margen o color. Una sesión de QA Windows consolidada por lote; no declarar GREEN solo por CI.
 
-Formato recomendado:
+**Un checkpoint al cerrar el lote o ante bloqueo real.** Actualizar `.planning/STATE.md` únicamente cuando cambie la verdad operativa; `.planning/ROADMAP.md` y `docs/MASTER_CONTEXT.md` solo por decisión durable; no copiar la misma historia en cuatro documentos.
 
-```text
-R?-A cambio focal → checkpoint
-R?-B CI/diagnóstico → checkpoint
-R?-C docs/cierre → checkpoint
-STOP antes del siguiente slice si el bloque se alarga
-```
-
-No acumular varios slices sin checkpoint.
+Autoridad de este cambio: `docs/plans/SGPDF_R4_V4_METODOLOGIA_LOTES_2026-10-18.md`, con prompt portable en `docs/qa/SGPDF_PROMPT_CODEX_ANTIGRAVITY_R4_V4_LOTES_2026-10-18.md`. No cambia el bloqueo de R4-C/R4-D ni autoriza bloque 3, R5/T9.2/F14/merge.
 
 ## Orden actual
 
