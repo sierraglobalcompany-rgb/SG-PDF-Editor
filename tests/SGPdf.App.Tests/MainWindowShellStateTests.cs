@@ -143,12 +143,12 @@ public sealed class MainWindowShellStateTests
                 Assert.Equal(Visibility.Collapsed,
                     Assert.IsType<Border>(window.FindName("ReaderNavigationDrawer")).Visibility);
 
-                await InvokeTask(window, "ActivateDocumentAsync", first);
+                await (Task)Invoke(window, "ActivateDocumentAsync", first)!;
                 Assert.True(first.IsReaderNavigationOpen);
                 Assert.Equal(Visibility.Visible,
                     Assert.IsType<Border>(window.FindName("ReaderNavigationDrawer")).Visibility);
 
-                await InvokeTask(window, "ActivateDocumentAsync", second);
+                await (Task)Invoke(window, "ActivateDocumentAsync", second)!;
                 Assert.False(second.IsReaderNavigationOpen);
                 Assert.Equal(Visibility.Collapsed,
                     Assert.IsType<Border>(window.FindName("ReaderNavigationDrawer")).Visibility);
