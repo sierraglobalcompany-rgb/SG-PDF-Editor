@@ -395,6 +395,8 @@ public partial class MainWindow
         BindLegacyReaderStateToDocument(document);
         _zplDocument = null;
         _renderedZplLabels = Array.Empty<ZplRenderedLabel>();
+        // Document identity drives the shell; two PDFs can share a window title.
+        SyncShellWorkspaceFromActiveDocument();
         UpdateDocumentTopShellVisibility();
 
         _updatingReaderScroll = true;
