@@ -42,21 +42,33 @@ public sealed class MainWindowShellStateTests
     [Fact]
     public void DocumentTabHeader_ResolvesApprovedPdfIconFromAbsolutePackResource()
     {
-        RunInSta(() =>
+        RunInSta(async () =>
         {
+            using var pdf = PdfFixture.Create();
             var window = new MainWindow();
             try
             {
                 RaiseLoaded(window);
+                ConfigureReader(window);
+                Assert.True(await InvokeTask<bool>(window, "TryOpenPdfPathAsync", pdf.Path, null));
+
                 var tabs = Assert.IsType<System.Windows.Controls.TabControl>(
                     window.FindName("DocumentTabs"));
-                var header = Assert.IsType<System.Windows.Controls.StackPanel>(
-                    tabs.ItemTemplate!.LoadContent());
-                var icon = Assert.IsType<System.Windows.Controls.Image>(header.Children[0]);
+                Assert.Single(tabs.Items);
+                // Instantiate the template through the real TabControl item generator,
+                // not DataTemplate.LoadContent(): WPF seals templates during visual layout.
+                tabs.ApplyTemplate();
+                tabs.Measure(new Size(640d, 48d));
+                tabs.Arrange(new Rect(0d, 0d, 640d, 48d));
+                tabs.UpdateLayout();
+                var tab = Assert.IsType<System.Windows.Controls.TabItem>(
+                    tabs.ItemContainerGenerator.ContainerFromIndex(0));
+                var icon = FindVisualDescendant<System.Windows.Controls.Image>(tab);
+                Assert.NotNull(icon);
                 var bitmap = Assert.IsType<BitmapImage>(icon.Source);
 
-                // QA-V4-001: relative BitmapImage URIs in a code-built DataTemplate
-                // have no guaranteed XAML BaseUri; icon was invisible in real Windows QA.
+                // QA-V4-001: independent pack URI avoids the missing XAML BaseUri
+                // of a code-built FrameworkElementFactory image.
                 Assert.True(bitmap.UriSource.IsAbsoluteUri,
                     "Document tab icon must resolve independently of XAML BaseUri.");
                 Assert.Equal("pack", bitmap.UriSource.Scheme);
@@ -125,6 +137,22 @@ public sealed class MainWindowShellStateTests
 
     private static void RaiseLoaded(MainWindow window)
         => window.RaiseEvent(new RoutedEventArgs(FrameworkElement.LoadedEvent));
+
+    private static T? FindVisualDescendant<T>(DependencyObject root)
+        where T : DependencyObject
+    {
+        for (var index = 0; index < VisualTreeHelper.GetChildrenCount(root); index++)
+        {
+            var child = VisualTreeHelper.GetChild(root, index);
+            if (child is T match)
+                return match;
+            var nested = FindVisualDescendant<T>(child);
+            if (nested is not null)
+                return nested;
+        }
+
+        return null;
+    }
 
     private static string GetShellKind(MainWindow window)
     {
