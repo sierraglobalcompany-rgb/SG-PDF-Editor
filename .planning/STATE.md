@@ -1,6 +1,6 @@
 ---
 gsd_state_version: '1.1'
-status: f13-t9-1-qa-v4-001-code-fixed-ci-green-windows-retest-pending
+status: f13-t9-1-v4-windows-icon-postfix-pass-other-p1-open
 progress:
   total_phases: 19
   completed_phases: 13
@@ -116,6 +116,8 @@ Checkpoint:
 `docs/history/2026-10-17-f13-t9-1-r3-green-r4-next-checkpoint.md`.
 
 ## R4 — estado actual verificado (2026-10-17)
+
+**Último retest Windows — 2026-10-18:** app `fc662c8c9123c3f2e0ddbf685c3cf1e01d76a404`, build 0/0; primer smoke terminó ExitCode=0 antes de 30s sin causa confirmada, repetición PASS 30s. **V01/icon PASS posfix**, cuatro capturas WPF reales Light/Dark abierto/cerrado al 125%. **R4-C/R4-D QA_PENDING / P1 OPEN:** contraste de tabs/miniaturas/Organizar en Dark, actualización de tema en caliente y restauración visual W09 entre PDFs homónimos (causa por confirmar). Guard de cierre No/Sí, cierre inactivo, bookmarks y ZPL ejecutados; mínimo/Tab-order/error inducido siguen sin cobertura íntegra. Sin cambios productivos/tests/assets. [Matriz actualizada](../docs/qa/2026-10-17-r4c-r4d-v4-windows-matrix.md) y [checkpoint posfix](../docs/history/2026-10-18-r4c-r4d-v4-postfix-windows-results.md). CI del commit documental posterior por verificar aparte. No bloque 3/R5/T9.2/merge. Los estados de icono pendiente siguientes son históricos previos a este retest.
 
 **Actualización QA-V4-001 (2026-10-18): código corregido, CI GREEN, aún NO validado visualmente en Windows.** Prueba WPF real del icono, `ad69280`, reproducida RED en [39082039007](https://github.com/sierraglobalcompany-rgb/SG-PDF-Editor/actions/runs/39082039007): el `Image` generado tenía `Source == null`; después se modificó **una sola línea** en `BuildDocumentTabHeaderTemplate()` para usar URI de paquete absoluta `pack://application:,,,/SGPdf.App;component/Assets/SGPdf.Document.png` (commit `3f5d0c9`). [CI 39082254808](https://github.com/sierraglobalcompany-rgb/SG-PDF-Editor/actions/runs/39082254808) SUCCESS: 1.289 PASS, 0 FAIL, 1 SKIP; build 0 errores/advertencias, smoke 30 s PASS. **No actualizar V01/T06 a PASS:** el screenshot real anterior corresponde a `26db4b1`; se requiere nueva V01 en Windows sobre el nuevo HEAD y luego completar V02–V04/W01–W15/T01–T08. [Checkpoint causal](../docs/history/2026-10-18-qa-v4-001-tab-icon-red-green-windows-retest-pending.md). No merge, bloque 3 ni R5/T9.2.
 
