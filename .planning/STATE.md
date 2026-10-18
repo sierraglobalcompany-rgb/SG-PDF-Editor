@@ -1,6 +1,6 @@
 ---
 gsd_state_version: '1.1'
-status: f13-t9-1-v4-published-ci-success-r4c-r4d-windows-qa-pending
+status: f13-t9-1-r4c-r4d-windows-qa-stopped-p1-tab-icon
 progress:
   total_phases: 19
   completed_phases: 13
@@ -116,6 +116,8 @@ Checkpoint:
 `docs/history/2026-10-17-f13-t9-1-r3-green-r4-next-checkpoint.md`.
 
 ## R4 — estado actual verificado (2026-10-17)
+
+**Último gate Windows:** app `26db4b18a9cfe144be88775ac2f170e5939a53a0`, build 0/0 y smoke 30s PASS; Light, escala real 125% (monitor 1920x1200). **STOP_P1 / QA_PENDING:** icono PDF de la pestaña ausente en captura real V01 (T06 FAIL). Owner `BuildDocumentTabHeaderTemplate()`; causa exacta de resolución del bitmap aún no confirmada. Sin cambio de producto ni tests. QA restante detenida según prompt; no cierre ni bloque 3/R5/T9.2. Matriz y diagnóstico: [checkpoint QA](../docs/history/2026-10-17-r4c-r4d-windows-qa-p1-tab-icon.md). CI del commit documental posterior se verifica por separado.
 
 - **R4-B:** GREEN / CLOSED; no reabrir.
 - **R4-C (marcadores):** código en `5ff21171abb4b467e8796ba18f54e0d337ab2418`, exact-head CI [39069863859](https://github.com/sierraglobalcompany-rgb/SG-PDF-Editor/actions/runs/39069863859) SUCCESS: 1286 PASS, 0 FAIL, 1 SKIP; build 0/0; smoke 30s. **Windows QA W01–W15 pendiente → QA_PENDING**; no GREEN de cierre.
