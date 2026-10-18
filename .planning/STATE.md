@@ -1,6 +1,6 @@
 ---
 gsd_state_version: '1.1'
-status: f13-t9-1-r4c-r4d-windows-qa-stopped-p1-tab-icon
+status: f13-t9-1-qa-v4-001-code-fixed-ci-green-windows-retest-pending
 progress:
   total_phases: 19
   completed_phases: 13
@@ -116,6 +116,8 @@ Checkpoint:
 `docs/history/2026-10-17-f13-t9-1-r3-green-r4-next-checkpoint.md`.
 
 ## R4 — estado actual verificado (2026-10-17)
+
+**Actualización QA-V4-001 (2026-10-18): código corregido, CI GREEN, aún NO validado visualmente en Windows.** Prueba WPF real del icono, `ad69280`, reproducida RED en [39082039007](https://github.com/sierraglobalcompany-rgb/SG-PDF-Editor/actions/runs/39082039007): el `Image` generado tenía `Source == null`; después se modificó **una sola línea** en `BuildDocumentTabHeaderTemplate()` para usar URI de paquete absoluta `pack://application:,,,/SGPdf.App;component/Assets/SGPdf.Document.png` (commit `3f5d0c9`). [CI 39082254808](https://github.com/sierraglobalcompany-rgb/SG-PDF-Editor/actions/runs/39082254808) SUCCESS: 1.289 PASS, 0 FAIL, 1 SKIP; build 0 errores/advertencias, smoke 30 s PASS. **No actualizar V01/T06 a PASS:** el screenshot real anterior corresponde a `26db4b1`; se requiere nueva V01 en Windows sobre el nuevo HEAD y luego completar V02–V04/W01–W15/T01–T08. [Checkpoint causal](../docs/history/2026-10-18-qa-v4-001-tab-icon-red-green-windows-retest-pending.md). No merge, bloque 3 ni R5/T9.2.
 
 **Último gate Windows:** app `26db4b18a9cfe144be88775ac2f170e5939a53a0`, build 0/0 y smoke 30s PASS; Light, escala real 125% (monitor 1920x1200). **STOP_P1 / QA_PENDING:** icono PDF de la pestaña ausente en captura real V01 (T06 FAIL). Owner `BuildDocumentTabHeaderTemplate()`; causa exacta de resolución del bitmap aún no confirmada. Sin cambio de producto ni tests. QA restante detenida según prompt; no cierre ni bloque 3/R5/T9.2. Matriz y diagnóstico: [checkpoint QA](../docs/history/2026-10-17-r4c-r4d-windows-qa-p1-tab-icon.md). CI del commit documental posterior se verifica por separado.
 

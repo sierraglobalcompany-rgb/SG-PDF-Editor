@@ -62,3 +62,12 @@ Por fila: `PASS/FAIL/NOT_RUN/PARTIAL/BLOCKED_ENVIRONMENT`, timestamp, SHA/entorn
 ## Cobertura automatizada nueva (independiente del QA manual)
 
 Dos refuerzos se aprobaron en CI sobre `e8001a0ea354a22f5b9868d1c792148e92d11e49`: prueba XAML semántica header-only en `f3aecac` y prueba STA de `DocumentTabs.SelectedItem == ActiveDocument` tras abrir un PDF en `e8001a0`. [CI 39080291059](https://github.com/sierraglobalcompany-rgb/SG-PDF-Editor/actions/runs/39080291059) SUCCESS; 1.288 PASS, 0 FAIL, 1 SKIP; build 0/0, smoke 30 s. **El gate W01–W15, V01–V04 y T01–T08 NO cambia de NOT_RUN/PARTIAL a PASS por esta evidencia automatizada.** Este checkpoint documental crea nuevo SHA que requerirá su propio CI.
+
+## QA-V4-001 — corrección automatizada, revalidación visual aún pendiente (2026-10-18)
+
+- Captura V01 original (app `26db4b1`) **FAIL/P1** por imagen no dibujada; queda como evidencia histórica, sin sobrescribir.
+- Nueva prueba sobre pestaña generada real por WPF: `ad69280517201d3a1804a82d15ca809179ea7708`; [CI RED 39082039007](https://github.com/sierraglobalcompany-rgb/SG-PDF-Editor/actions/runs/39082039007) falla por `Image.Source == null`, 1 fallo esperado + 1 SKIP. Primer prototipo de test `af1137a` falló por un problema del harness de template no sellado, y **no es evidencia causal**.
+- Corrección mínima al URI del mismo icono oficial en `BuildDocumentTabHeaderTemplate()`: `3f5d0c9b43c925ab5b740d69b7d8c5b17fb47077` (pack URI absoluta, sin reemplazo de asset).
+- [CI GREEN 39082254808](https://github.com/sierraglobalcompany-rgb/SG-PDF-Editor/actions/runs/39082254808): **1.289 PASS / 0 FAIL / 1 SKIP**, build 0/0, smoke 30 s PASS. El test ahora ve `BitmapImage` con `UriSource` pack absoluta y píxeles decodificados.
+- **Protocolo de ejecución inmediata para Codex Windows:** preflight de rama limpia y último HEAD; compilar; lanzar app real; abrir el mismo PDF sintético y capturar **primero V01 Light Closed**, con icono oficial visible junto al título; si falta, `STOP_P1` sin avanzar. Si V01 pasa, ejecutar V02–V04 y resto W01–W15/T01–T08 (Dark, DPI 125%, 2 PDFs, bookmarks y ZPL); registrar resultados y diferencias sin fingir GREEN.
+- Nuevos casos: `V01/T06 = RECHECK_REQUIRED` (la última evidencia real continúa FAIL); `V02–V04 = NOT_RUN`. Código + automatización GREEN no sustituyen capturas reales. No merge, bloque 3, R5 ni T9.2.
