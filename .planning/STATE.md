@@ -158,6 +158,12 @@ Automated PASS proves only automated evidence. Windows-real, Light/Dark visual f
 - R4-C/R4-D siguen `QA_PENDING` por foto V01 anterior al fix y resto visual W01–W15/T01–T08; bloque 3, F14, R5, T9.2 y merge siguen detenidos. No integrar IA ni traducción IA; `PDF→Markdown` inventariado como no implementado y sin IA.
 - **CI de este commit documental** pendiente de verificar por separado; no inferir GREEN visual.
 
+## W09 homologación de drawer — código GREEN, QA Windows pendiente (2026-10-18)
+
+- Test causal 2 PDF homónimos `245ca41` + harness `9eb73a6`; [RED 39152982080](https://github.com/sierraglobalcompany-rgb/SG-PDF-Editor/actions/runs/39152982080) confirmó `Expected Collapsed / Actual Visible`.
+- Fix de owner `cc5d58d` en `MainWindow.Documents.cs` llama explícitamente `SyncShellWorkspaceFromActiveDocument()` al activar; [GREEN 39153249583](https://github.com/sierraglobalcompany-rgb/SG-PDF-Editor/actions/runs/39153249583): 1.290 PASS, 0 FAIL, 1 SKIP, build 0/0, smoke 30 s. [Checkpoint](../docs/history/2026-10-18-r4d-w09-homonymous-pdfs-red-green-checkpoint.md).
+- **W09 aún no PASS Windows**; P1 contraste Dark y cambio de tema vivo continúan OPEN; R4-C/R4-D `QA_PENDING`. No bloque 3/R5/T9.2/F14/merge.
+
 ## Recovery if chat ends
 
 1. Confirmar rama y HEAD/CI live; nunca asumir un SHA histórico.
