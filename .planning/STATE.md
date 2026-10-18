@@ -149,6 +149,13 @@ Execution order:
 
 Automated PASS proves only automated evidence. Windows-real, Light/Dark visual fidelity, 125% scaling, hardware/private corpus, printing/scanning/stylus and external-reader checks remain separate until actually run.
 
+## V4 postfix QA handoff — 2026-10-18
+
+- Auditoría de **31 herramientas sin IA** y brecha visual V4: [inventario auditado](../docs/qa/2026-10-18-auditoria-31-herramientas-sin-ia-y-brecha-visual-v4.md), baseline `a8ef2cf`, CI [39083267232](https://github.com/sierraglobalcompany-rgb/SG-PDF-Editor/actions/runs/39083267232) SUCCESS (1289/0/1; build 0/0; smoke 30s).
+- **Próximo gate único:** [Codex QA V01 posfix y comparación V4](../docs/qa/2026-10-18-codex-v4-v01-postfix-visual-gate.md). Solo evidencia real Windows, no implementar UI, sin subir documentos privados.
+- R4-C/R4-D siguen `QA_PENDING` por foto V01 anterior al fix y resto visual W01–W15/T01–T08; bloque 3, F14, R5, T9.2 y merge siguen detenidos. No integrar IA ni traducción IA; `PDF→Markdown` inventariado como no implementado y sin IA.
+- **CI de este commit documental** pendiente de verificar por separado; no inferir GREEN visual.
+
 ## Recovery if chat ends
 
 1. Confirmar rama y HEAD/CI live; nunca asumir un SHA histórico.
