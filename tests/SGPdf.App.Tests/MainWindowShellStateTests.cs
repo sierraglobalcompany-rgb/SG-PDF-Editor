@@ -109,6 +109,55 @@ public sealed class MainWindowShellStateTests
     }
 
     [Fact]
+    public void SameNamedPdfs_PreserveIndependentReaderDrawerVisibility()
+    {
+        RunInSta(async () =>
+        {
+            using var a = PdfFixture.Create();
+            using var b = PdfFixture.Create();
+            Assert.NotEqual(a.Path, b.Path);
+            Assert.Equal(Path.GetFileName(a.Path), Path.GetFileName(b.Path));
+
+            var window = new MainWindow();
+            try
+            {
+                RaiseLoaded(window);
+                ConfigureReader(window);
+                Assert.True(await InvokeTask<bool>(window, "TryOpenPdfPathAsync", a.Path, null));
+                var first = Assert.IsType<SGPdf.App.Shell.PdfDocumentWorkspace>(window.ActiveDocument);
+                var toggle = Assert.IsType<Button>(window.FindName("ReaderNavigationToggleButton"));
+                Assert.Equal(Visibility.Collapsed,
+                    Assert.IsType<Border>(window.FindName("ReaderNavigationDrawer")).Visibility);
+
+                toggle.RaiseEvent(new RoutedEventArgs(
+                    System.Windows.Controls.Primitives.ButtonBase.ClickEvent, toggle));
+                Assert.True(first.IsReaderNavigationOpen);
+                Assert.Equal(Visibility.Visible,
+                    Assert.IsType<Border>(window.FindName("ReaderNavigationDrawer")).Visibility);
+
+                Assert.True(await InvokeTask<bool>(window, "TryOpenPdfPathAsync", b.Path, null));
+                var second = Assert.IsType<SGPdf.App.Shell.PdfDocumentWorkspace>(window.ActiveDocument);
+                Assert.NotSame(first, second);
+                Assert.Equal(window.Title, $"SG PDF Editor — {Path.GetFileName(b.Path)}");
+                Assert.False(second.IsReaderNavigationOpen);
+                Assert.Equal(Visibility.Collapsed,
+                    Assert.IsType<Border>(window.FindName("ReaderNavigationDrawer")).Visibility);
+
+                await InvokeTask(window, "ActivateDocumentAsync", first);
+                Assert.True(first.IsReaderNavigationOpen);
+                Assert.Equal(Visibility.Visible,
+                    Assert.IsType<Border>(window.FindName("ReaderNavigationDrawer")).Visibility);
+
+                await InvokeTask(window, "ActivateDocumentAsync", second);
+                Assert.False(second.IsReaderNavigationOpen);
+                Assert.Equal(Visibility.Collapsed,
+                    Assert.IsType<Border>(window.FindName("ReaderNavigationDrawer")).Visibility);
+            }
+            finally { CloseClean(window); }
+        });
+    }
+
+    [Fact]
     public void SuccessfulZplCommit_SwitchesToZpl_AndFailedPdfOpenPreservesZpl()
     {
         RunInSta(async () =>
