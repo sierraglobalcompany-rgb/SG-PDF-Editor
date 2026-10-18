@@ -40,6 +40,36 @@ public sealed class MainWindowShellStateTests
     }
 
     [Fact]
+    public void DocumentTabHeader_ResolvesApprovedPdfIconFromAbsolutePackResource()
+    {
+        RunInSta(() =>
+        {
+            var window = new MainWindow();
+            try
+            {
+                RaiseLoaded(window);
+                var tabs = Assert.IsType<System.Windows.Controls.TabControl>(
+                    window.FindName("DocumentTabs"));
+                var header = Assert.IsType<System.Windows.Controls.StackPanel>(
+                    tabs.ItemTemplate!.LoadContent());
+                var icon = Assert.IsType<System.Windows.Controls.Image>(header.Children[0]);
+                var bitmap = Assert.IsType<BitmapImage>(icon.Source);
+
+                // QA-V4-001: relative BitmapImage URIs in a code-built DataTemplate
+                // have no guaranteed XAML BaseUri; icon was invisible in real Windows QA.
+                Assert.True(bitmap.UriSource.IsAbsoluteUri,
+                    "Document tab icon must resolve independently of XAML BaseUri.");
+                Assert.Equal("pack", bitmap.UriSource.Scheme);
+                Assert.Contains("/SGPdf.App;component/Assets/SGPdf.Document.png",
+                    bitmap.UriSource.AbsoluteUri, StringComparison.OrdinalIgnoreCase);
+                Assert.True(bitmap.PixelWidth > 0 && bitmap.PixelHeight > 0,
+                    "The approved PDF icon must decode to visible pixels.");
+            }
+            finally { CloseClean(window); }
+        });
+    }
+
+    [Fact]
     public void SuccessfulPdfOpen_SwitchesHomeToPdf()
     {
         RunInSta(async () =>
