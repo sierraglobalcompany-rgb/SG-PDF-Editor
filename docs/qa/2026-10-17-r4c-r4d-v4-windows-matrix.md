@@ -1,6 +1,6 @@
 # SG PDF — R4-C / R4-D: matriz de QA Windows real contra V4
 
-**Estado actual (2026-10-18):** `QA_PENDING / P1 OPEN`. Retest real sobre `fc662c8`: icono V01 PASS posfix; cuatro capturas WPF obtenidas; fallos de contraste y restauración W09. Ver [checkpoint posfix](../history/2026-10-18-r4c-r4d-v4-postfix-windows-results.md). El protocolo original y CI históricos siguientes no sustituyen estos resultados.
+**Estado actual (2026-10-18, lote A):** `QA_PENDING / P1 OPEN`. Retest real `QA_ONLY` sobre `8d6db5e`: **W09 PASS Windows**, icono PDF PASS, contraste Dark y tema vivo FAIL; cuatro capturas nuevas al 125%. [Checkpoint canónico lote A](../history/2026-10-18-v4-lote-a-windows-qa-only.md), con hashes y diferencias por región. Las filas no reejecutadas conservan evidencia del retest previo `fc662c8`; no se promueven por CI. El protocolo original y sus STOP visuales históricos quedan subordinados al lote vigente: documentar P1 visual seguro y continuar evidencia.
 **Rama:** `feat/f13-task9-t9-1-document-shell-realignment-20261017`. **Baseline exact-head:** `0427cfff84e500884759d5287fd53054738c2fb9`, CI [39076821081](https://github.com/sierraglobalcompany-rgb/SG-PDF-Editor/actions/runs/39076821081) SUCCESS; 1.288 PASS, 0 FAIL, 1 SKIP; build 0/0; smoke 30 s. El commit documental que agrega esta matriz debe tener CI nuevo para citarlo como HEAD final.
 
 ## Entorno y controles
@@ -11,10 +11,10 @@ En Windows x64, comprobar `git fetch --all --prune`, rama, SHA, tree limpio y ej
 
 | Evidencia real | Diseño aprobado | Estado |
 | --- | --- | --- |
-| `R4D_V01_LIGHT_CLOSED_POSTFIX_REAL.png` | [Claro, navegación cerrada](../design/references/sgpdf-v4/SG_PDF_MOCKUP_V4_CLARO_CERRADO_2026-10-17.png) | PARTIAL composición; icon PASS posfix |
-| `R4D_V02_LIGHT_OPEN_REAL.png` | [Claro, navegación abierta](../design/references/sgpdf-v4/SG_PDF_MOCKUP_V4_CLARO_NAVEGACION_2026-10-17.png) | PARTIAL; captura real, fidelidad V4 pendiente |
-| `R4D_V03_DARK_CLOSED_REAL.png` | [Oscuro, navegación cerrada](../design/references/sgpdf-v4/SG_PDF_MOCKUP_V4_OSCURO_CERRADO_2026-10-17.png) | FAIL; contraste de título de tab |
-| `R4D_V04_DARK_OPEN_REAL.png` | [Oscuro, navegación abierta](../design/references/sgpdf-v4/SG_PDF_MOCKUP_V4_OSCURO_NAVEGACION_2026-10-17.png) | FAIL; contraste de números de miniatura |
+| `V01_LIGHT_CLOSED.png` | [Claro, navegación cerrada](../design/references/sgpdf-v4/SG_PDF_MOCKUP_V4_CLARO_CERRADO_2026-10-17.png) | PARTIAL composición; icon PASS real en `8d6db5e` |
+| `V02_LIGHT_OPEN.png` | [Claro, navegación abierta](../design/references/sgpdf-v4/SG_PDF_MOCKUP_V4_CLARO_NAVEGACION_2026-10-17.png) | PARTIAL; captura nueva, fidelidad V4 pendiente |
+| `V03_DARK_CLOSED_FAIL.png` | [Oscuro, navegación cerrada](../design/references/sgpdf-v4/SG_PDF_MOCKUP_V4_OSCURO_CERRADO_2026-10-17.png) | FAIL; título negro sobre tab Dark confirmado |
+| `V04_DARK_OPEN_FAIL.png` | [Oscuro, navegación abierta](../design/references/sgpdf-v4/SG_PDF_MOCKUP_V4_OSCURO_NAVEGACION_2026-10-17.png) | FAIL; números blancos sobre papel blanco confirmados |
 
 Cada captura debe mostrar la aplicación real sin teclado virtual ocultando elementos. Registrar identidad de app, icono de PDF asociado en cada tab, tab activo/cierre, iconos aprobados de utilidades o fallback `read/comment/forms`, 11 tools y estados disabled, menu/zoom, toggle/drawer, foco/contraste y ausencia de texto `SGPdf.App.Shell.PdfDocumentWorkspace` o clipping. Diferencias cosméticas P2 y funcionales P1/P0; no exigir coincidencia pixel a pixel del PDF ilustrativo.
 
@@ -30,7 +30,7 @@ Cada captura debe mostrar la aplicación real sin teclado virtual ocultando elem
 | W06 | Padre sin destino no navega, hijo conserva destino válido | PASS — padre null no navega; hijo sí |
 | W07 | B sin outlines: «Este PDF no tiene marcadores.»; sin árbol de A | PASS — B vacío sin árbol de A |
 | W08 | A↔B en carga: sin datos stale/excepciones | PARTIAL — A↔B sin mezcla; no carga lenta forzada |
-| W09 | Guardar/restaurar drawer y pestaña de navegación por PDF | FAIL observado — drawer heredado entre source.pdf de carpetas distintas, causa por confirmar |
+| W09 | Guardar/restaurar drawer y pestaña de navegación por PDF | PASS Windows lote A `8d6db5e` — A abierto/Marcadores y B cerrado; después A cerrado y B abierto/Páginas; alternancia y reapertura A conserva Marcadores |
 | W10 | Cierre del activo/último: limpiar UI/nav | PASS — cierre activo/último e inactivo observados |
 | W11 | Home y ZPL sin toggle/bookmarks residuales | PASS — Home y ZPL real sin rail/drawer PDF |
 | W12 | Light/Dark: estados/empty/error legibles sin color fijo erróneo | FAIL — contraste Dark y cambio de tema en caliente |

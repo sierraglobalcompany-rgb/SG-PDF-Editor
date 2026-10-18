@@ -1,6 +1,6 @@
 ---
 gsd_state_version: '1.1'
-status: f13-t9-1-w09-ci-green-windows-qa-pending-dark-theme-p1-open
+status: f13-t9-1-w09-windows-pass-dark-live-theme-p1-open
 progress:
   total_phases: 19
   completed_phases: 13
@@ -13,7 +13,7 @@ progress:
 
 ## Método vigente / foco real — 2026-10-18
 
-- **R4-C/R4-D QA_PENDING**; V01 icono PDF PASS posfix, W09 código/test GREEN con [CI 39153601757](https://github.com/sierraglobalcompany-rgb/SG-PDF-Editor/actions/runs/39153601757) (1.290/0/1) pero **W09 Windows aún no validado**; tema Dark y cambio Light↔Dark en caliente siguen P1 abiertos.
+- **R4-C/R4-D QA_PENDING**; lote A `QA_ONLY` Windows sobre `8d6db5e`: **W09 PASS real** en ambas configuraciones de PDFs homónimos y pestañas independientes; icono PDF PASS. Contraste Dark y cambio Light↔Dark siguen **dos familias P1 OPEN**. Cuatro capturas reales al 125%; restore/build 0/0, full 1.290/0/1 y smoke 30 s PASS. [Checkpoint canónico del lote A](../docs/history/2026-10-18-v4-lote-a-windows-qa-only.md). CI del commit documental final se verifica aparte; no GREEN visual. Esta actualización prevalece sobre W09 pendiente/fallido en secciones históricas inferiores.
 - **Ruta optimizada:** [auditoría 10 pasadas + lotes A/B/C](../docs/plans/SGPDF_R4_V4_METODOLOGIA_LOTES_2026-10-18.md); [prompt único para Codex/Antigravity](../docs/qa/SGPDF_PROMPT_CODEX_ANTIGRAVITY_R4_V4_LOTES_2026-10-18.md). Lote A P1/tema/W09 → B estructura V4 → C QA final. Un CI y un checkpoint por lote, salvo riesgo P0 o bloqueo real.
 - **No aprobado:** command bar/bloque 3, R5/T9.2/F14–F18, merge a main y cualquier herramienta IA. Esta sección prevalece sobre frases históricas posteriores aún no depuradas.
 
