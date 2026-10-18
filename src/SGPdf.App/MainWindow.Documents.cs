@@ -220,7 +220,7 @@ public partial class MainWindow
         documentIcon.SetValue(Image.StretchProperty, Stretch.Uniform);
         documentIcon.SetValue(
             Image.SourceProperty,
-            new BitmapImage(new Uri("/SGPdf.App;component/Assets/SGPdf.Document.png", UriKind.Relative)));
+            new BitmapImage(new Uri("pack://application:,,,/SGPdf.App;component/Assets/SGPdf.Document.png", UriKind.Absolute)));
         panel.AppendChild(documentIcon);
 
         var title = new FrameworkElementFactory(typeof(TextBlock));
