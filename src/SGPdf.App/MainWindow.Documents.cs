@@ -19,9 +19,7 @@ public partial class MainWindow
     private bool _documentTabsUiInitialized;
     private bool _syncingDocumentTabs;
     private Border? _documentTopShell;
-    private Grid? _documentTabRow;
-    private TabControl? _documentTabs;
-    private Button? _addDocumentTabButton;
+    private DockPanel? _documentTabRow;
 
     private Func<PdfDocumentWorkspace, bool> _confirmCloseDirtyDocument = static document =>
         MessageBox.Show(
@@ -33,12 +31,6 @@ public partial class MainWindow
     internal IReadOnlyList<PdfDocumentWorkspace> OpenDocuments => _openDocuments;
 
     internal PdfDocumentWorkspace? ActiveDocument { get; private set; }
-
-    private TabControl DocumentTabs => _documentTabs
-        ?? throw new InvalidOperationException("Las pestañas de documentos no están inicializadas.");
-
-    private Button AddDocumentTabButton => _addDocumentTabButton
-        ?? throw new InvalidOperationException("El botón para abrir otro PDF no está inicializado.");
 
     private static bool RegisterDocumentLifecycleHook()
     {
@@ -72,136 +64,16 @@ public partial class MainWindow
         if (_documentTabsUiInitialized)
             return;
 
-        if (Content is not DockPanel root)
-            throw new InvalidOperationException("No se encontró el shell principal de la ventana.");
-
-        var existingMenu = root.Children.OfType<Menu>().FirstOrDefault()
-            ?? throw new InvalidOperationException("No se encontró el menú principal.");
-
-        root.Children.Remove(existingMenu);
-        root.Children.Remove(NavigationBar);
-
-        var shellGrid = new Grid();
-        shellGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        shellGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-
-        var tabRow = new Grid
-        {
-            Name = "DocumentTabRow",
-            MinHeight = 38d,
-            Margin = new Thickness(8, 6, 8, 0),
-            Visibility = Visibility.Collapsed
-        };
-        tabRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        tabRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1d, GridUnitType.Star) });
-        tabRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-
-        var brand = new TextBlock
-        {
-            Text = "SG PDF",
-            FontWeight = FontWeights.SemiBold,
-            VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(4, 0, 12, 0)
-        };
-        brand.SetResourceReference(TextBlock.ForegroundProperty, "TextFillColorPrimaryBrush");
-        Grid.SetColumn(brand, 0);
-        tabRow.Children.Add(brand);
-
-        _documentTabs = new TabControl
-        {
-            Name = "DocumentTabs",
-            MinHeight = 34d,
-            Background = Brushes.Transparent,
-            BorderThickness = new Thickness(0),
-            HorizontalContentAlignment = HorizontalAlignment.Stretch,
-            ItemTemplate = BuildDocumentTabHeaderTemplate()
-        };
-        DocumentTabs.SetResourceReference(FrameworkElement.StyleProperty, "SgDocumentTabsStyle");
+        // Geometry is declarative (MainWindow.xaml); wire existing state and commands once.
+        DocumentTabs.ItemTemplate = BuildDocumentTabHeaderTemplate();
         DocumentTabs.ItemsSource = _openDocuments;
         DocumentTabs.SelectionChanged += DocumentTabs_SelectionChanged;
-        AutomationProperties.SetName(DocumentTabs, "Documentos PDF abiertos");
-        RegisterName(DocumentTabs.Name, DocumentTabs);
-        Grid.SetColumn(DocumentTabs, 1);
-        tabRow.Children.Add(DocumentTabs);
-
-        _addDocumentTabButton = new Button
-        {
-            Name = "AddDocumentTabButton",
-            Content = "+",
-            Width = 32d,
-            Height = 32d,
-            MinWidth = 32d,
-            Padding = new Thickness(0),
-            Margin = new Thickness(6, 0, 2, 0),
-            VerticalAlignment = VerticalAlignment.Center,
-            ToolTip = "Abrir otro PDF"
-        };
-        AddDocumentTabButton.SetResourceReference(FrameworkElement.StyleProperty, "SgIconButtonStyle");
         AddDocumentTabButton.Click += AddDocumentTabButton_Click;
-        AutomationProperties.SetName(AddDocumentTabButton, "Abrir otro PDF");
-        RegisterName(AddDocumentTabButton.Name, AddDocumentTabButton);
-        Grid.SetColumn(AddDocumentTabButton, 2);
-        tabRow.Children.Add(AddDocumentTabButton);
-
-        Grid.SetRow(tabRow, 0);
-        shellGrid.Children.Add(tabRow);
-
-        var commandRow = new Grid
-        {
-            Margin = new Thickness(4, 2, 4, 4)
-        };
-        commandRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1d, GridUnitType.Star) });
-        commandRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-
-        existingMenu.HorizontalAlignment = HorizontalAlignment.Left;
-        existingMenu.VerticalAlignment = VerticalAlignment.Center;
-        existingMenu.Background = Brushes.Transparent;
-        Grid.SetColumn(existingMenu, 0);
-        commandRow.Children.Add(existingMenu);
-
-        NavigationBar.HorizontalAlignment = HorizontalAlignment.Right;
-        NavigationBar.BorderThickness = new Thickness(0);
-        NavigationBar.Background = Brushes.Transparent;
-        if (NavigationBar.Child is StackPanel navigationItems)
-        {
-            navigationItems.HorizontalAlignment = HorizontalAlignment.Right;
-            navigationItems.Margin = new Thickness(6, 4, 6, 4);
-        }
-
-        PreviousPageButton.Content = "‹";
-        PreviousPageButton.MinWidth = 32d;
-        PreviousPageButton.ToolTip = "Página anterior";
-        PreviousPageButton.SetResourceReference(FrameworkElement.StyleProperty, "SgIconButtonStyle");
-        NextPageButton.Content = "›";
-        NextPageButton.MinWidth = 32d;
-        NextPageButton.ToolTip = "Página siguiente";
-        NextPageButton.SetResourceReference(FrameworkElement.StyleProperty, "SgIconButtonStyle");
-        FitPageButton.Content = "Página";
-        FitWidthButton.Content = "Ancho";
-
-        Grid.SetColumn(NavigationBar, 1);
-        commandRow.Children.Add(NavigationBar);
-        Grid.SetRow(commandRow, 1);
-        shellGrid.Children.Add(commandRow);
-
-        var topShell = new Border
-        {
-            Name = "DocumentTopShell",
-            BorderThickness = new Thickness(0, 0, 0, 1),
-            Child = shellGrid,
-            Visibility = Visibility.Collapsed
-        };
-        topShell.SetResourceReference(Border.BackgroundProperty, "ApplicationBackgroundBrush");
-        topShell.SetResourceReference(Border.BorderBrushProperty, "CardStrokeColorDefaultBrush");
-        RegisterName(topShell.Name, topShell);
-        DockPanel.SetDock(topShell, Dock.Top);
-        root.Children.Insert(0, topShell);
-
         NavigationBar.IsVisibleChanged += DocumentTopShellChildVisibilityChanged;
         LabelNavigationBar.IsVisibleChanged += DocumentTopShellChildVisibilityChanged;
 
-        _documentTopShell = topShell;
-        _documentTabRow = tabRow;
+        _documentTopShell = DocumentTopShell;
+        _documentTabRow = DocumentTabRow;
         _documentTabsUiInitialized = true;
         SyncDocumentTabsSelection();
         UpdateDocumentTopShellVisibility();
@@ -266,7 +138,7 @@ public partial class MainWindow
 
     private void SyncDocumentTabsSelection()
     {
-        if (_documentTabs is null)
+        if (!_documentTabsUiInitialized)
             return;
 
         _syncingDocumentTabs = true;

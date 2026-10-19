@@ -9,11 +9,12 @@ public sealed class DocumentShellRealignmentContractTests
     public void DocumentShell_DeclaresRealDocumentTabsAndAddButton()
     {
         var source = File.ReadAllText(FindRepoFile("src", "SGPdf.App", "MainWindow.Documents.cs"));
+        var xaml = File.ReadAllText(FindRepoFile("src", "SGPdf.App", "MainWindow.xaml"));
 
-        Assert.Contains("Name = \"DocumentTabs\"", source);
-        Assert.Contains("Name = \"AddDocumentTabButton\"", source);
-        Assert.Contains("Name = \"DocumentTopShell\"", source);
-        Assert.Contains("Name = \"DocumentTabRow\"", source);
+        Assert.Contains("x:Name=\"DocumentTabs\"", xaml);
+        Assert.Contains("x:Name=\"AddDocumentTabButton\"", xaml);
+        Assert.Contains("x:Name=\"DocumentTopShell\"", xaml);
+        Assert.Contains("x:Name=\"DocumentTabRow\"", xaml);
     }
 
     [Fact]
@@ -34,11 +35,12 @@ public sealed class DocumentShellRealignmentContractTests
     public void DocumentTabs_V4UsesApprovedDocumentIconAndHeaderOnlySelectedVisual()
     {
         var source = File.ReadAllText(FindRepoFile("src", "SGPdf.App", "MainWindow.Documents.cs"));
+        var xaml = File.ReadAllText(FindRepoFile("src", "SGPdf.App", "MainWindow.xaml"));
         var styles = XDocument.Load(FindRepoFile("src", "SGPdf.App", "Themes", "Modern.xaml"));
         XNamespace presentation = "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
         XNamespace x = "http://schemas.microsoft.com/winfx/2006/xaml";
 
-        Assert.Contains("SgDocumentTabsStyle", source);
+        Assert.Contains("SgDocumentTabsStyle", xaml);
         Assert.Contains("SGPdf.Document.png", source);
         Assert.Contains("BuildDocumentTabHeaderTemplate()", source);
         Assert.Contains("TextTrimming.CharacterEllipsis", source);

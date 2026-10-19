@@ -10,8 +10,44 @@
         WindowStartupLocation="CenterScreen"
         Closed="Window_Closed">
     <DockPanel>
-        <Menu DockPanel.Dock="Top"
-              Background="{DynamicResource ApplicationBackgroundBrush}">
+        <!-- One V4 top-shell composition; named menu/reader commands retain their original handlers. -->
+        <Border x:Name="DocumentTopShell" DockPanel.Dock="Top"
+                Background="{DynamicResource ApplicationBackgroundBrush}"
+                BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+                BorderThickness="0,0,0,1" Visibility="Collapsed">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <DockPanel x:Name="DocumentTabRow" Grid.Row="0"
+                           MinHeight="44" LastChildFill="False"
+                           Margin="12,4,8,0" Visibility="Collapsed">
+                    <StackPanel DockPanel.Dock="Left" Orientation="Horizontal"
+                                Margin="0,0,12,0" VerticalAlignment="Center">
+                        <Image Source="pack://application:,,,/SGPdf.App;component/Assets/SGPdf.App.ico"
+                               Width="25" Height="25" Stretch="Uniform" />
+                        <TextBlock Text="SG PDF" FontSize="14" FontWeight="SemiBold"
+                                   VerticalAlignment="Center" Margin="7,0,0,0"
+                                   Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                    </StackPanel>
+                    <TabControl x:Name="DocumentTabs" DockPanel.Dock="Left"
+                                MinHeight="34" Background="Transparent" BorderThickness="0"
+                                Style="{DynamicResource SgDocumentTabsStyle}"
+                                AutomationProperties.Name="Documentos PDF abiertos" />
+                    <Button x:Name="AddDocumentTabButton" DockPanel.Dock="Left"
+                            Content="+" Width="32" Height="32" MinWidth="32"
+                            Padding="0" Margin="3,0,0,0" VerticalAlignment="Center"
+                            ToolTip="Abrir otro PDF" AutomationProperties.Name="Abrir otro PDF"
+                            Style="{DynamicResource SgIconButtonStyle}" />
+                </DockPanel>
+                <Grid Grid.Row="1" Margin="4,2,4,4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+        <Menu Grid.Column="0"
+              Background="Transparent">
             <MenuItem Header="_Archivo">
                 <MenuItem x:Name="OpenPdfMenuItem" Header="_Abrir..." Click="OpenPdf_Click" />
                 <MenuItem x:Name="OpenZplMenuItem"
@@ -37,22 +73,22 @@
         </Menu>
 
         <Border x:Name="NavigationBar"
-                DockPanel.Dock="Top"
+                Grid.Column="1"
                 Style="{DynamicResource SgToolbarBorderStyle}"
                 Visibility="Collapsed"
                 IsVisibleChanged="NavigationBar_IsVisibleChanged">
             <StackPanel Orientation="Horizontal"
                         HorizontalAlignment="Center"
-                        Margin="12,8">
+                        Margin="5,3">
                 <Button x:Name="PreviousPageButton"
-                        Content="← Anterior"
-                        MinWidth="96"
+                        Content="‹"
+                        MinWidth="32"
                         Style="{DynamicResource SgToolbarButtonStyle}"
                         Click="PreviousPage_Click"
                         IsEnabled="False" />
 
                 <StackPanel Orientation="Horizontal"
-                            Margin="16,0"
+                            Margin="8,0"
                             VerticalAlignment="Center">
                     <TextBlock Text="Página"
                                VerticalAlignment="Center"
@@ -75,15 +111,15 @@
                 </StackPanel>
 
                 <Button x:Name="NextPageButton"
-                        Content="Siguiente →"
-                        MinWidth="96"
+                        Content="›"
+                        MinWidth="32"
                         Style="{DynamicResource SgToolbarButtonStyle}"
                         Click="NextPage_Click"
                         IsEnabled="False" />
 
                 <Border Width="1"
                         Height="24"
-                        Margin="14,0"
+                        Margin="8,0"
                         Background="{DynamicResource CardStrokeColorDefaultBrush}" />
 
                 <Button x:Name="ZoomOutButton"
@@ -94,7 +130,7 @@
                         IsEnabled="False" />
                 <Button x:Name="ZoomPercentButton"
                         Content="100%"
-                        MinWidth="62"
+                        MinWidth="54"
                         Style="{DynamicResource SgToolbarButtonStyle}"
                         ToolTip="Tamaño real (100%)"
                         Click="ActualSize_Click"
@@ -107,19 +143,23 @@
                         IsEnabled="False" />
 
                 <Button x:Name="FitPageButton"
-                        Content="Ajustar página"
+                        Content="Página"
                         Margin="12,0,2,0"
                         Style="{DynamicResource SgToolbarButtonStyle}"
                         ToolTip="Mostrar la página completa"
                         Click="FitPage_Click"
                         IsEnabled="False" />
                 <Button x:Name="FitWidthButton"
-                        Content="Ajustar ancho"
+                        Content="Ancho"
                         Style="{DynamicResource SgToolbarButtonStyle}"
                         ToolTip="Ajustar al ancho del visor"
                         Click="FitWidth_Click"
                         IsEnabled="False" />
             </StackPanel>
+        </Border>
+
+                </Grid>
+            </Grid>
         </Border>
 
         <Border x:Name="LabelNavigationBar"
@@ -150,7 +190,7 @@
             </StackPanel>
         </Border>
 
-        <StatusBar DockPanel.Dock="Bottom"
+        <StatusBar DockPanel.Dock="Bottom" Height="28" Padding="12,0"
                    Background="{DynamicResource ApplicationBackgroundBrush}">
             <TextBlock x:Name="StatusText" Text="Listo" />
         </StatusBar>
