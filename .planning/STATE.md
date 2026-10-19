@@ -1,6 +1,6 @@
 ---
 gsd_state_version: '1.1'
-status: f13-t9-1-w09-windows-pass-dark-live-theme-p1-open
+status: f13-t9-1-lote-a-code-windows-green-r4-qa-pending
 progress:
   total_phases: 19
   completed_phases: 13
@@ -13,7 +13,7 @@ progress:
 
 ## Método vigente / foco real — 2026-10-18
 
-- **R4-C/R4-D QA_PENDING**; lote A `QA_ONLY` Windows sobre `8d6db5e`: **W09 PASS real** en ambas configuraciones de PDFs homónimos y pestañas independientes; icono PDF PASS. Contraste Dark y cambio Light↔Dark siguen **dos familias P1 OPEN**. Cuatro capturas reales al 125%; restore/build 0/0, full 1.290/0/1 y smoke 30 s PASS. [Checkpoint canónico del lote A](../docs/history/2026-10-18-v4-lote-a-windows-qa-only.md). CI del commit documental final se verifica aparte; no GREEN visual. Esta actualización prevalece sobre W09 pendiente/fallido en secciones históricas inferiores.
+- **LOTE_A_CODE_AND_WINDOWS_GREEN** para QA-V4-002/003; W09 conserva PASS y regresión corta real PASS. [Resultado canónico FIX_AND_VALIDATE](../docs/history/2026-10-18-v4-lote-a-dark-hot-theme-fixed.md): causas, diff, QA Windows 125%, hashes y gates. CI exact-head del commit final se entrega al publicar. **R4-C/R4-D siguen QA_PENDING** por fidelidad/cobertura V4 restante; este resultado prevalece sobre P1 de tema abiertos en textos históricos inferiores. Lote B/C pendiente; bloque 3/R5/T9.2/F14–F18/merge sin autorización.
 - **Ruta optimizada:** [auditoría 10 pasadas + lotes A/B/C](../docs/plans/SGPDF_R4_V4_METODOLOGIA_LOTES_2026-10-18.md); [prompt único para Codex/Antigravity](../docs/qa/SGPDF_PROMPT_CODEX_ANTIGRAVITY_R4_V4_LOTES_2026-10-18.md). Lote A P1/tema/W09 → B estructura V4 → C QA final. Un CI y un checkpoint por lote, salvo riesgo P0 o bloqueo real.
 - **No aprobado:** command bar/bloque 3, R5/T9.2/F14–F18, merge a main y cualquier herramienta IA. Esta sección prevalece sobre frases históricas posteriores aún no depuradas.
 

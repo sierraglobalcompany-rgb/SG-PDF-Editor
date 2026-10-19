@@ -62,9 +62,9 @@ public partial class MainWindow
         var surface = new Grid
         {
             Name = "OrganizeSurface",
-            Visibility = Visibility.Collapsed,
-            Background = new SolidColorBrush(Color.FromRgb(243, 243, 243))
+            Visibility = Visibility.Collapsed
         };
+        surface.SetResourceReference(Panel.BackgroundProperty, "LayerFillColorDefaultBrush");
         surface.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         surface.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1d, GridUnitType.Star) });
 
@@ -183,6 +183,7 @@ public partial class MainWindow
         stack.AppendChild(preview);
 
         var pageNumber = new FrameworkElementFactory(typeof(TextBlock));
+        pageNumber.SetValue(TextBlock.ForegroundProperty, Brushes.Black);
         pageNumber.SetValue(TextBlock.HorizontalAlignmentProperty, HorizontalAlignment.Center);
         pageNumber.SetValue(TextBlock.MarginProperty, new Thickness(0, 6, 0, 0));
         pageNumber.SetValue(TextBlock.FontWeightProperty, FontWeights.SemiBold);

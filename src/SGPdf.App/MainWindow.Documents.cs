@@ -191,8 +191,8 @@ public partial class MainWindow
             Child = shellGrid,
             Visibility = Visibility.Collapsed
         };
-        topShell.SetResourceReference(Border.BackgroundProperty, "SgSurfaceBrush");
-        topShell.SetResourceReference(Border.BorderBrushProperty, "SgBorderBrush");
+        topShell.SetResourceReference(Border.BackgroundProperty, "ApplicationBackgroundBrush");
+        topShell.SetResourceReference(Border.BorderBrushProperty, "CardStrokeColorDefaultBrush");
         RegisterName(topShell.Name, topShell);
         DockPanel.SetDock(topShell, Dock.Top);
         root.Children.Insert(0, topShell);

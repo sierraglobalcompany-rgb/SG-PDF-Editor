@@ -3,21 +3,13 @@
     <!--
       SG PDF visual layer.
       Native WPF Fluent resources are loaded by Application.ThemeMode=System.
-      Keep this dictionary small: aliases + reusable variants only.
+      Bind consumers directly to native theme brushes. App-scoped Freezable
+      color aliases retain their old resource context after ThemeMode changes.
+      Keep this dictionary small: reusable variants only.
     -->
 
-    <SolidColorBrush x:Key="SgSurfaceBrush"
-                     Color="{DynamicResource ApplicationBackgroundColor}" />
-    <SolidColorBrush x:Key="SgPanelBrush"
-                     Color="{DynamicResource CardBackgroundFillColorDefault}" />
-    <SolidColorBrush x:Key="SgCanvasBrush"
-                     Color="{DynamicResource LayerFillColorDefault}" />
-    <SolidColorBrush x:Key="SgBorderBrush"
-                     Color="{DynamicResource CardStrokeColorDefault}" />
     <SolidColorBrush x:Key="SgAccentBrush"
                      Color="{StaticResource SystemAccentColor}" />
-    <SolidColorBrush x:Key="SgMutedTextBrush"
-                     Color="{DynamicResource TextFillColorSecondary}" />
 
     <Style x:Key="SgPrimaryButtonStyle"
            TargetType="{x:Type Button}"
@@ -83,7 +75,7 @@
     <Style x:Key="SgRailItemSelectedStyle"
            TargetType="{x:Type Button}"
            BasedOn="{StaticResource SgRailItemStyle}">
-        <Setter Property="Background" Value="{DynamicResource SgCanvasBrush}" />
+        <Setter Property="Background" Value="{DynamicResource LayerFillColorDefaultBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource SgAccentBrush}" />
         <Setter Property="FontWeight" Value="SemiBold" />
     </Style>
@@ -96,7 +88,7 @@
     </Style>
 
     <Style x:Key="SgMutedTextStyle" TargetType="{x:Type TextBlock}">
-        <Setter Property="Foreground" Value="{StaticResource SgMutedTextBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
         <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
 
@@ -113,8 +105,8 @@
     </Style>
 
     <Style x:Key="SgPanelBorderStyle" TargetType="{x:Type Border}">
-        <Setter Property="Background" Value="{StaticResource SgPanelBrush}" />
-        <Setter Property="BorderBrush" Value="{StaticResource SgBorderBrush}" />
+        <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="CornerRadius" Value="8" />
     </Style>
@@ -131,8 +123,8 @@
            TargetType="{x:Type Border}">
         <Setter Property="Width" Value="36" />
         <Setter Property="Height" Value="36" />
-        <Setter Property="Background" Value="{StaticResource SgCanvasBrush}" />
-        <Setter Property="BorderBrush" Value="{StaticResource SgBorderBrush}" />
+        <Setter Property="Background" Value="{DynamicResource LayerFillColorDefaultBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="CornerRadius" Value="8" />
     </Style>
@@ -147,21 +139,22 @@
            TargetType="{x:Type Border}">
         <Setter Property="Padding" Value="0,0,0,12" />
         <Setter Property="Margin" Value="0,0,0,12" />
-        <Setter Property="BorderBrush" Value="{StaticResource SgBorderBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}" />
         <Setter Property="BorderThickness" Value="0,0,0,1" />
     </Style>
 
     <Style x:Key="SgToolbarBorderStyle" TargetType="{x:Type Border}">
-        <Setter Property="Background" Value="{StaticResource SgPanelBrush}" />
-        <Setter Property="BorderBrush" Value="{StaticResource SgBorderBrush}" />
+        <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}" />
         <Setter Property="BorderThickness" Value="0,0,0,1" />
     </Style>
     <!-- V4: document tabs are a header-only strip. PDF pages belong to Reader, not TabControl.Content. -->
     <Style x:Key="SgDocumentTabItemStyle" TargetType="{x:Type TabItem}">
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
         <Setter Property="MinHeight" Value="34" />
         <Setter Property="Padding" Value="12,5" />
         <Setter Property="Margin" Value="0,0,6,0" />
-        <Setter Property="BorderBrush" Value="{DynamicResource SgBorderBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Template">
@@ -180,11 +173,11 @@
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="TabChrome" Property="Background"
-                                    Value="{DynamicResource SgPanelBrush}" />
+                                    Value="{DynamicResource CardBackgroundFillColorDefaultBrush}" />
                         </Trigger>
                         <Trigger Property="IsSelected" Value="True">
                             <Setter TargetName="TabChrome" Property="Background"
-                                    Value="{DynamicResource SgPanelBrush}" />
+                                    Value="{DynamicResource CardBackgroundFillColorDefaultBrush}" />
                             <Setter TargetName="TabChrome" Property="BorderBrush"
                                     Value="{DynamicResource SgAccentBrush}" />
                             <Setter TargetName="TabChrome" Property="BorderThickness" Value="1,1,1,3" />

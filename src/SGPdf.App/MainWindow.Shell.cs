@@ -184,8 +184,8 @@ public partial class MainWindow
             Child = scroller,
             Visibility = Visibility.Collapsed
         };
-        rail.SetResourceReference(BackgroundProperty, "SgPanelBrush");
-        rail.SetResourceReference(BorderBrushProperty, "SgBorderBrush");
+        rail.SetResourceReference(BackgroundProperty, "CardBackgroundFillColorDefaultBrush");
+        rail.SetResourceReference(BorderBrushProperty, "CardStrokeColorDefaultBrush");
         RegisterName(rail.Name, rail);
         Grid.SetColumn(rail, 0);
         workspace.Children.Add(rail);

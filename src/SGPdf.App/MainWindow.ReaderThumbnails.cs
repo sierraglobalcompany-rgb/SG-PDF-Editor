@@ -307,6 +307,8 @@ public partial class MainWindow
         stack.AppendChild(preview);
 
         var pageNumber = new FrameworkElementFactory(typeof(TextBlock));
+        // The thumbnail card represents white paper in both application themes.
+        pageNumber.SetValue(TextBlock.ForegroundProperty, Brushes.Black);
         pageNumber.SetValue(TextBlock.HorizontalAlignmentProperty, HorizontalAlignment.Center);
         pageNumber.SetValue(TextBlock.MarginProperty, new Thickness(0, 6, 0, 0));
         pageNumber.SetBinding(TextBlock.TextProperty, new Binding(nameof(ReaderThumbnailItem.PageNumber))

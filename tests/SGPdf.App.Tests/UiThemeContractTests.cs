@@ -45,10 +45,6 @@ public sealed class UiThemeContractTests
 
         var requiredKeys = new[]
         {
-            "SgSurfaceBrush",
-            "SgPanelBrush",
-            "SgCanvasBrush",
-            "SgBorderBrush",
             "SgAccentBrush",
             "SgPrimaryButtonStyle",
             "SgToolbarButtonStyle",
@@ -78,7 +74,7 @@ public sealed class UiThemeContractTests
     {
         var document = LoadMainWindow();
         var root = Assert.IsType<XElement>(document.Root);
-        AssertSharedResource(root, "Background", "SgSurfaceBrush");
+        AssertSharedResource(root, "Background", "ApplicationBackgroundBrush");
 
         AssertSharedResource(FindNamed(document, "NavigationBar"), "Style", "SgToolbarBorderStyle");
         AssertSharedResource(FindNamed(document, "LabelNavigationBar"), "Style", "SgToolbarBorderStyle");
@@ -90,9 +86,9 @@ public sealed class UiThemeContractTests
         var right = Assert.Single(mainGrid.Elements(), element =>
             element.Name.LocalName == "Border" && GridColumn(element) == 2);
 
-        AssertSharedResource(center, "Background", "SgCanvasBrush");
-        AssertSharedResource(right, "Background", "SgPanelBrush");
-        AssertSharedResource(right, "BorderBrush", "SgBorderBrush");
+        AssertSharedResource(center, "Background", "LayerFillColorDefaultBrush");
+        AssertSharedResource(right, "Background", "CardBackgroundFillColorDefaultBrush");
+        AssertSharedResource(right, "BorderBrush", "CardStrokeColorDefaultBrush");
     }
 
     [Fact]
@@ -107,12 +103,12 @@ public sealed class UiThemeContractTests
         var right = Assert.Single(mainGrid.Elements(), element =>
             element.Name.LocalName == "Border" && GridColumn(element) == 2);
 
-        AssertDeferredResource(root, "Background", "SgSurfaceBrush");
+        AssertDeferredResource(root, "Background", "ApplicationBackgroundBrush");
         AssertDeferredResource(FindNamed(document, "NavigationBar"), "Style", "SgToolbarBorderStyle");
         AssertDeferredResource(FindNamed(document, "LabelNavigationBar"), "Style", "SgToolbarBorderStyle");
-        AssertDeferredResource(center, "Background", "SgCanvasBrush");
-        AssertDeferredResource(right, "Background", "SgPanelBrush");
-        AssertDeferredResource(right, "BorderBrush", "SgBorderBrush");
+        AssertDeferredResource(center, "Background", "LayerFillColorDefaultBrush");
+        AssertDeferredResource(right, "Background", "CardBackgroundFillColorDefaultBrush");
+        AssertDeferredResource(right, "BorderBrush", "CardStrokeColorDefaultBrush");
     }
 
     [Fact]
@@ -164,7 +160,7 @@ public sealed class UiThemeContractTests
     {
         var document = XDocument.Load(ProjectPath("src", "SGPdf.App", fileName));
         var root = Assert.IsType<XElement>(document.Root);
-        AssertDeferredResource(root, "Background", "SgSurfaceBrush");
+        AssertDeferredResource(root, "Background", "ApplicationBackgroundBrush");
 
         var buttons = document.Descendants().Where(element => element.Name.LocalName == "Button").ToList();
         Assert.NotEmpty(buttons);

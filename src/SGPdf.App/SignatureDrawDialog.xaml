@@ -6,7 +6,7 @@
         MinWidth="620" MinHeight="460"
         WindowStartupLocation="CenterOwner"
         ResizeMode="CanResizeWithGrip"
-        Background="{DynamicResource SgSurfaceBrush}">
+        Background="{DynamicResource ApplicationBackgroundBrush}">
     <Grid Margin="18">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -23,7 +23,7 @@
             <ComboBox x:Name="SignatureDrawWidthComboBox" Width="130" />
         </StackPanel>
 
-        <Border Grid.Row="1" BorderBrush="{DynamicResource SgBorderBrush}" BorderThickness="1" CornerRadius="8" Background="White">
+        <Border Grid.Row="1" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Background="White">
             <InkCanvas x:Name="SignatureDrawInkCanvas"
                        Background="White"
                        EditingMode="Ink"

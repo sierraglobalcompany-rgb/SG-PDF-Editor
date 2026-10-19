@@ -1,6 +1,6 @@
 # SG PDF — R4-C / R4-D: matriz de QA Windows real contra V4
 
-**Estado actual (2026-10-18, lote A):** `QA_PENDING / P1 OPEN`. Retest real `QA_ONLY` sobre `8d6db5e`: **W09 PASS Windows**, icono PDF PASS, contraste Dark y tema vivo FAIL; cuatro capturas nuevas al 125%. [Checkpoint canónico lote A](../history/2026-10-18-v4-lote-a-windows-qa-only.md), con hashes y diferencias por región. Las filas no reejecutadas conservan evidencia del retest previo `fc662c8`; no se promueven por CI. El protocolo original y sus STOP visuales históricos quedan subordinados al lote vigente: documentar P1 visual seguro y continuar evidencia.
+**Estado actual (2026-10-18, FIX_AND_VALIDATE lote A):** **002/003 PASS Windows**, W09 PASS y regresión corta PASS, icono PDF PASS. Cuatro capturas finales al 125%; [checkpoint único del fix](../history/2026-10-18-v4-lote-a-dark-hot-theme-fixed.md) contiene causas, hashes y límites. **R4-C/R4-D QA_PENDING** por composición V4 y cobertura restante. Filas no reejecutadas conservan evidencia previa; ningún PASS procede solo de CI. Los protocolos/STOP históricos inferiores no sustituyen este resultado.
 **Rama:** `feat/f13-task9-t9-1-document-shell-realignment-20261017`. **Baseline exact-head:** `0427cfff84e500884759d5287fd53054738c2fb9`, CI [39076821081](https://github.com/sierraglobalcompany-rgb/SG-PDF-Editor/actions/runs/39076821081) SUCCESS; 1.288 PASS, 0 FAIL, 1 SKIP; build 0/0; smoke 30 s. El commit documental que agrega esta matriz debe tener CI nuevo para citarlo como HEAD final.
 
 ## Entorno y controles
@@ -11,10 +11,10 @@ En Windows x64, comprobar `git fetch --all --prune`, rama, SHA, tree limpio y ej
 
 | Evidencia real | Diseño aprobado | Estado |
 | --- | --- | --- |
-| `V01_LIGHT_CLOSED.png` | [Claro, navegación cerrada](../design/references/sgpdf-v4/SG_PDF_MOCKUP_V4_CLARO_CERRADO_2026-10-17.png) | PARTIAL composición; icon PASS real en `8d6db5e` |
-| `V02_LIGHT_OPEN.png` | [Claro, navegación abierta](../design/references/sgpdf-v4/SG_PDF_MOCKUP_V4_CLARO_NAVEGACION_2026-10-17.png) | PARTIAL; captura nueva, fidelidad V4 pendiente |
-| `V03_DARK_CLOSED_FAIL.png` | [Oscuro, navegación cerrada](../design/references/sgpdf-v4/SG_PDF_MOCKUP_V4_OSCURO_CERRADO_2026-10-17.png) | FAIL; título negro sobre tab Dark confirmado |
-| `V04_DARK_OPEN_FAIL.png` | [Oscuro, navegación abierta](../design/references/sgpdf-v4/SG_PDF_MOCKUP_V4_OSCURO_NAVEGACION_2026-10-17.png) | FAIL; números blancos sobre papel blanco confirmados |
+| `V01_LIGHT_CLOSED_FINAL.png` | [Claro, navegación cerrada](../design/references/sgpdf-v4/SG_PDF_MOCKUP_V4_CLARO_CERRADO_2026-10-17.png) | PARTIAL composición; icon/contraste PASS |
+| `V02_LIGHT_OPEN_FINAL.png` | [Claro, navegación abierta](../design/references/sgpdf-v4/SG_PDF_MOCKUP_V4_CLARO_NAVEGACION_2026-10-17.png) | PARTIAL composición; contraste PASS |
+| `V03_DARK_CLOSED_FINAL.png` | [Oscuro, navegación cerrada](../design/references/sgpdf-v4/SG_PDF_MOCKUP_V4_OSCURO_CERRADO_2026-10-17.png) | PARTIAL composición; título Dark PASS corregido |
+| `V04_DARK_OPEN_FINAL.png` | [Oscuro, navegación abierta](../design/references/sgpdf-v4/SG_PDF_MOCKUP_V4_OSCURO_NAVEGACION_2026-10-17.png) | PARTIAL composición; numeración Dark PASS corregida |
 
 Cada captura debe mostrar la aplicación real sin teclado virtual ocultando elementos. Registrar identidad de app, icono de PDF asociado en cada tab, tab activo/cierre, iconos aprobados de utilidades o fallback `read/comment/forms`, 11 tools y estados disabled, menu/zoom, toggle/drawer, foco/contraste y ausencia de texto `SGPdf.App.Shell.PdfDocumentWorkspace` o clipping. Diferencias cosméticas P2 y funcionales P1/P0; no exigir coincidencia pixel a pixel del PDF ilustrativo.
 
@@ -33,7 +33,7 @@ Cada captura debe mostrar la aplicación real sin teclado virtual ocultando elem
 | W09 | Guardar/restaurar drawer y pestaña de navegación por PDF | PASS Windows lote A `8d6db5e` — A abierto/Marcadores y B cerrado; después A cerrado y B abierto/Páginas; alternancia y reapertura A conserva Marcadores |
 | W10 | Cierre del activo/último: limpiar UI/nav | PASS — cierre activo/último e inactivo observados |
 | W11 | Home y ZPL sin toggle/bookmarks residuales | PASS — Home y ZPL real sin rail/drawer PDF |
-| W12 | Light/Dark: estados/empty/error legibles sin color fijo erróneo | FAIL — contraste Dark y cambio de tema en caliente |
+| W12 | Light/Dark: estados/empty/error legibles sin color fijo erróneo | PARTIAL — 002/003 contraste/tema PASS real; estados de error/carga inducidos no reejecutados |
 | W13 | Windows DPI 125%: sin clipping, foco visible, sin scroll horizontal accidental | PARTIAL — 125% y scroll real; mínimo 960x640 NOT_RUN |
 | W14 | Teclado Tab/flechas/Enter y accesibilidad/nombres, sin activación inadvertida | PARTIAL — Right/Enter/Space; Tab-order completo no certificado |
 | W15 | Error de carga inducido de forma segura si viable: mensaje de error distinto a empty, app estable | NOT_RUN — no error de lectura inducido de forma segura sin tocar producto |
@@ -44,7 +44,7 @@ Cada captura debe mostrar la aplicación real sin teclado virtual ocultando elem
 | --- | --- | --- |
 | T01 | Abrir A+B, alternar tabs, título largo elipsis, selected consistente, sin tipo interno | PASS funcional — A+B, alternancia, elipsis/cierre visibles; Dark en T03 |
 | T02 | Cerrar inactivo/activo, dirty guard R1B con Sí/No y persistencia correcta | PASS — guard No conserva/Sí cierra; cierre inactivo conserva B |
-| T03 | Foco de teclado y active tab visibles en Light/Dark, no solo color | FAIL — título negro en Dark; foco completo no certificado |
+| T03 | Foco de teclado y active tab visibles en Light/Dark, no solo color | PARTIAL — título y foco de cierre PASS Light/Dark; recorrido completo no certificado |
 | T04 | Rail Leer→Editar→Comentar→Firmar→Organizar→Leer, guard correcto y 1 selected | PARTIAL — cinco modos responden; retorno directo/guard de modo no cubierto |
 | T05 | 11 tools, forms/OCR/censurar/comparar/convertir/proteger disabled y sin acción falsa | PASS — 11 tools, seis disabled, scroll y click Proteger sin acción |
 | T06 | Iconos oficiales sin deformación, label centrada, tooltip y accesibilidad | PASS iconografía — PNG documental reparado y arte/glyphs oficiales observados |

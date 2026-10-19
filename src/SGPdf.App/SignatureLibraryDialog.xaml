@@ -7,7 +7,7 @@
         WindowStartupLocation="CenterOwner"
         ResizeMode="CanResizeWithGrip"
         ShowInTaskbar="False"
-        Background="{DynamicResource SgSurfaceBrush}">
+        Background="{DynamicResource ApplicationBackgroundBrush}">
     <Window.Resources>
         <DrawingBrush x:Key="SignatureLibraryCheckerboardBrush" Viewport="0,0,12,12" ViewportUnits="Absolute" TileMode="Tile">
             <DrawingBrush.Drawing>
@@ -37,7 +37,7 @@
         <Grid Grid.Row="1">
             <ListBox x:Name="SignatureLibraryItemsList"
                      HorizontalContentAlignment="Stretch"
-                     BorderBrush="{DynamicResource SgBorderBrush}"
+                     BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
                      BorderThickness="1">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
@@ -51,7 +51,7 @@
                                     Margin="0,0,12,0"
                                     Padding="6"
                                     Background="{StaticResource SignatureLibraryCheckerboardBrush}"
-                                    BorderBrush="{DynamicResource SgBorderBrush}"
+                                    BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
                                     BorderThickness="1"
                                     CornerRadius="3">
                                 <Image Source="{Binding Thumbnail}" Stretch="Uniform" />

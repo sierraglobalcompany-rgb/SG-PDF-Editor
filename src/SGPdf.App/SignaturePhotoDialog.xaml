@@ -6,7 +6,7 @@
         MinWidth="620" MinHeight="560"
         WindowStartupLocation="CenterOwner"
         ResizeMode="CanResizeWithGrip"
-        Background="{DynamicResource SgSurfaceBrush}">
+        Background="{DynamicResource ApplicationBackgroundBrush}">
     <Window.Resources>
         <DrawingBrush x:Key="CheckerboardBrush" Viewport="0,0,16,16" ViewportUnits="Absolute" TileMode="Tile">
             <DrawingBrush.Drawing>
@@ -25,7 +25,7 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <Border Grid.Row="0" Background="{StaticResource CheckerboardBrush}" BorderBrush="{DynamicResource SgBorderBrush}" BorderThickness="1" Padding="12" CornerRadius="8">
+        <Border Grid.Row="0" Background="{StaticResource CheckerboardBrush}" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" Padding="12" CornerRadius="8">
             <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
                 <Image x:Name="SignaturePhotoPreviewImage" Stretch="Uniform" MaxHeight="350" />
             </ScrollViewer>

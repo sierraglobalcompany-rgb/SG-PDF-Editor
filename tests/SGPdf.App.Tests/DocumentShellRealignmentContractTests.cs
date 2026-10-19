@@ -167,7 +167,7 @@ public sealed class DocumentShellRealignmentContractTests
                    && (string?)setter.Attribute("Value") == "60");
         Assert.Contains(selectedStyle.Elements(presentation + "Setter"),
             setter => (string?)setter.Attribute("Property") == "Background"
-                   && ((string?)setter.Attribute("Value"))?.Contains("SgCanvasBrush") == true);
+                   && ((string?)setter.Attribute("Value"))?.Contains("LayerFillColorDefaultBrush") == true);
         Assert.Contains(selectedStyle.Elements(presentation + "Setter"),
             setter => (string?)setter.Attribute("Property") == "BorderBrush"
                    && ((string?)setter.Attribute("Value"))?.Contains("SgAccentBrush") == true);

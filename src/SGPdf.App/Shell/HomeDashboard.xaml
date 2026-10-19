@@ -1,7 +1,7 @@
 <UserControl x:Class="SGPdf.App.Shell.HomeDashboard"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <Grid Background="{DynamicResource SgSurfaceBrush}">
+    <Grid Background="{DynamicResource ApplicationBackgroundBrush}">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="96" />
             <ColumnDefinition Width="*" />
@@ -10,9 +10,9 @@
         <Border x:Name="HomeRail"
                 Grid.Column="0"
                 Width="96"
-                BorderBrush="{DynamicResource SgBorderBrush}"
+                BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
                 BorderThickness="0,0,1,0"
-                Background="{DynamicResource SgPanelBrush}">
+                Background="{DynamicResource CardBackgroundFillColorDefaultBrush}">
             <Grid Margin="0,12">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
