@@ -23,7 +23,7 @@ public sealed class MainWindowToolRailTests
     ];
 
     [Fact]
-    public void DocumentRail_Is96Pixels_OrderedAccessible_IconAndText_AndSelectionFollowsModeOwner()
+    public void DocumentRail_UsesV4CompactWidth_OrderedAccessible_IconAndText_AndSelectionFollowsModeOwner()
     {
         RunInSta(() =>
         {
@@ -37,7 +37,7 @@ public sealed class MainWindowToolRailTests
                 RaiseLoaded(window);
 
                 var rail = Assert.IsType<Border>(window.FindName("DocumentToolRail"));
-                Assert.Equal(96d, rail.Width);
+                Assert.Equal(78d, rail.Width);
 
                 var items = Assert.IsType<StackPanel>(window.FindName("DocumentToolRailItems"));
                 var buttons = items.Children.OfType<Button>().ToArray();

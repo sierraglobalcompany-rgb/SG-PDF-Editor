@@ -86,7 +86,7 @@ public sealed class UiThemeContractTests
         var right = Assert.Single(mainGrid.Elements(), element =>
             element.Name.LocalName == "Border" && GridColumn(element) == 2);
 
-        AssertSharedResource(center, "Background", "LayerFillColorDefaultBrush");
+        AssertSharedResource(center, "Background", "LayerFillColorAltBrush");
         AssertSharedResource(right, "Background", "CardBackgroundFillColorDefaultBrush");
         AssertSharedResource(right, "BorderBrush", "CardStrokeColorDefaultBrush");
     }
@@ -106,7 +106,7 @@ public sealed class UiThemeContractTests
         AssertDeferredResource(root, "Background", "ApplicationBackgroundBrush");
         AssertDeferredResource(FindNamed(document, "NavigationBar"), "Style", "SgToolbarBorderStyle");
         AssertDeferredResource(FindNamed(document, "LabelNavigationBar"), "Style", "SgToolbarBorderStyle");
-        AssertDeferredResource(center, "Background", "LayerFillColorDefaultBrush");
+        AssertDeferredResource(center, "Background", "LayerFillColorAltBrush");
         AssertDeferredResource(right, "Background", "CardBackgroundFillColorDefaultBrush");
         AssertDeferredResource(right, "BorderBrush", "CardStrokeColorDefaultBrush");
     }
