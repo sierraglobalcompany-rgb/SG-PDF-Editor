@@ -1,6 +1,6 @@
 ---
 gsd_state_version: '1.1'
-status: f13-t9-1-lote-a-code-windows-green-r4-qa-pending
+status: f13-t9-1-v4-unified-code-ci-green-windows-qa-pending
 progress:
   total_phases: 19
   completed_phases: 13
@@ -10,6 +10,16 @@ progress:
 ---
 
 # Project State
+
+## Autoridad activa — V4 shell unificado (2026-10-19)
+
+**Usuario autorizó reconstrucción integral de la composición visual**, incluida **apariencia** de la fila superior; no desbloquea nuevas funciones. Se reemplaza el prompt/lote B previo por [plano y QA integrados](../docs/plans/SGPDF_V4_SHELL_UNIFICADO_RECONSTRUCCION_QA_2026-10-19.md).
+
+- Baseline Lote A `644ffbb` **Windows GREEN** Dark/hot-theme/W09; no reabrirlo.
+- Refactor UI integrado: `3968e0d` (cabecera/tab/toolbar en XAML), `bf97a97` (rail/drawer/canvas), `a45c90c` (contratos actualizados). Exact-head [CI 39204283530](https://github.com/sierraglobalcompany-rgb/SG-PDF-Editor/actions/runs/39204283530) **SUCCESS**, 1290 PASS / 0 FAIL / 1 SKIP, build 0 warnings/0 errors y smoke 30 s PASS.
+- **R4-C/R4-D QA_PENDING VISUAL WINDOWS**: la reconstrucción NO se ha comparado aún con las cuatro vistas reales de Windows. Próxima acción única: **Codex QA_ONLY integrado**, cuatro capturas Light/Dark/navegación abierto/cerrado en 125%, min-width 960 DIP, multi-PDF, W09, Home/ZPL, dirty guard y Light↔Dark caliente. No marcar V4 GREEN por CI.
+- **Bloque 3 solo visual** autorizado dentro de T9.1; **bloque 3 funcional, R5/T9.2, F14–F18, IA y merge NO autorizados**.
+- Solo actualizar esta sección o el checkpoint canónico si cambia la verdad viva; historia previa queda abajo como evidencia, no como estado activo. Nuevo commit documental necesita su propio CI exact-head.
 
 ## Método vigente / foco real — 2026-10-18
 
