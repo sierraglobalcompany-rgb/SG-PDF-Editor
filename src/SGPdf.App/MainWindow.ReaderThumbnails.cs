@@ -116,7 +116,42 @@ public partial class MainWindow
         RegisterName(feedback.Name, feedback);
         tabs.Items.Add(pagesTab);
         tabs.Items.Add(bookmarksTab);
-        host.Child = tabs;
+
+        // One drawer owner: header/close and existing pages/bookmarks share the same host.
+        var drawerLayout = new Grid();
+        drawerLayout.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        drawerLayout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        var drawerHeader = new DockPanel
+        {
+            Margin = new Thickness(12, 10, 10, 4),
+            LastChildFill = true
+        };
+        var closeDrawer = new Button
+        {
+            Content = "×",
+            Width = 28d,
+            Height = 28d,
+            MinWidth = 28d,
+            ToolTip = "Cerrar navegación"
+        };
+        closeDrawer.SetResourceReference(FrameworkElement.StyleProperty, "SgIconButtonStyle");
+        closeDrawer.Click += ToggleReaderNavigation;
+        AutomationProperties.SetName(closeDrawer, "Cerrar navegación");
+        DockPanel.SetDock(closeDrawer, Dock.Right);
+        drawerHeader.Children.Add(closeDrawer);
+        var drawerTitle = new TextBlock
+        {
+            Text = "Navegación",
+            FontWeight = FontWeights.SemiBold,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        drawerTitle.SetResourceReference(TextBlock.ForegroundProperty, "TextFillColorPrimaryBrush");
+        drawerHeader.Children.Add(drawerTitle);
+        Grid.SetRow(drawerHeader, 0);
+        Grid.SetRow(tabs, 1);
+        drawerLayout.Children.Add(drawerHeader);
+        drawerLayout.Children.Add(tabs);
+        host.Child = drawerLayout;
 
         RegisterName(tabs.Name, tabs);
         RegisterName(pagesTab.Name, pagesTab);
@@ -172,10 +207,10 @@ public partial class MainWindow
         var toggle = new Button
         {
             Name = "ReaderNavigationToggleButton",
-            Content = "›",
-            Width = 30d,
-            Height = 36d,
-            MinWidth = 30d,
+            Content = "◧",
+            Width = 34d,
+            Height = 34d,
+            MinWidth = 34d,
             Padding = new Thickness(0),
             Margin = new Thickness(8, 8, 0, 0),
             HorizontalAlignment = HorizontalAlignment.Left,
@@ -243,7 +278,7 @@ public partial class MainWindow
         _readerNavigationColumn.Width = new GridLength(isOpen ? ReaderNavigationDrawerWidth : 0d);
         _readerNavigationDrawer.Visibility = isOpen ? Visibility.Visible : Visibility.Collapsed;
         _readerNavigationToggleButton.Visibility = canToggle ? Visibility.Visible : Visibility.Collapsed;
-        _readerNavigationToggleButton.Content = isOpen ? "‹" : "›";
+        _readerNavigationToggleButton.Content = "◧";
 
         var accessibilityName = isOpen
             ? "Ocultar páginas y marcadores"

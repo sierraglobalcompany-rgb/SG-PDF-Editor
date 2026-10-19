@@ -211,7 +211,7 @@
                            Style="{DynamicResource SgSectionHeaderStyle}" />
             </Border>
 
-            <Grid Grid.Column="1" Background="{DynamicResource LayerFillColorDefaultBrush}">
+            <Grid Grid.Column="1" Background="{DynamicResource LayerFillColorAltBrush}">
                 <ScrollViewer x:Name="PdfScrollViewer"
                               HorizontalScrollBarVisibility="Auto"
                               VerticalScrollBarVisibility="Auto"
@@ -232,6 +232,12 @@
                                 Visibility="Collapsed" />
                     </Grid>
                 </ScrollViewer>
+                <TextBlock Text="Vista del documento" FontSize="11" FontWeight="SemiBold"
+                           Margin="52,15,0,0" HorizontalAlignment="Left"
+                           VerticalAlignment="Top" IsHitTestVisible="False"
+                           Panel.ZIndex="60"
+                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                           Visibility="{Binding Visibility, ElementName=PdfScrollViewer}" />
 
                 <TextBlock x:Name="EmptyStateText"
                            HorizontalAlignment="Center"

@@ -99,6 +99,17 @@ public partial class MainWindow
         };
         RegisterName(items.Name, items);
 
+        var railHeading = new TextBlock
+        {
+            Text = "DOCUMENTO",
+            FontSize = 9d,
+            FontWeight = FontWeights.SemiBold,
+            TextAlignment = TextAlignment.Center,
+            Margin = new Thickness(2, 0, 2, 4)
+        };
+        railHeading.SetResourceReference(TextBlock.ForegroundProperty, "TextFillColorSecondaryBrush");
+        items.Children.Add(railHeading);
+
         foreach (var descriptor in ToolCatalog.Document)
         {
             FrameworkElement icon;
@@ -137,7 +148,7 @@ public partial class MainWindow
                 FontSize = 10.5d,
                 TextWrapping = TextWrapping.NoWrap,
                 TextTrimming = TextTrimming.CharacterEllipsis,
-                Width = 72d,
+                Width = 64d,
                 Margin = new Thickness(0, 4, 0, 0),
                 HorizontalAlignment = HorizontalAlignment.Center,
                 TextAlignment = TextAlignment.Center
@@ -179,7 +190,7 @@ public partial class MainWindow
         var rail = new Border
         {
             Name = "DocumentToolRail",
-            Width = 96d,
+            Width = 78d,
             BorderThickness = new Thickness(0, 0, 1, 0),
             Child = scroller,
             Visibility = Visibility.Collapsed
@@ -224,7 +235,7 @@ public partial class MainWindow
         if (_documentToolRail is not null)
             _documentToolRail.Visibility = documentVisible ? Visibility.Visible : Visibility.Collapsed;
         if (_documentToolRailColumn is not null)
-            _documentToolRailColumn.Width = new GridLength(documentVisible ? 96d : 0d);
+            _documentToolRailColumn.Width = new GridLength(documentVisible ? 78d : 0d);
 
         if (documentVisible)
             UpdateDocumentToolRailSelection();

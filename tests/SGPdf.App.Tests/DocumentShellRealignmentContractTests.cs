@@ -68,7 +68,7 @@ public sealed class DocumentShellRealignmentContractTests
                 && trigger.Descendants(presentation + "Setter").Any(setter =>
                     (string?)setter.Attribute("TargetName") == "TabChrome"
                     && (string?)setter.Attribute("Property") == "BorderThickness"
-                    && (string?)setter.Attribute("Value") == "1,1,1,3"));
+                    && (string?)setter.Attribute("Value") == "1,3,1,1"));
     }
 
     [Fact]
@@ -158,7 +158,7 @@ public sealed class DocumentShellRealignmentContractTests
         Assert.DoesNotContain("string.Equals(descriptor.Id, \"read\", StringComparison.Ordinal)", shellSource);
         Assert.Contains("descriptor.DocumentIconPath", shellSource);
         Assert.Contains("IsEnabled = descriptor.ActionId is not null", shellSource);
-        Assert.Contains("Width = 72d", shellSource);
+        Assert.Contains("Width = 64d", shellSource);
 
         var railStyle = styles.Descendants(presentation + "Style")
             .Single(e => (string?)e.Attribute(x + "Key") == "SgRailItemStyle");
@@ -166,7 +166,7 @@ public sealed class DocumentShellRealignmentContractTests
             .Single(e => (string?)e.Attribute(x + "Key") == "SgRailItemSelectedStyle");
         Assert.Contains(railStyle.Elements(presentation + "Setter"),
             setter => (string?)setter.Attribute("Property") == "Height"
-                   && (string?)setter.Attribute("Value") == "60");
+                   && (string?)setter.Attribute("Value") == "48");
         Assert.Contains(selectedStyle.Elements(presentation + "Setter"),
             setter => (string?)setter.Attribute("Property") == "Background"
                    && ((string?)setter.Attribute("Value"))?.Contains("LayerFillColorDefaultBrush") == true);
