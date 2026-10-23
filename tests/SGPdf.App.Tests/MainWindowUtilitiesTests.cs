@@ -9,6 +9,18 @@ namespace SGPdf.App.Tests;
 public sealed class MainWindowUtilitiesTests
 {
     [Fact]
+    public void PdfToJpgUi_ExposesMinimalMainWindowHandlers()
+    {
+        Type windowType = typeof(MainWindow);
+        MethodInfo? click = windowType.GetMethod("ExportPdfToJpg_Click", BindingFlags.Instance | BindingFlags.NonPublic);
+        MethodInfo? runner = windowType.GetMethod("TryExportPdfToJpgAsync", BindingFlags.Instance | BindingFlags.NonPublic);
+
+        Assert.NotNull(click);
+        Assert.NotNull(runner);
+        Assert.Equal(typeof(Task<bool>), runner!.ReturnType);
+    }
+
+    [Fact]
     public void HerramientasCommands_ArePresentAndDisabledWithoutPdf()
     {
         OrganizeWindowTestHost.RunInSta(() =>
@@ -20,10 +32,16 @@ public sealed class MainWindowUtilitiesTests
                 var tools = OrganizeWindowTestHost.Element<MenuItem>(window, "UtilitiesMenuItem");
                 var watermark = OrganizeWindowTestHost.Element<MenuItem>(window, "WatermarkTextMenuItem");
                 var numbering = OrganizeWindowTestHost.Element<MenuItem>(window, "PageNumberingMenuItem");
+                var pdfToJpg = OrganizeWindowTestHost.Element<MenuItem>(window, "PdfToJpgMenuItem");
+                var compression = OrganizeWindowTestHost.Element<MenuItem>(window, "CompressPdfMenuItem");
 
                 Assert.Equal("_Herramientas", tools.Header);
                 Assert.False(watermark.IsEnabled);
                 Assert.False(numbering.IsEnabled);
+                Assert.Equal("Exportar PDF a _JPG...", pdfToJpg.Header);
+                Assert.False(pdfToJpg.IsEnabled);
+                Assert.Equal("_Comprimir PDF...", compression.Header);
+                Assert.False(compression.IsEnabled);
             }
             finally { OrganizeWindowTestHost.CloseClean(window); }
         });
@@ -63,6 +81,79 @@ public sealed class MainWindowUtilitiesTests
                 Assert.True(await OrganizeWindowTestHost.OpenReaderAsync(window, fixture.Path));
                 Assert.True(OrganizeWindowTestHost.Element<MenuItem>(window, "WatermarkTextMenuItem").IsEnabled);
                 Assert.True(OrganizeWindowTestHost.Element<MenuItem>(window, "PageNumberingMenuItem").IsEnabled);
+                Assert.True(OrganizeWindowTestHost.Element<MenuItem>(window, "CompressPdfMenuItem").IsEnabled);
+                Assert.True(OrganizeWindowTestHost.Element<MenuItem>(window, "PdfToJpgMenuItem").IsEnabled);
+            }
+            finally { OrganizeWindowTestHost.CloseClean(window); }
+        });
+    }
+
+    [Fact]
+    public void PdfToJpgCommand_CancelledFolder_IsNoOp()
+    {
+        OrganizeWindowTestHost.RunInSta(async () =>
+        {
+            using var fixture = OrganizeWindowPdfFixture.Create(2);
+            var window = new MainWindow();
+            try
+            {
+                Assert.True(await OrganizeWindowTestHost.OpenReaderAsync(window, fixture.Path));
+                var originalHash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(fixture.Path)));
+                var resultTask = Assert.IsAssignableFrom<Task<bool>>(
+                    InvokeByName(window, "TryExportPdfToJpgAsync", string.Empty));
+
+                Assert.False(await resultTask);
+                Assert.Equal(originalHash, Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(fixture.Path))));
+                Assert.Contains("cancel", OrganizeWindowTestHost.Element<TextBlock>(window, "StatusText").Text, StringComparison.OrdinalIgnoreCase);
+                Assert.False(ReadBoolField(window, "_utilityExecuting"));
+                Assert.Empty(Directory.GetFiles(fixture.DirectoryPath, "*.jpg", SearchOption.AllDirectories));
+            }
+            finally { OrganizeWindowTestHost.CloseClean(window); }
+        });
+    }
+
+    [Fact]
+    public void CompressionCommand_CancelledDestination_IsNoOp()
+    {
+        OrganizeWindowTestHost.RunInSta(async () =>
+        {
+            using var fixture = OrganizeWindowPdfFixture.Create(2);
+            var window = new MainWindow();
+            try
+            {
+                Assert.True(await OrganizeWindowTestHost.OpenReaderAsync(window, fixture.Path));
+                var original = File.ReadAllBytes(fixture.Path);
+                var resultTask = Assert.IsAssignableFrom<Task<bool>>(
+                    InvokeByName(window, "TryRunPdfCompressionUtilityAsync", string.Empty));
+
+                Assert.False(await resultTask);
+                Assert.Equal(original, File.ReadAllBytes(fixture.Path));
+                Assert.Contains("cancel", OrganizeWindowTestHost.Element<TextBlock>(window, "StatusText").Text, StringComparison.OrdinalIgnoreCase);
+                Assert.False(ReadBoolField(window, "_utilityExecuting"));
+                Assert.Empty(Directory.GetFiles(fixture.DirectoryPath, "*-comprimido.pdf"));
+            }
+            finally { OrganizeWindowTestHost.CloseClean(window); }
+        });
+    }
+
+    [Fact]
+    public void CompressionCommand_AlreadyExecuting_IsRejected()
+    {
+        OrganizeWindowTestHost.RunInSta(async () =>
+        {
+            using var fixture = OrganizeWindowPdfFixture.Create(2);
+            var window = new MainWindow();
+            try
+            {
+                Assert.True(await OrganizeWindowTestHost.OpenReaderAsync(window, fixture.Path));
+                OrganizeWindowTestHost.SetField(window, "_utilityExecuting", true);
+                var destination = Path.Combine(fixture.DirectoryPath, "must-not-exist.pdf");
+                var resultTask = Assert.IsAssignableFrom<Task<bool>>(
+                    InvokeByName(window, "TryRunPdfCompressionUtilityAsync", destination));
+
+                Assert.False(await resultTask);
+                Assert.False(File.Exists(destination));
+                Assert.True(ReadBoolField(window, "_utilityExecuting"));
             }
             finally { OrganizeWindowTestHost.CloseClean(window); }
         });

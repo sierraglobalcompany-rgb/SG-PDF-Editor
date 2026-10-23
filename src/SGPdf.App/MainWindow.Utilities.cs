@@ -1,3 +1,4 @@
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -75,6 +76,16 @@ public partial class MainWindow
             Name = "PdfToPngMenuItem",
             Header = "Exportar PDF a _PNG..."
         };
+        var pdfToJpg = new MenuItem
+        {
+            Name = "PdfToJpgMenuItem",
+            Header = "Exportar PDF a _JPG..."
+        };
+        var compression = new MenuItem
+        {
+            Name = "CompressPdfMenuItem",
+            Header = "_Comprimir PDF..."
+        };
 
         watermark.SetBinding(
             IsEnabledProperty,
@@ -94,6 +105,12 @@ public partial class MainWindow
         pdfToPng.SetBinding(
             IsEnabledProperty,
             new Binding(nameof(IsEnabled)) { Source = PrintPdfMenuItem });
+        pdfToJpg.SetBinding(
+            IsEnabledProperty,
+            new Binding(nameof(IsEnabled)) { Source = PrintPdfMenuItem });
+        compression.SetBinding(
+            IsEnabledProperty,
+            new Binding(nameof(IsEnabled)) { Source = PrintPdfMenuItem });
         watermark.Click += WatermarkText_Click;
         batchWatermark.Click += BatchWatermark_Click;
         numbering.Click += PageNumbering_Click;
@@ -101,6 +118,8 @@ public partial class MainWindow
         ocr.Click += Ocr_Click;
         qrCode.Click += QrCode_Click;
         pdfToPng.Click += ExportPdfToPng_Click;
+        pdfToJpg.Click += ExportPdfToJpg_Click;
+        compression.Click += CompressPdf_Click;
         utilities.Items.Add(watermark);
         utilities.Items.Add(batchWatermark);
         utilities.Items.Add(numbering);
@@ -108,6 +127,8 @@ public partial class MainWindow
         utilities.Items.Add(ocr);
         utilities.Items.Add(qrCode);
         utilities.Items.Add(pdfToPng);
+        utilities.Items.Add(pdfToJpg);
+        utilities.Items.Add(compression);
 
         RegisterName(watermark.Name, watermark);
         RegisterName(batchWatermark.Name, batchWatermark);
@@ -116,6 +137,93 @@ public partial class MainWindow
         RegisterName(ocr.Name, ocr);
         RegisterName(qrCode.Name, qrCode);
         RegisterName(pdfToPng.Name, pdfToPng);
+        RegisterName(pdfToJpg.Name, pdfToJpg);
+        RegisterName(compression.Name, compression);
+    }
+
+    private async void CompressPdf_Click(object sender, RoutedEventArgs e)
+    {
+        if (!CanRunUtility())
+        {
+            StatusText.Text = "No se puede ejecutar la utilidad en el estado actual del editor.";
+            return;
+        }
+
+        var sourceName = Path.GetFileNameWithoutExtension(_session!.FilePath);
+        var destination = SelectUtilityDestination(
+            "Guardar copia comprimida como",
+            $"{sourceName}-comprimido.pdf",
+            overwritePrompt: false);
+        await TryRunPdfCompressionUtilityAsync(destination);
+    }
+
+    private async Task<bool> TryRunPdfCompressionUtilityAsync(string? destinationPath)
+    {
+        if (!CanRunUtility())
+        {
+            StatusText.Text = "No se puede ejecutar la utilidad en el estado actual del editor.";
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(destinationPath))
+        {
+            StatusText.Text = "Compresión cancelada.";
+            return false;
+        }
+
+        _utilityExecuting = true;
+        UpdateCompressionCommandAvailability();
+        StatusText.Text = "Comprimiendo una copia del PDF...";
+        try
+        {
+            var sourceSession = _session!;
+            var result = await new PdfCompressionCoordinator().CompressCopyAsync(
+                sourceSession,
+                destinationPath,
+                CancellationToken.None);
+
+            if (!result.Succeeded)
+            {
+                StatusText.Text = result.NoReduction
+                    ? "No se obtuvo reducción; el original no cambió."
+                    : $"No se pudo comprimir el PDF: {result.Error}";
+                return false;
+            }
+
+            var savings = result.SourceLength - result.OutputLength;
+            var savingsPercent = result.SourceLength > 0
+                ? savings * 100d / result.SourceLength
+                : 0d;
+            StatusText.Text =
+                $"Copia comprimida guardada: {Path.GetFileName(destinationPath)} " +
+                $"({result.SourceLength:N0} → {result.OutputLength:N0} bytes; ahorro {savingsPercent:N1}%).";
+            return true;
+        }
+        catch (OperationCanceledException)
+        {
+            StatusText.Text = "Compresión cancelada.";
+            return false;
+        }
+        catch (Exception ex)
+        {
+            StatusText.Text = $"No se pudo comprimir el PDF: {ex.Message}";
+            return false;
+        }
+        finally
+        {
+            _utilityExecuting = false;
+            UpdateCompressionCommandAvailability();
+        }
+    }
+
+    private void UpdateCompressionCommandAvailability()
+    {
+        if (FindName("CompressPdfMenuItem") is MenuItem compression)
+        {
+            compression.SetCurrentValue(
+                IsEnabledProperty,
+                PrintPdfMenuItem.IsEnabled && CanRunUtility());
+        }
     }
 
     private void WatermarkText_Click(object sender, RoutedEventArgs e)
@@ -211,7 +319,7 @@ public partial class MainWindow
             return false;
         }
 
-        _utilityExecuting = true;
+        SetUtilityExecuting(true);
         try
         {
             var sourcePath = _session.FilePath;
@@ -248,7 +356,7 @@ public partial class MainWindow
         }
         finally
         {
-            _utilityExecuting = false;
+            SetUtilityExecuting(false);
         }
     }
 
@@ -279,7 +387,7 @@ public partial class MainWindow
             return false;
         }
 
-        _utilityExecuting = true;
+        SetUtilityExecuting(true);
         try
         {
             var sourcePath = _session.FilePath;
@@ -318,7 +426,7 @@ public partial class MainWindow
         }
         finally
         {
-            _utilityExecuting = false;
+            SetUtilityExecuting(false);
         }
     }
 
@@ -345,7 +453,7 @@ public partial class MainWindow
             return false;
         }
 
-        _utilityExecuting = true;
+        SetUtilityExecuting(true);
         try
         {
             var sourcePath = _session.FilePath;
@@ -378,7 +486,7 @@ public partial class MainWindow
         }
         finally
         {
-            _utilityExecuting = false;
+            SetUtilityExecuting(false);
         }
     }
 
@@ -392,7 +500,16 @@ public partial class MainWindow
            !_organizeModeActive &&
            _zplDocument is null;
 
-    private string? SelectUtilityDestination(string title, string suggestedFileName)
+    private void SetUtilityExecuting(bool value)
+    {
+        _utilityExecuting = value;
+        UpdateCompressionCommandAvailability();
+    }
+
+    private string? SelectUtilityDestination(
+        string title,
+        string suggestedFileName,
+        bool overwritePrompt = true)
     {
         var dialog = new SaveFileDialog
         {
@@ -400,7 +517,7 @@ public partial class MainWindow
             Filter = "Archivo PDF (*.pdf)|*.pdf",
             AddExtension = true,
             DefaultExt = ".pdf",
-            OverwritePrompt = true,
+            OverwritePrompt = overwritePrompt,
             FileName = suggestedFileName
         };
         return dialog.ShowDialog(this) == true ? dialog.FileName : null;

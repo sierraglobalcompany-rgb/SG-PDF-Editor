@@ -6,6 +6,87 @@ namespace SGPdf.App;
 
 public partial class MainWindow
 {
+    private async void ExportPdfToJpg_Click(object sender, RoutedEventArgs e)
+    {
+        if (!CanRunUtility())
+        {
+            StatusText.Text = "No se puede exportar el PDF a JPG en el estado actual del editor.";
+            return;
+        }
+
+        var dialog = new OpenFolderDialog
+        {
+            Title = "Seleccionar carpeta para exportar JPG",
+            Multiselect = false
+        };
+
+        if (dialog.ShowDialog(this) != true || string.IsNullOrWhiteSpace(dialog.FolderName))
+        {
+            StatusText.Text = "Exportación PDF a JPG cancelada.";
+            return;
+        }
+
+        await TryExportPdfToJpgAsync(dialog.FolderName);
+    }
+
+    private async Task<bool> TryExportPdfToJpgAsync(string? outputDirectory)
+    {
+        if (!CanRunUtility())
+        {
+            StatusText.Text = "No se puede exportar el PDF a JPG en el estado actual del editor.";
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(outputDirectory))
+        {
+            StatusText.Text = "Exportación PDF a JPG cancelada: no se seleccionó una carpeta.";
+            return false;
+        }
+
+        _utilityExecuting = true;
+        SetBusy(true);
+        StatusText.Text = "Exportando PDF a JPG...";
+
+        try
+        {
+            string sourcePath = _session!.FilePath;
+            IReadOnlyList<string> outputs = await Task.Run(() =>
+                new PdfToPngExporter().ExportAllPagesAsJpg(
+                    sourcePath,
+                    outputDirectory,
+                    CancellationToken.None));
+
+            StatusText.Text = outputs.Count == 1
+                ? $"1 página exportada a JPG en: {outputDirectory}"
+                : $"{outputs.Count} páginas exportadas a JPG en: {outputDirectory}";
+            return true;
+        }
+        catch (OperationCanceledException)
+        {
+            StatusText.Text = "Exportación PDF a JPG cancelada.";
+            return false;
+        }
+        catch (Exception exception)
+        {
+            StatusText.Text = $"No se pudo exportar el PDF a JPG: {exception.Message}";
+            if (IsVisible)
+            {
+                MessageBox.Show(
+                    this,
+                    StatusText.Text,
+                    "Exportar PDF a JPG",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
+            return false;
+        }
+        finally
+        {
+            _utilityExecuting = false;
+            SetBusy(false);
+        }
+    }
+
     private async void ExportPdfToPng_Click(object sender, RoutedEventArgs e)
     {
         if (!CanRunUtility())

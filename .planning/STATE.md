@@ -9,6 +9,12 @@ progress:
   current_subtask: T9.1
 ---
 
+## Estado operativo — publicación F15-A/B · 2026-10-23
+
+- F14-A/B: CI exact-head `build` **SUCCESS**, commit `7fadc60589d96c2a132ffe4296cf4e63d746a463`, ejecución `39909263996` (1.317 PASS / 0 FAIL / 1 SKIP).
+- F15-A/B: `PASS_LOCAL`; compresión qpdf, Imagen→PDF y PDF→JPG implementadas; Home 15/15. El commit de esta publicación queda `CI_PENDING` hasta confirmar su CI exact-head.
+- Dark/125 % y corpus documental complejo: pendientes. `main` read-only, sin merge. F15 no se declara global GREEN; F15-C no iniciado.
+
 ## Estado operativo — F14-A/B · 2026-10-23
 
 - Excepción funcional F14-A/B: autorizada y ejecutada después del freeze histórico F14–F18. Prioridad vigente: funcionalidad F14–F17 primero; pulido visual V4 en F18/Astra.

@@ -53,8 +53,9 @@ public sealed class ToolCatalogTests
         var items = ReadCatalog("Home");
 
         var imageToPdf = Assert.Single(items, item => item.Id == "image-to-pdf");
-        Assert.Null(imageToPdf.ActionId);
-        Assert.Contains("Próximamente", imageToPdf.DisabledReason ?? string.Empty, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal("image-to-pdf", imageToPdf.ActionId);
+        Assert.False(imageToPdf.RequiresPdf);
+        Assert.Null(imageToPdf.DisabledReason);
 
         var pdfToPng = Assert.Single(items, item => item.Id == "pdf-to-png");
         Assert.Equal("PDF a PNG", pdfToPng.Title);
@@ -64,7 +65,7 @@ public sealed class ToolCatalogTests
             new[]
             {
                 "merge-pdf", "split-pdf", "organize-pages", "edit-pdf", "ocr", "redact", "protect", "sign",
-                "compare-pdf", "pdf-to-png", "qr", "labels-zpl", "watermark", "page-numbering"
+                "compare-pdf", "pdf-to-png", "image-to-pdf", "qr", "labels-zpl", "watermark", "page-numbering"
             },
             items.Where(item => item.ActionId is not null).Select(item => item.Id));
 
@@ -72,7 +73,7 @@ public sealed class ToolCatalogTests
             new[]
             {
                 "merge", "split", "organize", "edit", "ocr", "redact", "protect", "sign",
-                "compare", "convert", "qr", "open-zpl", "watermark", "page-numbering"
+                "compare", "convert", "image-to-pdf", "qr", "open-zpl", "watermark", "page-numbering"
             },
             items.Where(item => item.ActionId is not null).Select(item => item.ActionId));
 

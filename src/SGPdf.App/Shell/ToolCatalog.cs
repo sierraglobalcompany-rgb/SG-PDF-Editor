@@ -14,7 +14,7 @@ internal static class ToolCatalog
         new("sign", "Firmar", "PDF", "Añade una firma visual al documento.", "ShellIconSign", "sign", true),
         new("compare-pdf", "Comparar PDF", "PDF", "Compara el documento activo con otro PDF.", "ShellIconCompare", "compare", true),
         new("pdf-to-png", "PDF a PNG", "Convertir", "Exporta páginas del PDF como imágenes PNG.", "ShellIconConvert", "convert", true),
-        new("image-to-pdf", "Imagen a PDF", "Convertir", "Convierte imágenes en un documento PDF.", "ShellIconImageToPdf", null, false, "Próximamente"),
+        new("image-to-pdf", "Imagen a PDF", "Convertir", "Convierte imágenes PNG o JPG en un documento PDF.", "ShellIconImageToPdf", "image-to-pdf", false),
         new("qr", "QR", "Herramientas", "Genera un código QR como imagen PNG local.", "ShellIconQr", "qr", false),
         new("labels-zpl", "Etiquetas ZPL", "Etiquetas", "Abre y previsualiza archivos ZPL localmente.", "ShellIconZpl", "open-zpl", false),
         new("watermark", "Marca de agua", "PDF", "Añade una marca de agua de texto al PDF.", "ShellIconWatermark", "watermark", true),

@@ -2,6 +2,7 @@ using System.Reflection;
 using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Windows;
+using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -140,6 +141,132 @@ public sealed class MainWindowShellStateTests
                 Assert.Equal(1, pickerCalls);
                 Assert.Equal("Home", GetShellKind(window));
                 Assert.Empty(Assert.IsType<TabControl>(window.FindName("DocumentTabs")).Items);
+            }
+            finally { CloseClean(window); }
+        });
+    }
+
+    [Fact]
+    public void HomeImageToPdf_CancelledSelectionStagesDoNotAskForPdfOrCreateTab()
+    {
+        RunInSta(async () =>
+        {
+            var window = new MainWindow();
+            var pdfPickerCalls = 0;
+            var orderPickerCalls = 0;
+            var destinationPickerCalls = 0;
+            try
+            {
+                RaiseLoaded(window);
+                SetField(window, "_selectHomePdfPath", (Func<MainWindow, string?>)(_ =>
+                {
+                    pdfPickerCalls++;
+                    return null;
+                }));
+                SetField(window, "_selectImageToPdfSources", (Func<MainWindow, IReadOnlyList<string>?>)(_ => null));
+                SetField(window, "_selectImageToPdfOrder", (Func<MainWindow, IReadOnlyList<string>, IReadOnlyList<string>?>)((_, _) =>
+                {
+                    orderPickerCalls++;
+                    return null;
+                }));
+                SetField(window, "_selectImageToPdfDestination", (Func<MainWindow, string?>)(_ =>
+                {
+                    destinationPickerCalls++;
+                    return null;
+                }));
+
+                Assert.True(await InvokeTask<bool>(window, "TryStartHomeActionAsync", "image-to-pdf"));
+                Assert.Equal(0, pdfPickerCalls);
+                Assert.Equal(0, orderPickerCalls);
+                Assert.Equal(0, destinationPickerCalls);
+
+                SetField(window, "_selectImageToPdfSources", (Func<MainWindow, IReadOnlyList<string>?>)(_ => ["first.png", "second.jpg"]));
+                Assert.True(await InvokeTask<bool>(window, "TryStartHomeActionAsync", "image-to-pdf"));
+                Assert.Equal(0, pdfPickerCalls);
+                Assert.Equal(1, orderPickerCalls);
+                Assert.Equal(0, destinationPickerCalls);
+
+                SetField(window, "_selectImageToPdfOrder", (Func<MainWindow, IReadOnlyList<string>, IReadOnlyList<string>?>)((_, paths) =>
+                {
+                    orderPickerCalls++;
+                    return paths;
+                }));
+                Assert.True(await InvokeTask<bool>(window, "TryStartHomeActionAsync", "image-to-pdf"));
+                Assert.Equal(0, pdfPickerCalls);
+                Assert.Equal(2, orderPickerCalls);
+                Assert.Equal(1, destinationPickerCalls);
+                Assert.Equal("Home", GetShellKind(window));
+                Assert.Empty(Assert.IsType<TabControl>(window.FindName("DocumentTabs")).Items);
+                Assert.Null(GetField(window, "_session"));
+            }
+            finally { CloseClean(window); }
+        });
+    }
+
+    [Fact]
+    public void ImageToPdfOrderDialog_MovesSelectedImageAndNamesItsControls()
+    {
+        RunInSta(() =>
+        {
+            var dialogType = typeof(MainWindow).Assembly.GetType(
+                "SGPdf.App.Features.Conversions.ImageToPdfOrderDialog",
+                throwOnError: true)!;
+            var dialog = (Window)Activator.CreateInstance(
+                dialogType,
+                BindingFlags.Instance | BindingFlags.NonPublic,
+                binder: null,
+                args: new object?[] { new[] { "first.png", "second.jpg", "third.jpeg" } },
+                culture: null)!;
+            try
+            {
+                var list = Assert.IsType<ListBox>(dialog.FindName("ImageOrderListBox"));
+                var moveUp = Assert.IsType<Button>(dialog.FindName("MoveUpButton"));
+                list.SelectedIndex = 2;
+                Assert.True(moveUp.IsEnabled);
+                Assert.Equal("Subir imagen en el orden", AutomationProperties.GetName(moveUp));
+
+                var moveHandler = dialogType.GetMethod("MoveUp_Click", BindingFlags.Instance | BindingFlags.NonPublic);
+                Assert.NotNull(moveHandler);
+                moveHandler!.Invoke(dialog, [moveUp, new RoutedEventArgs(Button.ClickEvent)]);
+
+                var orderedPaths = dialogType.GetProperty("OrderedPaths", BindingFlags.Instance | BindingFlags.NonPublic);
+                Assert.NotNull(orderedPaths);
+                Assert.Equal(
+                    new[] { "first.png", "third.jpeg", "second.jpg" },
+                    Assert.IsAssignableFrom<IReadOnlyList<string>>(orderedPaths!.GetValue(dialog)));
+            }
+            finally { dialog.Close(); }
+        });
+    }
+
+    [Fact]
+    public void HomeImageToPdf_CancelledSelectionPreservesAnOpenPdfSession()
+    {
+        RunInSta(async () =>
+        {
+            using var fixture = PdfFixture.Create();
+            var window = new MainWindow();
+            var pdfPickerCalls = 0;
+            try
+            {
+                RaiseLoaded(window);
+                Assert.True(await InvokeTask<bool>(window, "TryOpenPdfPathAsync", fixture.Path, null));
+                object activeDocument = window.ActiveDocument!;
+                object session = GetField(window, "_session")!;
+                SetField(window, "_selectHomePdfPath", (Func<MainWindow, string?>)(_ =>
+                {
+                    pdfPickerCalls++;
+                    return null;
+                }));
+                SetField(window, "_selectImageToPdfSources", (Func<MainWindow, IReadOnlyList<string>?>)(_ => null));
+
+                Assert.True(await InvokeTask<bool>(window, "TryStartHomeActionAsync", "image-to-pdf"));
+
+                Assert.Equal(0, pdfPickerCalls);
+                Assert.Same(activeDocument, window.ActiveDocument);
+                Assert.Same(session, GetField(window, "_session"));
+                Assert.Equal(fixture.Path, Assert.IsType<PdfDocumentSession>(GetField(window, "_session")).FilePath);
+                Assert.Single(Assert.IsType<TabControl>(window.FindName("DocumentTabs")).Items);
             }
             finally { CloseClean(window); }
         });
@@ -463,6 +590,13 @@ public sealed class MainWindowShellStateTests
         var field = typeof(MainWindow).GetField(name, BindingFlags.Instance | BindingFlags.NonPublic);
         Assert.NotNull(field);
         field.SetValue(window, value);
+    }
+
+    private static object? GetField(MainWindow window, string name)
+    {
+        var field = typeof(MainWindow).GetField(name, BindingFlags.Instance | BindingFlags.NonPublic);
+        Assert.NotNull(field);
+        return field.GetValue(window);
     }
 
     private static object? Invoke(MainWindow window, string name, params object?[] args)

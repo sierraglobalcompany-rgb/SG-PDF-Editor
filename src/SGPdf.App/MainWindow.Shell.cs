@@ -421,7 +421,7 @@ public partial class MainWindow
             return true;
         }
 
-        if (actionId is not ("qr" or "organize" or "edit" or "sign" or "merge" or "split" or
+        if (actionId is not ("qr" or "image-to-pdf" or "organize" or "edit" or "sign" or "merge" or "split" or
                 "ocr" or "redact" or "protect" or "compare" or "convert" or
                 "watermark" or "page-numbering") ||
             _homeActionStarting || _isBusy || _utilityExecuting || _zplDocument is not null)
@@ -430,6 +430,12 @@ public partial class MainWindow
         _homeActionStarting = true;
         try
         {
+            if (actionId == "image-to-pdf")
+            {
+                await StartImageToPdfFromHomeAsync();
+                return true;
+            }
+
             if (actionId == "qr")
             {
                 if (!CanStartBatch())

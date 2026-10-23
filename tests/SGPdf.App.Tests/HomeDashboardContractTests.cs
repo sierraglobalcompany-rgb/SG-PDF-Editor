@@ -118,10 +118,22 @@ public sealed class HomeDashboardContractTests
             Assert.NotNull(requestTool);
 
             var home = ReadCatalog("Home");
-            var disabled = Assert.Single(home, item => ReadString(item, "Id") == "image-to-pdf");
+            Type descriptorType = home[0].GetType();
+            var constructor = descriptorType.GetConstructor(
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
+                binder: null,
+                types: [typeof(string), typeof(string), typeof(string), typeof(string), typeof(string), typeof(string), typeof(bool), typeof(string)],
+                modifiers: null);
+            Assert.NotNull(constructor);
+            var disabled = constructor!.Invoke(["disabled", "Deshabilitada", "PDF", "No disponible.", "ShellIconEdit", null, false, "No disponible"]);
             requestTool.Invoke(dashboard, new[] { disabled });
             Assert.Null(requested);
 
+            var imageToPdf = Assert.Single(home, item => ReadString(item, "Id") == "image-to-pdf");
+            requestTool.Invoke(dashboard, new[] { imageToPdf });
+            Assert.Equal("image-to-pdf", requested);
+
+            requested = null;
             var zpl = Assert.Single(home, item => ReadString(item, "Id") == "labels-zpl");
             requestTool.Invoke(dashboard, new[] { zpl });
             Assert.Equal("open-zpl", requested);
