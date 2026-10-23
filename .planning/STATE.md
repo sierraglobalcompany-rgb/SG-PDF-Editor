@@ -9,11 +9,12 @@ progress:
   current_subtask: T9.1
 ---
 
-## Estado operativo — publicación F15-A/B/C · 2026-10-23
+## Estado operativo — publicación F15-A/B/C/D · 2026-10-23
 
-- F15-A/B: checkpoint en `81dfc45fd39b723407562957b072a610b823378a`; CI exact-head `build` `39993998408` **SUCCESS**.
-- F15-C (recorte y desbloqueo autorizado): `PASS_AUTOMATED` — Release build 0 warnings / 0 errors, focal 201/201, suite completa 1.349 PASS / 0 FAIL / 1 SKIP y smoke 30 s PASS. QA WPF `GUI_NOT_VERIFIED`; esta publicación es un checkpoint de desarrollo, no cierre de GUI ni F15 global GREEN. El CI exact-head de este checkpoint se registra en el reporte PUB1.
-- Dark/125 % y corpus documental complejo: pendientes. F15-D: NOT STARTED. `main` sigue read-only, sin merge ni release.
+- F15-A/B: publicado en `81dfc45fd39b723407562957b072a610b823378a`; CI exact-head `build` `39993998408` **SUCCESS**.
+- F15-C (recorte y desbloqueo autorizado): publicado en `d0938547e3f58c962ec80c2b829bf1abd18314d6`; CI exact-head `build` `40008500764` **SUCCESS**. QA WPF `GUI_NOT_VERIFIED`; no equivale a cierre visual.
+- F15-D (marca de agua de imagen): implementación integrada y publicada en este checkpoint de la rama `feat/f15-a-compress-20261023`; CI exact-head del nuevo commit `CI_PENDING` hasta verificar la corrida automática. QA automatizada local: build 0/0, focal 24/24, integrada 40/40, suite completa 1374 PASS / 0 FAIL / 1 SKIP y smoke 30 s PASS, según informe de ejecución. Flujo GUI funcional PASS; Tab/foco `NOT_VERIFIED`.
+- Dark/125 % y corpus documental complejo: pendientes. No declarar F15 ni F14 global GREEN. `main` sigue read-only, sin merge ni release.
 ## Estado operativo — F14-A/B · 2026-10-23
 
 - Excepción funcional F14-A/B: autorizada y ejecutada después del freeze histórico F14–F18. Prioridad vigente: funcionalidad F14–F17 primero; pulido visual V4 en F18/Astra.

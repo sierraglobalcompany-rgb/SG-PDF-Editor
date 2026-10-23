@@ -96,6 +96,11 @@ public partial class MainWindow
             Name = "CropPdfMenuItem",
             Header = "Recortar área visible..."
         };
+        var imageWatermark = new MenuItem
+        {
+            Name = "ImageWatermarkMenuItem",
+            Header = "Marca de agua de _imagen..."
+        };
 
         watermark.SetBinding(
             IsEnabledProperty,
@@ -127,6 +132,9 @@ public partial class MainWindow
         crop.SetBinding(
             IsEnabledProperty,
             new Binding(nameof(IsEnabled)) { Source = PrintPdfMenuItem });
+        imageWatermark.SetBinding(
+            IsEnabledProperty,
+            new Binding(nameof(IsEnabled)) { Source = PrintPdfMenuItem });
         watermark.Click += WatermarkText_Click;
         batchWatermark.Click += BatchWatermark_Click;
         numbering.Click += PageNumbering_Click;
@@ -138,6 +146,7 @@ public partial class MainWindow
         compression.Click += CompressPdf_Click;
         unlock.Click += UnlockPdf_Click;
         crop.Click += CropPdf_Click;
+        imageWatermark.Click += ImageWatermark_Click;
         utilities.Items.Add(watermark);
         utilities.Items.Add(batchWatermark);
         utilities.Items.Add(numbering);
@@ -149,6 +158,7 @@ public partial class MainWindow
         utilities.Items.Add(compression);
         utilities.Items.Add(unlock);
         utilities.Items.Add(crop);
+        utilities.Items.Add(imageWatermark);
 
         RegisterName(watermark.Name, watermark);
         RegisterName(batchWatermark.Name, batchWatermark);
@@ -161,6 +171,7 @@ public partial class MainWindow
         RegisterName(compression.Name, compression);
         RegisterName(unlock.Name, unlock);
         RegisterName(crop.Name, crop);
+        RegisterName(imageWatermark.Name, imageWatermark);
         UpdateUtilityCommandAvailability();
     }
 
@@ -244,7 +255,7 @@ public partial class MainWindow
 
     private void UpdateUtilityCommandAvailability()
     {
-        foreach (var name in new[] { "CompressPdfMenuItem", "UnlockPdfMenuItem", "CropPdfMenuItem" })
+        foreach (var name in new[] { "CompressPdfMenuItem", "UnlockPdfMenuItem", "CropPdfMenuItem", "ImageWatermarkMenuItem" })
         {
             if (FindName(name) is MenuItem command)
             {
@@ -359,6 +370,67 @@ public partial class MainWindow
         catch (Exception)
         {
             StatusText.Text = "No se pudo validar el recorte seguro; el original quedó intacto.";
+        }
+        finally
+        {
+            SetUtilityExecuting(false);
+        }
+    }
+
+    private async void ImageWatermark_Click(object sender, RoutedEventArgs e)
+    {
+        if (!CanRunUtility())
+        {
+            StatusText.Text = "No se puede ejecutar la utilidad en el estado actual del editor.";
+            return;
+        }
+
+        var sourceSession = _session!;
+        var dialog = new ImageWatermarkDialog(sourceSession.PageCount, _navigation!.CurrentPageIndex)
+        {
+            Owner = this
+        };
+        if (dialog.ShowDialog() != true || dialog.Request is null)
+        {
+            StatusText.Text = "Marca de agua cancelada.";
+            return;
+        }
+
+        var request = dialog.Request;
+        var destination = SelectUtilityDestination(
+            "Guardar copia con marca de agua de imagen como",
+            $"{Path.GetFileNameWithoutExtension(sourceSession.FilePath)}-marca-imagen.pdf",
+            overwritePrompt: false);
+        if (string.IsNullOrWhiteSpace(destination))
+        {
+            StatusText.Text = "Marca de agua cancelada: no se seleccionó un destino.";
+            return;
+        }
+
+        SetUtilityExecuting(true);
+        StatusText.Text = "Validando la imagen y creando una copia con marca de agua...";
+        try
+        {
+            var result = await new PdfImageWatermarkCoordinator().CreateCopyAsync(
+                sourceSession.FilePath,
+                request.ImagePath,
+                destination,
+                request.Range,
+                request.WidthPercent,
+                request.OpacityPercent,
+                request.Anchor,
+                CancellationToken.None);
+            StatusText.Text = result.Succeeded
+                ? $"Copia con marca de agua guardada: {Path.GetFileName(destination)}"
+                : $"No se pudo crear la copia con marca de agua: {result.Error}";
+        }
+        catch (OperationCanceledException)
+        {
+            StatusText.Text = "Marca de agua cancelada.";
+        }
+        catch (Exception)
+        {
+            StatusText.Text = "No se pudo validar la copia con marca de agua; el PDF original quedó intacto.";
         }
         finally
         {

@@ -1,0 +1,111 @@
+<Window x:Class="SGPdf.App.Features.Utilities.ImageWatermarkDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:automation="clr-namespace:System.Windows.Automation;assembly=PresentationCore"
+        Title="Marca de agua de imagen"
+        Width="540" Height="650"
+        MinWidth="500" MinHeight="580"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResize"
+        ShowInTaskbar="False"
+        Loaded="Window_Loaded">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel>
+                <TextBlock Text="Imagen" FontWeight="SemiBold" Margin="0,0,0,6" />
+                <Button x:Name="ChooseImageButton"
+                        Content="Elegir imagen PNG o JPEG..."
+                        HorizontalAlignment="Left"
+                        Padding="12,6"
+                        Click="ChooseImage_Click"
+                        automation:AutomationProperties.Name="Elegir imagen PNG o JPEG" />
+                <TextBox x:Name="ImagePathTextBox"
+                         Margin="0,8,0,14"
+                         Padding="7,4"
+                         IsReadOnly="True"
+                         TextWrapping="Wrap"
+                         automation:AutomationProperties.Name="Ruta de la imagen seleccionada" />
+
+                <Grid Margin="0,0,0,14">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="16" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Páginas" FontWeight="SemiBold" Margin="0,0,0,6" />
+                        <ComboBox x:Name="ScopeComboBox"
+                                  SelectedIndex="0"
+                                  SelectionChanged="ScopeComboBox_SelectionChanged"
+                                  automation:AutomationProperties.Name="Páginas de destino">
+                            <ComboBoxItem Content="Todas" Tag="All" />
+                            <ComboBoxItem Content="Página actual" Tag="Current" />
+                            <ComboBoxItem Content="Intervalo" Tag="Range" />
+                        </ComboBox>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="Posición" FontWeight="SemiBold" Margin="0,0,0,6" />
+                        <ComboBox x:Name="AnchorComboBox"
+                                  SelectedIndex="0"
+                                  automation:AutomationProperties.Name="Posición de la imagen">
+                            <ComboBoxItem Content="Centro" Tag="Center" />
+                            <ComboBoxItem Content="Superior izquierda" Tag="TopLeft" />
+                            <ComboBoxItem Content="Superior derecha" Tag="TopRight" />
+                            <ComboBoxItem Content="Inferior izquierda" Tag="BottomLeft" />
+                            <ComboBoxItem Content="Inferior derecha" Tag="BottomRight" />
+                        </ComboBox>
+                    </StackPanel>
+                </Grid>
+
+                <StackPanel x:Name="RangePanel" Orientation="Horizontal" Margin="0,0,0,14" Visibility="Collapsed">
+                    <TextBlock Text="Desde página" VerticalAlignment="Center" Margin="0,0,6,0" />
+                    <TextBox x:Name="StartPageTextBox" Width="66" Padding="6,3" Text="1"
+                             automation:AutomationProperties.Name="Primera página del intervalo" />
+                    <TextBlock Text="Hasta" VerticalAlignment="Center" Margin="12,0,6,0" />
+                    <TextBox x:Name="EndPageTextBox" Width="66" Padding="6,3"
+                             automation:AutomationProperties.Name="Última página del intervalo" />
+                </StackPanel>
+
+                <Grid Margin="0,0,0,14">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="16" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Ancho de página (10–80 %)" FontWeight="SemiBold" Margin="0,0,0,6" />
+                        <TextBox x:Name="WidthPercentTextBox" Text="30" Padding="7,4"
+                                 automation:AutomationProperties.Name="Porcentaje del ancho de página" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="Opacidad (10–100 %)" FontWeight="SemiBold" Margin="0,0,0,6" />
+                        <TextBox x:Name="OpacityPercentTextBox" Text="35" Padding="7,4"
+                                 automation:AutomationProperties.Name="Porcentaje de opacidad" />
+                    </StackPanel>
+                </Grid>
+
+                <TextBlock Margin="0,0,0,10"
+                           Foreground="DimGray"
+                           TextWrapping="Wrap"
+                           Text="Se guardará una copia nueva. El PDF original y el documento abierto no cambiarán. La imagen se colocará delante del contenido con un margen de 12 pt." />
+                <TextBlock x:Name="ValidationText"
+                           Foreground="Firebrick"
+                           TextWrapping="Wrap"
+                           AutomationProperties.LiveSetting="Assertive" />
+            </StackPanel>
+        </ScrollViewer>
+
+        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+            <Button Content="Cancelar" IsCancel="True" Padding="14,6" Margin="0,0,8,0"
+                    automation:AutomationProperties.Name="Cancelar marca de agua" />
+            <Button x:Name="ContinueButton" Content="Continuar..." IsDefault="True" IsEnabled="False"
+                    Padding="14,6" Click="Accept_Click"
+                    automation:AutomationProperties.Name="Continuar para guardar una copia" />
+        </StackPanel>
+    </Grid>
+</Window>

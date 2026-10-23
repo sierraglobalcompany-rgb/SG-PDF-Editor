@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Windows;
+using System.Windows.Automation;
 using System.Windows.Controls;
 using SGPdf.App.Pdf;
 using Xunit;
@@ -34,6 +35,7 @@ public sealed class MainWindowUtilitiesTests
                 var numbering = OrganizeWindowTestHost.Element<MenuItem>(window, "PageNumberingMenuItem");
                 var pdfToJpg = OrganizeWindowTestHost.Element<MenuItem>(window, "PdfToJpgMenuItem");
                 var compression = OrganizeWindowTestHost.Element<MenuItem>(window, "CompressPdfMenuItem");
+                var imageWatermark = OrganizeWindowTestHost.Element<MenuItem>(window, "ImageWatermarkMenuItem");
 
                 Assert.Equal("_Herramientas", tools.Header);
                 Assert.False(watermark.IsEnabled);
@@ -42,6 +44,8 @@ public sealed class MainWindowUtilitiesTests
                 Assert.False(pdfToJpg.IsEnabled);
                 Assert.Equal("_Comprimir PDF...", compression.Header);
                 Assert.False(compression.IsEnabled);
+                Assert.Equal("Marca de agua de _imagen...", imageWatermark.Header);
+                Assert.False(imageWatermark.IsEnabled);
             }
             finally { OrganizeWindowTestHost.CloseClean(window); }
         });
@@ -83,8 +87,35 @@ public sealed class MainWindowUtilitiesTests
                 Assert.True(OrganizeWindowTestHost.Element<MenuItem>(window, "PageNumberingMenuItem").IsEnabled);
                 Assert.True(OrganizeWindowTestHost.Element<MenuItem>(window, "CompressPdfMenuItem").IsEnabled);
                 Assert.True(OrganizeWindowTestHost.Element<MenuItem>(window, "PdfToJpgMenuItem").IsEnabled);
+                Assert.True(OrganizeWindowTestHost.Element<MenuItem>(window, "ImageWatermarkMenuItem").IsEnabled);
             }
             finally { OrganizeWindowTestHost.CloseClean(window); }
+        });
+    }
+
+    [Fact]
+    public void ImageWatermarkDialog_ExposesAccessibleControlsAndOnlyRevealsSelectedRange()
+    {
+        OrganizeWindowTestHost.RunInSta(() =>
+        {
+            var dialog = new SGPdf.App.Features.Utilities.ImageWatermarkDialog(pageCount: 4, currentPageIndex: 2);
+            try
+            {
+                var choose = Assert.IsType<Button>(dialog.FindName("ChooseImageButton"));
+                var scope = Assert.IsType<ComboBox>(dialog.FindName("ScopeComboBox"));
+                var range = Assert.IsType<StackPanel>(dialog.FindName("RangePanel"));
+                var width = Assert.IsType<TextBox>(dialog.FindName("WidthPercentTextBox"));
+                var opacity = Assert.IsType<TextBox>(dialog.FindName("OpacityPercentTextBox"));
+                Assert.Equal("Elegir imagen PNG o JPEG", AutomationProperties.GetName(choose));
+                Assert.Equal("30", width.Text);
+                Assert.Equal("35", opacity.Text);
+                Assert.Equal(Visibility.Collapsed, range.Visibility);
+
+                scope.SelectedIndex = 2;
+                Assert.Equal(Visibility.Visible, range.Visibility);
+                Assert.Equal("4", Assert.IsType<TextBox>(dialog.FindName("EndPageTextBox")).Text);
+            }
+            finally { dialog.Close(); }
         });
     }
 

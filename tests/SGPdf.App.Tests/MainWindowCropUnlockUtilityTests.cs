@@ -19,24 +19,29 @@ public sealed class MainWindowCropUnlockUtilityTests
                 OrganizeWindowTestHost.EnsureLoaded(window);
                 var unlock = OrganizeWindowTestHost.Element<MenuItem>(window, "UnlockPdfMenuItem");
                 var crop = OrganizeWindowTestHost.Element<MenuItem>(window, "CropPdfMenuItem");
+                var imageWatermark = OrganizeWindowTestHost.Element<MenuItem>(window, "ImageWatermarkMenuItem");
                 Assert.Equal("Desbloquear PDF con contraseña...", unlock.Header);
                 Assert.Equal("Recortar área visible...", crop.Header);
                 Assert.False(unlock.IsEnabled);
                 Assert.False(crop.IsEnabled);
+                Assert.False(imageWatermark.IsEnabled);
 
                 Assert.True(await OrganizeWindowTestHost.OpenReaderAsync(window, fixture.Path));
                 Assert.True(unlock.IsEnabled);
                 Assert.True(crop.IsEnabled);
+                Assert.True(imageWatermark.IsEnabled);
 
                 OrganizeWindowTestHost.SetField(window, "_utilityExecuting", true);
                 InvokeAvailabilityUpdate(window);
                 Assert.False(unlock.IsEnabled);
                 Assert.False(crop.IsEnabled);
+                Assert.False(imageWatermark.IsEnabled);
 
                 OrganizeWindowTestHost.SetField(window, "_utilityExecuting", false);
                 InvokeAvailabilityUpdate(window);
                 Assert.True(unlock.IsEnabled);
                 Assert.True(crop.IsEnabled);
+                Assert.True(imageWatermark.IsEnabled);
             }
             finally { OrganizeWindowTestHost.CloseClean(window); }
         });
