@@ -67,8 +67,11 @@ public sealed class DocumentShellRealignmentContractTests
                 && (string?)trigger.Attribute("Value") == "True"
                 && trigger.Descendants(presentation + "Setter").Any(setter =>
                     (string?)setter.Attribute("TargetName") == "TabChrome"
-                    && (string?)setter.Attribute("Property") == "BorderThickness"
-                    && (string?)setter.Attribute("Value") == "1,3,1,1"));
+                    && (string?)setter.Attribute("Property") == "Background"
+                    && ((string?)setter.Attribute("Value"))?.Contains("SgSelectionFillBrush") == true));
+        var selectedChrome = tabItemStyle.Descendants(presentation + "Border")
+            .Single(border => (string?)border.Attribute(x + "Name") == "TabChrome");
+        Assert.Equal("8", (string?)selectedChrome.Attribute("CornerRadius"));
     }
 
     [Fact]
@@ -106,6 +109,16 @@ public sealed class DocumentShellRealignmentContractTests
         Assert.Contains("ReaderNavigationSelectedIndex", workspaceSource);
     }
 
+    [Fact]
+    public void ContinuousReader_UsesThemeAwareCanvasBehindWhitePdfPages()
+    {
+        var readerSource = File.ReadAllText(FindRepoFile("src", "SGPdf.App", "MainWindow.Reader.cs"));
+
+        Assert.Contains("surface.SetResourceReference(Panel.BackgroundProperty, \"LayerFillColorAltBrush\")", readerSource);
+        Assert.Contains("Grid.SetRow(surface, Grid.GetRow(PdfScrollViewer))", readerSource);
+        Assert.Contains("border.SetValue(Border.BackgroundProperty, Brushes.White)", readerSource);
+    }
+
     [Fact(Skip = "T9.1-R5: menú contextual del workspace PDF se implementa después del drawer.")]
     public void PdfWorkspace_DeclaresContextMenuOwner()
     {
@@ -141,8 +154,73 @@ public sealed class DocumentShellRealignmentContractTests
         Assert.Contains("System.Windows.Controls.Image", shellSource);
         Assert.Contains("descriptor.DocumentIconPath", shellSource);
         Assert.Contains("System.Windows.Shapes.Path", shellSource);
-        Assert.Contains("Width = 22d", shellSource);
-        Assert.Contains("TextWrapping = TextWrapping.NoWrap", shellSource);
+        Assert.Contains("Width = 24d", shellSource);
+        Assert.Contains("TextWrapping = TextWrapping.Wrap", shellSource);
+    }
+
+    [Fact]
+    public void DocumentToolRail_F14ActionsDelegateToExistingOwnersAndGuardPdfReplacement()
+    {
+        var shell = File.ReadAllText(FindRepoFile("src", "SGPdf.App", "MainWindow.Shell.cs"));
+        var forms = File.ReadAllText(FindRepoFile("src", "SGPdf.App", "MainWindow.Forms.cs"));
+        var compare = File.ReadAllText(FindRepoFile("src", "SGPdf.App", "MainWindow.Compare.cs"));
+        var labels = File.ReadAllText(FindRepoFile("src", "SGPdf.App", "MainWindow.Labels.cs"));
+        var edit = File.ReadAllText(FindRepoFile("src", "SGPdf.App", "MainWindow.Edit.cs"));
+        var sign = File.ReadAllText(FindRepoFile("src", "SGPdf.App", "MainWindow.Sign.cs"));
+        var organize = File.ReadAllText(FindRepoFile("src", "SGPdf.App", "MainWindow.Organize.cs"));
+        var comments = File.ReadAllText(FindRepoFile("src", "SGPdf.App", "MainWindow.Comments.cs"));
+
+        var dispatches = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["forms"] = "EditAcroForm_Click(this, new RoutedEventArgs(Button.ClickEvent))",
+            ["ocr"] = "Ocr_Click(this, new RoutedEventArgs(Button.ClickEvent))",
+            ["redact"] = "await TryEnterEditModeAsync()",
+            ["compare"] = "ComparePdf_Click(this, new RoutedEventArgs(Button.ClickEvent))",
+            ["convert"] = "ExportPdfToPng_Click(this, new RoutedEventArgs(Button.ClickEvent))",
+            ["protect"] = "Protection_Click(this, new RoutedEventArgs(Button.ClickEvent))"
+        };
+        foreach (var dispatch in dispatches)
+        {
+            var actionCase = GetToolActionCase(shell, dispatch.Key);
+            Assert.Contains(dispatch.Value, actionCase, StringComparison.Ordinal);
+            Assert.DoesNotContain("new Pdf", actionCase, StringComparison.Ordinal);
+            Assert.DoesNotContain("new Ocr", actionCase, StringComparison.Ordinal);
+        }
+        Assert.Contains("TryPrepareCoreToolTransition(\"edit\")", GetToolActionCase(shell, "redact"), StringComparison.Ordinal);
+
+        foreach (var owner in new[] { forms, compare, labels, edit, sign, organize, comments })
+            Assert.Contains("TryLeaveAcroFormWithGuard()", owner, StringComparison.Ordinal);
+        Assert.Contains("_acroFormPropertiesScrollViewer?.Visibility == Visibility.Visible", shell, StringComparison.Ordinal);
+        Assert.Contains("? \"forms\"", shell, StringComparison.Ordinal);
+        var validate = labels.IndexOf("ValidateRenderedLabels(candidate, rendered)", StringComparison.Ordinal);
+        var guard = validate < 0
+            ? -1
+            : labels.IndexOf("TryLeaveAcroFormWithGuard()", validate, StringComparison.Ordinal);
+        var commit = guard < 0
+            ? -1
+            : labels.IndexOf("CommitLoadedZpl(candidate, rendered)", guard, StringComparison.Ordinal);
+        Assert.True(validate >= 0 && guard > validate && commit > guard);
+
+        Assert.DoesNotContain("_ocrModeActive", shell, StringComparison.Ordinal);
+        Assert.DoesNotContain("_compareModeActive", shell, StringComparison.Ordinal);
+        Assert.DoesNotContain("_convertModeActive", shell, StringComparison.Ordinal);
+        Assert.DoesNotContain("_protectModeActive", shell, StringComparison.Ordinal);
+    }
+
+    private static string GetToolActionCase(string shell, string actionId)
+    {
+        var methodStart = shell.IndexOf("private async void HandleToolAction", StringComparison.Ordinal);
+        Assert.True(methodStart >= 0);
+        var methodEnd = shell.IndexOf("private bool TryPrepareCoreToolTransition", methodStart, StringComparison.Ordinal);
+        Assert.True(methodEnd > methodStart);
+        var method = shell[methodStart..methodEnd];
+        var caseStart = method.IndexOf($"case \"{actionId}\":", StringComparison.Ordinal);
+        Assert.True(caseStart >= 0, $"No se encontró el dispatch de {actionId}.");
+        var nextCase = method.IndexOf("\n            case \"", caseStart + 1, StringComparison.Ordinal);
+        var switchEnd = method.IndexOf("\n        }", caseStart, StringComparison.Ordinal);
+        var caseEnd = nextCase < 0 ? switchEnd : Math.Min(nextCase, switchEnd);
+        Assert.True(caseEnd > caseStart);
+        return method[caseStart..caseEnd];
     }
 
     [Fact]
@@ -158,21 +236,56 @@ public sealed class DocumentShellRealignmentContractTests
         Assert.DoesNotContain("string.Equals(descriptor.Id, \"read\", StringComparison.Ordinal)", shellSource);
         Assert.Contains("descriptor.DocumentIconPath", shellSource);
         Assert.Contains("IsEnabled = descriptor.ActionId is not null", shellSource);
-        Assert.Contains("Width = 64d", shellSource);
+        Assert.Contains("Width = 62d", shellSource);
 
         var railStyle = styles.Descendants(presentation + "Style")
             .Single(e => (string?)e.Attribute(x + "Key") == "SgRailItemStyle");
         var selectedStyle = styles.Descendants(presentation + "Style")
             .Single(e => (string?)e.Attribute(x + "Key") == "SgRailItemSelectedStyle");
         Assert.Contains(railStyle.Elements(presentation + "Setter"),
-            setter => (string?)setter.Attribute("Property") == "Height"
-                   && (string?)setter.Attribute("Value") == "48");
+            setter => (string?)setter.Attribute("Property") == "MinHeight"
+                   && (string?)setter.Attribute("Value") == "62");
         Assert.Contains(selectedStyle.Elements(presentation + "Setter"),
             setter => (string?)setter.Attribute("Property") == "Background"
-                   && ((string?)setter.Attribute("Value"))?.Contains("LayerFillColorDefaultBrush") == true);
+                   && ((string?)setter.Attribute("Value"))?.Contains("SgSelectionFillBrush") == true);
         Assert.Contains(selectedStyle.Elements(presentation + "Setter"),
             setter => (string?)setter.Attribute("Property") == "BorderBrush"
                    && ((string?)setter.Attribute("Value"))?.Contains("SgAccentBrush") == true);
+    }
+
+    [Fact]
+    public void ReaderDrawer_V4UsesSegmentedTabsAndAContextRowToggle()
+    {
+        var readerSource = File.ReadAllText(FindRepoFile("src", "SGPdf.App", "MainWindow.ReaderThumbnails.cs"));
+        var xaml = File.ReadAllText(FindRepoFile("src", "SGPdf.App", "MainWindow.xaml"));
+        var styles = XDocument.Load(FindRepoFile("src", "SGPdf.App", "Themes", "Modern.xaml"));
+        XNamespace x = "http://schemas.microsoft.com/winfx/2006/xaml";
+        XNamespace presentation = "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+
+        Assert.Contains("ReaderContextBar.Children.Insert(0, toggle)", readerSource);
+        Assert.Contains("AutomationProperties.SetHelpText(toggle", readerSource);
+        Assert.DoesNotContain("Panel.SetZIndex(toggle, 80)", readerSource);
+        Assert.Contains("x:Name=\"ReaderContextBar\"", xaml);
+        Assert.Contains("x:Name=\"ReaderViewCaption\"", xaml);
+
+        var navigationTabStyle = styles.Descendants(presentation + "Style")
+            .Single(style => (string?)style.Attribute(x + "Key") == "SgReaderNavigationTabItemStyle");
+        var navigationControlTemplate = styles.Descendants(presentation + "Style")
+            .Single(style => (string?)style.Attribute(x + "Key") == "SgReaderNavigationTabsStyle")
+            .Descendants(presentation + "ControlTemplate")
+            .Single();
+        Assert.Contains(navigationControlTemplate.Descendants(presentation + "ContentPresenter"), presenter =>
+            (string?)presenter.Attribute("ContentSource") == "SelectedContent");
+        Assert.Contains(navigationTabStyle.Descendants(presentation + "Trigger"), trigger =>
+            (string?)trigger.Attribute("Property") == "IsSelected" &&
+            trigger.Descendants(presentation + "Setter").Any(setter =>
+                (string?)setter.Attribute("TargetName") == "NavigationTabChrome" &&
+                ((string?)setter.Attribute("Value"))?.Contains("SgSelectionFillBrush") == true));
+
+        var thumbnailStyle = styles.Descendants(presentation + "Style")
+            .Single(style => (string?)style.Attribute(x + "Key") == "SgReaderThumbnailItemStyle");
+        Assert.Contains(thumbnailStyle.Descendants(presentation + "Trigger"), trigger =>
+            (string?)trigger.Attribute("Property") == "IsKeyboardFocusWithin");
     }
 
     [Fact]

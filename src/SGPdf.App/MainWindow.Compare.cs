@@ -88,6 +88,8 @@ public partial class MainWindow
                 Path.GetFileName(leftPath),
                 Path.GetFileName(rightPath),
                 result);
+            if (!TryLeaveAcroFormWithGuard())
+                return;
             ShowComparePresentation(presentation);
             StatusText.Text = "Comparación completada.";
         }

@@ -15,7 +15,9 @@ Antes de tocar código o documentación:
 
 GitHub + STATE mandan sobre snapshots viejos.
 
-## Estado actual — 2026-10-17
+Para el estado vigente de F14-A/B y su excepción al freeze histórico, consulta el resumen inicial de .planning/STATE.md; main sigue read-only y sin merge ni release.
+
+## Estado histórico — 2026-10-17
 
 - F13 / Task9 / T9.1 ACTIVE; F0–F12 and Tasks 1–8 CLOSED; T9.2 and F14–F18 NOT STARTED/FROZEN.
 - R1/R1B/R2/R3 technical GREEN/CLOSED; **R4-B GREEN/CLOSED**.

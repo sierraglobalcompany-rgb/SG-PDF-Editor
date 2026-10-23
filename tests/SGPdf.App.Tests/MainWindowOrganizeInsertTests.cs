@@ -114,6 +114,10 @@ public sealed class MainWindowOrganizeInsertTests
                     (Func<PdfDocumentSession, CancellationToken, OrganizePreflightResult>)((_, _) => CleanPreflight()));
                 Assert.True(InvokeBool(window, "TryMergeOrganizePdfCandidate", secondary.Path));
 
+                Assert.True(OrganizeWindowTestHost.Element<Button>(window, "OrganizeInsertButton").IsEnabled);
+                Assert.True(OrganizeWindowTestHost.Element<Button>(window, "OrganizeMergeButton").IsEnabled);
+                Assert.True(OrganizeWindowTestHost.Element<Button>(window, "OrganizeSplitButton").IsEnabled);
+
                 var merged = CurrentPlan(window);
                 Assert.Equal(5, merged.Pages.Count);
                 AssertSecondarySequence(merged, secondary.Path, 2, new[] { 0, 1, 2 });

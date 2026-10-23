@@ -16,6 +16,7 @@ namespace SGPdf.App;
 public partial class MainWindow
 {
     private const double ReaderNavigationDrawerWidth = 240d;
+    private const double MinimumReaderNavigationDrawerWidth = 184d;
 
     private readonly PdfRenderScheduler _thumbnailRenderScheduler = new();
     private readonly ObservableCollection<ReaderThumbnailItem> _readerThumbnails = new();
@@ -55,6 +56,9 @@ public partial class MainWindow
             return;
 
         var host = FindReaderNavigationHost();
+        host.SetResourceReference(Border.BackgroundProperty, "CardBackgroundFillColorDefaultBrush");
+        host.SetResourceReference(Border.BorderBrushProperty, "CardStrokeColorDefaultBrush");
+        host.BorderThickness = new Thickness(0, 0, 1, 0);
         InitializeReaderNavigationDrawer(host);
 
         var tabs = new TabControl
@@ -62,6 +66,8 @@ public partial class MainWindow
             Name = "ReaderNavigationTabs",
             Visibility = Visibility.Collapsed
         };
+        tabs.SetResourceReference(FrameworkElement.StyleProperty, "SgReaderNavigationTabsStyle");
+        AutomationProperties.SetName(tabs, "Navegación del PDF");
         var pagesTab = new TabItem
         {
             Name = "ReaderPagesTab",
@@ -82,6 +88,10 @@ public partial class MainWindow
             ItemsSource = _readerThumbnails,
             ItemTemplate = BuildReaderThumbnailTemplate()
         };
+        thumbnailList.SetResourceReference(
+            ItemsControl.ItemContainerStyleProperty,
+            "SgReaderThumbnailItemStyle");
+        AutomationProperties.SetName(thumbnailList, "Páginas del PDF");
         var bookmarksTree = new TreeView
         {
             Name = "ReaderBookmarksTree",
@@ -202,27 +212,24 @@ public partial class MainWindow
         RegisterName(column.Name, column);
         RegisterName(host.Name, host);
 
-        var center = PdfScrollViewer.Parent as Grid
-            ?? throw new InvalidOperationException("No se encontró el canvas central del lector.");
+        if (PdfScrollViewer.Parent is not Grid)
+            throw new InvalidOperationException("No se encontró el canvas central del lector.");
         var toggle = new Button
         {
             Name = "ReaderNavigationToggleButton",
             Content = "◧",
-            Width = 34d,
-            Height = 34d,
-            MinWidth = 34d,
             Padding = new Thickness(0),
-            Margin = new Thickness(8, 8, 0, 0),
+            Margin = new Thickness(0),
             HorizontalAlignment = HorizontalAlignment.Left,
-            VerticalAlignment = VerticalAlignment.Top,
+            VerticalAlignment = VerticalAlignment.Center,
             Visibility = Visibility.Collapsed,
             ToolTip = "Mostrar páginas y marcadores"
         };
-        toggle.SetResourceReference(FrameworkElement.StyleProperty, "SgIconButtonStyle");
+        toggle.SetResourceReference(FrameworkElement.StyleProperty, "SgReaderNavigationToggleStyle");
         toggle.Click += ToggleReaderNavigation;
         AutomationProperties.SetName(toggle, "Mostrar páginas y marcadores");
-        Panel.SetZIndex(toggle, 80);
-        center.Children.Add(toggle);
+        AutomationProperties.SetHelpText(toggle, "Abre la navegación de páginas y marcadores del PDF actual.");
+        ReaderContextBar.Children.Insert(0, toggle);
         RegisterName(toggle.Name, toggle);
 
         _readerNavigationColumn = column;
@@ -275,16 +282,19 @@ public partial class MainWindow
                         NavigationBar.Visibility == Visibility.Visible;
         var isOpen = canToggle && document!.IsReaderNavigationOpen;
 
-        _readerNavigationColumn.Width = new GridLength(isOpen ? ReaderNavigationDrawerWidth : 0d);
+        _readerNavigationColumn.Width = new GridLength(isOpen ? ResolveReaderNavigationDrawerWidth() : 0d);
         _readerNavigationDrawer.Visibility = isOpen ? Visibility.Visible : Visibility.Collapsed;
         _readerNavigationToggleButton.Visibility = canToggle ? Visibility.Visible : Visibility.Collapsed;
-        _readerNavigationToggleButton.Content = "◧";
+        ReaderContextBar.Visibility = canToggle ? Visibility.Visible : Visibility.Collapsed;
 
         var accessibilityName = isOpen
             ? "Ocultar páginas y marcadores"
             : "Mostrar páginas y marcadores";
         _readerNavigationToggleButton.ToolTip = accessibilityName;
         AutomationProperties.SetName(_readerNavigationToggleButton, accessibilityName);
+        AutomationProperties.SetHelpText(
+            _readerNavigationToggleButton,
+            isOpen ? "Cierra la navegación del PDF actual." : "Abre la navegación de páginas y marcadores del PDF actual.");
 
         if (_readerNavigationTabs is null || document is null)
         {
@@ -308,22 +318,36 @@ public partial class MainWindow
         UpdateReaderBookmarkContext();
     }
 
+    private double ResolveReaderNavigationDrawerWidth()
+    {
+        var center = PdfScrollViewer.Parent as FrameworkElement;
+        var availableWidth = (center?.ActualWidth ?? 0d) +
+                             (_readerNavigationColumn?.Width.Value ?? 0d);
+        if (!double.IsFinite(availableWidth) || availableWidth <= 0d)
+            return ReaderNavigationDrawerWidth;
+
+        return Math.Clamp(
+            availableWidth * 0.22d,
+            MinimumReaderNavigationDrawerWidth,
+            ReaderNavigationDrawerWidth);
+    }
+
     private static DataTemplate BuildReaderThumbnailTemplate()
     {
         var outer = new FrameworkElementFactory(typeof(Border));
-        outer.SetValue(Border.MarginProperty, new Thickness(8));
-        outer.SetValue(Border.PaddingProperty, new Thickness(8));
-        outer.SetValue(Border.BackgroundProperty, Brushes.White);
-        outer.SetValue(Border.BorderBrushProperty, Brushes.LightGray);
-        outer.SetValue(Border.BorderThicknessProperty, new Thickness(1));
+        outer.SetValue(Border.MarginProperty, new Thickness(2));
+        outer.SetValue(Border.PaddingProperty, new Thickness(0));
+        outer.SetValue(Border.BackgroundProperty, Brushes.Transparent);
+        outer.SetValue(Border.BorderBrushProperty, Brushes.Transparent);
+        outer.SetValue(Border.BorderThicknessProperty, new Thickness(0));
 
         var stack = new FrameworkElementFactory(typeof(StackPanel));
         stack.SetValue(StackPanel.HorizontalAlignmentProperty, HorizontalAlignment.Center);
 
         var preview = new FrameworkElementFactory(typeof(Grid));
-        preview.SetValue(FrameworkElement.WidthProperty, 132d);
+        preview.SetValue(FrameworkElement.WidthProperty, 120d);
         preview.SetBinding(FrameworkElement.HeightProperty, new Binding(nameof(ReaderThumbnailItem.DisplayHeight)));
-        preview.SetValue(Panel.BackgroundProperty, Brushes.WhiteSmoke);
+        preview.SetValue(Panel.BackgroundProperty, Brushes.White);
 
         var image = new FrameworkElementFactory(typeof(Image));
         image.SetValue(Image.StretchProperty, Stretch.Fill);
@@ -343,9 +367,8 @@ public partial class MainWindow
 
         var pageNumber = new FrameworkElementFactory(typeof(TextBlock));
         // The thumbnail card represents white paper in both application themes.
-        pageNumber.SetValue(TextBlock.ForegroundProperty, Brushes.Black);
         pageNumber.SetValue(TextBlock.HorizontalAlignmentProperty, HorizontalAlignment.Center);
-        pageNumber.SetValue(TextBlock.MarginProperty, new Thickness(0, 6, 0, 0));
+        pageNumber.SetValue(TextBlock.MarginProperty, new Thickness(0, 4, 0, 0));
         pageNumber.SetBinding(TextBlock.TextProperty, new Binding(nameof(ReaderThumbnailItem.PageNumber))
         {
             StringFormat = "Página {0}"

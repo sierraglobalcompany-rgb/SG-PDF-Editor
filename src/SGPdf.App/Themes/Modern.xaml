@@ -10,6 +10,9 @@
 
     <SolidColorBrush x:Key="SgAccentBrush"
                      Color="{StaticResource SystemAccentColor}" />
+    <SolidColorBrush x:Key="SgSelectionFillBrush"
+                     Color="{StaticResource SystemAccentColor}"
+                     Opacity="0.14" />
 
     <Style x:Key="SgPrimaryButtonStyle"
            TargetType="{x:Type Button}"
@@ -57,21 +60,32 @@
     <Style x:Key="SgRailItemStyle"
            TargetType="{x:Type Button}"
            BasedOn="{StaticResource {x:Type Button}}">
-        <Setter Property="Height" Value="48" />
-        <Setter Property="Padding" Value="4,5" />
-        <Setter Property="Margin" Value="4,1" />
+        <Setter Property="MinHeight" Value="62" />
+        <Setter Property="Padding" Value="2,4" />
+        <Setter Property="Margin" Value="2,2" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderBrush" Value="Transparent" />
-        <Setter Property="BorderThickness" Value="3,0,0,0" />
+        <Setter Property="BorderThickness" Value="1" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type Button}">
-                    <Border CornerRadius="9" Background="{TemplateBinding Background}"
+                    <Border x:Name="RailChrome" CornerRadius="9" Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
                             Padding="{TemplateBinding Padding}">
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="RailChrome" Property="BorderBrush"
+                                    Value="{DynamicResource SgAccentBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                            <Setter TargetName="RailChrome" Property="BorderBrush"
+                                    Value="{DynamicResource SgAccentBrush}" />
+                            <Setter TargetName="RailChrome" Property="BorderThickness" Value="2" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
@@ -79,7 +93,7 @@
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Style.Triggers>
             <Trigger Property="IsEnabled" Value="False">
-                <Setter Property="Opacity" Value="0.52" />
+                <Setter Property="Opacity" Value="0.72" />
             </Trigger>
         </Style.Triggers>
     </Style>
@@ -87,7 +101,7 @@
     <Style x:Key="SgRailItemSelectedStyle"
            TargetType="{x:Type Button}"
            BasedOn="{StaticResource SgRailItemStyle}">
-        <Setter Property="Background" Value="{DynamicResource LayerFillColorDefaultBrush}" />
+        <Setter Property="Background" Value="{DynamicResource SgSelectionFillBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource SgAccentBrush}" />
         <Setter Property="FontWeight" Value="SemiBold" />
     </Style>
@@ -160,12 +174,144 @@
         <Setter Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}" />
         <Setter Property="BorderThickness" Value="0,0,0,1" />
     </Style>
+
+    <Style x:Key="SgReaderNavigationToggleStyle"
+           TargetType="{x:Type Button}"
+           BasedOn="{StaticResource SgIconButtonStyle}">
+        <Setter Property="Width" Value="36" />
+        <Setter Property="Height" Value="36" />
+        <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="ToolTip" Value="Mostrar páginas y marcadores" />
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="BorderBrush" Value="{DynamicResource SgAccentBrush}" />
+            </Trigger>
+            <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                <Setter Property="BorderBrush" Value="{DynamicResource SgAccentBrush}" />
+                <Setter Property="BorderThickness" Value="2" />
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+                <Setter Property="Background" Value="{DynamicResource SgSelectionFillBrush}" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="SgReaderNavigationTabsStyle" TargetType="{x:Type TabControl}">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="ItemContainerStyle" Value="{DynamicResource SgReaderNavigationTabItemStyle}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type TabControl}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <Border Grid.Row="0"
+                                Background="{DynamicResource LayerFillColorAltBrush}"
+                                BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+                                BorderThickness="1" CornerRadius="8" Padding="3">
+                            <TabPanel IsItemsHost="True" Background="Transparent"
+                                      KeyboardNavigation.TabNavigation="Local" />
+                        </Border>
+                        <ContentPresenter x:Name="PART_SelectedContentHost" Grid.Row="1"
+                                          Margin="0,8,0,0" ContentSource="SelectedContent"
+                                          SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="SgReaderNavigationTabItemStyle" TargetType="{x:Type TabItem}">
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="MinWidth" Value="84" />
+        <Setter Property="MinHeight" Value="34" />
+        <Setter Property="Padding" Value="10,5" />
+        <Setter Property="Focusable" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type TabItem}">
+                    <Border x:Name="NavigationTabChrome" Background="Transparent"
+                            BorderBrush="Transparent" BorderThickness="1"
+                            CornerRadius="6" Padding="{TemplateBinding Padding}">
+                        <ContentPresenter ContentSource="Header" RecognizesAccessKey="True"
+                                          HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="NavigationTabChrome" Property="Background"
+                                    Value="{DynamicResource LayerFillColorDefaultBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="NavigationTabChrome" Property="Background"
+                                    Value="{DynamicResource SgSelectionFillBrush}" />
+                            <Setter TargetName="NavigationTabChrome" Property="BorderBrush"
+                                    Value="{DynamicResource SgAccentBrush}" />
+                            <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                            <Setter TargetName="NavigationTabChrome" Property="BorderBrush"
+                                    Value="{DynamicResource SgAccentBrush}" />
+                            <Setter TargetName="NavigationTabChrome" Property="BorderThickness" Value="2" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="SgReaderThumbnailItemStyle" TargetType="{x:Type ListBoxItem}">
+        <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+        <Setter Property="Padding" Value="2" />
+        <Setter Property="Margin" Value="4,3" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ListBoxItem}">
+                    <Border x:Name="ThumbnailItemChrome" Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="8" Padding="{TemplateBinding Padding}">
+                        <ContentPresenter HorizontalAlignment="Stretch" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="ThumbnailItemChrome" Property="BorderBrush"
+                                    Value="{DynamicResource CardStrokeColorDefaultBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="ThumbnailItemChrome" Property="Background"
+                                    Value="{DynamicResource SgSelectionFillBrush}" />
+                            <Setter TargetName="ThumbnailItemChrome" Property="BorderBrush"
+                                    Value="{DynamicResource SgAccentBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                            <Setter TargetName="ThumbnailItemChrome" Property="BorderBrush"
+                                    Value="{DynamicResource SgAccentBrush}" />
+                            <Setter TargetName="ThumbnailItemChrome" Property="BorderThickness" Value="2" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- V4: document tabs are a header-only strip. PDF pages belong to Reader, not TabControl.Content. -->
     <Style x:Key="SgDocumentTabItemStyle" TargetType="{x:Type TabItem}">
+        <Setter Property="AutomationProperties.Name" Value="{Binding DisplayName}" />
         <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
-        <Setter Property="MinHeight" Value="34" />
-        <Setter Property="Padding" Value="12,5" />
-        <Setter Property="Margin" Value="0,0,6,0" />
+        <Setter Property="MinHeight" Value="38" />
+        <Setter Property="Padding" Value="12,6" />
+        <Setter Property="Margin" Value="0,0,4,0" />
         <Setter Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="Background" Value="Transparent" />
@@ -176,7 +322,7 @@
                             Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="6,6,0,0"
+                            CornerRadius="8"
                             Padding="{TemplateBinding Padding}">
                         <ContentPresenter ContentSource="Header"
                                           RecognizesAccessKey="True"
@@ -185,14 +331,14 @@
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="TabChrome" Property="Background"
-                                    Value="{DynamicResource CardBackgroundFillColorDefaultBrush}" />
+                                    Value="{DynamicResource LayerFillColorDefaultBrush}" />
                         </Trigger>
                         <Trigger Property="IsSelected" Value="True">
                             <Setter TargetName="TabChrome" Property="Background"
-                                    Value="{DynamicResource CardBackgroundFillColorDefaultBrush}" />
+                                    Value="{DynamicResource SgSelectionFillBrush}" />
                             <Setter TargetName="TabChrome" Property="BorderBrush"
                                     Value="{DynamicResource SgAccentBrush}" />
-                            <Setter TargetName="TabChrome" Property="BorderThickness" Value="1,3,1,1" />
+                            <Setter TargetName="TabChrome" Property="BorderThickness" Value="1" />
                             <Setter Property="FontWeight" Value="SemiBold" />
                         </Trigger>
                         <Trigger Property="IsKeyboardFocusWithin" Value="True">

@@ -82,6 +82,11 @@ public sealed class MainWindowOrganizeExtractSplitTests
                 var original = CurrentPlan(window);
 
                 Assert.True(InvokeBool(window, "TrySplitOrganizeEvery", 2, basePath));
+
+                Assert.True(OrganizeWindowTestHost.Element<Button>(window, "OrganizeInsertButton").IsEnabled);
+                Assert.True(OrganizeWindowTestHost.Element<Button>(window, "OrganizeMergeButton").IsEnabled);
+                Assert.True(OrganizeWindowTestHost.Element<Button>(window, "OrganizeSplitButton").IsEnabled);
+
                 Assert.Same(original, CurrentPlan(window));
 
                 var expected = new[]

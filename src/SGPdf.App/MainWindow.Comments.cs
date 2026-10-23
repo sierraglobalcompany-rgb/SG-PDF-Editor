@@ -422,6 +422,9 @@ public partial class MainWindow
                 return false;
             }
 
+            if (!TryLeaveAcroFormWithGuard())
+                return false;
+
             _commentWorkspace = CommentWorkspace.Create(_session.FilePath, _session.OpenedWithPassword);
             _commentModeActive = true;
             _signatureModeActive = false;

@@ -451,6 +451,10 @@ public partial class MainWindow
         SetEnabled("OrganizeExtractButton", false);
         SetEnabled("OrganizeSplitButton", false);
 
+        // Task7/8 son los propietarios finales del estado de estos comandos.
+        UpdateOrganizeTask7CommandAvailability();
+        UpdateOrganizeTask8CommandAvailability();
+
         void SetEnabled(string name, bool enabled)
         {
             if (FindName(name) is Button button)

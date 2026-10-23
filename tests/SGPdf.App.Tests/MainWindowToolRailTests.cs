@@ -17,7 +17,7 @@ public sealed class MainWindowToolRailTests
         "forms", "ocr", "redact", "compare", "convert", "protect"
     ];
 
-    private static readonly string[] FutureF14Actions =
+    private static readonly string[] F14DocumentActions =
     [
         "forms", "ocr", "redact", "compare", "convert", "protect"
     ];
@@ -65,13 +65,9 @@ public sealed class MainWindowToolRailTests
                     }
                 });
 
-                Assert.All(buttons.Take(5), button => Assert.True(button.IsEnabled));
-                Assert.All(buttons.Skip(5), button =>
-                {
-                    Assert.False(button.IsEnabled);
-                    Assert.False(string.IsNullOrWhiteSpace(AutomationProperties.GetHelpText(button)));
-                    Assert.NotNull(button.ToolTip);
-                });
+                // F14-A exposes all eleven document actions; enabled is a catalog capability,
+                // not a claim that a PDF-dependent command can execute without a document.
+                Assert.All(buttons, button => Assert.True(button.IsEnabled));
 
                 Assert.Equal(Visibility.Collapsed, rail.Visibility);
                 Assert.DoesNotContain(buttons, button => ReferenceEquals(button.Style, selectedStyle));
@@ -106,7 +102,7 @@ public sealed class MainWindowToolRailTests
     }
 
     [Fact]
-    public void Router_ExposesOnlyFiveF13Actions_AndIgnoresFutureActions()
+    public void Router_WithoutActivePdf_PreservesExistingModeFlagForF14DocumentActions()
     {
         RunInSta(() =>
         {
@@ -116,7 +112,7 @@ public sealed class MainWindowToolRailTests
                 RaiseLoaded(window);
                 var method = GetRouter();
 
-                foreach (var futureAction in FutureF14Actions)
+                foreach (var futureAction in F14DocumentActions)
                 {
                     SetField(window, "_organizeModeActive", true);
                     SetField(window, "_organizePlanDirty", false);

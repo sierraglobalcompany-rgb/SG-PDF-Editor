@@ -89,14 +89,10 @@ public sealed class ContextualShellContractTests
 
         Assert.Contains("Name = \"ContextToolbarHost\"", shellSource, StringComparison.Ordinal);
         Assert.Contains(
-            "workspace.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });",
+            "workspace.RowDefinitions.Insert(0, new RowDefinition { Height = GridLength.Auto });",
             shellSource,
             StringComparison.Ordinal);
-        Assert.Contains(
-            "workspace.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1d, GridUnitType.Star) });",
-            shellSource,
-            StringComparison.Ordinal);
-        Assert.Contains("Grid.SetRow(child, 1);", shellSource, StringComparison.Ordinal);
+        Assert.Contains("Grid.SetRow(child, Grid.GetRow(child) + 1);", shellSource, StringComparison.Ordinal);
         Assert.Contains("Grid.SetRow(host, 0);", shellSource, StringComparison.Ordinal);
         Assert.Contains("AttachCommentToolbarToContextHost();", shellSource, StringComparison.Ordinal);
         Assert.Contains("ContextToolbarHost.Children.Add(_commentToolbar);", shellSource, StringComparison.Ordinal);

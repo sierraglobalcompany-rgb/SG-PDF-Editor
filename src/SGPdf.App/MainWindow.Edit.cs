@@ -275,6 +275,9 @@ public partial class MainWindow
         var pageIndex = _navigation.CurrentPageIndex;
         try
         {
+            if (!TryLeaveAcroFormWithGuard())
+                return false;
+
             await EnsureEditSurfaceForCurrentPageAsync();
             if (!ReferenceEquals(_session, sourceSession) ||
                 _navigation?.CurrentPageIndex != pageIndex ||

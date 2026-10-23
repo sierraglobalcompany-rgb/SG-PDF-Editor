@@ -25,8 +25,8 @@
                            Margin="12,4,8,0" Visibility="Collapsed">
                     <StackPanel DockPanel.Dock="Left" Orientation="Horizontal"
                                 Margin="0,0,12,0" VerticalAlignment="Center">
-                        <Image Source="pack://application:,,,/SGPdf.App;component/Assets/SGPdf.App.ico"
-                               Width="25" Height="25" Stretch="Uniform" />
+                        <Image x:Name="DocumentBrandIcon"
+                               Width="28" Height="28" Stretch="Uniform" />
                         <TextBlock Text="SG PDF" FontSize="14" FontWeight="SemiBold"
                                    VerticalAlignment="Center" Margin="7,0,0,0"
                                    Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
@@ -75,10 +75,11 @@
         <Border x:Name="NavigationBar"
                 Grid.Column="1"
                 Style="{DynamicResource SgToolbarBorderStyle}"
+                HorizontalAlignment="Stretch"
                 Visibility="Collapsed"
                 IsVisibleChanged="NavigationBar_IsVisibleChanged">
             <StackPanel Orientation="Horizontal"
-                        HorizontalAlignment="Center"
+                        HorizontalAlignment="Right"
                         Margin="5,3">
                 <Button x:Name="PreviousPageButton"
                         Content="‹"
@@ -142,19 +143,25 @@
                         Click="ZoomIn_Click"
                         IsEnabled="False" />
 
-                <Button x:Name="FitPageButton"
-                        Content="Página"
-                        Margin="12,0,2,0"
-                        Style="{DynamicResource SgToolbarButtonStyle}"
-                        ToolTip="Mostrar la página completa"
-                        Click="FitPage_Click"
-                        IsEnabled="False" />
-                <Button x:Name="FitWidthButton"
-                        Content="Ancho"
-                        Style="{DynamicResource SgToolbarButtonStyle}"
-                        ToolTip="Ajustar al ancho del visor"
-                        Click="FitWidth_Click"
-                        IsEnabled="False" />
+                <Border Width="1" Height="24" Margin="8,0"
+                        Background="{DynamicResource CardStrokeColorDefaultBrush}" />
+
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button x:Name="FitPageButton"
+                            Content="Página"
+                            Margin="2,0"
+                            Style="{DynamicResource SgToolbarButtonStyle}"
+                            ToolTip="Mostrar la página completa"
+                            Click="FitPage_Click"
+                            IsEnabled="False" />
+                    <Button x:Name="FitWidthButton"
+                            Content="Ancho"
+                            Margin="2,0"
+                            Style="{DynamicResource SgToolbarButtonStyle}"
+                            ToolTip="Ajustar al ancho del visor"
+                            Click="FitWidth_Click"
+                            IsEnabled="False" />
+                </StackPanel>
             </StackPanel>
         </Border>
 
@@ -212,7 +219,23 @@
             </Border>
 
             <Grid Grid.Column="1" Background="{DynamicResource LayerFillColorAltBrush}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <StackPanel x:Name="ReaderContextBar" Grid.Row="0"
+                            Orientation="Horizontal" VerticalAlignment="Center"
+                            Margin="12,6" MinHeight="44" Visibility="Collapsed">
+                    <TextBlock x:Name="ReaderViewCaption"
+                               Text="Vista del documento" FontSize="12" FontWeight="SemiBold"
+                               VerticalAlignment="Center" Margin="8,0,0,0"
+                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                </StackPanel>
+
                 <ScrollViewer x:Name="PdfScrollViewer"
+                              Grid.Row="1"
+                              Background="{DynamicResource LayerFillColorAltBrush}"
                               HorizontalScrollBarVisibility="Auto"
                               VerticalScrollBarVisibility="Auto"
                               SizeChanged="PdfScrollViewer_SizeChanged">
@@ -232,14 +255,8 @@
                                 Visibility="Collapsed" />
                     </Grid>
                 </ScrollViewer>
-                <TextBlock Text="Vista del documento" FontSize="11" FontWeight="SemiBold"
-                           Margin="52,15,0,0" HorizontalAlignment="Left"
-                           VerticalAlignment="Top" IsHitTestVisible="False"
-                           Panel.ZIndex="60"
-                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                           Visibility="{Binding Visibility, ElementName=PdfScrollViewer}" />
-
                 <TextBlock x:Name="EmptyStateText"
+                           Grid.Row="1"
                            HorizontalAlignment="Center"
                            VerticalAlignment="Center"
                            Text="Abre un PDF para empezar"

@@ -22,6 +22,18 @@ public partial class MainWindow
     private Border? _documentToolRail;
     private ColumnDefinition? _documentToolRailColumn;
     private bool _shellUiInitialized;
+    private bool _homeActionStarting;
+    private Func<MainWindow, string?> _selectHomePdfPath = static owner =>
+    {
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = "Seleccionar PDF para la herramienta",
+            Filter = "Archivo PDF (*.pdf)|*.pdf",
+            CheckFileExists = true,
+            Multiselect = false
+        };
+        return dialog.ShowDialog(owner) == true ? dialog.FileName : null;
+    };
 
     private static bool RegisterShellLoadedHandler()
     {
@@ -117,8 +129,8 @@ public partial class MainWindow
             {
                 icon = new System.Windows.Controls.Image
                 {
-                    Width = 22d,
-                    Height = 22d,
+                    Width = 24d,
+                    Height = 24d,
                     HorizontalAlignment = HorizontalAlignment.Center,
                     Stretch = System.Windows.Media.Stretch.Uniform,
                     Source = new System.Windows.Media.Imaging.BitmapImage(
@@ -129,8 +141,8 @@ public partial class MainWindow
             {
                 var fallbackIcon = new System.Windows.Shapes.Path
                 {
-                    Width = 22d,
-                    Height = 22d,
+                    Width = 24d,
+                    Height = 24d,
                     HorizontalAlignment = HorizontalAlignment.Center,
                     Stretch = System.Windows.Media.Stretch.Uniform,
                     StrokeThickness = 1.5d
@@ -146,10 +158,10 @@ public partial class MainWindow
             {
                 Text = descriptor.Title,
                 FontSize = 10.5d,
-                TextWrapping = TextWrapping.NoWrap,
-                TextTrimming = TextTrimming.CharacterEllipsis,
-                Width = 64d,
-                Margin = new Thickness(0, 4, 0, 0),
+                TextWrapping = TextWrapping.Wrap,
+                TextTrimming = TextTrimming.None,
+                Width = 62d,
+                Margin = new Thickness(0, 3, 0, 0),
                 HorizontalAlignment = HorizontalAlignment.Center,
                 TextAlignment = TextAlignment.Center
             };
@@ -243,10 +255,17 @@ public partial class MainWindow
 
     private async void HandleToolAction(string actionId)
     {
-        if (actionId is not ("read" or "edit" or "comment" or "sign" or "organize"))
+        var isCoreMode = actionId is "read" or "edit" or "comment" or "sign" or "organize";
+        if (!isCoreMode && actionId is not ("forms" or "ocr" or "redact" or "compare" or "convert" or "protect"))
             return;
 
-        if (!TryPrepareCoreToolTransition(actionId))
+        if (_session is null || _zplDocument is not null || _isBusy || _utilityExecuting)
+        {
+            UpdateDocumentToolRailSelection();
+            return;
+        }
+
+        if (isCoreMode && !TryPrepareCoreToolTransition(actionId))
         {
             UpdateDocumentToolRailSelection();
             return;
@@ -268,6 +287,25 @@ public partial class MainWindow
                 break;
             case "organize":
                 TryEnterOrganizeMode();
+                break;
+            case "forms":
+                EditAcroForm_Click(this, new RoutedEventArgs(Button.ClickEvent));
+                break;
+            case "ocr":
+                Ocr_Click(this, new RoutedEventArgs(Button.ClickEvent));
+                break;
+            case "redact":
+                if (TryPrepareCoreToolTransition("edit") && await TryEnterEditModeAsync())
+                    StatusText.Text = "Censurar: selecciona texto compatible en Editar, pulsa Redactar y guarda una copia.";
+                break;
+            case "compare":
+                ComparePdf_Click(this, new RoutedEventArgs(Button.ClickEvent));
+                break;
+            case "convert":
+                ExportPdfToPng_Click(this, new RoutedEventArgs(Button.ClickEvent));
+                break;
+            case "protect":
+                Protection_Click(this, new RoutedEventArgs(Button.ClickEvent));
                 break;
         }
 
@@ -320,7 +358,9 @@ public partial class MainWindow
                     ? "organize"
                     : _signatureModeActive
                         ? "sign"
-                        : "read";
+                        : _acroFormPropertiesScrollViewer?.Visibility == Visibility.Visible
+                            ? "forms"
+                            : "read";
 
         foreach (var button in items.Children.OfType<Button>())
         {
@@ -359,9 +399,75 @@ public partial class MainWindow
         RefreshHomeRecentFiles();
     }
 
-    private void HomeToolRequested(string actionId)
+    private async void HomeToolRequested(string actionId)
     {
-        if (string.Equals(actionId, "open-zpl", StringComparison.Ordinal))
+        try
+        {
+            await TryStartHomeActionAsync(actionId);
+        }
+        catch (Exception ex)
+        {
+            StatusText.Text = $"No se pudo iniciar la herramienta: {ex.Message}";
+        }
+    }
+
+    // true means the intention was sent to its owner; it does not mean the operation completed.
+    private async Task<bool> TryStartHomeActionAsync(string actionId)
+    {
+        // Keep the historical ZPL behavior outside the new PDF flow.
+        if (actionId == "open-zpl")
+        {
             HomeOpenZplRequested();
+            return true;
+        }
+
+        if (actionId is not ("qr" or "organize" or "edit" or "sign" or "merge" or "split" or
+                "ocr" or "redact" or "protect" or "compare" or "convert" or
+                "watermark" or "page-numbering") ||
+            _homeActionStarting || _isBusy || _utilityExecuting || _zplDocument is not null)
+            return false;
+
+        _homeActionStarting = true;
+        try
+        {
+            if (actionId == "qr")
+            {
+                if (!CanStartBatch())
+                    return false;
+                QrCode_Click(this, new RoutedEventArgs(Button.ClickEvent));
+                return true;
+            }
+
+            if (_session is null)
+            {
+                var path = _selectHomePdfPath(this);
+                if (string.IsNullOrWhiteSpace(path) || !await TryOpenPdfPathAsync(path))
+                    return false;
+            }
+
+            if (_session is null || _zplDocument is not null || _isBusy || _utilityExecuting)
+                return false;
+
+            // Merge and Split are concrete Organize operations, not mode navigation.
+            // Keep the existing document/mode guards and the single Organize plan owner.
+            if (actionId is "merge" or "split")
+            {
+                if (!TryPrepareCoreToolTransition("organize") || !TryEnterOrganizeMode())
+                    return false;
+                return actionId == "merge" ? TryMergeOrganizePdf() : TrySplitOrganizePdf();
+            }
+
+            if (actionId == "watermark")
+                WatermarkText_Click(this, new RoutedEventArgs(Button.ClickEvent));
+            else if (actionId == "page-numbering")
+                PageNumbering_Click(this, new RoutedEventArgs(Button.ClickEvent));
+            else
+                HandleToolAction(actionId);
+            return true; // Intención delegada; NO asegura operación/salida completada.
+        }
+        finally
+        {
+            _homeActionStarting = false;
+        }
     }
 }

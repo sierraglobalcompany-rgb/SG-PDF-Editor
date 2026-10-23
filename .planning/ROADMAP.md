@@ -2,7 +2,9 @@
 
 > Authority: exact GitHub HEAD/CI → `.planning/STATE.md` → this roadmap → `.planning/REQUIREMENTS.md` → approved slice specs/plans.
 
-## Current routing — 2026-10-17
+## Routing snapshot — 2026-10-17 (histórico)
+
+- El freeze F14–F18 de este snapshot es histórico y precede a la excepción funcional F14-A/B autorizada el 2026-10-23; consulta el estado vigente en [STATE.md](STATE.md).
 
 - F0–F12: CLOSED / FROZEN for automated baseline.
 - F13: ACTIVE.

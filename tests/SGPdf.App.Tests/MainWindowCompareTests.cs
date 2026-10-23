@@ -103,7 +103,7 @@ public sealed class MainWindowCompareTests
         Assert.Contains("DetachActiveDocumentPendingUi", pending, StringComparison.Ordinal);
         Assert.Contains("ResetAcroFormUi();", edit, StringComparison.Ordinal);
         Assert.Contains("ResetAcroFormUi();", organize, StringComparison.Ordinal);
-        Assert.Contains("ResetAcroFormUi();", sign, StringComparison.Ordinal);
+        Assert.Contains("TryLeaveAcroFormWithGuard()", sign, StringComparison.Ordinal);
         Assert.Contains("ResetCompareUi();", forms, StringComparison.Ordinal);
     }
 

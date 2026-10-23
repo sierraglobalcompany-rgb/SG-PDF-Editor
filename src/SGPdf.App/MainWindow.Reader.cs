@@ -48,9 +48,9 @@ public partial class MainWindow
         var surface = new Grid
         {
             Name = "ReaderContinuousSurface",
-            Visibility = Visibility.Collapsed,
-            Background = Brushes.Transparent
+            Visibility = Visibility.Collapsed
         };
+        surface.SetResourceReference(Panel.BackgroundProperty, "LayerFillColorAltBrush");
         var list = new ListBox
         {
             Name = "ReaderPageList",
@@ -61,7 +61,6 @@ public partial class MainWindow
             ItemsSource = _readerPages,
             ItemTemplate = BuildReaderPageTemplate()
         };
-
         VirtualizingPanel.SetIsVirtualizing(list, true);
         VirtualizingPanel.SetVirtualizationMode(list, VirtualizationMode.Recycling);
         VirtualizingPanel.SetScrollUnit(list, ScrollUnit.Pixel);
@@ -72,6 +71,7 @@ public partial class MainWindow
         list.SizeChanged += ReaderPageList_SizeChanged;
 
         surface.Children.Add(list);
+        Grid.SetRow(surface, Grid.GetRow(PdfScrollViewer));
         Panel.SetZIndex(surface, 0);
         host.Children.Insert(0, surface);
         RegisterName(surface.Name, surface);

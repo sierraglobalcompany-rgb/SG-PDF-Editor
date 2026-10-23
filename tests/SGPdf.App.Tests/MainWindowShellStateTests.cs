@@ -108,6 +108,205 @@ public sealed class MainWindowShellStateTests
         });
     }
 
+    [Theory]
+    [InlineData("merge")]
+    [InlineData("split")]
+    [InlineData("organize")]
+    [InlineData("edit")]
+    [InlineData("sign")]
+    [InlineData("ocr")]
+    [InlineData("redact")]
+    [InlineData("protect")]
+    [InlineData("compare")]
+    [InlineData("convert")]
+    [InlineData("watermark")]
+    [InlineData("page-numbering")]
+    public void HomePdfAction_CancelledPickerLeavesHomeWithoutOpeningPdf(string actionId)
+    {
+        RunInSta(async () =>
+        {
+            var window = new MainWindow();
+            var pickerCalls = 0;
+            try
+            {
+                RaiseLoaded(window);
+                SetField(window, "_selectHomePdfPath", (Func<MainWindow, string?>)(_ =>
+                {
+                    pickerCalls++;
+                    return null;
+                }));
+
+                Assert.False(await InvokeTask<bool>(window, "TryStartHomeActionAsync", actionId));
+                Assert.Equal(1, pickerCalls);
+                Assert.Equal("Home", GetShellKind(window));
+                Assert.Empty(Assert.IsType<TabControl>(window.FindName("DocumentTabs")).Items);
+            }
+            finally { CloseClean(window); }
+        });
+    }
+
+    [Fact]
+    public void HomeMerge_UsesExistingOrganizePlanAndAddsSecondaryPdf()
+    {
+        RunInSta(async () =>
+        {
+            using var primary = PdfFixture.Create();
+            using var secondary = PdfFixture.Create();
+            var window = new MainWindow();
+            var primaryPickCount = 0;
+            var secondaryPickCount = 0;
+            try
+            {
+                RaiseLoaded(window);
+                ConfigureReader(window);
+                SetField(window, "_selectHomePdfPath", (Func<MainWindow, string?>)(_ =>
+                {
+                    primaryPickCount++;
+                    return primary.Path;
+                }));
+                SetField(window, "_selectOrganizePdfSource", (Func<string?>)(() =>
+                {
+                    secondaryPickCount++;
+                    return secondary.Path;
+                }));
+
+                Assert.True(await InvokeTask<bool>(window, "TryStartHomeActionAsync", "merge"));
+                Assert.Equal(1, primaryPickCount);
+                Assert.Equal(1, secondaryPickCount);
+                Assert.Equal("Pdf", GetShellKind(window));
+                Assert.Single(Assert.IsType<TabControl>(window.FindName("DocumentTabs")).Items);
+                var organizeMode = typeof(MainWindow).GetField("_organizeModeActive", BindingFlags.Instance | BindingFlags.NonPublic);
+                Assert.NotNull(organizeMode);
+                Assert.True((bool)organizeMode.GetValue(window)!);
+                var planField = typeof(MainWindow).GetField("_organizePlan", BindingFlags.Instance | BindingFlags.NonPublic);
+                Assert.NotNull(planField);
+                var plan = Assert.IsType<SGPdf.App.Features.Organize.OrganizePlan>(planField.GetValue(window));
+                Assert.Equal(2, plan.Pages.Count);
+            }
+            finally
+            {
+                SetField(window, "_confirmDiscardOrganizeChanges", (Func<bool>)(() => true));
+                CloseClean(window);
+            }
+        });
+    }
+
+    [Fact]
+    public void HomeMerge_CancelSecondaryKeepsOpenedPrimaryAndItsUnchangedPlan()
+    {
+        RunInSta(async () =>
+        {
+            using var primary = PdfFixture.Create();
+            var window = new MainWindow();
+            try
+            {
+                RaiseLoaded(window);
+                ConfigureReader(window);
+                SetField(window, "_selectHomePdfPath", (Func<MainWindow, string?>)(_ => primary.Path));
+                SetField(window, "_selectOrganizePdfSource", (Func<string?>)(() => null));
+
+                Assert.False(await InvokeTask<bool>(window, "TryStartHomeActionAsync", "merge"));
+                Assert.Equal("Pdf", GetShellKind(window));
+                Assert.Single(Assert.IsType<TabControl>(window.FindName("DocumentTabs")).Items);
+                var planField = typeof(MainWindow).GetField("_organizePlan", BindingFlags.Instance | BindingFlags.NonPublic);
+                Assert.NotNull(planField);
+                var plan = Assert.IsType<SGPdf.App.Features.Organize.OrganizePlan>(planField.GetValue(window));
+                Assert.Single(plan.Pages);
+            }
+            finally { CloseClean(window); }
+        });
+    }
+
+    [Fact]
+    public void HomeOrganize_OpensSelectedPdfAndReusesExistingOwnerOnce()
+    {
+        RunInSta(async () =>
+        {
+            using var pdf = PdfFixture.Create();
+            var window = new MainWindow();
+            var pickerCalls = 0;
+            bool? reentrantRequestStarted = null;
+            try
+            {
+                RaiseLoaded(window);
+                ConfigureReader(window);
+                SetField(window, "_selectHomePdfPath", (Func<MainWindow, string?>)(_ =>
+                {
+                    pickerCalls++;
+                    reentrantRequestStarted = InvokeTask<bool>(window, "TryStartHomeActionAsync", "organize")
+                        .GetAwaiter().GetResult();
+                    return pdf.Path;
+                }));
+
+                Assert.True(await InvokeTask<bool>(window, "TryStartHomeActionAsync", "organize"));
+                Assert.False(reentrantRequestStarted);
+                Assert.Equal(1, pickerCalls);
+                Assert.Equal("Pdf", GetShellKind(window));
+                Assert.Single(Assert.IsType<TabControl>(window.FindName("DocumentTabs")).Items);
+                var organizeMode = typeof(MainWindow).GetField("_organizeModeActive", BindingFlags.Instance | BindingFlags.NonPublic);
+                Assert.NotNull(organizeMode);
+                Assert.True((bool)organizeMode.GetValue(window)!);
+            }
+            finally { CloseClean(window); }
+        });
+    }
+
+    [Fact]
+    public void HomeOrganize_WithActivePdfSkipsPickerAndDoesNotDuplicateTab()
+    {
+        RunInSta(async () =>
+        {
+            using var pdf = PdfFixture.Create();
+            var window = new MainWindow();
+            var pickerCalls = 0;
+            try
+            {
+                RaiseLoaded(window);
+                ConfigureReader(window);
+                Assert.True(await InvokeTask<bool>(window, "TryOpenPdfPathAsync", pdf.Path, null));
+                SetField(window, "_selectHomePdfPath", (Func<MainWindow, string?>)(_ =>
+                {
+                    pickerCalls++;
+                    return null;
+                }));
+
+                Assert.True(await InvokeTask<bool>(window, "TryStartHomeActionAsync", "organize"));
+                Assert.Equal(0, pickerCalls);
+                Assert.Equal("Pdf", GetShellKind(window));
+                Assert.Single(Assert.IsType<TabControl>(window.FindName("DocumentTabs")).Items);
+                var organizeMode = typeof(MainWindow).GetField("_organizeModeActive", BindingFlags.Instance | BindingFlags.NonPublic);
+                Assert.NotNull(organizeMode);
+                Assert.True((bool)organizeMode.GetValue(window)!);
+            }
+            finally { CloseClean(window); }
+        });
+    }
+
+    [Fact]
+    public void HomeUnknownActionDoesNotOpenPickerOrChangeWorkspace()
+    {
+        RunInSta(async () =>
+        {
+            var window = new MainWindow();
+            var pickerCalls = 0;
+            try
+            {
+                RaiseLoaded(window);
+                SetField(window, "_selectHomePdfPath", (Func<MainWindow, string?>)(_ =>
+                {
+                    pickerCalls++;
+                    return null;
+                }));
+
+                Assert.False(await InvokeTask<bool>(window, "TryStartHomeActionAsync", "unknown-action"));
+                Assert.Equal(0, pickerCalls);
+                Assert.Equal("Home", GetShellKind(window));
+                Assert.Empty(Assert.IsType<TabControl>(window.FindName("DocumentTabs")).Items);
+            }
+            finally { CloseClean(window); }
+        });
+    }
+
     [Fact]
     public void SameNamedPdfs_PreserveIndependentReaderDrawerVisibility()
     {

@@ -15,6 +15,16 @@ public partial class MainWindow
     private StackPanel? _acroFormFieldsPanel;
     private ScrollViewer? _acroFormPropertiesScrollViewer;
     private Button? _saveAcroFormButton;
+    private Func<bool> _confirmDiscardAcroFormChanges = static () =>
+        MessageBox.Show(
+            "Hay cambios de formulario no guardados en el PDF original. " +
+            "Puedes usar 'Guardar como...' para conservar una copia. " +
+            "Si ya guardaste una copia, esa copia se mantiene. " +
+            "¿Descartar esta edición y cambiar de herramienta?",
+            "SG PDF Editor",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning)
+        == MessageBoxResult.Yes;
 
     protected override void OnContentRendered(EventArgs e)
     {
@@ -94,6 +104,15 @@ public partial class MainWindow
             return;
         }
 
+        if (_acroFormPropertiesScrollViewer?.Visibility == Visibility.Visible)
+        {
+            StatusText.Text = "El formulario ya está abierto.";
+            return;
+        }
+
+        if (_commentModeActive && !TryLeaveCommentModeWithGuard())
+            return;
+
         if (_editModeActive && !TryLeaveEditModeWithGuard())
             return;
         if (_organizeModeActive && !TryLeaveOrganizeModeWithGuard())
@@ -155,6 +174,7 @@ public partial class MainWindow
             StatusText.Text = fields.Count == 0
                 ? "El PDF no contiene campos de texto AcroForm compatibles."
                 : $"Campos de formulario: {fields.Count}.";
+            UpdateDocumentToolRailSelection();
         }
         catch (Exception ex)
         {
@@ -186,6 +206,19 @@ public partial class MainWindow
         return values;
     }
 
+    private bool TryLeaveAcroFormWithGuard()
+    {
+        if (_acroFormPropertiesScrollViewer?.Visibility != Visibility.Visible)
+            return true;
+        if (GetChangedAcroFormValues().Count > 0 && !_confirmDiscardAcroFormChanges())
+        {
+            StatusText.Text = "Cambio cancelado: conserva o guarda los cambios de formulario.";
+            return false;
+        }
+        ResetAcroFormUi();
+        return true;
+    }
+
     private void ResetAcroFormUi()
     {
         ResetCompareUi();
@@ -205,6 +238,8 @@ public partial class MainWindow
             LabelPropertiesPanel.Visibility = Visibility.Collapsed;
             PropertiesPlaceholderText.Visibility = Visibility.Visible;
         }
+
+        UpdateDocumentToolRailSelection();
     }
 
     private async void SaveAcroForm_Click(object sender, RoutedEventArgs e)

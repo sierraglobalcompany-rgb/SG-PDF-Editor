@@ -40,11 +40,10 @@ public partial class MainWindow
         var workspace = PdfScrollViewer.Parent as Grid
             ?? throw new InvalidOperationException("No se encontró el workspace central para la toolbar contextual.");
 
-        workspace.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        workspace.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1d, GridUnitType.Star) });
+        workspace.RowDefinitions.Insert(0, new RowDefinition { Height = GridLength.Auto });
 
         foreach (UIElement child in workspace.Children.Cast<UIElement>().ToArray())
-            Grid.SetRow(child, 1);
+            Grid.SetRow(child, Grid.GetRow(child) + 1);
 
         var host = new Grid
         {

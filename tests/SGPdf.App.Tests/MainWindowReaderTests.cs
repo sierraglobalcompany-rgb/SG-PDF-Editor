@@ -31,9 +31,80 @@ public sealed class MainWindowReaderTests
             try
             {
                 Assert.True(await OpenReaderAsync(window, fixture.SourcePath));
-                Assert.Equal(Visibility.Visible, Element<Grid>(window, "ReaderContinuousSurface").Visibility);
-                Assert.Equal(Visibility.Collapsed, Element<ScrollViewer>(window, "PdfScrollViewer").Visibility);
+                var surface = Element<Grid>(window, "ReaderContinuousSurface");
+                var pdfScrollViewer = Element<ScrollViewer>(window, "PdfScrollViewer");
+                Assert.Equal(Visibility.Visible, surface.Visibility);
+                Assert.Equal(Visibility.Collapsed, pdfScrollViewer.Visibility);
+                Assert.Equal(1, Grid.GetRow(pdfScrollViewer));
+                Assert.Equal(Grid.GetRow(pdfScrollViewer), Grid.GetRow(surface));
                 Assert.Equal(Visibility.Collapsed, Element<Canvas>(window, "SignatureOverlayCanvas").Visibility);
+            }
+            finally { CloseClean(window); }
+        });
+    }
+
+    [Fact]
+    public void ReaderViewport_UsesRemainingWorkspaceHeightWithDrawerClosedAndOpen()
+    {
+        RunInSta(async () =>
+        {
+            using var fixture = PdfFixture.Create(4);
+            var window = new MainWindow();
+            try
+            {
+                window.Show();
+                Assert.True(await OpenReaderAsync(window, fixture.SourcePath));
+                await Dispatcher.Yield(DispatcherPriority.ApplicationIdle);
+                window.UpdateLayout();
+
+                var contextBar = Element<StackPanel>(window, "ReaderContextBar");
+                var pdfScrollViewer = Element<ScrollViewer>(window, "PdfScrollViewer");
+                var center = Assert.IsType<Grid>(pdfScrollViewer.Parent);
+                var workspace = Assert.IsType<Grid>(center.Parent);
+                var surface = Element<Grid>(window, "ReaderContinuousSurface");
+                var pageList = Element<ListBox>(window, "ReaderPageList");
+                var toggle = Element<Button>(window, "ReaderNavigationToggleButton");
+                var drawer = Element<Border>(window, "ReaderNavigationDrawer");
+
+                AssertReaderGeometry();
+                Assert.Equal(Visibility.Collapsed, drawer.Visibility);
+
+                toggle.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, toggle));
+                await Dispatcher.Yield(DispatcherPriority.ApplicationIdle);
+                window.UpdateLayout();
+
+                Assert.Equal(Visibility.Visible, drawer.Visibility);
+                AssertReaderGeometry();
+
+                toggle.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, toggle));
+                await Dispatcher.Yield(DispatcherPriority.ApplicationIdle);
+                window.UpdateLayout();
+
+                Assert.Equal(Visibility.Collapsed, drawer.Visibility);
+                AssertReaderGeometry();
+
+                void AssertReaderGeometry()
+                {
+                    Assert.Equal(3, center.RowDefinitions.Count);
+                    Assert.Equal(1, Grid.GetRow(contextBar));
+                    Assert.Equal(2, Grid.GetRow(pdfScrollViewer));
+                    Assert.Equal(2, Grid.GetRow(surface));
+                    Assert.True(center.ActualHeight > 0);
+                    Assert.True(workspace.ActualHeight > 0);
+                    Assert.InRange(Math.Abs(center.ActualHeight - workspace.ActualHeight), 0d, 8d);
+
+                    var headerHeight = center.RowDefinitions[0].ActualHeight + center.RowDefinitions[1].ActualHeight;
+                    var availableContentHeight = center.ActualHeight - headerHeight;
+                    Assert.InRange(Math.Abs(center.RowDefinitions[2].ActualHeight - availableContentHeight), 0d, 8d);
+                    Assert.InRange(Math.Abs(surface.ActualHeight - center.RowDefinitions[2].ActualHeight), 0d, 8d);
+                    Assert.InRange(Math.Abs(pageList.ActualHeight - surface.ActualHeight), 0d, 8d);
+
+                    var barBounds = contextBar.TransformToAncestor(center).TransformBounds(
+                        new Rect(0d, 0d, contextBar.ActualWidth, contextBar.ActualHeight));
+                    var surfaceBounds = surface.TransformToAncestor(center).TransformBounds(
+                        new Rect(0d, 0d, surface.ActualWidth, surface.ActualHeight));
+                    Assert.True(barBounds.Bottom <= surfaceBounds.Top + 8d);
+                }
             }
             finally { CloseClean(window); }
         });

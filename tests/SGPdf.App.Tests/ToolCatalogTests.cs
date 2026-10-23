@@ -13,23 +13,18 @@ public sealed class ToolCatalogTests
     };
 
     [Fact]
-    public void DocumentCatalog_UsesApprovedOrder_AndOnlyCoreFiveAreExecutableInF13()
+    public void DocumentCatalog_UsesApprovedOrder_AndAllElevenActionsAreExecutable()
     {
         var items = ReadCatalog("Document");
 
         Assert.Equal(ApprovedDocumentOrder, items.Select(item => item.Id));
-        Assert.Equal(
-            ApprovedDocumentOrder.Take(5),
-            items.Where(item => item.ActionId is not null).Select(item => item.Id));
+        Assert.Equal(ApprovedDocumentOrder, items.Where(item => item.ActionId is not null).Select(item => item.Id));
 
-        foreach (var item in items.Take(5))
+        foreach (var item in items)
             Assert.Equal(item.Id, item.ActionId);
 
-        foreach (var item in items.Skip(5))
-        {
-            Assert.Null(item.ActionId);
-            Assert.False(string.IsNullOrWhiteSpace(item.DisabledReason));
-        }
+        Assert.Equal("Selecciona texto compatible desde Editar.", Assert.Single(items, item => item.Id == "redact").Description);
+        Assert.Equal("Exporta PDF a PNG.", Assert.Single(items, item => item.Id == "convert").Description);
     }
 
     [Fact]
@@ -65,12 +60,22 @@ public sealed class ToolCatalogTests
         Assert.Equal("PDF a PNG", pdfToPng.Title);
         Assert.DoesNotContain("JPG", pdfToPng.Title, StringComparison.OrdinalIgnoreCase);
 
-        var zpl = Assert.Single(items, item => item.Id == "labels-zpl");
-        Assert.Equal("open-zpl", zpl.ActionId);
+        Assert.Equal(
+            new[]
+            {
+                "merge-pdf", "split-pdf", "organize-pages", "edit-pdf", "ocr", "redact", "protect", "sign",
+                "compare-pdf", "pdf-to-png", "qr", "labels-zpl", "watermark", "page-numbering"
+            },
+            items.Where(item => item.ActionId is not null).Select(item => item.Id));
 
         Assert.Equal(
-            new[] { "labels-zpl" },
-            items.Where(item => item.ActionId is not null).Select(item => item.Id));
+            new[]
+            {
+                "merge", "split", "organize", "edit", "ocr", "redact", "protect", "sign",
+                "compare", "convert", "qr", "open-zpl", "watermark", "page-numbering"
+            },
+            items.Where(item => item.ActionId is not null).Select(item => item.ActionId));
+
     }
 
     private static IReadOnlyList<ToolView> ReadCatalog(string propertyName)

@@ -9,9 +9,16 @@ progress:
   current_subtask: T9.1
 ---
 
+## Estado operativo — F14-A/B · 2026-10-23
+
+- Excepción funcional F14-A/B: autorizada y ejecutada después del freeze histórico F14–F18. Prioridad vigente: funcionalidad F14–F17 primero; pulido visual V4 en F18/Astra.
+- F14-B: PASS_LOCAL_FUNCIONAL según QA local: focal 14/14; suite completa 1317 PASS / 0 FAIL / 1 SKIP; smoke 30 s; Unir 3 páginas y Dividir 2+2; las fuentes quedaron intactas. Home: 14/15 accesos conectados; Imagen→PDF permanece deshabilitada hasta F15.
+- R4-C/R4-D y Dark/125 %: QA_PENDING. La verificación exact-head del CI de esta publicación se registra en el reporte PUB1 V3; al redactar este bloque seguía pendiente. PDFs complejos no acreditados.
+- F13/T9.1 continúa activo. F15 es la siguiente etapa de planificación y no se inicia aquí. main sigue read-only: sin merge ni release. F14 no se declara global GREEN; V4 no queda certificada.
+
 # Project State
 
-## Autoridad activa — V4 shell unificado (2026-10-19)
+## Historia — autoridad V4 shell unificado (2026-10-19; snapshot histórico)
 
 **Usuario autorizó reconstrucción integral de la composición visual**, incluida **apariencia** de la fila superior; no desbloquea nuevas funciones. Se reemplaza el prompt/lote B previo por [plano y QA integrados](../docs/plans/SGPDF_V4_SHELL_UNIFICADO_RECONSTRUCCION_QA_2026-10-19.md).
 

@@ -319,6 +319,12 @@ public partial class MainWindow
         var fallback = wasActive
             ? _openDocuments.FirstOrDefault(candidate => !ReferenceEquals(candidate, document))
             : null;
+        var shouldResetClosedPdfStatus = wasActive &&
+                                         fallback is null &&
+                                         string.Equals(
+                                             StatusText.Text,
+                                             GetCurrentPageStatusText(),
+                                             StringComparison.Ordinal);
 
         if (fallback is not null)
         {
@@ -344,6 +350,8 @@ public partial class MainWindow
             UpdateViewerControlsUi();
             SyncDocumentTabsSelection();
             UpdateDocumentTopShellVisibility();
+            if (shouldResetClosedPdfStatus)
+                UpdateCurrentPageStatus(resetHomeWhenNoPdf: true);
         }
 
         UntrackOpenedDocument(document);

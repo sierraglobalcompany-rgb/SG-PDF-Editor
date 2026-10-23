@@ -87,6 +87,7 @@ public sealed class UiThemeContractTests
             element.Name.LocalName == "Border" && GridColumn(element) == 2);
 
         AssertSharedResource(center, "Background", "LayerFillColorAltBrush");
+        AssertSharedResource(FindNamed(document, "PdfScrollViewer"), "Background", "LayerFillColorAltBrush");
         AssertSharedResource(right, "Background", "CardBackgroundFillColorDefaultBrush");
         AssertSharedResource(right, "BorderBrush", "CardStrokeColorDefaultBrush");
     }
@@ -107,6 +108,7 @@ public sealed class UiThemeContractTests
         AssertDeferredResource(FindNamed(document, "NavigationBar"), "Style", "SgToolbarBorderStyle");
         AssertDeferredResource(FindNamed(document, "LabelNavigationBar"), "Style", "SgToolbarBorderStyle");
         AssertDeferredResource(center, "Background", "LayerFillColorAltBrush");
+        AssertDeferredResource(FindNamed(document, "PdfScrollViewer"), "Background", "LayerFillColorAltBrush");
         AssertDeferredResource(right, "Background", "CardBackgroundFillColorDefaultBrush");
         AssertDeferredResource(right, "BorderBrush", "CardStrokeColorDefaultBrush");
     }

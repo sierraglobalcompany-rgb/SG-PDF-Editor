@@ -57,6 +57,10 @@ public partial class MainWindow
             if (!ReferenceEquals(_labelRenderCts, renderCts))
                 return;
 
+            ValidateRenderedLabels(candidate, rendered);
+            if (!TryLeaveAcroFormWithGuard())
+                return;
+
             CommitLoadedZpl(candidate, rendered);
         }
         catch (OperationCanceledException) when (renderToken.IsCancellationRequested)
@@ -91,7 +95,6 @@ public partial class MainWindow
         IReadOnlyList<ZplRenderedLabel> renderedLabels)
     {
         ArgumentNullException.ThrowIfNull(document);
-        ValidateRenderedLabels(document, renderedLabels);
 
         _resizeRenderScheduler.CancelCurrent();
 

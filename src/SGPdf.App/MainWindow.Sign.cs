@@ -253,9 +253,11 @@ public partial class MainWindow
         if (_session is null || _navigation is null || _isBusy)
             return false;
 
+        if (!TryLeaveAcroFormWithGuard())
+            return false;
+
         CloseReaderFindBar();
         ClearReaderTextSelection();
-        ResetAcroFormUi();
         if (!await PrepareReaderForSignModeAsync())
             return false;
 
@@ -272,6 +274,8 @@ public partial class MainWindow
     private async Task<bool> TryEnterReadModeAsync()
     {
         if (_signatureEditState?.IsDirty == true && !TryResolvePendingSignatureEdits(SignatureGuardReason.LeaveSignMode))
+            return false;
+        if (!TryLeaveAcroFormWithGuard())
             return false;
 
         _signatureModeActive = false;

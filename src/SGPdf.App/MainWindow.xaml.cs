@@ -4,6 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Interop;
 using Microsoft.Win32;
 using SGPdf.App.Navigation;
 using SGPdf.App.Pdf;
@@ -27,8 +28,29 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        InitializeDocumentBrandIcon();
         InitializeReaderUi();
         UpdateViewerControlsUi();
+    }
+
+    private void InitializeDocumentBrandIcon()
+    {
+        var resourceUri = new Uri(
+            "pack://application:,,,/SGPdf.App;component/Assets/SGPdf.App.ico",
+            UriKind.Absolute);
+        var resource = Application.GetResourceStream(resourceUri)
+            ?? throw new InvalidOperationException("No se pudo cargar el icono oficial de SG PDF.");
+        using var iconStream = resource.Stream;
+        using var iconBuffer = new MemoryStream();
+        iconStream.CopyTo(iconBuffer);
+        iconBuffer.Position = 0;
+        using var icon = new System.Drawing.Icon(iconBuffer);
+        var bitmap = Imaging.CreateBitmapSourceFromHIcon(
+            icon.Handle,
+            Int32Rect.Empty,
+            BitmapSizeOptions.FromEmptyOptions());
+        bitmap.Freeze();
+        DocumentBrandIcon.Source = bitmap;
     }
 
     private async void OpenPdf_Click(object sender, RoutedEventArgs e)
@@ -403,10 +425,22 @@ public partial class MainWindow : Window
         FitWidthButton.IsEnabled = !_isBusy;
     }
 
-    private void UpdateCurrentPageStatus()
+    private string? GetCurrentPageStatusText()
+        => _session is not null && _navigation is not null
+            ? $"{Path.GetFileName(_session.FilePath)} — página {_navigation.CurrentPageNumber} de {_navigation.PageCount}"
+            : null;
+
+    private void UpdateCurrentPageStatus(bool resetHomeWhenNoPdf = false)
     {
-        if (_session is not null && _navigation is not null)
-            StatusText.Text = $"{Path.GetFileName(_session.FilePath)} — página {_navigation.CurrentPageNumber} de {_navigation.PageCount}";
+        var pageStatus = GetCurrentPageStatusText();
+        if (pageStatus is not null)
+        {
+            StatusText.Text = pageStatus;
+            return;
+        }
+
+        if (resetHomeWhenNoPdf && ActiveDocument is null && _zplDocument is null && !_isBusy)
+            StatusText.Text = "Listo";
     }
 
     private void PrintPdf_Click(object sender, RoutedEventArgs e)

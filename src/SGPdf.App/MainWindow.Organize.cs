@@ -236,6 +236,9 @@ public partial class MainWindow
             return false;
         }
 
+        if (!TryLeaveAcroFormWithGuard())
+            return false;
+
         try
         {
             var source = OrganizeSource.Capture(_session.FilePath, _session.PageCount);
