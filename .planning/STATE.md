@@ -9,12 +9,11 @@ progress:
   current_subtask: T9.1
 ---
 
-## Estado operativo — publicación F15-A/B · 2026-10-23
+## Estado operativo — publicación F15-A/B/C · 2026-10-23
 
-- F14-A/B: CI exact-head `build` **SUCCESS**, commit `7fadc60589d96c2a132ffe4296cf4e63d746a463`, ejecución `39909263996` (1.317 PASS / 0 FAIL / 1 SKIP).
-- F15-A/B: `PASS_LOCAL`; compresión qpdf, Imagen→PDF y PDF→JPG implementadas; Home 15/15. El commit de esta publicación queda `CI_PENDING` hasta confirmar su CI exact-head.
-- Dark/125 % y corpus documental complejo: pendientes. `main` read-only, sin merge. F15 no se declara global GREEN; F15-C no iniciado.
-
+- F15-A/B: checkpoint en `81dfc45fd39b723407562957b072a610b823378a`; CI exact-head `build` `39993998408` **SUCCESS**.
+- F15-C (recorte y desbloqueo autorizado): `PASS_AUTOMATED` — Release build 0 warnings / 0 errors, focal 201/201, suite completa 1.349 PASS / 0 FAIL / 1 SKIP y smoke 30 s PASS. QA WPF `GUI_NOT_VERIFIED`; esta publicación es un checkpoint de desarrollo, no cierre de GUI ni F15 global GREEN. El CI exact-head de este checkpoint se registra en el reporte PUB1.
+- Dark/125 % y corpus documental complejo: pendientes. F15-D: NOT STARTED. `main` sigue read-only, sin merge ni release.
 ## Estado operativo — F14-A/B · 2026-10-23
 
 - Excepción funcional F14-A/B: autorizada y ejecutada después del freeze histórico F14–F18. Prioridad vigente: funcionalidad F14–F17 primero; pulido visual V4 en F18/Astra.

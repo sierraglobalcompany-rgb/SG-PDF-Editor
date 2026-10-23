@@ -86,6 +86,16 @@ public partial class MainWindow
             Name = "CompressPdfMenuItem",
             Header = "_Comprimir PDF..."
         };
+        var unlock = new MenuItem
+        {
+            Name = "UnlockPdfMenuItem",
+            Header = "Desbloquear PDF con contraseña..."
+        };
+        var crop = new MenuItem
+        {
+            Name = "CropPdfMenuItem",
+            Header = "Recortar área visible..."
+        };
 
         watermark.SetBinding(
             IsEnabledProperty,
@@ -111,6 +121,12 @@ public partial class MainWindow
         compression.SetBinding(
             IsEnabledProperty,
             new Binding(nameof(IsEnabled)) { Source = PrintPdfMenuItem });
+        unlock.SetBinding(
+            IsEnabledProperty,
+            new Binding(nameof(IsEnabled)) { Source = PrintPdfMenuItem });
+        crop.SetBinding(
+            IsEnabledProperty,
+            new Binding(nameof(IsEnabled)) { Source = PrintPdfMenuItem });
         watermark.Click += WatermarkText_Click;
         batchWatermark.Click += BatchWatermark_Click;
         numbering.Click += PageNumbering_Click;
@@ -120,6 +136,8 @@ public partial class MainWindow
         pdfToPng.Click += ExportPdfToPng_Click;
         pdfToJpg.Click += ExportPdfToJpg_Click;
         compression.Click += CompressPdf_Click;
+        unlock.Click += UnlockPdf_Click;
+        crop.Click += CropPdf_Click;
         utilities.Items.Add(watermark);
         utilities.Items.Add(batchWatermark);
         utilities.Items.Add(numbering);
@@ -129,6 +147,8 @@ public partial class MainWindow
         utilities.Items.Add(pdfToPng);
         utilities.Items.Add(pdfToJpg);
         utilities.Items.Add(compression);
+        utilities.Items.Add(unlock);
+        utilities.Items.Add(crop);
 
         RegisterName(watermark.Name, watermark);
         RegisterName(batchWatermark.Name, batchWatermark);
@@ -139,6 +159,9 @@ public partial class MainWindow
         RegisterName(pdfToPng.Name, pdfToPng);
         RegisterName(pdfToJpg.Name, pdfToJpg);
         RegisterName(compression.Name, compression);
+        RegisterName(unlock.Name, unlock);
+        RegisterName(crop.Name, crop);
+        UpdateUtilityCommandAvailability();
     }
 
     private async void CompressPdf_Click(object sender, RoutedEventArgs e)
@@ -172,7 +195,7 @@ public partial class MainWindow
         }
 
         _utilityExecuting = true;
-        UpdateCompressionCommandAvailability();
+        UpdateUtilityCommandAvailability();
         StatusText.Text = "Comprimiendo una copia del PDF...";
         try
         {
@@ -212,17 +235,134 @@ public partial class MainWindow
         finally
         {
             _utilityExecuting = false;
-            UpdateCompressionCommandAvailability();
+            UpdateUtilityCommandAvailability();
         }
     }
 
     private void UpdateCompressionCommandAvailability()
+        => UpdateUtilityCommandAvailability();
+
+    private void UpdateUtilityCommandAvailability()
     {
-        if (FindName("CompressPdfMenuItem") is MenuItem compression)
+        foreach (var name in new[] { "CompressPdfMenuItem", "UnlockPdfMenuItem", "CropPdfMenuItem" })
         {
-            compression.SetCurrentValue(
-                IsEnabledProperty,
-                PrintPdfMenuItem.IsEnabled && CanRunUtility());
+            if (FindName(name) is MenuItem command)
+            {
+                command.SetCurrentValue(
+                    IsEnabledProperty,
+                    PrintPdfMenuItem.IsEnabled && CanRunUtility());
+            }
+        }
+    }
+
+    private async void UnlockPdf_Click(object sender, RoutedEventArgs e)
+    {
+        if (!CanRunUtility())
+        {
+            StatusText.Text = "No se puede ejecutar la utilidad en el estado actual del editor.";
+            return;
+        }
+
+        var dialog = new PdfUnlockDialog { Owner = this };
+        if (dialog.ShowDialog() != true || dialog.Request is null)
+        {
+            StatusText.Text = "Desbloqueo cancelado.";
+            return;
+        }
+
+        var destination = SelectUtilityDestination(
+            "Guardar copia desbloqueada como",
+            $"{Path.GetFileNameWithoutExtension(_session!.FilePath)}-sin-contrasena.pdf",
+            overwritePrompt: false);
+        if (string.IsNullOrWhiteSpace(destination))
+        {
+            dialog.Request.Clear();
+            StatusText.Text = "Desbloqueo cancelado: no se seleccionó un destino.";
+            return;
+        }
+
+        var request = dialog.Request;
+        var password = request.Password;
+        SetUtilityExecuting(true);
+        StatusText.Text = "Verificando el PDF y creando una copia sin contraseña...";
+        try
+        {
+            var result = await new PdfUnlockCoordinator().CreateUnlockedCopyAsync(
+                _session!.FilePath,
+                destination,
+                password,
+                request.AuthorizationConfirmed,
+                CancellationToken.None);
+            StatusText.Text = result.Succeeded
+                ? $"Copia sin contraseña guardada: {Path.GetFileName(destination)}"
+                : $"No se pudo desbloquear el PDF: {result.Error}";
+        }
+        catch (OperationCanceledException)
+        {
+            StatusText.Text = "Desbloqueo cancelado.";
+        }
+        catch (Exception)
+        {
+            StatusText.Text = "No se pudo completar el desbloqueo; el original quedó intacto.";
+        }
+        finally
+        {
+            password = string.Empty;
+            request.Clear();
+            SetUtilityExecuting(false);
+        }
+    }
+
+    private async void CropPdf_Click(object sender, RoutedEventArgs e)
+    {
+        if (!CanRunUtility())
+        {
+            StatusText.Text = "No se puede ejecutar la utilidad en el estado actual del editor.";
+            return;
+        }
+
+        var pageSize = _session!.GetPageSize(0);
+        var dialog = new PdfCropDialog(pageSize.Width, pageSize.Height) { Owner = this };
+        if (dialog.ShowDialog() != true || dialog.Request is null)
+        {
+            StatusText.Text = "Recorte cancelado.";
+            return;
+        }
+
+        var destination = SelectUtilityDestination(
+            "Guardar PDF recortado como",
+            $"{Path.GetFileNameWithoutExtension(_session.FilePath)}-recortado.pdf",
+            overwritePrompt: false);
+        if (string.IsNullOrWhiteSpace(destination))
+        {
+            StatusText.Text = "Recorte cancelado: no se seleccionó un destino.";
+            return;
+        }
+
+        SetUtilityExecuting(true);
+        StatusText.Text = "Verificando el PDF y creando la copia recortada...";
+        try
+        {
+            var result = await new PdfCropCoordinator().CreateCroppedCopyAsync(
+                _session,
+                destination,
+                dialog.Request,
+                CancellationToken.None);
+            StatusText.Text = result.Succeeded
+                ? $"Copia recortada guardada: {Path.GetFileName(destination)}"
+                : $"No se pudo recortar el PDF: {result.Error}";
+        }
+        catch (OperationCanceledException)
+        {
+            StatusText.Text = "Recorte cancelado.";
+        }
+        catch (Exception)
+        {
+            StatusText.Text = "No se pudo validar el recorte seguro; el original quedó intacto.";
+        }
+        finally
+        {
+            SetUtilityExecuting(false);
         }
     }
 
@@ -503,7 +643,7 @@ public partial class MainWindow
     private void SetUtilityExecuting(bool value)
     {
         _utilityExecuting = value;
-        UpdateCompressionCommandAvailability();
+        UpdateUtilityCommandAvailability();
     }
 
     private string? SelectUtilityDestination(

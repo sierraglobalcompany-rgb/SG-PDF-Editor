@@ -13,7 +13,8 @@ internal static class ChildProcessRunner
     public static async Task<ChildProcessResult> RunAsync(
         ProcessStartInfo startInfo,
         TimeSpan timeout,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        string? standardInput = null)
     {
         ArgumentNullException.ThrowIfNull(startInfo);
         if (timeout <= TimeSpan.Zero)
@@ -24,6 +25,7 @@ internal static class ChildProcessRunner
         startInfo.UseShellExecute = false;
         startInfo.RedirectStandardOutput = true;
         startInfo.RedirectStandardError = true;
+        startInfo.RedirectStandardInput = standardInput is not null;
         startInfo.CreateNoWindow = true;
 
         using var process = new Process { StartInfo = startInfo };
@@ -40,6 +42,14 @@ internal static class ChildProcessRunner
 
         try
         {
+            if (standardInput is not null)
+            {
+                await process.StandardInput.WriteLineAsync(standardInput.AsMemory(), cancellationToken)
+                    .ConfigureAwait(false);
+                await process.StandardInput.FlushAsync(cancellationToken).ConfigureAwait(false);
+                process.StandardInput.Close();
+            }
+
             await process.WaitForExitAsync(linkedCancellation.Token).ConfigureAwait(false);
 
             var standardOutput = await standardOutputTask.ConfigureAwait(false);
@@ -68,6 +78,22 @@ internal static class ChildProcessRunner
 
             throw new TimeoutException(
                 $"Process '{startInfo.FileName}' exceeded the timeout of {timeout.TotalMilliseconds:0} ms.");
+        }
+        catch
+        {
+            TryKillProcessTree(process);
+            try
+            {
+                await process.WaitForExitAsync(CancellationToken.None).ConfigureAwait(false);
+            }
+            catch (InvalidOperationException)
+            {
+                // The process may already have exited between failure and cleanup.
+            }
+
+            await DrainAsync(standardOutputTask).ConfigureAwait(false);
+            await DrainAsync(standardErrorTask).ConfigureAwait(false);
+            throw;
         }
     }
 

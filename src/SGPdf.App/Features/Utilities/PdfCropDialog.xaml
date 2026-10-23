@@ -1,0 +1,77 @@
+<Window x:Class="SGPdf.App.Features.Utilities.PdfCropDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Recortar área visible"
+        Width="510" Height="485"
+        MinWidth="480" MinHeight="450"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        Loaded="Window_Loaded">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0"
+                   Text="Márgenes para todas las páginas"
+                   FontWeight="SemiBold" />
+
+        <Grid Grid.Row="1" Margin="0,8,0,12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="16" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,0,10">
+                <TextBlock Text="Izquierda (mm)" />
+                <TextBox x:Name="LeftTextBox" Text="0" Margin="0,4,0,0" Padding="7,4" TextChanged="Margin_TextChanged" />
+            </StackPanel>
+            <StackPanel Grid.Row="0" Grid.Column="2" Margin="0,0,0,10">
+                <TextBlock Text="Derecha (mm)" />
+                <TextBox x:Name="RightTextBox" Text="0" Margin="0,4,0,0" Padding="7,4" TextChanged="Margin_TextChanged" />
+            </StackPanel>
+            <StackPanel Grid.Row="1" Grid.Column="0">
+                <TextBlock Text="Superior (mm)" />
+                <TextBox x:Name="TopTextBox" Text="0" Margin="0,4,0,0" Padding="7,4" TextChanged="Margin_TextChanged" />
+            </StackPanel>
+            <StackPanel Grid.Row="1" Grid.Column="2">
+                <TextBlock Text="Inferior (mm)" />
+                <TextBox x:Name="BottomTextBox" Text="0" Margin="0,4,0,0" Padding="7,4" TextChanged="Margin_TextChanged" />
+            </StackPanel>
+        </Grid>
+
+        <TextBlock x:Name="OutputSizeText"
+                   Grid.Row="2"
+                   Margin="0,0,0,12"
+                   FontWeight="SemiBold"
+                   TextWrapping="Wrap" />
+
+        <TextBlock x:Name="CropWarningText"
+                   Grid.Row="3"
+                   Margin="0,0,0,12"
+                   Foreground="DarkGoldenrod"
+                   TextWrapping="Wrap"
+                   Text="Recortar oculta zonas de la página, pero el contenido fuera del área puede recuperarse. No sirve para censurar información." />
+
+        <TextBlock x:Name="ValidationText"
+                   Grid.Row="4"
+                   Foreground="Firebrick"
+                   TextWrapping="Wrap" />
+
+        <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Content="Cancelar" IsCancel="True" Padding="14,6" Margin="0,0,8,0" />
+            <Button Content="Continuar..." IsDefault="True" Padding="14,6" Click="Accept_Click" />
+        </StackPanel>
+    </Grid>
+</Window>
