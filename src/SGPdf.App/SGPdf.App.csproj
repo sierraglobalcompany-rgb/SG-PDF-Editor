@@ -5,6 +5,7 @@
     <UseWPF>true</UseWPF>
     <ApplicationIcon>Assets\SGPdf.App.ico</ApplicationIcon>
     <PlatformTarget>x64</PlatformTarget>
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
