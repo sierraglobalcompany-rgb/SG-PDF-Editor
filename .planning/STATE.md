@@ -9,6 +9,13 @@ progress:
   current_subtask: T9.1
 ---
 
+## Estado operativo — Macro B/C · 2026-10-24
+
+- El publish `win-x64` bloqueado ahora es reproducible: `packages.lock.json` de App/Tests incluye el target RID con versiones y hashes existentes preservados; el cambio está en `b71f279`.
+- Build Release local: 0 advertencias / 0 errores; suite: 1379 PASS / 0 FAIL / 0 SKIP. Publish autocontenido inventariado con los 13 avisos .NET/WPF y terceros aplicables. Ver reporte y manifiesto Macro B/C externo.
+- Aplicación portable no lanzada: no se demostró aislamiento respecto al WIP. GUI/125%/foco y smoke offline siguen sin verificar; no se declaran R7 ni release GREEN.
+- Riesgo residual `ZplGSCustom.ttf`: decisión humana pública pendiente. `main` sigue read-only; sin installer, merge ni release.
+
 ## Estado operativo — Macro A / F14–F15–T9.1 · 2026-10-24
 
 - F15-A/B: publicado en `81dfc45fd39b723407562957b072a610b823378a`; CI exact-head `build` `39993998408` **SUCCESS**.
