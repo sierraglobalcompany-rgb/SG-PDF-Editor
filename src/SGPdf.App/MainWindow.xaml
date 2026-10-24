@@ -238,7 +238,18 @@
                               Background="{DynamicResource LayerFillColorAltBrush}"
                               HorizontalScrollBarVisibility="Auto"
                               VerticalScrollBarVisibility="Auto"
-                              SizeChanged="PdfScrollViewer_SizeChanged">
+                              SizeChanged="PdfScrollViewer_SizeChanged"
+                              ContextMenuOpening="PdfWorkspaceContextMenu_ContextMenuOpening">
+                    <ScrollViewer.ContextMenu>
+                        <ContextMenu x:Name="PdfWorkspaceContextMenu"
+                                     Opened="PdfWorkspaceContextMenu_Opened">
+                            <MenuItem Header="Copiar texto" Click="PdfWorkspaceCopyText_Click" />
+                            <Separator />
+                            <MenuItem Header="Ajustar a página" Click="PdfWorkspaceFitPage_Click" />
+                            <MenuItem Header="Ajustar al ancho" Click="PdfWorkspaceFitWidth_Click" />
+                            <MenuItem Header="Imprimir..." Click="PdfWorkspacePrint_Click" />
+                        </ContextMenu>
+                    </ScrollViewer.ContextMenu>
                     <Grid>
                         <Image x:Name="PdfImage"
                                Margin="24"

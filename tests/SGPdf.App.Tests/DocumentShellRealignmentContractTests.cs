@@ -119,7 +119,7 @@ public sealed class DocumentShellRealignmentContractTests
         Assert.Contains("border.SetValue(Border.BackgroundProperty, Brushes.White)", readerSource);
     }
 
-    [Fact(Skip = "T9.1-R5: menú contextual del workspace PDF se implementa después del drawer.")]
+    [Fact]
     public void PdfWorkspace_DeclaresContextMenuOwner()
     {
         var path = FindRepoFile("src", "SGPdf.App", "MainWindow.xaml");

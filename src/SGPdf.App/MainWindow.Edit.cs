@@ -424,6 +424,7 @@ public partial class MainWindow
             Tag = "ImageMoveBody",
             IsHitTestVisible = true
         };
+        AttachSelectedImageContextMenu(outline);
         _editOverlayCanvas.Children.Add(outline);
 
         var corners = new[]

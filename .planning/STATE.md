@@ -13,7 +13,8 @@ progress:
 
 - F15-A/B: publicado en `81dfc45fd39b723407562957b072a610b823378a`; CI exact-head `build` `39993998408` **SUCCESS**.
 - F15-C (recorte y desbloqueo autorizado): publicado en `d0938547e3f58c962ec80c2b829bf1abd18314d6`; CI exact-head `build` `40008500764` **SUCCESS**. QA WPF `GUI_NOT_VERIFIED`; no equivale a cierre visual.
-- F15-D (marca de agua de imagen): implementación integrada y publicada en este checkpoint de la rama `feat/f15-a-compress-20261023`; CI exact-head del nuevo commit `CI_PENDING` hasta verificar la corrida automática. QA automatizada local: build 0/0, focal 24/24, integrada 40/40, suite completa 1374 PASS / 0 FAIL / 1 SKIP y smoke 30 s PASS, según informe de ejecución. Flujo GUI funcional PASS; Tab/foco `NOT_VERIFIED`.
+- F15-D (marca de agua de imagen): implementación integrada y publicada en este checkpoint de la rama `feat/f15-a-compress-20261023`; CI exact-head `40021821032` SUCCESS en `ddd47ef3236e10fa85d41e1af8ccb988cc8784cc`. QA automatizada local: build 0/0, focal 24/24, integrada 40/40, suite completa 1374 PASS / 0 FAIL / 1 SKIP y smoke 30 s PASS, según informe de ejecución. Flujo GUI funcional PASS; Tab/foco `NOT_VERIFIED`.
+- T9.1-R5 (menús contextuales): implementación publicada; CI exact-head [PENDING hasta confirmación]; GUI_NOT_VERIFIED (WIP); R4 PARTIAL; V4/F18 pendientes. Build local PASS (0 advertencias/0 errores), focal 4/4 y suite 1378/1378 según evidencia PUB1.
 - Dark/125 % y corpus documental complejo: pendientes. No declarar F15 ni F14 global GREEN. `main` sigue read-only, sin merge ni release.
 ## Estado operativo — F14-A/B · 2026-10-23
 

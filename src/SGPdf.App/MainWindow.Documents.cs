@@ -18,6 +18,7 @@ public partial class MainWindow
     private bool _documentLifecycleInitialized;
     private bool _documentTabsUiInitialized;
     private bool _syncingDocumentTabs;
+    private bool _documentActivationInProgress;
     private Border? _documentTopShell;
     private DockPanel? _documentTabRow;
 
@@ -258,45 +259,54 @@ public partial class MainWindow
             return;
         }
 
-        CaptureActiveDocumentPendingState();
-        SaveActiveDocumentReaderState();
-        DetachActiveDocumentPendingUi();
-        _resizeRenderScheduler.CancelCurrent();
-        _readerRenderScheduler.CancelCurrent();
-
-        BindLegacyReaderStateToDocument(document);
-        _zplDocument = null;
-        _renderedZplLabels = Array.Empty<ZplRenderedLabel>();
-        // Document identity drives the shell; two PDFs can share a window title.
-        SyncShellWorkspaceFromActiveDocument();
-        UpdateDocumentTopShellVisibility();
-
-        _updatingReaderScroll = true;
+        _documentActivationInProgress = true;
         try
         {
-            InitializeContinuousReader(document.PageSizes);
-            var pageIndex = Math.Clamp(document.Navigation.CurrentPageIndex, 0, document.PageSizes.Count - 1);
-            if (pageIndex > 0)
-                ScrollReaderToPage(pageIndex);
+            ClearReaderTextSelection();
+            CaptureActiveDocumentPendingState();
+            SaveActiveDocumentReaderState();
+            DetachActiveDocumentPendingUi();
+            _resizeRenderScheduler.CancelCurrent();
+            _readerRenderScheduler.CancelCurrent();
 
-            if (document.VerticalOffset > 0d)
+            BindLegacyReaderStateToDocument(document);
+            _zplDocument = null;
+            _renderedZplLabels = Array.Empty<ZplRenderedLabel>();
+            // Document identity drives the shell; two PDFs can share a window title.
+            SyncShellWorkspaceFromActiveDocument();
+            UpdateDocumentTopShellVisibility();
+
+            _updatingReaderScroll = true;
+            try
             {
-                _readerVerticalOffset = document.VerticalOffset;
-                ScrollInternalReader(_readerVerticalOffset);
-                UpdateReaderCurrentPageFromViewport();
-            }
+                InitializeContinuousReader(document.PageSizes);
+                var pageIndex = Math.Clamp(document.Navigation.CurrentPageIndex, 0, document.PageSizes.Count - 1);
+                if (pageIndex > 0)
+                    ScrollReaderToPage(pageIndex);
 
-            Title = $"SG PDF Editor — {Path.GetFileName(document.FilePath)}";
-            UpdateViewerControlsUi();
-            UpdateCurrentPageStatus();
-            await RefreshReaderRenderWindowAsync();
-            RestoreDocumentPendingState(document);
+                if (document.VerticalOffset > 0d)
+                {
+                    _readerVerticalOffset = document.VerticalOffset;
+                    ScrollInternalReader(_readerVerticalOffset);
+                    UpdateReaderCurrentPageFromViewport();
+                }
+
+                Title = $"SG PDF Editor — {Path.GetFileName(document.FilePath)}";
+                UpdateViewerControlsUi();
+                UpdateCurrentPageStatus();
+                await RefreshReaderRenderWindowAsync();
+                RestoreDocumentPendingState(document);
+            }
+            finally
+            {
+                _updatingReaderScroll = false;
+                SyncDocumentTabsSelection();
+                UpdateDocumentTopShellVisibility();
+            }
         }
         finally
         {
-            _updatingReaderScroll = false;
-            SyncDocumentTabsSelection();
-            UpdateDocumentTopShellVisibility();
+            _documentActivationInProgress = false;
         }
     }
 

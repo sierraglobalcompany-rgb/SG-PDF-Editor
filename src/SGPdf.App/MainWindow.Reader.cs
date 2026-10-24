@@ -61,6 +61,8 @@ public partial class MainWindow
             ItemsSource = _readerPages,
             ItemTemplate = BuildReaderPageTemplate()
         };
+        list.ContextMenu = PdfScrollViewer.ContextMenu;
+        list.ContextMenuOpening += PdfWorkspaceContextMenu_ContextMenuOpening;
         VirtualizingPanel.SetIsVirtualizing(list, true);
         VirtualizingPanel.SetVirtualizationMode(list, VirtualizationMode.Recycling);
         VirtualizingPanel.SetScrollUnit(list, ScrollUnit.Pixel);
