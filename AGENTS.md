@@ -29,6 +29,16 @@ Para el estado vigente de F14-A/B y su excepción al freeze histórico, consulta
 
 ## Leyes obligatorias
 
+### Ley 6 — ejecución resolutiva sin ping-pong
+- Completar cada objetivo autorizado como **un lote coherente**: preflight útil → diagnóstico → implementación/corrección pertinente → QA focal y regresión → cierre. No solicitar otra orden por comando, archivo, fallo mecánico o CI transitorio.
+- Usar autonomía **A_RECUPERABLE** para causas técnicas locales: investigar, reparar dentro del alcance y retestar con hipótesis distintas y límites finitos; **B_PARCIAL** para aislar un gate bloqueado y continuar tareas independientes; **C_DECISION** para detener solo cambios que necesitan nueva autorización; **STOP_GLOBAL** solo ante riesgo material de identidad, seguridad o pérdida de WIP.
+- Preservar el trabajo ajeno, documentos sin guardar, `main`, datos privados, secretos, paquetes V4 y ramas/worktrees históricos. La ley no autoriza publicar, fusionar, borrar, cambiar contrato o rediseñar sin permiso expreso.
+- Ejecutar pruebas pertinentes del SHA/build real; no confundir CI automático con QA humana ni permitir que el autor de cambios se autoapruebe (Ley 5). No maquillar aserciones, skips, capturas ni estados bloqueados.
+- Al terminar, generar **un informe Markdown por tarea** y **un ZIP solo si existen evidencias útiles**, ambos en la misma carpeta externa de reportes autorizada; verificar archivos, CRC/hash y un único `NEXT` realmente necesario, o `NEXT=NINGUNO`.
+- Antes de un nuevo handoff, determinar qué acción o capacidad distinta lo justifica. Evitar microtareas, pruebas completas repetidas y duplicación de documentos; las fases que exigen autorización independiente conservan sus gates.
+- Si alguna instrucción vigente del proyecto contradice esta cláusula, respetar la autoridad superior y registrar el conflicto; el estado histórico descrito abajo no prevalece sobre GitHub exact-head y `.planning/STATE.md`.
+
+
 ### KISS
 `SIMPLE → EFICIENTE → OPTIMIZADO → EFICAZ → MANTENIBLE → A→B`
 
