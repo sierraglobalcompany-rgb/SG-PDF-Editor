@@ -2,6 +2,14 @@
 
 > Authority: exact GitHub HEAD/CI → `.planning/STATE.md` → this roadmap → `.planning/REQUIREMENTS.md` → approved slice specs/plans.
 
+## ACTUAL — 2026-10-24
+
+- F14/F15 functional slices A–D and T9.1-R5 are published on `feat/f15-a-compress-20261023`; R5 exact-head CI `40047923449` is **SUCCESS**. `main` remains read-only at `31c0594758a83ec555d73ecdd7c597cdf8791fd7`; no merge/release is authorized.
+- R6 causal pixel test is locally verified against synthetic PDFium/WPF composition; the isolated full suite is **1379 PASS / 0 FAIL / 0 SKIP**. The CI for the checkpoint that versions this test must be read at its exact new SHA; the R5 base CI does not include it.
+- R7 remains `PARTIAL / NOT_CLOSED`: WIP state is unknown, no app was launched; Windows GUI, Light/Dark, 125% scale, focus/Tab and complex/private corpus checks remain open. F14/F15 functional publication does not make those gates GREEN.
+- Macro route: **A** consolidates R6 evidence and performs portable publish preflight; **B** is ChatGPT's independent audit of this report, TRX, hashes, capability table and payload manifest; **C** must be scoped after B. Its minimum evidence gate is a Windows session/VM demonstrably isolated from the WIP, followed by synthetic PDF/ZPL GUI and offline smoke. Installer and public license acceptance remain out of scope / human decision.
+- The associated `SGPDF_PLAN_MAESTRO_MACROENTREGAS_RECUPERACION_2026-10-24.md` was not present in Downloads, the repository, or the searched report/Desktop locations; this ACTUAL block records only the received Macro A and verified repository state.
+
 ## Routing snapshot — 2026-10-17 (histórico)
 
 - El freeze F14–F18 de este snapshot es histórico y precede a la excepción funcional F14-A/B autorizada el 2026-10-23; consulta el estado vigente en [STATE.md](STATE.md).
@@ -117,7 +125,7 @@ Must include:
 - real 125% Windows scaling / DPI 120;
 - P0=0 / P1=0 before T9.1 exit.
 
-## Next bounded task
+## Next bounded task — snapshot histórico, reemplazado por ACTUAL 2026-10-24
 
 **T9.1-R4-D — tabs+rail publicados y CI SUCCESS; siguiente único gate: [QA visual Windows V4](../docs/qa/2026-10-17-r4c-r4d-v4-windows-matrix.md)**. R4-C/R4-D siguen QA_PENDING. Bloque 3/R5/T9.2 bloqueados.
 

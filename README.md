@@ -2,26 +2,13 @@
 
 Aplicación Windows local-first para trabajar con PDF y etiquetas térmicas ZPL sin depender de Internet, APIs ni servicios de pago.
 
-## Estado actual — 2026-10-17
+## Estado actual — 2026-10-24
 
-- F0–F12: **CLOSED / FROZEN** en la baseline automatizada documentada.
-- F13 Tasks 1–8: cerradas; **Task9 ACTIVE**.
-- T9.0: DONE.
-- T9.1: ACTIVE — realineamiento document shell / UX.
-- DG-0 SG Design Governance: **GREEN / CLOSED**.
-- R1 reader multi-document core: **GREEN / CLOSED**.
-- R1B per-document pending state + close guard: **GREEN / CLOSED**.
-- R2 top shell + real document tabs: **GREEN / CLOSED** en `cf816557adab80f0e6e2e4ecb2f6628dc92eba90`.
-- R3 document rail + official artwork: **GREEN / CLOSED técnicamente**; product commit `394bd320f8df03c0b00b5a517c00869a6c3a74e2`, exact-head GREEN `4050ef37422fc2cdb98b79f4bd4c215534fc553e`.
-- Exact-head CI R3: run `39046256870`, job `117435463253` — Build PASS 0 warnings/0 errors, startup smoke PASS 30 s, tests `1279 passed / 0 failed / 2 skipped / 1281 total`.
-- Los 2 skips restantes son contratos futuros intencionales: R4 drawer Páginas/Marcadores y R5 context menu PDF.
-- Próximo bloque elegible: **T9.1-R4 — Pages/Bookmarks collapsible drawer**. No iniciado.
-- Rama canónica: `feat/f13-task9-t9-1-document-shell-realignment-20261017`.
-- `main` continúa read-only en `31c0594758a83ec555d73ecdd7c597cdf8791fd7`; no hay merge aprobado.
-- T9.2 no iniciado; F14–F18 frozen.
-
-Checkpoint de recuperación R3:
-`docs/history/2026-10-17-f13-t9-1-r3-green-r4-next-checkpoint.md`.
+- F14/F15 funcional y T9.1-R5 publicados en `feat/f15-a-compress-20261023`; R5 exact-head CI `40047923449` **SUCCESS**. F14/F15 no quedan globalmente GREEN: Dark/125%, foco, corpus complejo y QA real/manual permanecen separados.
+- R6 test causal WPF/PDFium de selección de imagen: focal PASS y suite aislada **1379 PASS / 0 FAIL / 0 SKIP**. El CI base 40047923449 no contiene el nuevo test; revisar el exact-head CI de su checkpoint publicado.
+- Publish `win-x64` autocontenido generado e inventariado fuera del repo. La app no se lanzó; GUI `NOT_VERIFIED` por WIP no aislada y offline smoke `NOT_RUN`. La decisión pública de licencia para `ZplGSCustom.ttf` sigue pendiente de una persona responsable.
+- `main` permanece read-only en `31c0594758a83ec555d73ecdd7c597cdf8791fd7`; sin merge ni release. R7 continúa `PARTIAL / NOT_CLOSED` hasta QA Windows aislada.
+- La sección “Continuidad T9.1” más abajo conserva el routing snapshot del 2026-10-17; no es la ruta vigente. Consultar `.planning/STATE.md` y `.planning/ROADMAP.md`.
 
 El PASS automatizado no equivale a QA real/manual/private/physical. Esos gates permanecen separados donde corresponda.
 

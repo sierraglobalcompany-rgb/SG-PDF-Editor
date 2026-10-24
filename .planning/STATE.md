@@ -9,13 +9,15 @@ progress:
   current_subtask: T9.1
 ---
 
-## Estado operativo — publicación F15-A/B/C/D · 2026-10-23
+## Estado operativo — Macro A / F14–F15–T9.1 · 2026-10-24
 
 - F15-A/B: publicado en `81dfc45fd39b723407562957b072a610b823378a`; CI exact-head `build` `39993998408` **SUCCESS**.
 - F15-C (recorte y desbloqueo autorizado): publicado en `d0938547e3f58c962ec80c2b829bf1abd18314d6`; CI exact-head `build` `40008500764` **SUCCESS**. QA WPF `GUI_NOT_VERIFIED`; no equivale a cierre visual.
-- F15-D (marca de agua de imagen): implementación integrada y publicada en este checkpoint de la rama `feat/f15-a-compress-20261023`; CI exact-head `40021821032` SUCCESS en `ddd47ef3236e10fa85d41e1af8ccb988cc8784cc`. QA automatizada local: build 0/0, focal 24/24, integrada 40/40, suite completa 1374 PASS / 0 FAIL / 1 SKIP y smoke 30 s PASS, según informe de ejecución. Flujo GUI funcional PASS; Tab/foco `NOT_VERIFIED`.
-- T9.1-R5 (menús contextuales): implementación publicada; CI exact-head [PENDING hasta confirmación]; GUI_NOT_VERIFIED (WIP); R4 PARTIAL; V4/F18 pendientes. Build local PASS (0 advertencias/0 errores), focal 4/4 y suite 1378/1378 según evidencia PUB1.
-- Dark/125 % y corpus documental complejo: pendientes. No declarar F15 ni F14 global GREEN. `main` sigue read-only, sin merge ni release.
+- F15-D (marca de agua de imagen): publicado en `ddd47ef3236e10fa85d41e1af8ccb988cc8784cc`; CI exact-head `40021821032` **SUCCESS**. QA automatizada local: focal 24/24, integrada 40/40, suite 1374 PASS / 0 FAIL / 1 SKIP y smoke 30 s PASS. Tab/foco `NOT_VERIFIED`.
+- T9.1-R5 (menús contextuales): commit `22f1a38c225478685d759879aea90645eba166c1`; CI exact-head `build` `40047923449` **SUCCESS** (1378 PASS / 0 FAIL / 0 SKIP). GUI `NOT_VERIFIED` por WIP; R4 `PARTIAL`; V4/F18 pendientes.
+- R6: test causal WPF/PDFium `MainWindowImageSelectionPixelCompositionTests.cs`, SHA-256 `1EF9CABBA4283DABDC05B240368E6B40B9C8F312E32CAEF38D1C93E6739A9481`; focal PASS en el reporte R6 y suite aislada local **1379 PASS / 0 FAIL / 0 SKIP**. El CI base 40047923449 no incluye este test; exact-head CI del checkpoint que lo versiona queda por confirmar tras publicación. No declarar `R6_FINAL_GREEN` ni cerrar R7 por CI solamente.
+- Publish portable `win-x64` autocontenido compilado e inventariado fuera del repo: 582 archivos / 281,487,751 bytes. App no lanzada; GUI bloqueada por WIP no aislada y smoke offline `NOT_RUN`. `PUBLIC_LICENSE_GATE=DECISION_HUMANA_PENDING` por la procedencia residual documentada de `ZplGSCustom.ttf`.
+- Dark/125 %, foco y corpus documental complejo: pendientes. F14/F15 no se declaran global GREEN. `main` sigue read-only, sin merge ni release.
 ## Estado operativo — F14-A/B · 2026-10-23
 
 - Excepción funcional F14-A/B: autorizada y ejecutada después del freeze histórico F14–F18. Prioridad vigente: funcionalidad F14–F17 primero; pulido visual V4 en F18/Astra.
